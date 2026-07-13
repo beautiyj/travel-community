@@ -1,0 +1,326 @@
+/* 관리자(업소 대시보드) 전용 스타일. 사이트 공용 CSS가 아직 없어서 admin 범위에 한해 별도 파일로 관리합니다. */
+
+:root {
+    --admin-primary: #0284c7;
+    --admin-primary-dark: #0369a1;
+    --admin-bg: #f8fafc;
+    --admin-border: #e2e8f0;
+    --admin-text: #1e293b;
+    --admin-muted: #64748b;
+    --admin-danger: #ef4444;
+    --admin-warn: #f59e0b;
+    --admin-good: #16a34a;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    background: var(--admin-bg);
+    color: var(--admin-text);
+    font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+}
+
+.admin-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* ── Sidebar ── */
+.admin-sidebar {
+    width: 224px;
+    flex-shrink: 0;
+    background: #fff;
+    border-right: 1px solid var(--admin-border);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+}
+
+.admin-sidebar__logo {
+    height: 64px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--admin-border);
+    font-weight: 800;
+    color: var(--admin-primary);
+}
+
+.admin-sidebar__logo-badge {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--admin-primary);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+}
+
+.admin-sidebar__biz {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--admin-border);
+}
+
+.admin-sidebar__biz-name {
+    margin: 0;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.admin-sidebar__biz-owner {
+    margin: 2px 0 0;
+    font-size: 12px;
+    color: var(--admin-muted);
+}
+
+.admin-sidebar__status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.admin-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+.admin-status-dot--open { background: #4ade80; }
+.admin-status-dot--closed { background: #f87171; }
+.admin-status-label--open { color: #16a34a; }
+.admin-status-label--closed { color: #ef4444; }
+
+.admin-sidebar__nav {
+    flex: 1;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow-y: auto;
+}
+
+.admin-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    color: var(--admin-muted);
+}
+
+.admin-nav-item:hover {
+    background: var(--admin-bg);
+    color: var(--admin-text);
+}
+
+.admin-nav-item.is-active {
+    background: rgba(2, 132, 199, 0.1);
+    color: var(--admin-primary);
+}
+
+.admin-nav-item--danger {
+    color: var(--admin-danger);
+}
+
+.admin-badge {
+    margin-left: auto;
+    background: var(--admin-danger);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 800;
+    border-radius: 999px;
+    min-width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 5px;
+}
+
+.admin-sidebar__footer {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+/* ── Main ── */
+.admin-main {
+    flex: 1;
+    margin-left: 224px;
+    min-height: 100vh;
+}
+
+.admin-topbar {
+    height: 64px;
+    background: #fff;
+    border-bottom: 1px solid var(--admin-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+}
+
+.admin-topbar__title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.admin-topbar__date {
+    font-size: 14px;
+    color: var(--admin-muted);
+}
+
+.admin-content {
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* ── KPI cards ── */
+.admin-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.admin-kpi-card {
+    background: #fff;
+    border: 1px solid var(--admin-border);
+    border-radius: 16px;
+    padding: 20px;
+}
+
+.admin-kpi-card__label {
+    margin: 0;
+    font-size: 14px;
+    color: var(--admin-muted);
+}
+
+.admin-kpi-card__value {
+    margin: 6px 0 0;
+    font-size: 28px;
+    font-weight: 800;
+}
+
+.admin-kpi-card__unit {
+    margin-left: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--admin-muted);
+}
+
+.admin-kpi-card--warn .admin-kpi-card__value { color: var(--admin-warn); }
+.admin-kpi-card--good .admin-kpi-card__value { color: var(--admin-good); }
+
+/* ── Generic card ── */
+.admin-card {
+    background: #fff;
+    border: 1px solid var(--admin-border);
+    border-radius: 16px;
+    padding: 24px;
+}
+
+.admin-card__title {
+    margin: 0 0 16px;
+    font-size: 16px;
+    font-weight: 800;
+}
+
+.admin-card__subtitle {
+    font-weight: 400;
+    font-size: 13px;
+    color: var(--admin-muted);
+    margin-left: 4px;
+}
+
+.admin-empty {
+    text-align: center;
+    color: var(--admin-muted);
+    font-size: 14px;
+    padding: 24px 0;
+}
+
+/* ── Reservation list rows ── */
+.admin-reservation-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-reservation-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--admin-border);
+}
+
+.admin-reservation-row:last-child {
+    border-bottom: none;
+}
+
+.admin-reservation-row__name {
+    font-weight: 700;
+}
+
+.admin-reservation-row__meta {
+    margin-left: 8px;
+    font-size: 13px;
+    color: var(--admin-muted);
+}
+
+.admin-reservation-row__right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.admin-reservation-row__price {
+    font-weight: 700;
+    color: var(--admin-primary);
+}
+
+/* ── Status badges ── */
+.admin-badge-status {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 999px;
+}
+.admin-badge-status--confirmed { background: #dcfce7; color: #15803d; }
+.admin-badge-status--pending { background: #fef3c7; color: #b45309; }
+.admin-badge-status--done { background: #dbeafe; color: #1d4ed8; }
+.admin-badge-status--cancelled { background: #fee2e2; color: #dc2626; }
+
+/* ── Buttons ── */
+.admin-btn {
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.admin-btn--sm {
+    font-size: 12px;
+    padding: 6px 12px;
+}
+.admin-btn--primary {
+    background: var(--admin-primary);
+    color: #fff;
+}
+.admin-btn--primary:hover {
+    background: var(--admin-primary-dark);
+}

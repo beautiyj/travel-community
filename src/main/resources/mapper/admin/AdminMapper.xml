@@ -3,8 +3,58 @@
 
 <mapper namespace="com.gnagnoohc.travel.admin.mapper.AdminMapper">
 
-    <!-- <select id="selectAdminList" resultType="adminDto">
-        SELECT * FROM admin_table
-    </select> -->
+    <resultMap id="adminReservationResultMap" type="com.gnagnoohc.travel.admin.dto.AdminReservationDto">
+        <id     property="reservationId" column="reservation_id"/>
+        <result property="visitorName"   column="visitor_name"/>
+        <result property="phone"         column="phone"/>
+        <result property="visitDate"     column="visit_date"/>
+        <result property="headcount"     column="headcount"/>
+        <result property="status"        column="status"/>
+        <result property="createdAt"     column="created_at"/>
+        <result property="placeName"     column="place_name"/>
+        <result property="amount"        column="amount"/>
+        <result property="paymentStatus" column="payment_status"/>
+    </resultMap>
+
+    <!-- 특정 업소(placeId)의 예약 목록. member_id로 소유자 검증까지 같이 함 -->
+    <select id="selectReservationsByPlace" resultMap="adminReservationResultMap">
+        SELECT
+            r.reservation_id,
+            r.visitor_name,
+            r.phone,
+            r.visit_date,
+            r.headcount,
+            r.status,
+            r.created_at,
+            p.name AS place_name,
+            pay.amount,
+            pay.payment_status
+        FROM RESERVATION r
+        JOIN PLACE p ON p.place_id = r.place_id
+        LEFT JOIN PAYMENT pay ON pay.reservation_id = r.reservation_id
+        WHERE r.place_id = #{placeId}
+          AND p.member_id = #{bizMemberId}
+        <if test="status != null and status != ''">
+            AND r.status = #{status}
+        </if>
+        ORDER BY r.visit_date DESC, r.reservation_id DESC
+    </select>
+
+    <!-- 예약 상태 변경 (수락/거절). 소유자가 아니면 0건 UPDATE -->
+    <update id="updateReservationStatus">
+        UPDATE RESERVATION r
+        JOIN PLACE p ON p.place_id = r.place_id
+        SET r.status = #{status}
+        WHERE r.reservation_id = #{reservationId}
+          AND p.member_id = #{bizMemberId}
+    </update>
+
+    <!-- 즉시 예약마감 토글 -->
+    <update id="updatePlaceClosed">
+        UPDATE PLACE
+        SET is_closed = #{isClosed}
+        WHERE place_id = #{placeId}
+          AND member_id = #{bizMemberId}
+    </update>
 
 </mapper>

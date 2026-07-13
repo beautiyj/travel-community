@@ -2,6 +2,7 @@ package com.gnagnoohc.travel.admin.service;
 
 import com.gnagnoohc.travel.admin.dto.AdminDashboardCountsDto;
 import com.gnagnoohc.travel.admin.dto.AdminDashboardViewDto;
+import com.gnagnoohc.travel.admin.dto.AdminMonthlyTrendDto;
 import com.gnagnoohc.travel.admin.dto.AdminPlaceOverviewDto;
 import com.gnagnoohc.travel.admin.dto.AdminReservationDto;
 import com.gnagnoohc.travel.admin.mapper.AdminMapper;
@@ -28,6 +29,7 @@ public class AdminDashboardService {
 
         List<AdminReservationDto> todayReservations = adminMapper.selectTodayReservations(overview.getPlaceId());
         AdminDashboardCountsDto counts = adminMapper.selectDashboardCounts(overview.getPlaceId());
+        List<AdminMonthlyTrendDto> monthlyTrend = adminMapper.selectMonthlyTrend(overview.getPlaceId());
 
         return AdminDashboardViewDto.builder()
                 .placeName(overview.getPlaceName())
@@ -35,6 +37,7 @@ public class AdminDashboardService {
                 .isClosed(overview.isClosed())
                 .todayLabel(todayLabel())
                 .todayReservations(todayReservations)
+                .monthlyTrend(monthlyTrend)
                 .monthlyCount(counts.getMonthlyCount())
                 .pendingCount(counts.getPendingCount())
                 .todayVisitors(counts.getTodayVisitors())

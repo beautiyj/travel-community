@@ -15,6 +15,7 @@ public class AdminDashboardViewDto {
     private boolean isClosed;
     private String todayLabel;
     private List<AdminReservationDto> todayReservations;
+    private List<AdminMonthlyTrendDto> monthlyTrend;
     private Integer monthlyCount;
     private Integer pendingCount;
     private Integer todayVisitors;

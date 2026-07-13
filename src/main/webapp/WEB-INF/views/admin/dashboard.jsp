@@ -7,6 +7,7 @@
     <meta charset="UTF-8">
     <title>대시보드 - 관리자 - 트립어라운드</title>
     <link rel="stylesheet" href="/css/admin.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -38,7 +39,13 @@
                 </div>
             </div>
 
-            <!-- 월별 예약 추이 차트는 이번 단계에서 제외 (추후 Chart.js 등으로 추가 예정) -->
+            <!-- 월별 예약 추이 차트 -->
+            <div class="admin-card">
+                <h2 class="admin-card__title">월별 예약 추이 <span class="admin-card__subtitle">최근 6개월</span></h2>
+                <div class="admin-chart-wrap">
+                    <canvas id="monthlyTrendChart"></canvas>
+                </div>
+            </div>
 
             <!-- 오늘 예약 현황 -->
             <div class="admin-card">
@@ -81,6 +88,56 @@
         </div>
     </div>
 </div>
+
+
+<script>
+    const monthlyTrendLabels = [<c:forEach var="m" items="${monthlyTrend}" varStatus="st">'${m.monthLabel}'<c:if test="${!st.last}">,</c:if></c:forEach>];
+    const monthlyTrendCounts = [<c:forEach var="m" items="${monthlyTrend}" varStatus="st">${m.bookingCount}<c:if test="${!st.last}">,</c:if></c:forEach>];
+    const monthlyTrendRevenue = [<c:forEach var="m" items="${monthlyTrend}" varStatus="st">${m.revenue}<c:if test="${!st.last}">,</c:if></c:forEach>];
+
+    new Chart(document.getElementById('monthlyTrendChart'), {
+        data: {
+            labels: monthlyTrendLabels,
+            datasets: [
+                {
+                    type: 'bar',
+                    label: '예약 건수',
+                    data: monthlyTrendCounts,
+                    backgroundColor: 'rgba(2, 132, 199, 0.5)',
+                    yAxisID: 'yCount'
+                },
+                {
+                    type: 'line',
+                    label: '매출',
+                    data: monthlyTrendRevenue,
+                    borderColor: '#f59e0b',
+                    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                    tension: 0.3,
+                    yAxisID: 'yRevenue'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                yCount: {
+                    type: 'linear',
+                    position: 'left',
+                    beginAtZero: true,
+                    title: { display: true, text: '건' }
+                },
+                yRevenue: {
+                    type: 'linear',
+                    position: 'right',
+                    beginAtZero: true,
+                    grid: { drawOnChartArea: false },
+                    title: { display: true, text: '원' }
+                }
+            }
+        }
+    });
+</script>
 
 </body>
 </html>

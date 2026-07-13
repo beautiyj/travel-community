@@ -248,6 +248,11 @@ body {
     margin-left: 4px;
 }
 
+.admin-chart-wrap {
+    position: relative;
+    height: 280px;
+}
+
 .admin-empty {
     text-align: center;
     color: var(--admin-muted);

@@ -32,6 +32,7 @@ public class AdminController {
         model.addAttribute("isClosed", view.isClosed());
         model.addAttribute("todayLabel", view.getTodayLabel());
         model.addAttribute("todayReservations", view.getTodayReservations());
+        model.addAttribute("monthlyTrend", view.getMonthlyTrend());
         model.addAttribute("monthlyCount", view.getMonthlyCount());
         model.addAttribute("pendingCount", view.getPendingCount());
         model.addAttribute("todayVisitors", view.getTodayVisitors());

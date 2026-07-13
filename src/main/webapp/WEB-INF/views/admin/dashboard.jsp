@@ -59,14 +59,16 @@
                                 </c:choose>
                                 <div class="admin-reservation-row">
                                     <div>
-                                        <span class="admin-reservation-row__name">${r.guestName}</span>
-                                        <span class="admin-reservation-row__meta">${r.phone} · ${r.people}명</span>
+                                        <span class="admin-reservation-row__name">${r.visitorName}</span>
+                                        <span class="admin-reservation-row__meta">${r.phone} · ${r.headcount}명</span>
                                     </div>
                                     <div class="admin-reservation-row__right">
-                                        <span class="admin-reservation-row__price"><fmt:formatNumber value="${r.price}" type="number" groupingUsed="true"/>원</span>
+                                        <c:if test="${r.amount != null}">
+                                            <span class="admin-reservation-row__price"><fmt:formatNumber value="${r.amount}" type="number" groupingUsed="true"/>원</span>
+                                        </c:if>
                                         <span class="admin-badge-status admin-badge-status--${statusClass}">${r.status}</span>
                                         <c:if test="${r.status == '대기중'}">
-                                            <!-- TODO: 예약 수락 액션은 '예약 관리' 탭 구현 시 연결 -->
+                                            <!-- 실제 수락 액션 연결은 예약 관리 탭 구현 시 진행 -->
                                             <button type="button" class="admin-btn admin-btn--primary admin-btn--sm">수락</button>
                                         </c:if>
                                     </div>

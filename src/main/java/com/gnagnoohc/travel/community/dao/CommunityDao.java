@@ -3,6 +3,7 @@ package com.gnagnoohc.travel.community.dao;
 import java.util.List;
 
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import com.gnagnoohc.travel.community.dto.CommentDto;
 import com.gnagnoohc.travel.community.dto.CommunityDto;
@@ -12,7 +13,7 @@ import com.gnagnoohc.travel.community.dto.ImageDto;
 @Mapper
 public interface CommunityDao {
 
-	List<CommunityDto> selectAll(String category, String q);
+	List<CommunityDto> selectAll(@Param("category") String category, @Param("q") String q);
 	void updateReadcount(Long postId);
 	CommunityDto selectOne(Long postId);
 	List<ImageDto> selectImages(Long postId);

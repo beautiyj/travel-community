@@ -32,14 +32,11 @@ public class CommunityController {
     
     // 목록
     @GetMapping("/community/list")
-    public String list(@RequestParam(required = false) String category,
-                       @RequestParam(required = false) String q,
+    public String list(@RequestParam(value = "category", required = false) String category,
+                       @RequestParam(value = "q", required = false) String q,
                        Model model) {
- 
-        // 검색어, 카테고리를 매퍼에 넘겨 서버에서 필터링
-    	List<CommunityDto> postList=service.selectAll(category, q);
     	
-        model.addAttribute("postList", postList);
+        model.addAttribute("postList", service.selectAll(category, q));
         
         return "community/list";
     }

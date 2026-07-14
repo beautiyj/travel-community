@@ -12,6 +12,7 @@
     <div style="padding: 20px; min-height: 400px;">
         <h2>컴포넌트추가_테스트인덱스파일</h2>
         <button onclick="location.href='/tour/test'">테스트 페이지</button>
+        <button onclick="location.href='/community/list'">게시판 페이지</button>
     </div>
 
     <%@ include file="../common/footer.jsp" %>

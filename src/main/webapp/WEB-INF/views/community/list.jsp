@@ -67,7 +67,7 @@
               <span class="badge badge-${post.category}">${post.category}</span>
             </span>
             <span class="col-title">${post.title}</span>
-            <span class="col-author">${post.memberName}</span>
+            <span class="col-author">${post.nickname}</span>
             <span class="col-date">
               <fmt:formatDate value="${post.createdAt}" pattern="yyyy-MM-dd" />
             </span>

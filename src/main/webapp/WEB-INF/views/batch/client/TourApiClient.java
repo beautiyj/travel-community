@@ -13,43 +13,74 @@ public class TourApiClient {
     @Value("${tour.api.service-key}") private String serviceKey; 
     @Value("${tour.api.base-url}") private String baseUrl;
 
+    // 공공데이터 불러올 때 같은 코드들은 상수로 정의해서 재사용하기
+    private static final String MOBILE_OS = "ETC";
+    private static final String MOBILE_APP = "Travel";
+
+    // 공공데이터 기본 엔드포인트 주소 설정
     public TourApiClient(WebClient.Builder webClientBuilder) {
-        // 공공데이터 기본 엔드포인트 주소 설정
         this.webClient = webClientBuilder.baseUrl(this.baseUrl).build();
     }
 
     /**
-     * 위치기반 관광정보 조회 API 호출 (JSON 수신 강제)
+     * 1. 위치기반 관광정보 조회 API 호출 (JSON)
      * @param mapX 경도
      * @param mapY 위도
      * @param radius 반경(m)
-     * @return 공공데이터가 던져준 순수 JSON 문자열
+     * @return 공공데이터 JSON 문자열
      */
     public String fetchLocationBasedTour(String mapX, String mapY, int radius) {
         try {
-            // 💡 중요: 공공데이터 특유의 서비스키 인코딩 깨짐을 방지하기 위해 URI를 수동으로 안전하게 조립합니다.
+            // 공공데이터 서비스키 인코딩 깨짐을 방지하기 위해 URI를 수동으로 조립 필요
             String urlString = "/locationBasedList2"
-                    + "?serviceKey=" + serviceKey  // 인증키
-                    + "&numOfRows=100"             // 한 페이지 결과 수
-                    + "&pageNo=1"                  // 페이지 번호
-                    + "&MobileOS=ETC"              // OS 구분 (필수 필수값)
-                    + "&MobileApp=TravelApp"       // 서비스명 (필수 필수값)
-                    + "&mapX=" + mapX              // GPS X좌표 (경도)
-                    + "&mapY=" + mapY              // GPS Y좌표 (위도)
-                    + "&radius=" + radius          // 거리 반경
-                    + "&_type=json";               // ⭐ 팀장님이 짚으신 치트키: 무조건 JSON으로 응답 유도
+                + "?serviceKey=" + serviceKey
+                + "&numOfRows=10"              // 한 페이지 결과 수
+                + "&pageNo=1"                  // 페이지 번호
+                + "&MobileOS=" + MOBILE_OS     // OS 구분
+                + "&MobileApp=" + MOBILE_APP   // 서비스명 (필수값)
+                + "&mapX=" + mapX              // GPS X좌표 (경도)
+                + "&mapY=" + mapY              // GPS Y좌표 (위도)
+                + "&radius=" + radius          // 거리 반경
+                + "&_type=json";               // JSON으로 응답 변환
 
             URI uri = new URI(urlString);
 
-            // 외부 API 호출 후 결과 JSON을 통째로 String으로 받아 리턴
-            return this.webClient.get()
-                    .uri(uri)
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .block(); // 동기식 배치를 위해 block() 처리하여 대기
+            // webClient 프레임워크 표준 체이닝 문법 - 외부 API 호출 후 결과 JSON을 통째로 String으로 받아 리턴
+            return this.webClient.get()         // HTTP GET 방식 요청
+                .uri(uri)                       // 공공데이터 URL 주소로 요청 (uri 세팅)
+                .retrieve()                     // 공공데이터 서버가 응답한 결과 추출
+                .bodyToMono(String.class)       // 받아온 JSON 데이터 전체를 String 변환
+                .block();                       // 동기식 배치를 위해 block() 처리하여 대기(동기식 대기 형태)
 
         } catch (Exception e) {
             // 에러 로그는 나중에 batch_execution_log 테이블에 기록할 수 있도록 예외를 던지거나 기록 조치
+            throw new RuntimeException("공공데이터 API 호출 중 에러 발생: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 2. 키워드 관광정보 조회 API 호출 (JSON)
+     * @param keyword 요청키워드
+     * @return 공공데이터 JSON 문자열
+     */
+    public String fetchSearchKeywordTour(String keyword) {
+        try {
+            String urlString = "/searchKeyword2"
+                + "?servicekey=" + serviceKey
+                + "&numOfRows=10"
+                + "&pageNo=1"
+                + "&MobileOS=" + MOBILE_OS
+                + "&MobileApp=" + MOBILE_APP
+                + "&keyword=" + keyword
+                + "&_type=json";
+            URI uri = new URI(urlString);
+
+            return this.webClient.get()
+                .uri(uri)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+        } catch (Exception e) {
             throw new RuntimeException("공공데이터 API 호출 중 에러 발생: " + e.getMessage(), e);
         }
     }

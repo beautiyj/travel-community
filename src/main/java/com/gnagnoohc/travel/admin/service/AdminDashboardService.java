@@ -5,6 +5,7 @@ import com.gnagnoohc.travel.admin.dto.AdminDashboardViewDto;
 import com.gnagnoohc.travel.admin.dto.AdminMonthlyTrendDto;
 import com.gnagnoohc.travel.admin.dto.AdminPlaceOverviewDto;
 import com.gnagnoohc.travel.admin.dto.AdminReservationDto;
+import com.gnagnoohc.travel.admin.dto.AdminSidebarContextDto;
 import com.gnagnoohc.travel.admin.mapper.AdminMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,11 +22,23 @@ public class AdminDashboardService {
 
     private final AdminMapper adminMapper;
 
+    // 사이드바(업소명/대표명/마감상태/뱃지 카운트)에만 필요한 최소 데이터. 대시보드 외 다른 admin 페이지에서도 재사용
+    public AdminSidebarContextDto getSidebarContext(Long bizMemberId) {
+        AdminPlaceOverviewDto overview = requireOverview(bizMemberId);
+        AdminDashboardCountsDto counts = adminMapper.selectDashboardCounts(overview.getPlaceId());
+
+        return AdminSidebarContextDto.builder()
+                .placeId(overview.getPlaceId())
+                .placeName(overview.getPlaceName())
+                .ownerName(overview.getOwnerName())
+                .isClosed(overview.isClosed())
+                .pendingCount(counts.getPendingCount())
+                .cancelRequestCount(counts.getCancelRequestCount())
+                .build();
+    }
+
     public AdminDashboardViewDto getDashboard(Long bizMemberId) {
-        AdminPlaceOverviewDto overview = adminMapper.selectPlaceOverviewByMember(bizMemberId);
-        if (overview == null) {
-            throw new IllegalArgumentException("등록된 업소가 없습니다.");
-        }
+        AdminPlaceOverviewDto overview = requireOverview(bizMemberId);
 
         List<AdminReservationDto> todayReservations = adminMapper.selectTodayReservations(overview.getPlaceId());
         AdminDashboardCountsDto counts = adminMapper.selectDashboardCounts(overview.getPlaceId());
@@ -43,6 +56,14 @@ public class AdminDashboardService {
                 .todayVisitors(counts.getTodayVisitors())
                 .cancelRequestCount(counts.getCancelRequestCount())
                 .build();
+    }
+
+    private AdminPlaceOverviewDto requireOverview(Long bizMemberId) {
+        AdminPlaceOverviewDto overview = adminMapper.selectPlaceOverviewByMember(bizMemberId);
+        if (overview == null) {
+            throw new IllegalArgumentException("등록된 업소가 없습니다.");
+        }
+        return overview;
     }
 
     private String todayLabel() {

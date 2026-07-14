@@ -329,3 +329,39 @@ body {
 .admin-btn--primary:hover {
     background: var(--admin-primary-dark);
 }
+.admin-btn--danger {
+    background: #fff;
+    color: var(--admin-danger);
+    border: 1px solid #fecaca;
+}
+.admin-btn--danger:hover {
+    background: #fef2f2;
+}
+
+/* ── Filter row ── */
+.admin-filter-row {
+    display: flex;
+    gap: 8px;
+}
+
+.admin-filter-btn {
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    background: #fff;
+    border: 1px solid var(--admin-border);
+    color: var(--admin-text);
+}
+
+.admin-filter-btn.is-active {
+    background: var(--admin-primary);
+    color: #fff;
+    border-color: var(--admin-primary);
+}
+
+.admin-inline-form {
+    display: inline-block;
+    margin: 0;
+}

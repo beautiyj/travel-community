@@ -26,7 +26,7 @@
 
     <nav class="admin-sidebar__nav">
         <a href="/admin/dashboard?memberId=${memberId}" class="admin-nav-item${activeTab == 'overview' ? ' is-active' : ''}">대시보드</a>
-        <a href="/admin/reservations" class="admin-nav-item${activeTab == 'reservations' ? ' is-active' : ''}">
+        <a href="/admin/reservations?memberId=${memberId}" class="admin-nav-item${activeTab == 'reservations' ? ' is-active' : ''}">
             예약 관리
             <c:if test="${(pendingCount + cancelRequestCount) > 0}">
                 <span class="admin-badge">${pendingCount + cancelRequestCount}</span>

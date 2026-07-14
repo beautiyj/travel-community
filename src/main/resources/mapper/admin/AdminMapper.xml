@@ -17,10 +17,11 @@
     </resultMap>
 
     <resultMap id="placeOverviewResultMap" type="com.gnagnoohc.travel.admin.dto.AdminPlaceOverviewDto">
-        <id     property="placeId"   column="place_id"/>
-        <result property="placeName" column="place_name"/>
-        <result property="ownerName" column="owner_name"/>
-        <result property="isClosed"  column="is_closed"/>
+        <id     property="placeId"    column="place_id"/>
+        <result property="placeName"  column="place_name"/>
+        <result property="ownerName"  column="owner_name"/>
+        <result property="closed"     column="is_closed"/>
+        <result property="firstImage" column="first_image"/>
     </resultMap>
 
     <resultMap id="dashboardCountsResultMap" type="com.gnagnoohc.travel.admin.dto.AdminDashboardCountsDto">
@@ -36,9 +37,14 @@
         <result property="revenue"      column="revenue"/>
     </resultMap>
 
+    <resultMap id="regionOptionResultMap" type="com.gnagnoohc.travel.admin.dto.AdminRegionOptionDto">
+        <id     property="regionId"   column="region_id"/>
+        <result property="regionName" column="region_name"/>
+    </resultMap>
+
     <!-- 사업자 회원의 업소 개요(대시보드 사이드바/헤더용). 업소 1인당 1개라고 가정하고 1건만 조회 -->
     <select id="selectPlaceOverviewByMember" resultMap="placeOverviewResultMap">
-        SELECT p.place_id, p.name AS place_name, p.is_closed, m.name AS owner_name
+        SELECT p.place_id, p.name AS place_name, p.is_closed, p.first_image, m.name AS owner_name
         FROM PLACE p
         JOIN member m ON m.member_id = p.member_id
         WHERE p.member_id = #{bizMemberId}
@@ -140,5 +146,36 @@
         WHERE place_id = #{placeId}
           AND member_id = #{bizMemberId}
     </update>
+
+    <!-- 업소 등록 폼 지역 드롭다운. 트리 없이 단순 목록(MVP) -->
+    <select id="selectRegionOptions" resultMap="regionOptionResultMap">
+        SELECT region_id, region_name
+        FROM REGION
+        ORDER BY region_name
+    </select>
+
+    <!-- member_type=0(사업자)만 업소 등록 가능. 회원 없으면 null 반환 -->
+    <select id="selectMemberType" resultType="java.lang.Integer">
+        SELECT member_type
+        FROM member
+        WHERE member_id = #{memberId}
+    </select>
+
+    <!-- 사업자 직접등록. is_closed/created_at/updated_at은 DB DEFAULT에 맡기고 컬럼 목록에서 제외 -->
+    <insert id="insertOwnerPlace" parameterType="com.gnagnoohc.travel.admin.dto.AdminPlaceRegisterDto"
+            useGeneratedKeys="true" keyProperty="placeId" keyColumn="place_id">
+        INSERT INTO PLACE (
+            content_id, content_type_id, place_type, region_id, member_id,
+            name, description, address, mapx, mapy, admin_type, first_image
+        ) VALUES (
+            #{contentId}, #{contentTypeId}, #{placeType}, #{regionId}, #{memberId},
+            #{name}, #{description}, #{address}, #{mapx}, #{mapy}, #{adminType}, #{firstImage}
+        )
+    </insert>
+
+    <insert id="insertPlaceImage">
+        INSERT INTO PLACE_IMAGE (place_id, image_url, sort_order)
+        VALUES (#{placeId}, #{imageUrl}, #{sortOrder})
+    </insert>
 
 </mapper>

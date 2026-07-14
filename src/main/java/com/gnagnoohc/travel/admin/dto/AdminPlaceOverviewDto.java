@@ -10,4 +10,5 @@ public class AdminPlaceOverviewDto {
     private String placeName;
     private String ownerName;
     private boolean isClosed;
+    private String firstImage;
 }

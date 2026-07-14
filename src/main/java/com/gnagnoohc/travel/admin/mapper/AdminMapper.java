@@ -3,6 +3,8 @@ package com.gnagnoohc.travel.admin.mapper;
 import com.gnagnoohc.travel.admin.dto.AdminDashboardCountsDto;
 import com.gnagnoohc.travel.admin.dto.AdminMonthlyTrendDto;
 import com.gnagnoohc.travel.admin.dto.AdminPlaceOverviewDto;
+import com.gnagnoohc.travel.admin.dto.AdminPlaceRegisterDto;
+import com.gnagnoohc.travel.admin.dto.AdminRegionOptionDto;
 import com.gnagnoohc.travel.admin.dto.AdminReservationDto;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -36,5 +38,17 @@ public interface AdminMapper {
             @Param("placeId") Long placeId,
             @Param("bizMemberId") Long bizMemberId,
             @Param("isClosed") boolean isClosed
+    );
+
+    List<AdminRegionOptionDto> selectRegionOptions();
+
+    Integer selectMemberType(@Param("memberId") Long memberId);
+
+    int insertOwnerPlace(AdminPlaceRegisterDto place);
+
+    int insertPlaceImage(
+            @Param("placeId") Long placeId,
+            @Param("imageUrl") String imageUrl,
+            @Param("sortOrder") int sortOrder
     );
 }

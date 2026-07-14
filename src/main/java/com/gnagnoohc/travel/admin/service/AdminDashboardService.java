@@ -6,6 +6,7 @@ import com.gnagnoohc.travel.admin.dto.AdminMonthlyTrendDto;
 import com.gnagnoohc.travel.admin.dto.AdminPlaceOverviewDto;
 import com.gnagnoohc.travel.admin.dto.AdminReservationDto;
 import com.gnagnoohc.travel.admin.dto.AdminSidebarContextDto;
+import com.gnagnoohc.travel.admin.exception.NoPlaceRegisteredException;
 import com.gnagnoohc.travel.admin.mapper.AdminMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -61,7 +62,7 @@ public class AdminDashboardService {
     private AdminPlaceOverviewDto requireOverview(Long bizMemberId) {
         AdminPlaceOverviewDto overview = adminMapper.selectPlaceOverviewByMember(bizMemberId);
         if (overview == null) {
-            throw new IllegalArgumentException("등록된 업소가 없습니다.");
+            throw new NoPlaceRegisteredException("등록된 업소가 없습니다.");
         }
         return overview;
     }

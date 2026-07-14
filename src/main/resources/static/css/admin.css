@@ -365,3 +365,61 @@ body {
     display: inline-block;
     margin: 0;
 }
+
+/* ── Form ── */
+.admin-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 480px;
+}
+
+.admin-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.admin-form-group--row {
+    flex-direction: row;
+    gap: 16px;
+}
+
+.admin-form-group--row > div {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.admin-form-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--admin-text);
+}
+
+.admin-form-input,
+.admin-form-select,
+.admin-form-textarea {
+    border: 1px solid var(--admin-border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--admin-text);
+}
+
+.admin-form-textarea {
+    resize: vertical;
+}
+
+.admin-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 8px;
+}
+
+.admin-form-actions .admin-btn {
+    padding: 10px 20px;
+    font-size: 14px;
+}

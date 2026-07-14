@@ -3,4 +3,103 @@
 
 <mapper namespace="com.gnagnoohc.travel.community.dao.CommunityDao">
 	
+	<!-- 목록: 검색어(q)와 카테고리로 동적 필터 -->
+    <!-- nickname이 post 테이블에 직접 있으므로 member JOIN 불필요 -->
+    <select id="selectAll" resultType="community">
+        select post_id, member_id, nickname, place_id, title, content,
+               created_at, updated_at, readcount, category
+        from post
+        <where>
+            <!-- 카테고리: '전체'이거나 없으면 조건 제외 -->
+            <if test="category != null and category != '' and category != '전체'">
+                and category = #{category}
+            </if>
+            <!-- 검색어: 제목 또는 작성자(nickname)에 포함 -->
+            <if test="q != null and q != ''">
+                and (title like concat('%', #{q}, '%')
+                     or nickname like concat('%', #{q}, '%'))
+            </if>
+        </where>
+        order by post_id desc
+    </select>
+    
+    <!-- 단건 조회 -->
+    <select id="selectOne" parameterType="long" resultType="community">
+        select p.post_id, p.member_id, p.place_id, p.title, p.content,
+               p.created_at, p.updated_at, p.readcount, p.category,
+               m.nickname as nickname
+        from post p
+        join member m on p.member_id = m.member_id
+        where p.post_id = #{postId}
+    </select>
+    
+    <!-- 조회수 증가 -->
+    <update id="updateReadcount" parameterType="long">
+        update post set readcount = readcount + 1 where post_id = #{postId}
+    </update>
+    
+    <!-- 등록 (post_id 자동 생성값을 dto.postId 로 반환) -->
+    <!-- nickname은 post에 저장하지 않음 (member_id만 저장) -->
+    <insert id="insert" parameterType="community" useGeneratedKeys="true" keyProperty="postId">
+        insert into post (member_id, place_id, title, content, category)
+        values (#{memberId}, #{placeId}, #{title}, #{content}, #{category})
+    </insert>
+    
+    <!-- 수정 -->
+    <update id="update" parameterType="community">
+        update post
+        set title= #{title}, content= #{content}, category = #{category}
+        where post_id = #{postId}
+    </update>
+    
+    <!-- 삭제 -->
+    <delete id="delete" parameterType="long">
+        delete from post where post_id = #{postId}
+    </delete>
+    
+    <!-- ── 이미지 (image 테이블) ── -->
+ 
+    <!-- 이미지 저장 -->
+    <insert id="insertImage" parameterType="image">
+        insert into image (post_id2, image_url, sort_order)
+        values (#{postId2}, #{imageUrl}, #{sortOrder})
+    </insert>
+ 
+    <!-- 게시글의 이미지 목록 (정렬 순서대로) -->
+    <select id="selectImages" parameterType="long" resultType="image">
+        select image_id, post_id2, image_url, sort_order, created_at
+        from image
+        where post_id2 = #{postId}
+        order by sort_order asc, image_id asc
+    </select>
+    
+    <!-- ── 댓글 (comment 테이블) ── -->
+ 
+    <!-- 게시글의 댓글 목록 (작성자 이름 join) -->
+    <select id="selectComments" parameterType="long" resultType="comment">
+        select c.comment_id, c.content, c.depth,
+               c.created_at, c.updated_at,
+               c.parent_id, c.post_id, c.member_id,
+               m.nickname as member_name
+        from comment c
+        join member m on c.member_id = m.member_id
+        where c.post_id = #{postId}
+        order by
+            coalesce(c.parent_id, c.comment_id) asc,  <!-- 원댓글 기준 묶기 -->
+            c.parent_id is not null,                   <!-- 원댓글 먼저, 대댓글 뒤 -->
+            c.comment_id asc
+    </select>
+ 
+    <!-- 댓글 등록 -->
+    <insert id="insertComment" parameterType="comment"
+            useGeneratedKeys="true" keyProperty="commentId">
+        insert into comment (content, depth, parent_id, post_id, member_id)
+        values (#{content}, #{depth}, #{parentId}, #{postId}, #{memberId})
+    </insert>
+ 
+    <!-- 댓글 삭제 -->
+    <delete id="deleteComment" parameterType="long">
+        delete from comment
+        where comment_id = #{commentId}
+    </delete>
 </mapper>

@@ -6,35 +6,42 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>새 글쓰기</title>
+<title>게시글 수정</title>
 </head>
 <body>
 <c:set var="cp" value="${pageContext.request.contextPath}" />
 
 <div class="write-container">
 
-  <a href="${cp}/community/list" class="back-link">&lt; 목록으로</a>
-  <h1 class="page-title">새 글쓰기</h1>
+  <!-- 수정 취소 시 원래 게시글로 돌아감 -->
+  <a href="${cp}/community/detail?postId=${post.postId}" class="back-link">&lt; 게시글로</a>
+  <h1 class="page-title">게시글 수정</h1>
 
-  <form action="${cp}/community/write" method="post" enctype="multipart/form-data">
+  <form action="${cp}/community/update" method="post" enctype="multipart/form-data">
 
-    <!-- 카테고리 -->
+    <!-- 어떤 글을 수정하는지 서버에 전달 -->
+    <input type="hidden" name="postId" value="${post.postId}">
+
+    <!-- 카테고리: 기존 값과 일치하는 항목에 checked -->
     <div class="field">
       <label class="field-label">카테고리</label>
       <div class="category-group">
-        <input type="radio" name="category" id="cat-general" value="일반" checked>
+        <input type="radio" name="category" id="cat-general" value="일반"
+               ${post.category == '일반' ? 'checked' : ''}>
         <label for="cat-general" class="category-card">
           <div class="cat-name">일반</div>
           <div class="cat-desc">자유로운 여행 이야기</div>
         </label>
 
-        <input type="radio" name="category" id="cat-companion" value="모집">
+        <input type="radio" name="category" id="cat-companion" value="모집"
+               ${post.category == '모집' ? 'checked' : ''}>
         <label for="cat-companion" class="category-card">
           <div class="cat-name">모집 (동행)</div>
           <div class="cat-desc">동행자를 구하는 글</div>
         </label>
 
-        <input type="radio" name="category" id="cat-review" value="후기">
+        <input type="radio" name="category" id="cat-review" value="후기"
+               ${post.category == '후기' ? 'checked' : ''}>
         <label for="cat-review" class="category-card">
           <div class="cat-name">후기</div>
           <div class="cat-desc">다녀온 여행 후기</div>
@@ -42,21 +49,27 @@
       </div>
     </div>
 
-    <!-- 제목 -->
+    <!-- 작성자: 읽기 전용 -->
+    <div class="field">
+      <label class="field-label">작성자</label>
+      <input type="text" value="${post.nickname}" readonly class="text-input readonly">
+    </div>
+
+    <!-- 제목: 기존 값 채움 -->
     <div class="field">
       <label class="field-label" for="title">제목</label>
       <input type="text" id="title" name="title" class="text-input"
-             placeholder="제목을 입력하세요" required>
+             value="${post.title}" placeholder="제목을 입력하세요" required>
     </div>
 
-    <!-- 내용 -->
+    <!-- 내용: 기존 값 채움 -->
     <div class="field">
       <label class="field-label" for="content">내용</label>
       <textarea id="content" name="content" class="text-area" rows="12"
-                placeholder="여행 경험을 자세히 공유해주세요.." required></textarea>
+                placeholder="여행 경험을 자세히 공유해주세요..." required>${post.content}</textarea>
     </div>
 
-    <!-- 이미지 -->
+    <!-- 이미지 추가 (새로 올릴 이미지) -->
     <div class="field">
       <label class="field-label">이미지</label>
       <label for="images" class="image-upload-box">
@@ -68,8 +81,8 @@
 
     <!-- 버튼 -->
     <div class="btn-group">
-      <a href="${cp}/community/list" class="btn btn-cancel">취소</a>
-      <button type="submit" class="btn btn-submit">게시하기</button>
+      <a href="${cp}/community/detail?postId=${post.postId}" class="btn btn-cancel">취소</a>
+      <button type="submit" class="btn btn-submit">수정 완료</button>
     </div>
 
   </form>

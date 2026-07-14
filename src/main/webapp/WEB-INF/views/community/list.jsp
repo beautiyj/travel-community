@@ -54,7 +54,7 @@
       <span class="col-title">제목</span>
       <span class="col-author">작성자</span>
       <span class="col-date">작성일</span>
-      <span class="col-views">조회</span>
+      <span class="col-views">조회수</span>
     </div>
 
     <c:choose>

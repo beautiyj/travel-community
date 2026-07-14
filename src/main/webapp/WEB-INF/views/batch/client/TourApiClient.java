@@ -59,14 +59,18 @@ public class TourApiClient {
     }
 
     /**
-     * 2. 키워드 관광정보 조회 API 호출 (JSON)
+     * 2.  지역기반관광정보조회
+     */
+
+    /**
+     * 3. 키워드 관광정보 조회 API 호출 (JSON)
      * @param keyword 요청키워드
      * @return 공공데이터 JSON 문자열
      */
     public String fetchSearchKeywordTour(String keyword) {
         try {
             String urlString = "/searchKeyword2"
-                + "?servicekey=" + serviceKey
+                + "?serviceKey=" + serviceKey
                 + "&numOfRows=10"
                 + "&pageNo=1"
                 + "&MobileOS=" + MOBILE_OS
@@ -84,4 +88,5 @@ public class TourApiClient {
             throw new RuntimeException("공공데이터 API 호출 중 에러 발생: " + e.getMessage(), e);
         }
     }
+
 }

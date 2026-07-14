@@ -2,7 +2,9 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 
 <%--
+
 사용법 (jsp:param으로 전달하는 값):
+
 - dropdownId   : 드롭다운 고유 id (한 페이지에 여러 개 쓸 때 중복 방지용, 필수 항목)
 - listAttr     : Controller가 Model에 담은 리스트의 속성명 (예: "regionList", "areaList")
 - selectedAttr : 현재 선택된 값이 담긴 속성명 (예: "areaCode", "shopCode")
@@ -11,6 +13,7 @@
 - paramKey     : 쿼리 파라미터 키 이름 (예: "areaCode")
 - defaultLabel : 아무것도 선택 안 됐을 때 버튼에 보일 기본 텍스트 (예: "지역 선택")
 - width        : 버튼 너비 (px 단위 숫자만, 미입력 시 자동)
+
 --%>
 
 <c:set var="dropdownId" value="${param.dropdownId}" />

@@ -163,7 +163,7 @@
 
 <!-- ───────── 삭제 확인 모달 (조각 파일) ───────── -->
 <c:if test="${isOwner}">
-  <jsp:include page="deleteModal.jsp" />
+  <jsp:include page="../common/deleteModal.jsp" />
 </c:if>
 
 
@@ -180,6 +180,7 @@
   function openDeleteModal() {
     document.getElementById('deleteModal').style.display = 'flex';
   }
+  
   function closeDeleteModal() {
     document.getElementById('deleteModal').style.display = 'none';
   }

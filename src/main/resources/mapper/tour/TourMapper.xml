@@ -9,7 +9,7 @@
 
     <!-- <select id="selectByAreaCode" resultType="...PlaceEntity">
         SELECT * FROM PLACE WHERE region_id = #{areaCode}
-        <!-- admin_type 조건 없음 -->
+        admin_type 조건 없음 
     </select> -->
 
 </mapper>

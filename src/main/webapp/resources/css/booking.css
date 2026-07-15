@@ -1,0 +1,161 @@
+/* =========================================================
+   booking.css — 예약/결제 공용 디자인 (피그마 시안 기준)
+   reservationForm.jsp, checkout.jsp 에서 공유
+   ========================================================= */
+
+:root {
+    --background: #f8fafc;
+    --foreground: #0f172a;
+    --card: #ffffff;
+    --primary: #0284c7;
+    --primary-light: #38bdf8;
+    --secondary: #f0f9ff;
+    --muted: #f1f5f9;
+    --muted-foreground: #64748b;
+    --border: rgba(148, 163, 184, 0.25);
+    --radius: 12px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Noto Sans KR', 'Pretendard', 'Malgun Gothic', -apple-system, sans-serif;
+    background: var(--background);
+    color: var(--foreground);
+}
+
+/* ---------- 페이지 공통 레이아웃 ---------- */
+.page-wrap { max-width: 960px; margin: 0 auto; padding: 48px 32px; }
+.back-link {
+    display: inline-flex; align-items: center; gap: 6px; margin-bottom: 32px;
+    font-size: 14px; font-weight: 600; color: var(--muted-foreground);
+    background: none; border: none; cursor: pointer; text-decoration: none;
+}
+.back-link:hover { color: var(--foreground); }
+.page-title { font-size: 24px; font-weight: 800; margin-bottom: 32px; }
+
+.booking-grid { display: grid; grid-template-columns: 1fr 300px; gap: 32px; align-items: start; }
+@media (max-width: 768px) { .booking-grid { grid-template-columns: 1fr; } }
+
+/* ---------- 장소 정보 카드 ---------- */
+.place-card {
+    background: var(--secondary); border-radius: var(--radius);
+    padding: 16px; display: flex; gap: 16px; align-items: center; margin-bottom: 20px;
+}
+.place-card .thumb {
+    width: 80px; height: 56px; border-radius: var(--radius); background: #bae6fd;
+    display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0;
+}
+.place-card .name { font-weight: 700; }
+.place-card .desc { font-size: 14px; color: var(--muted-foreground); }
+
+/* ---------- 폼 필드 ---------- */
+.field { margin-bottom: 20px; }
+.field > label { display: block; font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+.field input[type=text], .field input[type=tel] {
+    width: 100%; padding: 12px 16px; border: 1px solid var(--border);
+    border-radius: var(--radius); background: #fff; font-size: 15px; outline: none;
+}
+.field input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(2, 132, 199, .15); }
+
+.input-box {
+    display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+    border: 1px solid var(--border); border-radius: var(--radius); background: #fff;
+}
+.input-box .icon { color: var(--muted-foreground); font-size: 15px; }
+.input-box input[type=date] { flex: 1; border: none; outline: none; font-size: 15px;
+                              background: transparent; font-family: inherit; }
+
+/* 인원 스테퍼 */
+.stepper-btn {
+    width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--secondary);
+    font-size: 16px; font-weight: 700; cursor: pointer; color: var(--foreground);
+}
+.stepper-btn:hover { background: var(--muted); }
+.stepper-value { width: 32px; text-align: center; font-weight: 700; border: none; font-size: 15px;
+                 background: transparent; }
+.stepper-unit { font-size: 14px; color: var(--muted-foreground); }
+
+/* ---------- 버튼 ---------- */
+.btn-row { display: flex; gap: 12px; padding-top: 8px; }
+.btn {
+    flex: 1; padding: 14px; border-radius: var(--radius); font-size: 15px;
+    font-weight: 700; cursor: pointer; font-family: inherit; transition: all .15s;
+}
+.btn-outline { background: #fff; border: 2px solid var(--border); color: var(--foreground); }
+.btn-outline:hover { background: var(--secondary); }
+.btn-primary {
+    background: var(--primary); border: none; color: #fff;
+    box-shadow: 0 8px 20px rgba(2, 132, 199, .3);
+}
+.btn-primary:hover { background: #0270ab; }
+.btn-primary:disabled {
+    background: var(--muted); color: var(--muted-foreground);
+    box-shadow: none; cursor: not-allowed;
+}
+
+/* ---------- 요약 카드 (예약 요약 / 결제 정보) ---------- */
+.summary-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+    padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.04);
+}
+.summary-card h3 { font-size: 16px; font-weight: 800; margin-bottom: 16px; }
+.summary-row { display: flex; justify-content: space-between; font-size: 14px; padding: 6px 0; }
+.summary-row .label { color: var(--muted-foreground); }
+.summary-row .value { font-weight: 600; }
+.summary-divider { border-top: 1px solid var(--border); margin-top: 8px; padding-top: 14px; }
+.summary-total { display: flex; justify-content: space-between; font-size: 16px;
+                 font-weight: 800; color: var(--primary); padding-top: 6px; }
+
+/* ---------- 결제 수단 선택 (checkout) ---------- */
+.section-title { font-size: 16px; font-weight: 800; margin-bottom: 12px; }
+.method-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+.method-btn {
+    padding: 13px; border: 2px solid var(--border); border-radius: var(--radius);
+    background: #fff; font-size: 14px; font-weight: 700; cursor: pointer;
+    color: var(--foreground); font-family: inherit; transition: all .15s;
+}
+.method-btn:hover { border-color: var(--muted-foreground); }
+.method-btn.active { border-color: var(--primary); background: rgba(2, 132, 199, .05); color: var(--primary); }
+
+/* 신용카드 미리보기 */
+.card-preview {
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    border-radius: 16px; padding: 24px; color: #fff; margin-bottom: 16px;
+}
+.card-preview .card-type { font-size: 11px; opacity: .6; letter-spacing: 3px; margin-bottom: 16px; }
+.card-preview .card-num { font-size: 20px; font-family: 'Courier New', monospace;
+                          font-weight: 700; letter-spacing: 3px; margin-bottom: 20px; }
+.card-preview .card-meta { display: flex; justify-content: space-between; }
+.card-preview .meta-label { font-size: 11px; opacity: .6; }
+.card-preview .meta-value { font-weight: 700; }
+.field input.mono { font-family: 'Courier New', monospace; }
+
+/* 간편결제 안내 패널 */
+.simple-pay-panel {
+    text-align: center; padding: 48px 0; background: var(--secondary);
+    border-radius: 16px; margin-bottom: 24px;
+}
+.simple-pay-panel .pay-logo {
+    width: 64px; height: 64px; border-radius: 16px; margin: 0 auto 12px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 22px; font-weight: 800;
+}
+.pay-logo.kakao { background: #facc15; color: #191919; }
+.pay-logo.naver { background: #22c55e; }
+.pay-logo.toss  { background: #3b82f6; }
+.simple-pay-panel .pay-name { font-weight: 700; }
+.simple-pay-panel .pay-desc { font-size: 14px; color: var(--muted-foreground); margin-top: 4px; }
+
+/* 동의 체크 */
+.agree-box {
+    display: flex; align-items: flex-start; gap: 12px; padding: 16px;
+    background: var(--secondary); border-radius: var(--radius); margin-bottom: 24px; cursor: pointer;
+}
+.agree-box input[type=checkbox] { width: 20px; height: 20px; margin-top: 1px;
+                                  accent-color: var(--primary); cursor: pointer; }
+.agree-box .agree-text { font-size: 14px; }
+.agree-box .agree-text .link { color: var(--primary); font-weight: 600; }
+
+#waiting { display: none; text-align: center; color: var(--muted-foreground);
+           font-size: 14px; margin-top: 12px; }

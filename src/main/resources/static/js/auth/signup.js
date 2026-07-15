@@ -12,7 +12,7 @@ const emailVerificationState = {
 
 // 화면의 재발송 카운트다운을 관리한다. 서버의 발송 제한을 대신하지 않는다.
 let emailCooldownTimer = null;
-// [수정] 배포 경로가 루트가 아니어도 회원가입 API URL을 현재 앱 경로로 만든다.
+//  배포 경로가 루트가 아니어도 회원가입 API URL을 현재 앱 경로로 만든다.
 let appBasePath = "";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -28,12 +28,12 @@ document.addEventListener("DOMContentLoaded", () => {
 	const verificationField = document.querySelector("#emailVerificationField");
 	const sendEmailButton = document.querySelector("#sendEmailCodeButton");
 	const verifyEmailButton = document.querySelector("#verifyEmailCodeButton");
-	// [수정] form action에서 애플리케이션 컨텍스트 경로를 한 번만 계산한다.
+	//  form action에서 애플리케이션 컨텍스트 경로를 한 번만 계산한다.
 	appBasePath = resolveAppBasePath(form.action);
 
-	// [수정] 비밀번호 두 값이 변경될 때 회원가입 유효성 메시지를 즉시 갱신한다.
+	//  비밀번호 두 값이 변경될 때 회원가입 유효성 메시지를 즉시 갱신한다.
 	const validatePasswordMatchOnChange = () => {
-		// [수정] 비밀번호 관련 값을 수정하면 이전 submit 요약 메시지도 제거한다.
+		//  비밀번호 관련 값을 수정하면 이전 submit 요약 메시지도 제거한다.
 		clearMessage();
 		clearFieldMessage("passwordError");
 		clearFieldMessage("passwordConfirmError");
@@ -50,16 +50,16 @@ document.addEventListener("DOMContentLoaded", () => {
 	};
 	password.addEventListener("change", validatePasswordMatchOnChange);
 	passwordConfirm.addEventListener("change", validatePasswordMatchOnChange);
-	// [수정] 비밀번호와 확인값을 한 글자씩 입력할 때마다 일치 여부를 갱신한다.
+	//  비밀번호와 확인값을 한 글자씩 입력할 때마다 일치 여부를 갱신한다.
 	password.addEventListener("input", validatePasswordMatchOnChange);
 	passwordConfirm.addEventListener("input", validatePasswordMatchOnChange);
 
-	// [수정] submit 유효성 메시지는 사용자가 해당 입력값을 change할 때 즉시 제거한다.
+	//  submit 유효성 메시지는 사용자가 해당 입력값을 change할 때 즉시 제거한다.
 	[
 		["name", "nameError"],
 		["login_id", "usernameError"],
 		["email", "emailError"],
-		// [수정] 인증번호를 수정하면 인증번호 입력 오류도 함께 숨긴다.
+		//  인증번호를 수정하면 인증번호 입력 오류도 함께 숨긴다.
 		["verificationCode", "verificationCodeError"],
 		["nickname", "nicknameError"],
 		["birth", "birthError"],
@@ -68,7 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	].forEach(([fieldId, messageId]) => {
 		const field = document.querySelector(`#${fieldId}`);
 		field.addEventListener("change", () => {
-			// [수정] 변경한 입력의 필드 메시지와 약관 아래 submit 요약을 함께 숨긴다.
+			//  변경한 입력의 필드 메시지와 약관 아래 submit 요약을 함께 숨긴다.
 			clearFieldMessage(messageId);
 			clearMessage();
 		});
@@ -79,7 +79,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	// 아이디가 바뀌면 이전 중복 확인 결과를 무효화한다.
 	loginId.addEventListener("input", () => {
-		// [수정] 이전 submit 알림이 입력 변경 후 남지 않도록 초기화한다.
+		//  이전 submit 알림이 입력 변경 후 남지 않도록 초기화한다.
 		clearMessage();
 		if (duplicateCheckState.loginId !== "") {
 			duplicateCheckState.loginId = "";
@@ -89,7 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	// 닉네임이 바뀌면 이전 중복 확인 결과를 무효화한다.
 	nickname.addEventListener("input", () => {
-		// [수정] 이전 submit 알림이 입력 변경 후 남지 않도록 초기화한다.
+		//  이전 submit 알림이 입력 변경 후 남지 않도록 초기화한다.
 		clearMessage();
 		if (duplicateCheckState.nickname !== "") {
 			duplicateCheckState.nickname = "";
@@ -99,7 +99,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	// 이메일이 변경되면 이전 인증 결과와 인증번호 입력값을 폐기한다.
 	email.addEventListener("input", () => {
-		// [수정] 이메일 입력을 다시 시작하면 이전 submit 알림을 숨긴다.
+		//  이메일 입력을 다시 시작하면 이전 submit 알림을 숨긴다.
 		clearMessage();
 		emailVerificationState.email = "";
 		emailVerificationState.verified = false;
@@ -111,7 +111,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	// 이메일 형식을 검사한 뒤 서버에 인증번호 발송을 요청한다.
 	sendEmailButton.addEventListener("click", async () => {
-		// [수정] 이메일 인증 결과는 약관 아래가 아닌 이메일 오류 태그에 표시한다.
+		//  이메일 인증 결과는 약관 아래가 아닌 이메일 오류 태그에 표시한다.
 		clearMessage();
 		clearFieldMessage("emailError");
 		if (!validateEmail() || sendEmailButton.disabled) {
@@ -137,7 +137,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			}
 
 			verificationField.hidden = false;
-			// [수정] 인증번호 발송 성공 결과는 이메일 아래 초록색 안내로 표시한다.
+			//  인증번호 발송 성공 결과는 이메일 아래 초록색 안내로 표시한다.
 			showFieldMessage("emailError", result.message, false);
 			startEmailCooldown(sendEmailButton, 60);
 			verificationCode.focus();
@@ -149,7 +149,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	// 6자리 형식을 확인한 뒤 서버에 인증번호 검증을 요청한다.
 	verifyEmailButton.addEventListener("click", async () => {
-		// [수정] 이메일 인증 결과는 이메일 입력 아래 emailError 태그에 표시한다.
+		//  이메일 인증 결과는 이메일 입력 아래 emailError 태그에 표시한다.
 		clearMessage();
 		clearFieldMessage("emailError");
 		clearFieldMessage("verificationCodeError");
@@ -187,7 +187,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			clearEmailCooldown(sendEmailButton);
 			sendEmailButton.disabled = true;
 			sendEmailButton.textContent = "인증 완료";
-			// [수정] 이메일 인증 완료 결과는 이메일 아래 초록색 안내로 표시한다.
+			//  이메일 인증 완료 결과는 이메일 아래 초록색 안내로 표시한다.
 			showFieldMessage("emailError", result.message, false);
 		} catch (error) {
 			showRequestError(error, "emailError");
@@ -197,7 +197,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	// 아이디 형식을 검사한 뒤 서버 중복 확인 API를 비동기로 호출한다.
 	document.querySelector("#checkUsernameButton").addEventListener("click", async () => {
-		// [수정] 아이디 중복 확인 결과는 usernameError 태그에 표시한다.
+		//  아이디 중복 확인 결과는 usernameError 태그에 표시한다.
 		clearMessage();
 		clearFieldMessage("usernameError");
 		if (!validateUsername()) {
@@ -216,7 +216,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	// 닉네임 형식을 검사한 뒤 서버 중복 확인 API를 비동기로 호출한다.
 	document.querySelector("#checkNicknameButton").addEventListener("click", async () => {
-		// [수정] 닉네임 중복 확인 결과는 nicknameError 태그에 표시한다.
+		//  닉네임 중복 확인 결과는 nicknameError 태그에 표시한다.
 		clearMessage();
 		clearFieldMessage("nicknameError");
 		if (!validateNickname()) {
@@ -235,13 +235,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	// 브라우저 기본 제출을 막고, 전체 검증 후 회원가입 API를 호출한다.
 	form.addEventListener("submit", async (event) => {
-		// [수정] submit 결과와 submit 요약 오류만 약관 아래 공통 알림에 표시한다.
+		//  submit 결과와 submit 요약 오류만 약관 아래 공통 알림에 표시한다.
 		clearMessage();
 		const valid = validateSignupForm(true);
 		event.preventDefault();
 
 		if (!valid) {
-			// [수정] 브라우저 alert 대신 약관 아래 submit 알림 영역에 유효성 요약을 표시한다.
+			//  브라우저 alert 대신 약관 아래 submit 알림 영역에 유효성 요약을 표시한다.
 			showMessage("입력항목을 확인해주세요.", true);
 			return;
 		}
@@ -261,7 +261,7 @@ document.addEventListener("DOMContentLoaded", () => {
 				return;
 			}
 
-			// [수정] 회원가입 성공 시 결과 페이지 컨트롤러를 직접 요청한다.
+			//  회원가입 성공 시 결과 페이지 컨트롤러를 직접 요청한다.
 			window.location.assign(appUrl("/auth/signupresult"));
 
 		} catch (error) {
@@ -282,7 +282,7 @@ async function checkAvailability(url, input, checkedValue, messageElementId) {
 		const result = await parseJsonResponse(response);
 
 		if (!response.ok || !result.success) {
-			// [수정] 중복 확인 실패도 호출한 입력 필드 아래에 표시한다.
+			//  중복 확인 실패도 호출한 입력 필드 아래에 표시한다.
 			showFieldMessage(messageElementId, result.message || "중복 확인에 실패했습니다.", true);
 			return false;
 		}
@@ -291,8 +291,8 @@ async function checkAvailability(url, input, checkedValue, messageElementId) {
 			return false;
 		}
 
-		// [수정] 중복 여부에 따른 안내/오류 색상과 위치를 필드 메시지로 처리한다.
-		// [수정] available=true(중복 없음)일 때 별도 field-success 태그를 초록색으로 사용한다.
+		//  중복 여부에 따른 안내/오류 색상과 위치를 필드 메시지로 처리한다.
+		//  available=true(중복 없음)일 때 별도 field-success 태그를 초록색으로 사용한다.
 		showFieldMessage(messageElementId, result.message, !result.available);
 
 		if (!result.available) {
@@ -307,18 +307,18 @@ async function checkAvailability(url, input, checkedValue, messageElementId) {
 	}
 }
 
-// [수정] form action 경로에서 현재 애플리케이션의 컨텍스트 경로를 추출한다.
+//  form action 경로에서 현재 애플리케이션의 컨텍스트 경로를 추출한다.
 function resolveAppBasePath(action) {
 	const pathname = new URL(action, window.location.href).pathname;
 	return pathname.replace(/\/auth\/membersignup\/?$/, "");
 }
 
-// [수정] 추출한 컨텍스트 경로를 API 상대 경로 앞에 붙인다.
+//  추출한 컨텍스트 경로를 API 상대 경로 앞에 붙인다.
 function appUrl(path) {
 	return `${appBasePath}${path}`;
 }
 
-// [수정] HTML/빈 응답을 JSON 응답으로 오인하지 않도록 응답 형식을 검증한다.
+//  HTML/빈 응답을 JSON 응답으로 오인하지 않도록 응답 형식을 검증한다.
 async function parseJsonResponse(response) {
 	const contentType = response.headers.get("content-type") || "";
 	if (!contentType.toLowerCase().includes("json")) {
@@ -339,7 +339,7 @@ async function parseJsonResponse(response) {
 	}
 }
 
-// [수정] 네트워크/응답 형식 오류를 지정된 필드 또는 submit 공통 영역에 표시한다.
+//  네트워크/응답 형식 오류를 지정된 필드 또는 submit 공통 영역에 표시한다.
 function showRequestError(error, fieldMessageId = null) {
 	const message = error instanceof ResponseFormatError
 		? error.message
@@ -353,11 +353,11 @@ function showRequestError(error, fieldMessageId = null) {
 	showMessage(message, true);
 }
 
-// [수정] 중복 확인/이메일 인증처럼 필드에 종속된 결과를 해당 태그에 표시한다.
+//  중복 확인/이메일 인증처럼 필드에 종속된 결과를 해당 태그에 표시한다.
 function showFieldMessage(elementId, message, isError) {
 	const messageElement = document.querySelector(`#${elementId}`);
 	const hasMessage = typeof message === "string" && message.trim() !== "";
-	// [수정] field-error는 오류 전용으로 유지하고 성공 결과는 별도 태그에 표시한다.
+	//  field-error는 오류 전용으로 유지하고 성공 결과는 별도 태그에 표시한다.
 	const successElementId = getSuccessElementId(elementId);
 	const successElement = successElementId === ""
 		? null
@@ -366,12 +366,12 @@ function showFieldMessage(elementId, message, isError) {
 	messageElement.textContent = !isError && hasMessage ? "" : displayMessage;
 	if (successElement) {
 		successElement.textContent = !isError && hasMessage ? message : "";
-		// [수정] 성공 안내 태그 자체에도 초록색을 지정해 이전 CSS 캐시의 영향을 받지 않게 한다.
+		//  성공 안내 태그 자체에도 초록색을 지정해 이전 CSS 캐시의 영향을 받지 않게 한다.
 		successElement.style.color = !isError && hasMessage ? "#087f5b" : "";
 	}
 }
 
-// [수정] 새 요청 전에 필드별 이전 안내 메시지를 초기화한다.
+//  새 요청 전에 필드별 이전 안내 메시지를 초기화한다.
 function clearFieldMessage(elementId) {
 	const messageElement = document.querySelector(`#${elementId}`);
 	messageElement.textContent = "";
@@ -385,7 +385,7 @@ function clearFieldMessage(elementId) {
 	}
 }
 
-// [수정] 오류 태그와 대응하는 성공 안내 태그를 연결한다.
+//  오류 태그와 대응하는 성공 안내 태그를 연결한다.
 function getSuccessElementId(errorElementId) {
 	const successElementIds = {
 		emailError: "emailSuccess",
@@ -396,7 +396,7 @@ function getSuccessElementId(errorElementId) {
 	return successElementIds[errorElementId] || "";
 }
 
-// [수정] 응답 형식 오류를 네트워크 오류와 구분하기 위한 전용 오류다.
+//  응답 형식 오류를 네트워크 오류와 구분하기 위한 전용 오류다.
 class ResponseFormatError extends Error {
 	constructor(status) {
 		super(`서버 응답을 처리하지 못했습니다. (HTTP ${status})`);
@@ -457,11 +457,11 @@ function validateLoginIdDuplicateCheck(showError = true) {
 }
 
 function validatePassword(showError = true) {
-	// 비밀번호는 영문과 숫자를 포함한 8~64자로 검사한다.
+	// 비밀번호는 영문과 숫자를 포함한 8~20자로 검사한다.
 	const value = document.querySelector("#password").value;
-	const valid = /^(?=.*[A-Za-z])(?=.*\d)[^\s]{8,64}$/.test(value);
+	const valid = /^(?=.*[A-Za-z])(?=.*\d)[^\s]{8,20}$/.test(value);
 	if (showError) {
-		setError("passwordError", valid ? "" : "비밀번호는 공백 없이 영문과 숫자를 포함한 8~64자로 입력해주세요.");
+		setError("passwordError", valid ? "" : "비밀번호는 공백 없이 영문과 숫자를 포함한 8~20자로 입력해주세요.");
 	}
 	return valid;
 }
@@ -504,9 +504,9 @@ function validateEmailVerification(showError = true) {
 function validateNickname(showError = true) {
 	// 닉네임의 길이와 공백 포함 여부를 검사한다.
 	const value = document.querySelector("#nickname").value;
-	const valid = value.length >= 2 && value.length <= 20 && !hasWhitespace(value);
+	const valid = value.length >= 2 && value.length <= 10 && !hasWhitespace(value);
 	if (showError) {
-		setError("nicknameError", valid ? "" : "닉네임은 공백 없이 2~20자로 입력해주세요.");
+		setError("nicknameError", valid ? "" : "닉네임은 공백 없이 2~10자로 입력해주세요.");
 	}
 	return valid;
 }
@@ -534,7 +534,7 @@ function validateBirth(showError = true) {
 }
 
 function validatePhone(showError = true) {
-	// 국내 휴대전화 번호 형식을 검사한다.
+	// 휴대전화 번호 형식을 검사한다.
 	const value = document.querySelector("#phone").value;
 	const valid = !hasWhitespace(value) && /^01[016789]-?\d{3,4}-?\d{4}$/.test(value);
 	if (showError) {
@@ -574,7 +574,7 @@ function validatePrivacyAgreement(showError = true) {
 function setError(elementId, message) {
 	// 각 필드 아래의 오류 메시지를 갱신한다.
 	document.querySelector(`#${elementId}`).textContent = message;
-	// [수정] 오류가 갱신되면 같은 필드의 이전 성공 안내를 제거한다.
+	//  오류가 갱신되면 같은 필드의 이전 성공 안내를 제거한다.
 	const successElementId = getSuccessElementId(elementId);
 	if (successElementId !== "") {
 		const successElement = document.querySelector(`#${successElementId}`);
@@ -611,7 +611,7 @@ function clearEmailCooldown(button) {
 }
 
 function clearMessage() {
-	// [수정] 약관 아래 공통 알림은 submit 시작 시 이전 내용을 제거한다.
+	//  약관 아래 공통 알림은 submit 시작 시 이전 내용을 제거한다.
 	const messageBox = document.querySelector("#signupMessage");
 	messageBox.hidden = true;
 	messageBox.textContent = "";
@@ -619,7 +619,7 @@ function clearMessage() {
 }
 
 function showMessage(message, isError) {
-	// [수정] submit 예외/유효성 요약만 약관 아래 공통 알림 영역에 표시한다.
+	//  submit 예외/유효성 요약만 약관 아래 공통 알림 영역에 표시한다.
 	const messageBox = document.querySelector("#signupMessage");
 	const hasMessage = typeof message === "string" && message.trim() !== "";
 	messageBox.hidden = false;

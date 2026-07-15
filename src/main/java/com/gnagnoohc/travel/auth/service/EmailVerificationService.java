@@ -44,7 +44,7 @@ public class EmailVerificationService {
 		String email = normalizeAndValidateEmail(rawEmail);
 		Instant now = Instant.now();
 
-		// 최신 발송 기록을 잠근 뒤 쿨다운과 일일 발송 한도를 검사한다.
+		// 최신 발송 기록을 잠근 뒤 재발송 대기시간과 일일 발송 한도를 검사한다.
 		EmailVerification latest = mapper.findLatestEmailVerificationForUpdate(email, SIGNUP_PURPOSE);
 		validateSendLimits(email, latest, now);
 
@@ -85,7 +85,7 @@ public class EmailVerificationService {
 			throw new EmailVerificationException("인증 시도 횟수를 초과했습니다. 다시 발송해주세요.");
 		}
 
-		// 정답 여부와 관계없이 먼저 시도 횟수를 증가시킨다.
+		// 인증번호 일치 여부와 관계없이 먼저 시도 횟수를 증가시킨다.
 		// 오답에서는 예외를 던지지 않고 false를 반환해야 증가 UPDATE가 커밋된다.
 		if (mapper.incrementEmailVerificationAttempt(verification.getEmail_verification_id()) != 1) {
 			throw new EmailVerificationException("이메일 인증 시도 횟수를 변경하지 못했습니다.");
@@ -94,7 +94,7 @@ public class EmailVerificationService {
 		if (!passwordEncoder.matches(code, verification.getCode_hash())) {
 			return false;
 		}
-		// 정답인 경우에만 verified_at을 기록한다.
+		// 인증번호가 일치한 경우에만 verified_at을 기록한다.
 		if (mapper.markEmailVerificationVerified(verification.getEmail_verification_id()) != 1) {
 			throw new EmailVerificationException("이메일 인증 상태를 변경하지 못했습니다.");
 		}

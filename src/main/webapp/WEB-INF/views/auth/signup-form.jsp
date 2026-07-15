@@ -23,7 +23,7 @@
         </p>
     </header>
 
-    <%-- [수정] 회원가입 POST 경로에 컨텍스트 경로를 반영한다. --%>
+    <%-- 회원가입 POST 경로에 컨텍스트 경로를 반영한다. --%>
     <form id="signupForm" method="post" enctype="multipart/form-data" novalidate
           action="${pageContext.request.contextPath}/auth/membersignup">
         <input type="hidden" name="memberType" value="${memberType}">
@@ -49,14 +49,13 @@
                 <button id="checkUsernameButton" class="secondary-button" type="button">중복 확인</button>
             </div>
             <p id="usernameError" class="field-error" aria-live="polite"></p>
-            <%-- [수정] 아이디 사용 가능 안내를 오류 태그와 분리한다. --%>
             <p id="usernameSuccess" class="field-success" aria-live="polite"></p>
         </div>
 
         <div class="form-field">
             <label for="password">비밀번호</label>
             <input id="password" name="password" type="password" maxlength="64"
-                   autocomplete="new-password" placeholder="영문과 숫자를 포함한 8자 이상" required>
+                   autocomplete="new-password" placeholder="영문과 숫자를 포함한 8자 이상 20자 이하" required>
             <p id="passwordError" class="field-error" aria-live="polite"></p>
         </div>
 
@@ -65,7 +64,6 @@
             <input id="passwordConfirm" name="passwordConfirm" type="password" maxlength="64"
                    autocomplete="new-password" placeholder="비밀번호를 다시 입력하세요" required>
             <p id="passwordConfirmError" class="field-error" aria-live="polite"></p>
-            <%-- [수정] 비밀번호 일치 성공 안내를 오류 태그와 분리한다. --%>
             <p id="passwordConfirmSuccess" class="field-success" aria-live="polite"></p>
         </div>
 
@@ -77,7 +75,6 @@
                 <button id="sendEmailCodeButton" class="secondary-button" type="button">인증번호 발송</button>
             </div>
             <p id="emailError" class="field-error" aria-live="polite"></p>
-            <%-- [수정] 이메일 인증 안내를 오류 태그와 분리한다. --%>
             <p id="emailSuccess" class="field-success" aria-live="polite"></p>
         </div>
 
@@ -107,11 +104,10 @@
             <label for="nickname">닉네임</label>
             <div class="input-action-row">
                 <input id="nickname" name="nickname" type="text" maxlength="20"
-                       placeholder="2~20자로 입력하세요" required>
+                       placeholder="2~10자로 입력하세요" required>
                 <button id="checkNicknameButton" class="secondary-button" type="button">중복 확인</button>
             </div>
             <p id="nicknameError" class="field-error" aria-live="polite"></p>
-            <%-- [수정] 닉네임 사용 가능 안내를 오류 태그와 분리한다. --%>
             <p id="nicknameSuccess" class="field-success" aria-live="polite"></p>
         </div>
 

@@ -50,7 +50,7 @@ public class AuthService {
 		validateNoWhitespace("이메일", signUpRequest.getEmail());
 		validateNoWhitespace("전화번호", signUpRequest.getPhone());
 		
-		// [수정] 사용자에게 안내 가능한 회원가입 오류를 전용 예외로 전달한다.
+		// 사용자에게 안내 가능한 회원가입 오류를 전용 예외로 전달한다.
 		if (!signUpRequest.getPassword()
 		        .equals(signUpRequest.getPasswordConfirm())) {
 		    throw new SignupException("비밀번호가 비밀번호 확인란과 일치하지 않습니다.");

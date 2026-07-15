@@ -68,17 +68,17 @@ public class AuthController {
 		
 		try{
 			service.memberSignUp(signUpRequest);
-			// [수정] 성공 응답은 처리 결과만 반환하고 화면 이동 경로는 프론트에서 관리한다.
+			// 성공 응답은 처리 결과만 반환하고 화면 이동 경로는 프론트에서 관리한다.
 			return ResponseEntity.ok(Map.of(
 					"success",true
 					));
-		// [수정] 예상 가능한 회원가입 오류만 사용자 메시지로 반환한다.
+		// 예상 가능한 회원가입 오류만 사용자 메시지로 반환한다.
 		} catch (EmailVerificationException | SignupException e) {
 			return ResponseEntity.badRequest().body(Map.of(
 					"success", false,
 					"message", e.getMessage()
 			));
-		// [수정] 예상하지 못한 내부 예외의 상세 내용을 클라이언트에 노출하지 않는다.
+		// 예상하지 못한 내부 예외의 상세 내용을 클라이언트에 노출하지 않는다.
 		} catch (Exception e) {
 			log.error("회원가입 처리 중 예기치 않은 오류가 발생했습니다.", e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(

@@ -1,4 +1,4 @@
-package com.gnagnoohc.travel.community.dao;
+package com.gnagnoohc.travel.community.mapper;
 
 import java.util.List;
 
@@ -11,7 +11,7 @@ import com.gnagnoohc.travel.community.dto.ImageDto;
 
 
 @Mapper
-public interface CommunityDao {
+public interface CommunityMapper {
 
 	List<CommunityDto> selectAll(@Param("category") String category, @Param("q") String q);
 	void updateReadcount(Long postId);

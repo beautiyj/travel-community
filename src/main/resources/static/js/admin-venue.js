@@ -1,11 +1,11 @@
-// 업소정보 수정 폼: 기존 사진 카드(서버 렌더링)와 새로 추가한 사진 카드(클라이언트 렌더링)를
-// 하나의 그리드(#edit-photos-grid)에 함께 넣고, 타입 구분 없이 드래그로 순서를 섞을 수 있게 한다.
-//
-// 각 카드는 hidden input name="photoOrder" 를 갖는다.
+// 업소 등록/수정 폼 공용: 사진 그리드(#venue-photos-grid)에 카드를 넣고 드래그로 순서를 섞을 수 있게 한다.
+
+// 그리드에 data-order-field 속성이 있으면(수정 폼만 해당) 각 카드에 그 이름의 hidden input을 붙인다.
 //   - 기존 사진: value = 이미지 URL
 //   - 새 사진: value = "new" (실제 파일은 별도 file input으로 제출되므로, 서버는 "new" 토큰을 만날 때마다
-//              newImages 리스트에서 순서대로 하나씩 꺼내 매칭한다. 그래서 새 카드의 순서 = file input의 파일 순서로
+//              해당 리스트에서 순서대로 하나씩 꺼내 매칭한다. 그래서 새 카드의 순서 = file input의 파일 순서로
 //              항상 동기화해야 하고, 그 동기화는 syncFileInputOrder()가 담당한다.)
+// 등록 폼은 이 속성이 없어서 hidden input을 붙이지 않고, 파일 제출 순서 자체가 곧 최종 순서가 된다.
 //
 // 삭제는 기존/신규 카드 모두 카드 우상단 × 버튼(.venue-photo-preview__remove)으로 통일한다.
 //   - 신규 카드: 아직 서버에 없으니 DOM에서 완전히 제거
@@ -14,12 +14,14 @@
 document.addEventListener("DOMContentLoaded", function () {
     var MAX_PHOTOS = 5;
 
-    var grid = document.getElementById("edit-photos-grid");
-    var fileInput = document.getElementById("edit-newImages");
-    var countLabel = document.getElementById("edit-photos-count");
-    var remainingLabel = document.getElementById("edit-photos-remaining");
-    var dropzone = document.getElementById("edit-photos-dropzone");
+    var grid = document.getElementById("venue-photos-grid");
+    var fileInput = document.getElementById("venue-photos-input");
+    var countLabel = document.getElementById("venue-photos-count");
+    var remainingLabel = document.getElementById("venue-photos-remaining");
+    var dropzone = document.getElementById("venue-photos-dropzone");
     if (!grid || !fileInput) return;
+
+    var orderField = grid.dataset.orderField || null;
 
     function getVisibleItems() {
         return Array.from(grid.children).filter(function (item) {
@@ -81,11 +83,14 @@ document.addEventListener("DOMContentLoaded", function () {
         removeBtn.textContent = "×";
         item.appendChild(removeBtn);
 
-        var hidden = document.createElement("input");
-        hidden.type = "hidden";
-        hidden.name = "photoOrder";
-        hidden.value = "new";
-        item.appendChild(hidden);
+        //수정폼만 해당
+        if (orderField) {
+            var hidden = document.createElement("input");
+            hidden.type = "hidden";
+            hidden.name = orderField;
+            hidden.value = "new";
+            item.appendChild(hidden);
+        }
 
         return item;
     }

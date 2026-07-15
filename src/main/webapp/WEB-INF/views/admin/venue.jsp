@@ -72,8 +72,24 @@
                             </div>
 
                             <div class="admin-form-group">
-                                <label class="admin-form-label" for="images">사진</label>
-                                <input class="admin-form-input" type="file" id="images" name="images" multiple accept="image/*" required />
+                                <div class="venue-photo-header">
+                                    <label class="admin-form-label">업체 사진 <span class="venue-photo-header__count">(<span id="venue-photos-count">0</span>/5)</span></label>
+                                    <span class="venue-photo-header__hint">첫 번째 사진이 대표 이미지로 사용됩니다</span>
+                                </div>
+
+                                <div id="venue-photos-grid" class="venue-photo-grid"></div>
+
+                                <label id="venue-photos-dropzone" class="venue-photo-dropzone" for="venue-photos-input">
+                                    <svg class="venue-photo-dropzone__icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M4 8a2 2 0 0 1 2-2h1.17a2 2 0 0 0 1.66-.89l.34-.51a2 2 0 0 1 1.66-.89h2.34a2 2 0 0 1 1.66.89l.34.51a2 2 0 0 0 1.66.89H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                                        <circle cx="12" cy="13" r="3.5" stroke="currentColor" stroke-width="2"/>
+                                    </svg>
+                                    <p class="venue-photo-dropzone__title">클릭하여 사진 추가</p>
+                                    <p class="venue-photo-dropzone__hint">JPG, PNG, WEBP · 최대 10MB · 최대 <span id="venue-photos-remaining">5</span>장 추가 가능</p>
+                                    <input class="venue-photo-dropzone__input" type="file" id="venue-photos-input" name="images" multiple accept="image/jpeg,image/png,image/webp" required />
+                                </label>
+
+                                <p class="venue-photo-caption">드래그해서 사진 순서를 바꿀 수 있습니다. 사진에 마우스를 올리면 삭제 버튼이 나타납니다.</p>
                             </div>
 
                             <div class="admin-form-actions">
@@ -129,11 +145,11 @@
 
                                     <div class="admin-form-group">
                                         <div class="venue-photo-header">
-                                            <label class="admin-form-label">업체 사진 <span class="venue-photo-header__count">(<span id="edit-photos-count">${placeDetail.images.size()}</span>/5)</span></label>
+                                            <label class="admin-form-label">업체 사진 <span class="venue-photo-header__count">(<span id="venue-photos-count">${placeDetail.images.size()}</span>/5)</span></label>
                                             <span class="venue-photo-header__hint">첫 번째 사진이 대표 이미지로 사용됩니다</span>
                                         </div>
 
-                                        <div id="edit-photos-grid" class="venue-photo-grid">
+                                        <div id="venue-photos-grid" class="venue-photo-grid" data-order-field="photoOrder">
                                             <c:forEach var="img" items="${placeDetail.images}" varStatus="loop">
                                                 <div class="venue-photo-grid__item venue-photo-grid__item--existing${loop.index == 0 ? ' venue-photo-grid__item--main' : ''}" draggable="true">
                                                     <img src="${img}" alt="사진 ${loop.index + 1}" />
@@ -145,14 +161,14 @@
                                             </c:forEach>
                                         </div>
 
-                                        <label id="edit-photos-dropzone" class="venue-photo-dropzone${placeDetail.images.size() >= 5 ? ' is-hidden' : ''}" for="edit-newImages">
+                                        <label id="venue-photos-dropzone" class="venue-photo-dropzone${placeDetail.images.size() >= 5 ? ' is-hidden' : ''}" for="venue-photos-input">
                                             <svg class="venue-photo-dropzone__icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                                 <path d="M4 8a2 2 0 0 1 2-2h1.17a2 2 0 0 0 1.66-.89l.34-.51a2 2 0 0 1 1.66-.89h2.34a2 2 0 0 1 1.66.89l.34.51a2 2 0 0 0 1.66.89H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
                                                 <circle cx="12" cy="13" r="3.5" stroke="currentColor" stroke-width="2"/>
                                             </svg>
                                             <p class="venue-photo-dropzone__title">클릭하여 사진 추가</p>
-                                            <p class="venue-photo-dropzone__hint">JPG, PNG, WEBP · 최대 10MB · 최대 <span id="edit-photos-remaining">${5 - placeDetail.images.size()}</span>장 추가 가능</p>
-                                            <input class="venue-photo-dropzone__input" type="file" id="edit-newImages" name="newImages" multiple accept="image/jpeg,image/png,image/webp" />
+                                            <p class="venue-photo-dropzone__hint">JPG, PNG, WEBP · 최대 10MB · 최대 <span id="venue-photos-remaining">${5 - placeDetail.images.size()}</span>장 추가 가능</p>
+                                            <input class="venue-photo-dropzone__input" type="file" id="venue-photos-input" name="newImages" multiple accept="image/jpeg,image/png,image/webp" />
                                         </label>
 
                                         <p class="venue-photo-caption">드래그해서 사진 순서를 바꿀 수 있습니다. 사진에 마우스를 올리면 삭제 버튼이 나타납니다.</p>
@@ -226,7 +242,7 @@
     </div>
 </div>
 
-<c:if test="${editing}">
+<c:if test="${(empty place && canRegister) || editing}">
     <script src="/js/admin-venue.js"></script>
 </c:if>
 

@@ -3,8 +3,96 @@
 
 <mapper namespace="com.gnagnoohc.travel.auth.mapper.AuthMapper">
 
-    <!-- <select id="selectAuthList" resultType="authDto">
-        SELECT * FROM auth_table
-    </select> -->
+	<!-- <select id="selectAuthList" resultType="authDto"> SELECT * FROM auth_table 
+		</select> -->
+	<insert id="memberSignUp" parameterType="member"
+		useGeneratedKeys="true" keyProperty="member_id" keyColumn="member_id">
+		insert into
+		member(name, login_id, email, nickname, member_type, phone, gender,
+		birth,
+		profile_img_url, signup_type, member_status, email_verified,
+		email_verified_at)
+		values(#{name},#{login_id},#{email}, #{nickname},#{member_type},#{phone},#{gender},#{birth},#{profile_img_url},'LOCAL', 'ACTIVE', #{email_verified},#{email_verified_at})
+	</insert>
 
+	<insert id="localMemberJoin" parameterType="memberlocalauth">
+		insert into
+		member_local_auth(username, password_hash, password_updated_at,
+		failed_login_count, member_id) values(#{username}, #{password_hash}, sysdate(), 0, #{member_id})
+	</insert>
+	
+	<select id="checkNickname" parameterType="String" resultType="int">
+		select count(*) from member where nickname=#{nickname}
+	</select>
+
+	<select id="checkLoginId" parameterType="String" resultType="int">
+		select count(*) from member where login_id=#{loginId}
+	</select>
+
+	<!-- 회원가입에 사용할 가장 최근 인증 기록을 조회한다. -->
+	<select id="findLatestEmailVerification" resultType="emailverification">
+		select email_verification_id, email, purpose, code_hash, expires_at,
+			verified_at, attempt_count, resend_count, created_at, member_id
+		from email_verification
+		where email = #{email}
+			and purpose = #{purpose}
+		order by email_verification_id desc
+		limit 1
+	</select>
+
+	<!-- 발송/검증 중 같은 이메일의 최신 행을 잠가 동시 처리를 조정한다. -->
+	<select id="findLatestEmailVerificationForUpdate" resultType="emailverification">
+		select email_verification_id, email, purpose, code_hash, expires_at,
+			verified_at, attempt_count, resend_count, created_at, member_id
+		from email_verification
+		where email = #{email}
+			and purpose = #{purpose}
+		order by email_verification_id desc
+		limit 1
+		for update
+	</select>
+
+	<!-- 특정 이메일의 최근 24시간 발송 횟수를 계산한다. -->
+	<select id="countEmailVerificationRequestsInLastDay" resultType="int">
+		select count(*)
+		from email_verification
+		where email = #{email}
+			and purpose = #{purpose}
+			and created_at &gt;= date_sub(now(), interval 1 day)
+	</select>
+
+	<!-- Google SMTP 자원 보호를 위해 전체 최근 24시간 발송량도 계산한다. -->
+	<select id="countAllEmailVerificationRequestsInLastDay" resultType="int">
+		select count(*)
+		from email_verification
+		where created_at &gt;= date_sub(now(), interval 1 day)
+	</select>
+
+	<!-- 발송마다 새 행을 만들어 이력을 남기므로 resend_count 없이도 기간별 집계가 가능하다. -->
+	<insert id="insertEmailVerification" parameterType="emailverification"
+		useGeneratedKeys="true" keyProperty="email_verification_id"
+		keyColumn="email_verification_id">
+		insert into email_verification(
+			email, purpose, code_hash, expires_at, attempt_count,
+			resend_count, member_id
+		)
+		values(
+			#{email}, #{purpose}, #{code_hash}, #{expires_at}, 0, 0, null
+		)
+	</insert>
+
+	<!-- 오답도 시도 횟수에 포함되도록 검증 전에 증가시킨다. -->
+	<update id="incrementEmailVerificationAttempt">
+		update email_verification
+		set attempt_count = attempt_count + 1
+		where email_verification_id = #{emailVerificationId}
+	</update>
+
+	<!-- 인증 성공 시각은 한 번만 기록한다. -->
+	<update id="markEmailVerificationVerified">
+		update email_verification
+		set verified_at = now()
+		where email_verification_id = #{emailVerificationId}
+			and verified_at is null
+	</update>
 </mapper>

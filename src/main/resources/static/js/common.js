@@ -17,3 +17,15 @@ function toggleWishLocal(buttonElement) {
         buttonElement.setAttribute('data-active', 'true');
     }
 }
+
+/*  셀렉터블 버튼 클릭 인터랙션 핸들러
+    화면 내의 모든 .btn-selectable 요소를 찾아 클릭 시 활성화 상태(is-active) 토글
+ */
+document.addEventListener("DOMContentLoaded", function () {
+    document.addEventListener("click", function (event) {
+        const button = event.target.closest(".btn-selectable");
+        if (button) {
+            button.classList.toggle("is-active");
+        }
+    });
+});

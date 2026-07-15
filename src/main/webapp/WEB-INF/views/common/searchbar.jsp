@@ -1,12 +1,8 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8"%>
 <!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Insert title here</title>
-</head>
-<body>
+
+
 <div class="row-view">
 	<img
 		src="https://storage.googleapis.com/tagjs-prod.appspot.com/v1/AyigKfNNXD/g39rbhsd_expires_30_days.png" 
@@ -23,5 +19,3 @@
 		</span>
 	</div>
 </div>
-</body>
-</html>

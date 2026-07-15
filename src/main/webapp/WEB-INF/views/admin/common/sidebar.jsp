@@ -8,8 +8,24 @@
     </div>
 
     <div class="admin-sidebar__biz">
-        <p class="admin-sidebar__biz-name">${bizName}</p>
-        <p class="admin-sidebar__biz-owner">${ownerName} 대표</p>
+        <div class="admin-sidebar__biz-row">
+            <div class="admin-sidebar__biz-avatar">
+                <c:choose>
+                    <c:when test="${not empty bizFirstImage}">
+                        <img src="${bizFirstImage}" alt="${bizName}" />
+                    </c:when>
+                    <c:otherwise>
+                        <svg class="admin-sidebar__biz-avatar-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M4 21V5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v16M15 21V9a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v12M8 7h1M8 11h1M8 15h1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </c:otherwise>
+                </c:choose>
+            </div>
+            <div class="admin-sidebar__biz-text">
+                <p class="admin-sidebar__biz-name">${bizName}</p>
+                <p class="admin-sidebar__biz-owner">${ownerName} 대표</p>
+            </div>
+        </div>
         <div class="admin-sidebar__status">
             <c:choose>
                 <c:when test="${isClosed}">

@@ -2,9 +2,11 @@ package com.gnagnoohc.travel.admin.mapper;
 
 import com.gnagnoohc.travel.admin.dto.AdminDashboardCountsDto;
 import com.gnagnoohc.travel.admin.dto.AdminMonthlyTrendDto;
+import com.gnagnoohc.travel.admin.dto.AdminPlaceDetailDto;
 import com.gnagnoohc.travel.admin.dto.AdminPlaceOverviewDto;
 import com.gnagnoohc.travel.admin.dto.AdminPlaceRegisterDto;
-import com.gnagnoohc.travel.admin.dto.AdminRegionOptionDto;
+import com.gnagnoohc.travel.admin.dto.AdminPlaceUpdateDto;
+//import com.gnagnoohc.travel.admin.dto.AdminRegionOptionDto;
 import com.gnagnoohc.travel.admin.dto.AdminReservationDto;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -40,7 +42,7 @@ public interface AdminMapper {
             @Param("isClosed") boolean isClosed
     );
 
-    List<AdminRegionOptionDto> selectRegionOptions();
+//    List<AdminRegionOptionDto> selectRegionOptions();
 
     Integer selectMemberType(@Param("memberId") Long memberId);
 
@@ -51,4 +53,12 @@ public interface AdminMapper {
             @Param("imageUrl") String imageUrl,
             @Param("sortOrder") int sortOrder
     );
+
+    AdminPlaceDetailDto selectPlaceDetailByMember(@Param("bizMemberId") Long bizMemberId);
+
+    List<String> selectPlaceImages(@Param("placeId") Long placeId);
+
+    int updatePlace(AdminPlaceUpdateDto place);
+
+    int deletePlaceImage(@Param("placeId") Long placeId, @Param("imageUrl") String imageUrl);
 }

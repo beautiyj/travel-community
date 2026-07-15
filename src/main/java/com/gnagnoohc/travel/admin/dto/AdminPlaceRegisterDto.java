@@ -16,13 +16,13 @@ public class AdminPlaceRegisterDto {
     private String contentId;
     private String contentTypeId;
     private Integer placeType;
-    private Long regionId;
+//    private Long regionId;
     private Long memberId;
     private String name;
     private String description;
     private String address;
-    private BigDecimal mapx;
-    private BigDecimal mapy;
+//    private BigDecimal mapx;
+//    private BigDecimal mapy;
     private String firstImage;
     private int adminType;
 

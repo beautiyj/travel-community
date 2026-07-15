@@ -32,12 +32,6 @@ public class AdminController {
     private final AdminReservationService adminReservationService;
     private final AdminPlaceService adminPlaceService;
 
-    @RequestMapping("/admin/test")
-    public String adminTest() {
-        // /WEB-INF/views/admin/test.jsp
-        return "admin/test";
-    }
-
     // TODO: 로그인/세션 붙으면 memberId 파라미터 제거하고 인증 정보에서 가져오기
     @GetMapping("/admin/dashboard")
     public String dashboard(@RequestParam(defaultValue = "1") Long memberId, Model model) {
@@ -47,6 +41,7 @@ public class AdminController {
         model.addAttribute("bizName", view.getPlaceName());
         model.addAttribute("ownerName", view.getOwnerName());
         model.addAttribute("isClosed", view.isClosed());
+        model.addAttribute("bizFirstImage", view.getFirstImage());
         model.addAttribute("todayLabel", view.getTodayLabel());
         model.addAttribute("todayReservations", view.getTodayReservations());
         model.addAttribute("monthlyTrend", view.getMonthlyTrend());
@@ -58,6 +53,7 @@ public class AdminController {
         return "admin/dashboard";
     }
 
+    //예약 관리
     @GetMapping("/admin/reservations")
     public String reservations(
             @RequestParam(defaultValue = "1") Long memberId,
@@ -72,6 +68,7 @@ public class AdminController {
         model.addAttribute("bizName", ctx.getPlaceName());
         model.addAttribute("ownerName", ctx.getOwnerName());
         model.addAttribute("isClosed", ctx.isClosed());
+        model.addAttribute("bizFirstImage", ctx.getFirstImage());
         model.addAttribute("pendingCount", ctx.getPendingCount());
         model.addAttribute("cancelRequestCount", ctx.getCancelRequestCount());
         model.addAttribute("statusOptions", RESERVATION_STATUS_OPTIONS);
@@ -81,12 +78,14 @@ public class AdminController {
         return "admin/reservations";
     }
 
+    //예약관리 : 수락
     @PostMapping("/admin/reservations/{reservationId}/accept")
     public String acceptReservation(@PathVariable Long reservationId, @RequestParam Long memberId) {
         adminReservationService.accept(reservationId, memberId);
         return "redirect:/admin/reservations?memberId=" + memberId;
     }
 
+    //예약관리 : 거절
     @PostMapping("/admin/reservations/{reservationId}/reject")
     public String rejectReservation(@PathVariable Long reservationId, @RequestParam Long memberId) {
         adminReservationService.reject(reservationId, memberId);
@@ -94,7 +93,11 @@ public class AdminController {
     }
 
     @GetMapping("/admin/venue")
-    public String venue(@RequestParam(defaultValue = "1") Long memberId, Model model) {
+    public String venue(
+            @RequestParam(defaultValue = "1") Long memberId,
+            @RequestParam(defaultValue = "false") boolean edit,
+            Model model
+    ) {
         AdminPlaceOverviewDto overview = adminPlaceService.findOverview(memberId);
         model.addAttribute("memberId", memberId);
         model.addAttribute("place", overview);
@@ -104,14 +107,23 @@ public class AdminController {
             model.addAttribute("bizName", ctx.getPlaceName());
             model.addAttribute("ownerName", ctx.getOwnerName());
             model.addAttribute("isClosed", ctx.isClosed());
+            model.addAttribute("bizFirstImage", ctx.getFirstImage());
             model.addAttribute("pendingCount", ctx.getPendingCount());
             model.addAttribute("cancelRequestCount", ctx.getCancelRequestCount());
+
+            // 읽기뷰도 React 참고 화면과 동일하게 카테고리/지역/주소/소개/전체 사진을 보여줘야 해서 항상 상세 조회
+            model.addAttribute("placeDetail", adminPlaceService.findDetail(memberId));
+
+            if (edit) {
+                model.addAttribute("editing", true);
+//                model.addAttribute("regionOptions", adminPlaceService.getRegionOptions());
+            }
         } else {
             boolean canRegister = adminPlaceService.isBusinessMember(memberId);
             model.addAttribute("canRegister", canRegister);
-            if (canRegister) {
-                model.addAttribute("regionOptions", adminPlaceService.getRegionOptions());
-            }
+//            if (canRegister) {
+//                model.addAttribute("regionOptions", adminPlaceService.getRegionOptions());
+//            }
         }
 
         return "admin/venue";
@@ -131,9 +143,25 @@ public class AdminController {
         return "redirect:/admin/venue?memberId=" + memberId;
     }
 
+    @PostMapping("/admin/venue/update")
+    public String updateVenue(
+            @RequestParam Long memberId,
+            @RequestParam String name,
+            @RequestParam Integer placeType,
+            @RequestParam(required = false) Long regionId,
+            @RequestParam String address,
+            @RequestParam(required = false) String description,
+            // 수정 화면에서 드래그로 정한 최종 사진 순서(기존/신규 카드 통합). 기존 사진은 URL, 신규 사진은 "new" 토큰.
+            // "new" 토큰은 등장하는 순서대로 newImages의 파일과 하나씩 매칭된다.
+            @RequestParam(required = false) List<String> photoOrder,
+            @RequestParam(required = false) List<String> removeImageUrls,
+            @RequestParam(required = false) List<MultipartFile> newImages
+    ) {
+        adminPlaceService.updatePlace(memberId, name, placeType, regionId, address, description, photoOrder, removeImageUrls, newImages);
+        return "redirect:/admin/venue?memberId=" + memberId;
+    }
+
     // 아직 업소를 등록하지 않은 사업자가 dashboard/reservations에 접근하면 등록 화면으로 안내
-    // @ExceptionHandler는 RequestMappingHandlerAdapter와 다른 제한된 리졸버 세트를 쓰기 때문에
-    // @RequestParam을 직접 못 받는다 (No suitable resolver) -> HttpServletRequest에서 직접 꺼낸다.
     @ExceptionHandler(NoPlaceRegisteredException.class)
     public String handleNoPlaceRegistered(HttpServletRequest request) {
         String memberId = request.getParameter("memberId");

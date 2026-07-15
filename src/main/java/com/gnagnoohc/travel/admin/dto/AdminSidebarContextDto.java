@@ -14,4 +14,5 @@ public class AdminSidebarContextDto {
     private boolean isClosed;
     private Integer pendingCount;
     private Integer cancelRequestCount;
+    private String firstImage;
 }

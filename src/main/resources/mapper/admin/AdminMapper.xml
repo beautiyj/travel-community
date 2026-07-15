@@ -37,9 +37,22 @@
         <result property="revenue"      column="revenue"/>
     </resultMap>
 
+    <!-- 지역코드는 당분간 사업자 직접등록 업소엔 null로 두기로 해서 관련 옵션 조회 잠시 주석처리
     <resultMap id="regionOptionResultMap" type="com.gnagnoohc.travel.admin.dto.AdminRegionOptionDto">
         <id     property="regionId"   column="region_id"/>
         <result property="regionName" column="region_name"/>
+    </resultMap>
+    -->
+
+    <resultMap id="placeDetailResultMap" type="com.gnagnoohc.travel.admin.dto.AdminPlaceDetailDto">
+        <id     property="placeId"    column="place_id"/>
+        <result property="name"       column="name"/>
+        <result property="placeType"  column="place_type"/>
+        <result property="regionId"   column="region_id"/>
+        <result property="regionName" column="region_name"/>
+        <result property="address"    column="address"/>
+        <result property="description" column="description"/>
+        <result property="closed"     column="is_closed"/>
     </resultMap>
 
     <!-- 사업자 회원의 업소 개요(대시보드 사이드바/헤더용). 업소 1인당 1개라고 가정하고 1건만 조회 -->
@@ -147,12 +160,13 @@
           AND member_id = #{bizMemberId}
     </update>
 
-    <!-- 업소 등록 폼 지역 드롭다운. 트리 없이 단순 목록(MVP) -->
+    <!-- 업소 등록 폼 지역 드롭다운. 지역코드를 당분간 null로 두기로 해서 주석처리
     <select id="selectRegionOptions" resultMap="regionOptionResultMap">
         SELECT region_id, region_name
         FROM REGION
         ORDER BY region_name
     </select>
+    -->
 
     <!-- member_type=0(사업자)만 업소 등록 가능. 회원 없으면 null 반환 -->
     <select id="selectMemberType" resultType="java.lang.Integer">
@@ -162,14 +176,15 @@
     </select>
 
     <!-- 사업자 직접등록. is_closed/created_at/updated_at은 DB DEFAULT에 맡기고 컬럼 목록에서 제외 -->
+    <!-- region_id/mapx/mapy는 사업자 직접등록 업소엔 당분간 null로 두기로 해서 컬럼 목록에서 제외 (AdminPlaceRegisterDto도 동일하게 주석처리됨) -->
     <insert id="insertOwnerPlace" parameterType="com.gnagnoohc.travel.admin.dto.AdminPlaceRegisterDto"
             useGeneratedKeys="true" keyProperty="placeId" keyColumn="place_id">
         INSERT INTO PLACE (
-            content_id, content_type_id, place_type, region_id, member_id,
-            name, description, address, mapx, mapy, admin_type, first_image
+            content_id, content_type_id, place_type, <!-- region_id, --> member_id,
+            name, description, address, <!-- mapx, mapy, --> admin_type, first_image
         ) VALUES (
-            #{contentId}, #{contentTypeId}, #{placeType}, #{regionId}, #{memberId},
-            #{name}, #{description}, #{address}, #{mapx}, #{mapy}, #{adminType}, #{firstImage}
+            #{contentId}, #{contentTypeId}, #{placeType}, <!-- #{regionId}, --> #{memberId},
+            #{name}, #{description}, #{address}, <!-- #{mapx}, #{mapy}, --> #{adminType}, #{firstImage}
         )
     </insert>
 
@@ -177,5 +192,42 @@
         INSERT INTO PLACE_IMAGE (place_id, image_url, sort_order)
         VALUES (#{placeId}, #{imageUrl}, #{sortOrder})
     </insert>
+
+    <!-- 업소정보 수정 폼 진입 시 기존 값 채우기용. 지역명까지 같이 조회 -->
+    <select id="selectPlaceDetailByMember" resultMap="placeDetailResultMap">
+        SELECT p.place_id, p.name, p.place_type, p.region_id, r.region_name, p.address, p.description, p.is_closed
+        FROM PLACE p
+        LEFT JOIN REGION r ON r.region_id = p.region_id
+        WHERE p.member_id = #{bizMemberId}
+        LIMIT 1
+    </select>
+
+    <!-- 수정 폼에 보여줄 기존 사진 목록. sort_order 순서 = 첫 번째가 대표사진 -->
+    <select id="selectPlaceImages" resultType="java.lang.String">
+        SELECT image_url
+        FROM PLACE_IMAGE
+        WHERE place_id = #{placeId}
+        ORDER BY sort_order
+    </select>
+
+    <!-- 업소정보 수정. 소유자가 아니면 0건 UPDATE. region_id는 당분간 null로 두기로 해서 주석처리 (AdminPlaceUpdateDto도 동일) -->
+    <update id="updatePlace" parameterType="com.gnagnoohc.travel.admin.dto.AdminPlaceUpdateDto">
+        UPDATE PLACE
+        SET name = #{name},
+            place_type = #{placeType},
+            <!-- region_id = #{regionId}, -->
+            address = #{address},
+            description = #{description},
+            first_image = #{firstImage}
+        WHERE place_id = #{placeId}
+          AND member_id = #{memberId}
+    </update>
+
+    <!-- 수정 화면에서 체크 해제한 기존 사진 삭제 -->
+    <delete id="deletePlaceImage">
+        DELETE FROM PLACE_IMAGE
+        WHERE place_id = #{placeId}
+          AND image_url = #{imageUrl}
+    </delete>
 
 </mapper>

@@ -35,6 +35,7 @@ public class AdminDashboardService {
                 .isClosed(overview.isClosed())
                 .pendingCount(counts.getPendingCount())
                 .cancelRequestCount(counts.getCancelRequestCount())
+                .firstImage(overview.getFirstImage())
                 .build();
     }
 
@@ -49,6 +50,7 @@ public class AdminDashboardService {
                 .placeName(overview.getPlaceName())
                 .ownerName(overview.getOwnerName())
                 .isClosed(overview.isClosed())
+                .firstImage(overview.getFirstImage())
                 .todayLabel(todayLabel())
                 .todayReservations(todayReservations)
                 .monthlyTrend(monthlyTrend)

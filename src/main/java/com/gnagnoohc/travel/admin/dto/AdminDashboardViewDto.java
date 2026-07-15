@@ -13,6 +13,7 @@ public class AdminDashboardViewDto {
     private String placeName;
     private String ownerName;
     private boolean isClosed;
+    private String firstImage;
     private String todayLabel;
     private List<AdminReservationDto> todayReservations;
     private List<AdminMonthlyTrendDto> monthlyTrend;

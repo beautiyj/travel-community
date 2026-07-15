@@ -24,16 +24,20 @@ public class AdminReservationApiController {
         return adminReservationService.getReservations(placeId, memberId, status);
     }
 
+    //예약관리 확정
     @PostMapping("/reservations/{reservationId}/accept")
     public void accept(@PathVariable Long reservationId, @RequestParam Long memberId) {
         adminReservationService.accept(reservationId, memberId);
     }
 
+    //예약관리 : 거절
     @PostMapping("/reservations/{reservationId}/reject")
     public void reject(@PathVariable Long reservationId, @RequestParam Long memberId) {
         adminReservationService.reject(reservationId, memberId);
     }
 
+
+    //예약 마감
     @PatchMapping("/place/closed")
     public void setPlaceClosed(
             @RequestParam Long placeId,

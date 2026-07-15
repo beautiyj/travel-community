@@ -7,187 +7,12 @@
        <link ... community.css> ← 나중
    ============================================================ */
 
-/* ── 폰트 ── */
+/* ============= 1. 외부 리소스 및 폰트 정의 =================*/
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
-/* 서치바 */
-.image {
-	border-radius: 16px;
-	width: 40px;
-	height: 20px;
-	margin-right: 16px;
-	object-fit: fill;
-}
-.input {
-	color: #64748B;
-	font-size: 14px;
-	margin-right: 4px;
-	width: 523px;
-	box-sizing: border-box;
-	background: none;
-	border: none;
-	padding-top: 20px;
-	padding-bottom: 20px;
-}
-.row-view {
-	display: flex;
-	align-items: center;
-	background: #FFFFFF;
-	border-radius: 16px;
-	border: 1px solid #94A3B840;
-	box-shadow: 0px 8px 10px #0000001A;
-}
-.text {
-	color: #FFFFFF;
-	font-size: 14px;
-	font-weight: bold;
-}
-.view {
-	flex-shrink: 0;
-	display: flex;
-	flex-direction: column;
-	align-items: flex-start;
-	background: #0284C7;
-	border-radius: 16px;
-	padding: 10px 28px;
-}
+/* ============= 2. 디자인 토큰 (Design Tokens) - 전역 변수 중앙 제어 ======================*/
 
-/* 찜버튼 */
-.image {
-	width: 32px;
-	height: 32px;
-	object-fit: fill;
-}
-
-/* 작은 버튼 */
-.button-row-view {
-	display: flex;
-	align-items: center;
-	background: #0284C7;
-	border-radius: 16px;
-	border: none;
-	padding: 10px 19px;
-	gap: 8px;
-	text-align: left;
-}
-.image {
-	border-radius: 16px;
-	width: 16px;
-	height: 16px;
-	object-fit: fill;
-}
-.text {
-	color: #FFFFFF;
-	font-size: 14px;
-	font-weight: bold;
-}
-
-/* 태그버튼 */
-.text {
-	color: #1447E6;
-	font-size: 12px;
-	font-weight: bold;
-}
-.view {
-	display: flex;
-	flex-direction: column;
-	align-items: flex-start;
-	background: #DBEAFE;
-	border-radius: 33554400px;
-	padding: 2px 9px;
-}
-
-/* 셀렉터블 버튼 */
-.button {
-	display: flex;
-	flex-direction: column;
-	align-items: flex-start;
-	background: none;
-	border-radius: 12px;
-	border: 1px solid #FFC9C9;
-	padding: 7px 14px;
-	margin-left: 23px;
-	margin-right: 1px;
-	text-align: left;
-}
-.text {
-	color: #FB2C36;
-	font-size: 12px;
-	font-weight: bold;
-}
-
-/* 일반버튼(버튼컴포넌트) */
-.button {
-	display: flex;
-	flex-direction: column;
-	align-items: flex-start;
-	background: #0284C7;
-	border-radius: 16px;
-	border: none;
-	padding: 14px 139px;
-	box-shadow: 0px 4px 6px #0284C733;
-	text-align: left;
-}
-.text {
-	color: #FFFFFF;
-	font-size: 16px;
-	font-weight: bold;
-}
-
-/* 배너 */
-.box {
-	width: 6px;
-	height: 6px;
-	background: #FFFFFF80;
-	border-radius: 33554400px;
-	margin-right: 7px;
-}
-.box2 {
-	width: 6px;
-	height: 6px;
-	background: #FFFFFF80;
-	border-radius: 33554400px;
-	margin-right: 8px;
-}
-.box3 {
-	width: 24px;
-	height: 6px;
-	background: #FFFFFF;
-	border-radius: 33554400px;
-}
-.column {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	background: #FFFFFF00;
-	border-radius: 16px;
-	padding-top: 122px;
-	margin-left: 222px;
-	margin-right: 222px;
-	box-shadow: 0px 8px 10px #0000001A;
-}
-.image {
-	border-radius: 16px;
-	width: 36px;
-	height: 36px;
-	object-fit: fill;
-}
-.row-view {
-	align-self: stretch;
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	margin-bottom: 100px;
-	margin-left: 15px;
-	margin-right: 15px;
-}
-.row-view2 {
-	display: flex;
-	align-items: center;
-	margin-bottom: 16px;
-}
-
-/* ── 디자인 토큰 (색·모서리) ── */
+c/* ── 디자인 토큰 (색·모서리) ── */
 /* community.css / mypage.css 등 모든 페이지 CSS가 이 변수를 var(--이름)으로 참조 */
 :root {
   --background:             #f8fafc;   /* 페이지 배경 (연한 회색) */
@@ -214,6 +39,11 @@
 
   --danger:                 #fb2c36;   /* 취소 요청·탈퇴 등 (밝은 빨강) */
   --danger-foreground:      #ffffff;
+  --danger-soft:            #ffc9c9;   /* 셀렉터블 버튼 테두리 등 (연한 빨강) */
+  --danger-soft-bg:         #ffefef;
+
+  --tag-bg:                 #dbeafe;   /* 태그용 연한 파랑 배경 */
+  --tag-text:               #1447e6;   /* 태그용 짙은 파랑 글자 */
 
   --border:                 rgba(148, 163, 184, 0.25);  /* 테두리 */
   --input:                  transparent;                /* 입력창 배경 */
@@ -221,12 +51,19 @@
 
   --ring:                   #7dd3fc;   /* 포커스 링 (입력창 클릭 시) */
 
-  --radius:                 0.75rem;   /* 기본 모서리 둥글기 */
+  /* 모서리 둥글기 토큰 (Radii) */
+  --radius-sm:              6px;
+  --radius-md:              12px;
+  --radius-lg:              16px;
+  --radius-full:            9999px;    /* 완전한 원형 */
 
+  /* 타이포그래피 토큰 (Typography) */
   --font-weight-normal:     400;
   --font-weight-medium:     600;
+  --font-weight-bold:       700;
 
-  /* 타이포 크기 */
+  --text-xs:                0.75rem;   /* 12px */
+  --text-sm:                0.875rem;  /* 14px */
   --text-base:              1rem;      /* 16px */
   --text-lg:                1.125rem;  /* 18px */
   --text-xl:                1.25rem;   /* 20px */
@@ -234,18 +71,17 @@
 }
 
 
-/* ── 기본 리셋 ── */
+/* ============= 3. 기본 초기화 및 글로벌 스타일 (Reset & Base) ====================== */
+
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-}
+}	/* ── 기본 리셋 ── */
 
-
-/* ── 문서 기본 ── */
 html {
   font-size: 16px;
-}
+} /* ── 문서 기본 ── */
 
 body {
   background: var(--background);
@@ -254,8 +90,7 @@ body {
   line-height: 1.5;
 }
 
-
-/* ── 기본 타이포그래피 ── */
+/* 글로벌 타이포그래피 */
 h1 { font-size: var(--text-2xl); font-weight: var(--font-weight-medium); line-height: 1.5; }
 h2 { font-size: var(--text-xl);  font-weight: var(--font-weight-medium); line-height: 1.5; }
 h3 { font-size: var(--text-lg);  font-weight: var(--font-weight-medium); line-height: 1.5; }
@@ -264,41 +99,42 @@ h4 { font-size: var(--text-base);font-weight: var(--font-weight-medium); line-he
 label  { font-size: var(--text-base); font-weight: var(--font-weight-medium); line-height: 1.5; }
 
 button {
+  font-family: inherit;
   font-size: var(--text-base);
   font-weight: var(--font-weight-medium);
   line-height: 1.5;
-  font-family: inherit;
   cursor: pointer;
 }
 
-input,
-textarea {
+input, textarea {
+  font-family: inherit;
   font-size: var(--text-base);
   font-weight: var(--font-weight-normal);
   line-height: 1.5;
-  font-family: inherit;
 }
 
-
-/* ── 링크 기본 ── */
 a {
   color: inherit;
   text-decoration: none;
-}
+} /* ── 링크 기본 ── */
 
 
-/* ============================================================
-   공통 컴포넌트 — 여러 페이지가 함께 사용
-   ============================================================ */
+/* ============= 4. 레이아웃 및 상단 헤더 컴포넌트 ========================== */
 
-/* ── 상단 헤더 / 내비게이션 ── */
+.container { 
+  max-width: 1101px; 
+  margin: 0 auto; 
+  padding: 48px 32px; 
+} /* ── 공통 레이아웃 컨테이너 ── */
+
 .header {
-  background: #FFFFFFF0;
-  box-shadow: 0 1px 2px #0000001A;
+  background: rgba(255, 255, 255, 0.94);    /* #FFFFFFF0 치환 */
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); /* #0000001A 치환 */
   position: sticky;
   top: 0;
   z-index: 10;
-}
+} /* ── 상단 헤더 / 내비게이션 ── */
+
 .header-inner {
   max-width: 1200px;
   margin: 0 auto;
@@ -307,398 +143,72 @@ a {
   align-items: center;
   padding: 14px 32px;
 }
-.brand { display: flex; align-items: center; gap: 8px; }
-.brand .logo {
-  width: 32px; height: 32px; border-radius: 8px;
-  background: var(--primary);
-  display: flex; align-items: center; justify-content: center;
-  color: var(--primary-foreground); font-weight: bold; font-size: 16px;
+
+.brand { 
+  display: flex; 
+  align-items: center; 
+  gap: 8px; 
 }
-.brand .name { color: var(--primary); font-size: 20px; font-weight: bold; }
-.nav { display: flex; align-items: center; gap: 24px; }
-.nav a { color: var(--muted-foreground); font-size: 14px; font-weight: bold; cursor: pointer; }
-.nav a:hover { color: var(--primary); }
-.header-actions { display: flex; align-items: center; gap: 12px; }
+
+.brand .logo {
+  width: 32px; 
+  height: 32px; 
+  border-radius: 8px;
+  background: var(--primary);
+  display: flex; 
+  align-items: center; 
+  justify-content: center;
+  color: var(--primary-foreground); 
+  font-weight: var(--font-weight-bold); 
+  font-size: var(--text-base);
+}
+
+.brand .name { 
+  color: var(--primary); 
+  font-size: var(--text-xl); 
+  font-weight: var(--font-weight-bold); 
+}
+
+.nav { 
+  display: flex; 
+  align-items: center; 
+  gap: 24px; 
+}
+
+.nav a { 
+  color: var(--muted-foreground); 
+  font-size: var(--text-sm); 
+  font-weight: var(--font-weight-bold); 
+  cursor: pointer; 
+}
+
+.nav a:hover { 
+  color: var(--primary); 
+}
+
+.header-actions { 
+  display: flex; 
+  align-items: center; 
+  gap: 12px; 
+}
+
 .region-btn {
-  display: flex; align-items: center; gap: 6px;
-  background: none; border: 1px solid var(--border); border-radius: 12px;
-  padding: 7px 13px; font-size: 14px; font-weight: bold; color: var(--foreground);
+  display: flex; 
+  align-items: center; 
+  gap: 6px;
+  background: none; 
+  border: 1px solid var(--border); 
+  border-radius: var(--radius-md);
+  padding: 7px 13px; 
+  font-size: var(--text-sm); 
+  font-weight: var(--font-weight-bold); 
+  color: var(--foreground);
   cursor: pointer;
 }
-/* 헤더 텍스트 링크 (기본: 흐린 글자). 페이지별로 색 override 가능 */
-.link-text { color: var(--muted-foreground); font-size: 14px; font-weight: bold; cursor: pointer; }
 
-
-/* ── 공통 레이아웃 컨테이너 ── */
-.container { max-width: 1101px; margin: 0 auto; padding: 48px 32px; }
-
-
-/* cardComponent.css */
-.column {
-	background: #FFFFFF;
-	border-radius: 16px;
-	border: 1px solid #94A3B840;
-	padding: 2px;
-	margin-right: 25px;
-}
-.column2 {
-	align-self: stretch;
-	padding: 16px 15px;
-}
-.column3 {
-	align-self: stretch;
-}
-.column4 {
-	align-self: stretch;
-	display: flex;
-	flex-direction: column;
-	align-items: flex-start;
-	padding-top: 10px;
-	gap: 4px;
-}
-.image {
-	width: 31px;
-	height: 31px;
-	object-fit: fill;
-}
-.image2 {
-	width: 11px;
-	height: 11px;
-	object-fit: fill;
-}
-.image3 {
-	width: 13px;
-	height: 13px;
-	object-fit: fill;
-}
-.row-view {
-	align-self: stretch;
-	display: flex;
-	justify-content: space-between;
-	align-items: flex-start;
-	padding: 11px 12px 148px 12px;
-	background-image: url('https://storage.googleapis.com/tagjs-prod.appspot.com/v1/sdkNAxW71L/kxj3k02n_expires_30_days.png');
-	background-size: 100% 100%;
-}
-.row-view2 {
-	align-self: stretch;
-	display: flex;
-	align-items: center;
-	padding-top: 4px;
-	gap: 4px;
-}
-.row-view3 {
-	align-self: stretch;
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	padding-top: 8px;
-}
-.row-view4 {
-	flex-shrink: 0;
-	display: flex;
-	align-items: center;
-	gap: 5px;
-}
-.row-view5 {
-	flex-shrink: 0;
-	display: flex;
-	align-items: center;
-	gap: 4px;
-}
-.row-view6 {
-	display: flex;
-	align-items: center;
-	gap: 3px;
-}
-.text {
-	color: #007A55;
-	font-size: 12px;
-	font-weight: bold;
-}
-.text2 {
-	color: #0F172A;
-	font-size: 18px;
-	font-weight: bold;
-}
-.text3 {
-	color: #64748B;
-	font-size: 14px;
-}
-.text4 {
-	color: #E17100;
-	font-size: 14px;
-	font-weight: bold;
-}
-.text5 {
-	color: #64748B;
-	font-size: 12px;
-}
-.text6 {
-	color: #0284C7;
-	font-size: 14px;
-	font-weight: bold;
-}
-.text7 {
-	color: #0C4A6E;
-	font-size: 12px;
-}
-.view {
-	align-self: stretch;
-	background: #DFF2FE;
-}
-.view2 {
-	flex-shrink: 0;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	padding-top: 3px;
-}
-.view3 {
-	display: flex;
-	flex-direction: column;
-	align-items: flex-start;
-	background: #D0FAE5;
-	border-radius: 37282700px;
-	padding-bottom: 4px;
-	padding-left: 9px;
-	padding-right: 9px;
-}
-.view4 {
-	align-self: stretch;
-	display: flex;
-	flex-direction: column;
-	align-items: flex-start;
-}
-.view5 {
-	flex-shrink: 0;
-	display: flex;
-	flex-direction: column;
-	align-items: flex-start;
-	background: #F0F9FF;
-	border-radius: 37282700px;
-	padding: 1px 7px;
-}
-.view6 {
-	display: flex;
-	flex-direction: column;
-	align-items: flex-start;
-	background: #F0F9FF;
-	border-radius: 37282700px;
-	padding-top: 2px;
-	padding-left: 7px;
-	padding-right: 7px;
-}
-
-/* selectableCardComponent */
-.button {
-	flex-shrink: 0;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	background: #FEF3C6;
-	border-radius: 16px;
-	border: none;
-	padding: 11px 16px;
-	margin-top: 12px;
-	margin-right: 119px;
-	text-align: left;
-}
-.column {
-	display: flex;
-	flex-direction: column;
-	align-items: flex-start;
-	background: #FFFBEB;
-	border-radius: 16px;
-	border: 1px solid #FE9A00;
-	padding-top: 13px;
-	padding-left: 25px;
-	padding-right: 12px;
-	box-shadow: 0px 2px 4px #0000001A;
-}
-.column2 {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	padding-top: 15px;
-	margin-bottom: 24px;
-}
-.image {
-	border-radius: 16px;
-	width: 20px;
-	height: 20px;
-	object-fit: fill;
-}
-.image2 {
-	width: 11px;
-	height: 11px;
-	margin-right: 6px;
-	object-fit: fill;
-}
-.row-view {
-	display: flex;
-	align-items: flex-start;
-	margin-bottom: 1px;
-}
-.row-view2 {
-	display: flex;
-	align-items: center;
-}
-.row-view3 {
-	display: flex;
-	align-items: center;
-	padding-top: 5px;
-	padding-bottom: 5px;
-}
-.text {
-	color: #0F172A;
-	font-size: 24px;
-	font-weight: bold;
-}
-.text2 {
-	color: #0F172A;
-	font-size: 16px;
-	font-weight: bold;
-}
-.text3 {
-	color: #64748B;
-	font-size: 12px;
-	font-weight: bold;
-	width: 175px;
-}
-.text4 {
-	color: #64748B;
-	font-size: 12px;
-	font-weight: bold;
-	margin-right: 58px;
-}
-.text5 {
-	color: #64748B;
-	font-size: 12px;
-	font-weight: bold;
-	margin-right: 49px;
-}
-.text6 {
-	color: #64748B;
-	font-size: 12px;
-	font-weight: bold;
-	margin-right: 70px;
-}
-.view {
-	display: flex;
-	flex-direction: column;
-	align-items: flex-start;
-	padding-top: 15px;
-	padding-right: 138px;
-}
-.view2 {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	padding-top: 3px;
-}
-
-/* navbar */
-.button {
-	flex-shrink: 0;
-	display: flex;
-	flex-direction: column;
-	align-items: flex-start;
-	background: #0284C7;
-	border-radius: 12px;
-	border: none;
-	padding: 7px 16px;
-	text-align: left;
-}
-.button-row-view {
-	flex-shrink: 0;
-	display: flex;
-	align-items: center;
-	background: none;
-	border-radius: 12px;
-	border: 1px solid #94A3B840;
-	padding: 6px 13px;
-	text-align: left;
-}
-.image {
-	width: 31px;
-	height: 31px;
-	object-fit: fill;
-}
-.image2 {
-	width: 15px;
-	height: 15px;
-	object-fit: fill;
-}
-.image3 {
-	border-radius: 12px;
-	width: 13px;
-	height: 13px;
-	margin-right: 6px;
-	object-fit: fill;
-}
-.image4 {
-	border-radius: 12px;
-	width: 13px;
-	height: 13px;
-	object-fit: fill;
-}
-.row-view {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	background: #FFFFFFF0;
-	padding: 13px 32px;
-	margin-bottom: 1px;
-	box-shadow: 0px 1px 2px #0000001A;
-}
-.row-view2 {
-	flex-shrink: 0;
-	display: flex;
-	align-items: center;
-	gap: 8px;
-}
-.row-view3 {
-	flex-shrink: 0;
-	display: flex;
-	align-items: center;
-	gap: 25px;
-}
-.row-view4 {
-	flex-shrink: 0;
-	display: flex;
-	align-items: center;
-	gap: 6px;
-}
-.row-view5 {
-	flex-shrink: 0;
-	display: flex;
-	align-items: center;
-	gap: 12px;
-}
-.text {
-	color: #0284C7;
-	font-size: 20px;
-	font-weight: bold;
-}
-.text2 {
-	color: #64748B;
-	font-size: 14px;
-	font-weight: bold;
-}
-.text3 {
-	color: #0F172A;
-	font-size: 14px;
-	font-weight: bold;
-	margin-right: 9px;
-}
-.text4 {
-	color: #0F172A;
-	font-size: 14px;
-	font-weight: bold;
-}
-.text5 {
-	color: #FFFFFF;
-	font-size: 14px;
-	font-weight: bold;
-}
+.link-text { 
+  color: var(--muted-foreground); 
+  font-size: var(--text-sm); 
+  font-weight: var(--font-weight-bold); 
+  cursor: pointer; 
+} /* 헤더 텍스트 링크 (기본: 흐린 글자). 페이지별로 색 override 가능 */

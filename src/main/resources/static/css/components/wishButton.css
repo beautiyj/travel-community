@@ -1,0 +1,6 @@
+/* wishButton.jsp 위시버튼 찜버튼 */
+.wish-icon {
+  width: 32px;
+  height: 32px;
+  object-fit: fill;
+}

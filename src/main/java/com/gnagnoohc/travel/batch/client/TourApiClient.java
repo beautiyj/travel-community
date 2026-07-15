@@ -4,6 +4,12 @@ package com.gnagnoohc.travel.batch.client;
 // 공공데이터 서버 호출, JSON XML 데이터 받아오기
 // XML -> JSON 변환은 주소 뒤에 필수 파라미터 세팅에 _type = "json" 꼭 추가해야 변환됨
 
+import java.net.URI;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.WebClient;
+
 @Component
 public class TourApiClient {
 

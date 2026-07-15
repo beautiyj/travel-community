@@ -18,14 +18,38 @@ function toggleWishLocal(buttonElement) {
     }
 }
 
-/*  셀렉터블 버튼 클릭 인터랙션 핸들러
-    화면 내의 모든 .btn-selectable 요소를 찾아 클릭 시 활성화 상태(is-active) 토글
- */
+/* 셀렉터블 컴포넌트 인터랙션 핸들러 */
 document.addEventListener("DOMContentLoaded", function () {
+    
     document.addEventListener("click", function (event) {
+        
+        // 셀렉터블 버튼 감지 (.btn-selectable)
         const button = event.target.closest(".btn-selectable");
         if (button) {
             button.classList.toggle("is-active");
+        }
+
+        // 셀렉터블 역할 카드 감지 ([class^='sel-card-col-'])
+        const roleCard = event.target.closest("[class^='sel-card-col-']");
+        if (roleCard) {
+            const groupName = roleCard.getAttribute("data-card-group");
+            
+            // 동일한 단일선택 그룹에 묶여 있는 카드들을 전부 불러와 초기화 (라디오 버튼 스위칭 메커니즘)
+            const siblingCards = document.querySelectorAll(`[data-card-group="${groupName}"]`);
+            siblingCards.forEach(card => {
+                card.classList.remove("active");
+            });
+
+            // 클릭한 카드만 활성화
+            roleCard.classList.add("active");
+
+            // 비즈니스 로직 연동 - 회원가입 폼의 hidden input(id="memberRole") 값 동적 변경
+            // BUSINESS 설정된 셀렉터블 카드 클릭 후 회원가입 -> 서버로 전송될 hidden input의 value=BUSINESS로 변경 역할
+            const selectedRoleId = roleCard.getAttribute("data-card-id"); // ROLE_USER 또는 ROLE_BUSINESS 등
+            const roleHiddenInput = document.getElementById("memberRole");
+            if (roleHiddenInput) {
+                roleHiddenInput.value = selectedRoleId;
+            }
         }
     });
 });

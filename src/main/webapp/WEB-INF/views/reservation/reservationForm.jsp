@@ -5,33 +5,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>숙박 예약</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Pretendard', 'Malgun Gothic', sans-serif; background: #f5f6f8; }
-        .wrap { max-width: 480px; margin: 0 auto; padding: 32px 20px; }
-        h2 { margin-bottom: 16px; font-size: 20px; }
-        form { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,.06); }
-        .field { margin-bottom: 18px; }
-        .field label, .field-label { display: block; font-size: 13px; color: #555; margin-bottom: 6px; }
-        .field input[type=text], .field input[type=tel], .field input[type=date] {
-            width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
-        .headcount-box { display: flex; align-items: center; gap: 10px; }
-        .headcount-box button { width: 32px; height: 32px; border: 1px solid #ddd; border-radius: 6px;
-                                 background: #fff; font-size: 16px; cursor: pointer; }
-        .headcount-box input { width: 48px; text-align: center; border: none; font-size: 15px; }
-        .actions { display: flex; gap: 10px; margin-top: 24px; }
-        .actions button { flex: 1; padding: 14px; border: none; border-radius: 8px; font-size: 15px;
-                           font-weight: 600; cursor: pointer; }
-        .actions button[type=button] { background: #eee; color: #333; }
-        .actions button[type=submit] { background: #3b82f6; color: #fff; }
-    </style>
+    <title>예약하기</title>
+    <link rel="stylesheet" href="/resources/css/booking.css">
 </head>
 <body>
-<div class="wrap">
 
-    <h2>예약하기</h2>
-    <!-- TODO: 숙박/맛집 파트 완성 후 placeId로 조회한 장소 정보(이름/주소/사진) 카드 표시 -->
+<div class="page-wrap">
+
+    <a href="javascript:history.back()" class="back-link">&lsaquo; 상세페이지로</a>
+    <h1 class="page-title">예약하기</h1>
 
     <form action="/reservations" method="post" id="reservationForm">
 
@@ -39,59 +21,117 @@
         <input type="hidden" name="placeId" value="${placeId}">
         <input type="hidden" name="amount" id="amount" value="${price * 2}">
 
-        <div class="field">
-            <label for="visitorName">예약자 이름</label>
-            <input type="text" id="visitorName" name="visitorName" required maxlength="50">
-        </div>
+        <div class="booking-grid">
 
-        <div class="field">
-            <label for="phone">연락처</label>
-            <input type="tel" id="phone" name="phone" required maxlength="20" placeholder="010-0000-0000">
-        </div>
+            <!-- ─── 왼쪽: 입력 폼 ─── -->
+            <div>
+                <!-- TODO: 숙박/맛집 파트 완성 후 placeId로 조회한 장소 정보(이름/지역/사진/평점)로 교체 -->
+                <div class="place-card">
+                    <div class="thumb">&#127756;</div>
+                    <div>
+                        <p class="name">장소 #${placeId}</p>
+                        <p class="desc">장소 정보 연동 예정</p>
+                    </div>
+                </div>
 
-        <div class="field">
-            <label for="visitDate">체크인 날짜</label>
-            <input type="date" id="visitDate" name="visitDate" required>
-        </div>
+                <div class="field">
+                    <label for="visitorName">예약자 이름</label>
+                    <input type="text" id="visitorName" name="visitorName" required maxlength="50"
+                           placeholder="이름을 입력하세요">
+                </div>
 
-        <div class="field">
-            <label for="headcount">인원</label>
-            <div class="headcount-box">
-                <button type="button" id="btnMinus" aria-label="인원 줄이기">−</button>
-                <input type="number" id="headcount" name="headcount" value="2" min="1" max="10" readonly>
-                <button type="button" id="btnPlus" aria-label="인원 늘리기">+</button>
-                <span>명</span>
+                <div class="field">
+                    <label for="phone">연락처</label>
+                    <input type="tel" id="phone" name="phone" required maxlength="20"
+                           placeholder="010-0000-0000">
+                </div>
+
+                <div class="field">
+                    <label for="visitDate">방문 날짜</label>
+                    <div class="input-box">
+                        <span class="icon">&#128197;</span>
+                        <input type="date" id="visitDate" name="visitDate" required>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="headcount">인원</label>
+                    <div class="input-box">
+                        <span class="icon">&#128101;</span>
+                        <button type="button" class="stepper-btn" id="btnMinus" aria-label="인원 줄이기">&minus;</button>
+                        <input type="number" class="stepper-value" id="headcount" name="headcount"
+                               value="2" min="1" max="10" readonly>
+                        <button type="button" class="stepper-btn" id="btnPlus" aria-label="인원 늘리기">+</button>
+                        <span class="stepper-unit">명</span>
+                    </div>
+                </div>
+
+                <div class="btn-row">
+                    <button type="button" class="btn btn-outline" onclick="history.back()">취소</button>
+                    <button type="submit" class="btn btn-primary" id="submitBtn" disabled>결제하기</button>
+                </div>
             </div>
-        </div>
 
-        <div class="actions">
-            <button type="button" onclick="history.back()">취소</button>
-            <button type="submit">결제하기</button>
+            <!-- ─── 오른쪽: 예약 요약 ─── -->
+            <div class="summary-card">
+                <h3>예약 요약</h3>
+                <div class="summary-row"><span class="label">숙소/장소</span><span class="value">장소 #${placeId}</span></div>
+                <div class="summary-row"><span class="label">날짜</span><span class="value" id="sumDate">&mdash;</span></div>
+                <div class="summary-row"><span class="label">인원</span><span class="value" id="sumPeople">2명</span></div>
+                <div class="summary-row summary-divider">
+                    <span class="label">금액</span>
+                    <span class="value"><fmt:formatNumber value="${price}" pattern="#,###"/>원 &times; <span id="sumUnitCount">2</span>명</span>
+                </div>
+                <div class="summary-total"><span>합계</span><span id="sumTotal"></span></div>
+            </div>
+
         </div>
     </form>
 </div>
 
 <script>
-    const UNIT_PRICE = parseInt("${price}", 10) || 0;  // 서버에서 내려준 1인 단가
-    const headcountInput = document.getElementById('headcount');
-    const amountInput = document.getElementById('amount');
+    var UNIT_PRICE = parseInt("${price}", 10) || 0;  // 서버에서 내려준 1인 단가
 
+    var headcountInput = document.getElementById('headcount');
+    var amountInput   = document.getElementById('amount');
+    var nameInput     = document.getElementById('visitorName');
+    var phoneInput    = document.getElementById('phone');
+    var dateInput     = document.getElementById('visitDate');
+    var submitBtn     = document.getElementById('submitBtn');
+
+    // 인원 변경 시: 서버로 보낼 amount + 요약 카드 갱신
     function updateAmount() {
-        const count = parseInt(headcountInput.value, 10);
-        amountInput.value = UNIT_PRICE * count;   // 인원 바뀔 때마다 amount 갱신
+        var count = parseInt(headcountInput.value, 10);
+        amountInput.value = UNIT_PRICE * count;
+        document.getElementById('sumPeople').textContent = count + '명';
+        document.getElementById('sumUnitCount').textContent = count;
+        document.getElementById('sumTotal').textContent = (UNIT_PRICE * count).toLocaleString() + '원';
     }
 
-    document.getElementById('btnMinus').addEventListener('click', () => {
-        const v = parseInt(headcountInput.value, 10);
+    // 필수값(이름/연락처/날짜) 다 채워야 결제하기 활성화
+    function validate() {
+        submitBtn.disabled = !(nameInput.value.trim() && phoneInput.value.trim() && dateInput.value);
+    }
+
+    document.getElementById('btnMinus').addEventListener('click', function () {
+        var v = parseInt(headcountInput.value, 10);
         if (v > 1) { headcountInput.value = v - 1; updateAmount(); }
     });
 
-    document.getElementById('btnPlus').addEventListener('click', () => {
-        const v = parseInt(headcountInput.value, 10);
+    document.getElementById('btnPlus').addEventListener('click', function () {
+        var v = parseInt(headcountInput.value, 10);
         if (v < 10) { headcountInput.value = v + 1; updateAmount(); }
     });
 
+    nameInput.addEventListener('input', validate);
+    phoneInput.addEventListener('input', validate);
+    dateInput.addEventListener('change', function () {
+        document.getElementById('sumDate').textContent = this.value || '—';
+        validate();
+    });
+
     updateAmount();
+    validate();
 </script>
 </body>
 </html>

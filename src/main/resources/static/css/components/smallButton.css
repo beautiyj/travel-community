@@ -52,3 +52,10 @@
 .btn-small-row.theme-secondary .btn-small-text {
   color: var(--secondary-foreground);
 }
+/* 위험 테마 (Danger - 게시글 삭제 등 되돌릴 수 없는 동작) */
+.btn-small-row.theme-danger {
+  background: var(--destructive);
+}
+.btn-small-row.theme-danger .btn-small-text {
+  color: var(--destructive-foreground);
+}

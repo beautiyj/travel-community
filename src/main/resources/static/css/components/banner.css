@@ -90,27 +90,14 @@
   outline-offset: 3px;
 }
 
-.banner-arrow {
+/* 화살표 크기·모양(48x48 원형, 그림자, hover)은 wishButton.css 의 .btn-wish-trigger 가 담당.
+   여기서는 배너 안에서의 위치(양옆 절대좌표)만 지정 */
+.banner-arrow-prev,
+.banner-arrow-next {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
   z-index: 2;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-
-  background: rgba(255, 255, 255, 0.18);   /* 배경 거의 투명 */
-  border: none;
-  border-radius: var(--radius-full);
-  transition: background 150ms ease;
-}
-
-.banner-arrow:hover {
-  background: rgba(255, 255, 255, 0.32);
 }
 
 .banner-arrow-prev { left: 12px; }
@@ -120,15 +107,10 @@
   width: 18px;
   height: 18px;
   fill: none;
-  stroke: var(--card);                  /* 흰 꺽쇠 */
+  stroke: var(--foreground);           /* .btn-wish-trigger 배경이 흰색이라 진한 색으로 */
   stroke-width: 2.5;
   stroke-linecap: round;
   stroke-linejoin: round;
-}
-
-.banner-arrow:focus-visible {
-  outline: 2px solid var(--card);
-  outline-offset: 2px;
 }
 
 .banner-dots {

@@ -1,0 +1,121 @@
+/* ============================================================
+   community.css — 커뮤니티(게시판) 전용 스타일
+   ※ common.css 를 먼저 불러온 뒤 이 파일을 불러오세요.
+   (토큰·리셋·헤더·컨테이너는 common.css 에 있음)
+   ============================================================ */
+
+/* 헤더의 '로그인' 링크는 진한 글자색으로 override */
+.link-text { color: var(--foreground); }
+
+/* '회원가입' 버튼 */
+.btn-primary {
+  background: var(--primary); color: #fff; border: none;
+  border-radius: 12px; padding: 7px 16px;
+  font-size: 14px; font-weight: bold; cursor: pointer;
+}
+
+/* ---------- Page layout ---------- */
+.page { display: none; }
+.page.active { display: block; }
+
+.page-head { text-align: center; margin-bottom: 24px; }
+.page-head h1 { font-size: 24px; font-weight: bold; margin: 0 0 8px; }
+.page-head p { color: var(--muted-foreground); font-size: 14px; margin: 0; }
+
+.list-topbar { display: flex; justify-content: space-between; align-items: flex-start; }
+.write-btn {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--primary); color: #fff; border: none;
+  border-radius: 16px; padding: 10px 19px;
+  font-size: 14px; font-weight: bold; cursor: pointer;
+}
+
+/* ---------- Filter tabs ---------- */
+.tabs { display: flex; gap: 8px; padding-top: 24px; }
+.tab {
+  background: #fff; border: 1px solid var(--border);
+  border-radius: 9999px; padding: 7px 17px;
+  font-size: 14px; font-weight: bold; color: var(--muted-foreground); cursor: pointer;
+}
+.tab.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+/* ---------- Search ---------- */
+.search {
+  display: flex; align-items: center; gap: 8px;
+  background: #fff; border: 1px solid var(--border); border-radius: 16px;
+  padding: 13px 16px; margin-top: 16px;
+}
+.search svg { flex-shrink: 0; }
+.search input {
+  border: none; outline: none; flex: 1;
+  font-size: 14px; color: var(--foreground); background: transparent;
+}
+.search input::placeholder { color: var(--muted-foreground); }
+
+/* ---------- Post table ---------- */
+.table { background: #fff; border: 1px solid var(--border); border-radius: 16px; margin-top: 24px; overflow: hidden; }
+.row {
+  display: grid;
+  grid-template-columns: 72px 1fr 110px 110px 64px;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px;
+}
+.table-head { background: var(--secondary); padding: 12px 24px; }
+.table-head span { color: var(--muted-foreground); font-size: 12px; font-weight: bold; }
+.post-row { cursor: pointer; border-top: 1px solid var(--border); }
+.post-row:hover { background: var(--background); }
+
+.badge {
+  display: inline-block; border-radius: 9999px;
+  padding: 2px 8px; font-size: 12px; font-weight: bold; text-align: center;
+  justify-self: start;
+}
+.badge.review  { background: #D0FAE5; color: #007A55; }
+.badge.recruit { background: #EDE9FE; color: #7008E7; }
+.badge.general { background: #F1F5F9; color: #45556C; }
+
+.post-title { font-size: 16px; font-weight: bold; color: var(--foreground); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cell-muted { color: var(--muted-foreground); font-size: 14px; font-weight: bold; }
+.empty { padding: 48px; text-align: center; color: var(--muted-foreground); font-size: 14px; }
+
+/* ---------- Detail page ---------- */
+.back-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: var(--muted-foreground); font-size: 14px; font-weight: bold;
+  cursor: pointer; margin-bottom: 24px; border: none; background: none;
+}
+.detail-card {
+  background: #fff; border: 1px solid var(--border); border-radius: 16px;
+  padding: 33px; margin-bottom: 24px;
+}
+.detail-card h2 { font-size: 24px; font-weight: bold; margin: 12px 0 0; }
+.detail-meta { display: flex; gap: 16px; padding: 16px 0 24px; }
+.detail-meta span { display: inline-flex; align-items: center; gap: 6px; color: var(--muted-foreground); font-size: 14px; }
+.detail-body { font-size: 16px; line-height: 1.8; color: var(--foreground); white-space: pre-line; }
+
+/* ---------- Comments ---------- */
+.comments { background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 24px 33px; }
+.comments-head { display: flex; align-items: center; gap: 8px; margin-bottom: 24px; }
+.comments-head .title { font-size: 18px; font-weight: bold; }
+.comments-head .count { color: var(--primary); font-size: 18px; font-weight: bold; }
+.comment { display: flex; gap: 11px; padding: 16px 0; border-top: 1px solid var(--border); }
+.comment:first-of-type { border-top: none; }
+.comment.reply { margin-left: 51px; }
+.avatar { width: 40px; height: 40px; border-radius: 9999px; background: #E2E8F0; flex-shrink: 0; }
+.avatar.sm { width: 28px; height: 28px; }
+.comment-head { display: flex; align-items: center; gap: 8px; }
+.comment-author { font-size: 14px; font-weight: bold; }
+.comment-date { color: var(--muted-foreground); font-size: 12px; }
+.comment-text { font-size: 14px; color: var(--foreground); margin: 4px 0 8px; }
+.reply-link { display: inline-flex; align-items: center; gap: 4px; color: var(--muted-foreground); font-size: 12px; font-weight: bold; cursor: pointer; }
+.comment-form { display: flex; gap: 11px; align-items: flex-start; padding-top: 24px; border-top: 1px solid var(--border); margin-top: 8px; }
+.comment-form textarea {
+  flex: 1; border: 1px solid var(--border); border-radius: 16px;
+  padding: 13px 17px; font-size: 14px; font-family: inherit; resize: vertical;
+  min-height: 44px; outline: none;
+}
+.comment-form button {
+  background: var(--primary); color: #fff; border: none; border-radius: 12px;
+  padding: 12px 20px; font-size: 14px; font-weight: bold; cursor: pointer;
+}

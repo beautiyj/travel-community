@@ -26,8 +26,14 @@ import lombok.RequiredArgsConstructor;
 public class CommunityController {
     private final CommunityService service;
 	
+    // 인덱스 파일 실행
+    @GetMapping("/main/index")
+    public String index() {
+        return "main/index";
+    }
+    
     // 이미지 저장
-    @Value("${file.upload-dir}")
+    @Value("${file.upload-community}")
     private String uploadDir;
     
     // 목록
@@ -36,25 +42,29 @@ public class CommunityController {
                        @RequestParam(value = "q", required = false) String q,
                        Model model) {
     	
-        model.addAttribute("postList", service.selectAll(category, q));
+    	List<CommunityDto> postList = service.selectAll(category, q);
+    	model.addAttribute("postList", postList);
         
         return "community/list";
     }
     
     // 상세 (조회수 증가 포함)
     @GetMapping("/community/detail")
-    public String detail(@RequestParam Long postId, Model model) {
- 
-        service.updateReadcount(postId);          // 조회수 +1
-        
-        // 게시글 + 이미지 + 댓글을 하나의 post DTO에 담아 전달
+    public String detail(@RequestParam("postId") Long postId, Model model) {
+
         CommunityDto post = service.selectOne(postId);
-        List<ImageDto> imageList = service.selectImages(postId);      // 이미지
-        List<CommentDto> commentList = service.selectComments(postId); // 댓글
+        if (post == null) {
+            return "redirect:/community/list";   // 없는 글이면 목록으로
+        }
+
+        service.updateReadcount(postId);   // 글이 있을 때만 조회수 +1
+
+        List<ImageDto> imageList = service.selectImages(postId);
+        List<CommentDto> commentList = service.selectComments(postId);
         
         post.setImageList(imageList);
         post.setCommentList(commentList);
- 
+
         model.addAttribute("post", post);
         
         return "community/detail";
@@ -102,7 +112,7 @@ public class CommunityController {
  
     // 수정 폼 열기 (기존 글 채워서)
     @GetMapping("/community/edit")
-    public String editForm(@RequestParam Long postId, Model model, HttpSession session) {
+    public String editForm(@RequestParam("postId") Long postId, Model model, HttpSession session) {
  
         CommunityDto post = service.selectOne(postId);
  
@@ -139,7 +149,7 @@ public class CommunityController {
  
     // 삭제
     @PostMapping("/community/delete")
-    public String delete(@RequestParam Long postId, HttpSession session) {
+    public String delete(@RequestParam("postId") Long postId, HttpSession session) {
  
         CommunityDto post = service.selectOne(postId);
         if (!isOwner(post, session)) {
@@ -158,7 +168,9 @@ public class CommunityController {
     private void saveImages(MultipartFile[] images, Long postId) throws IOException {
         if (images == null) return;
  
-        int order = 0;   // sort_order: 올린 순서대로 0, 1, 2 ...
+        List<ImageDto> existingImages = service.selectImages(postId);
+        int order = existingImages.size();   // 이어서 매길 시작 번호
+        
         for (MultipartFile image : images) {
             if (image == null || image.isEmpty()) continue;
  
@@ -171,7 +183,7 @@ public class CommunityController {
             image.transferTo(new File(folder, savedName));
  
             ImageDto img = new ImageDto();
-            img.setPostId2(postId);        // FK 컬럼명이 post_id2
+            img.setPostId(postId);        // FK 컬럼명이 post_id2
             img.setImageUrl(savedName);    // 저장된 파일명
             img.setSortOrder(order++);     // 정렬 순서
             service.insertImage(img);

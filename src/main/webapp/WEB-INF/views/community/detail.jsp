@@ -28,13 +28,6 @@
      ※ 로그인 담당자가 MemberDto 를 담기로 하면 loginMember.memberId 로 바꿀 것 --%>
 <c:set var="isOwner" value="${isLoggedIn and loginMember eq post.memberId}" />
 
-<%-- 카테고리(한글) → tagButton 의 place_type(영문) 매핑 (list.jsp 와 동일 규칙) --%>
-<c:choose>
-  <c:when test="${post.category eq '후기'}"><c:set var="placeType" value="tour" /></c:when>
-  <c:when test="${post.category eq '모집'}"><c:set var="placeType" value="food" /></c:when>
-  <c:otherwise><c:set var="placeType" value="" /></c:otherwise>
-</c:choose>
-
 <div class="container">
 
   <a href="${cp}/community/list" class="back-link">&lt; 목록으로</a>
@@ -45,9 +38,8 @@
     <!-- 배지+제목 / 수정·삭제 버튼 (list.jsp 헤더와 같은 .list-topbar 재사용) -->
     <div class="list-topbar">
       <div>
-        <jsp:include page="../common/tagButton.jsp">
-          <jsp:param name="place_type" value="${placeType}" />
-          <jsp:param name="text"       value="${post.category}" />
+        <jsp:include page="../common/postCategoryTag.jsp">
+          <jsp:param name="category" value="${post.category}" />
         </jsp:include>
         <h2>${post.title}</h2>
       </div>

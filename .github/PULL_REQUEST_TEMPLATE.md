@@ -8,22 +8,24 @@
 
 ## 요약
 
-- 메인 화면(`index.jsp`)에서 여행지 카드 배치를 담당할 핵심 컴포넌트 3종(`cardComponent`, `tagButton`, `wishButton`)의 동적 데이터 바인딩 및 상호 결합 테스트 완료
+- 메인 화면(`index.jsp`)에서 사용할 핵심 컴포넌트 3종(`cardComponent`, `tagButton`, `wishButton`)의 동적 데이터 바인딩 및 상호 결합 테스트 완료
+- 버튼 컴포넌트(`buttonComponent.jsp`) 최종 테스트 완료 (기본 규격을 중간 사이즈로 고정하여 재사용성 검증 완료)
 - 정적 리소스(이미지/아이콘) 탐색 경로 최적화 및 태그 컴포넌트의 유동적 텍스트 너비 대응을 위한 CSS 규격 수정 완료
+- 로컬 테스트 효율화를 위해 타 도메인 백엔드 스캔 제외 필터 적용 (병합 시 주의 요망)
 
 ## 상세 내용
 
-### 1. 테스트 검증 환경 구축 (`index.jsp`)
+### 1. 테스트 검증 환경 구축 및 버튼 컴포넌트 규격화
 - `cardComponent.jsp`, `tagButton.jsp`, `wishButton.jsp` 3가지 컴포넌트를 단독 및 결합 형태로 호출하여 정상 작동 검증
-- 조건별 가상 데이터 주입을 통해 다음 3가지 핵심 분기점 검수 완료
-  - **Case 1 (숙박):** `place_type="stay"` 조건 시 파란색 배지 매핑 및 찜 비활성화(`isBookmarked=false`) 상태 렌더링 확인
-  - **Case 2 (관광지):** `place_type="tour"` 조건 시 연녹색 배지 매핑 및 찜 활성화(`isBookmarked=true`) 상태 렌더링 확인
-  - **Case 3 (기본/직접 입력):** `place_type` 공백 처리 및 `text` 파라미터 주입 시 회색 테마(`.type-default`) 적용 및 사용자 지정 텍스트(예: "서울 성수동 인기 카페" 등 유동적 너비) 정상 출력 확인
+- **buttonComponent.jsp 최종 테스트 완료:** 디자인 일관성과 컴포넌트 재사용성을 높이기 위해 버튼의 기본 규격을 **중간 사이즈(Medium Size)**로 일괄 적용 및 조율 완료
 
 ### 2. fix: tagButton.css (기본 태그 너비 유동성 확보)
 - 기존 고정 너비(`width: 72px`)로 인해 발생하던 긴 커스텀 텍스트(Case 5, 6) 잘림 및 레이아웃 붕괴 현상 수정
-- `width: max-content` 또는 최소 너비(`min-width: 72px`) 설정을 통해 텍스트 길이에 따라 배경 칩 자켓 너비가 부드럽게 늘어나도록 가변성 확보
+- `width: max-content` 설정을 통해 텍스트 길이에 따라 배지 너비가 가변적으로 늘어나도록 대응
 
 ### 3. chore: 이미지 아이콘 리소스 경로 정비
-- 브라우저 깨짐 현상 및 404 에러 방지를 위해 기존 불명확했던 아이콘 경로 체계를 스프링 정적 자원 표준 경로로 일괄 이식
-- 물리 파일 위치를 내부 `resources` 폴더에서 웹 앱 순정 스태틱 경로인 **`${pageContext.request.contextPath}/images/icons/`** 폴더 내부로 이동 완료 (`wish-on.png`, `wish-off.png` 등 정상 출력 확인)
+- 경로 404 에러 방지 및 자원 관리를 위해 기존 불명확했던 아이콘 리소스들을 정적 자원 표준 경로인 **`${pageContext.request.contextPath}/images/icons/`** 폴더 내부로 이동 완료 (`wish-on.png`, `wish-off.png` 등정상 출력 확인)
+
+### ⚠️ [중요] 타 브랜치 병합 시 작업자 주의 사항
+- 로컬 구동 시 타 도메인(admin, auth, batch 등)의 미완성 백엔드 로직으로 인해 서버가 터지는 현상을 막기 위해, `TravelApplication.java`에 **정규식 기반 컴포넌트 스캔 제외 필터(`excludeFilters`)**를 임시 적용해 두었습니다.
+- **본인 도메인이 아닌 다른 도메인 부분을 제외한 상태로 실행해 두었으니, 타 작업자분들은 병합(Merge) 후 혹은 다른 브랜치에서 테스트 시 해당 설정을 주석 처리하거나 수정/삭제 후 진행해 주시기 바랍니다.**

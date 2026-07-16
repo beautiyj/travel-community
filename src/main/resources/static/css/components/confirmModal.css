@@ -1,0 +1,116 @@
+/* ============================================================
+   modal.css  —  공통 모달(확인 다이얼로그) 스타일
+   - common.css 의 디자인 토큰(var(--...))을 사용하므로 common.css 뒤에 불러올 것
+       <link ... common.css>   ← 먼저
+       <link ... modal.css>    ← 나중
+       <link ... community.css>
+   - confirmModal.jsp (삭제 / 예약 취소 / 탈퇴 등)가 공통으로 사용
+   ============================================================ */
+
+/* ============= 1. 오버레이 (화면 전체를 덮는 배경) ========================== */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: none;                        /* 기본 숨김 — .is-open 일 때만 표시 */
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.45);   /* --foreground 45% */
+}
+
+.modal-overlay.is-open {
+  display: flex;
+}
+
+/* ============= 2. 모달 본체 ========================== */
+
+.modal {
+  width: 100%;
+  max-width: 420px;
+  background: var(--card);
+  color: var(--card-foreground);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.18);
+  padding: 28px;
+}
+
+.modal-title {
+  font-size: var(--text-xl);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: 10px;
+}
+
+.modal-message {
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+  margin-bottom: 24px;
+}
+
+/* ============= 3. 버튼 영역 ========================== */
+
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.modal-buttons button {
+  min-width: 88px;
+  padding: 9px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+}
+
+/* 취소(보조) 버튼 */
+.btn-modal-cancel {
+  background: var(--card);
+  color: var(--muted-foreground);
+  border-color: var(--border);
+}
+
+.btn-modal-cancel:hover {
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+/* 확정 버튼 — tone 파라미터로 색만 바뀜 */
+.btn-modal-confirm.is-danger {
+  background: var(--destructive);       /* 삭제·탈퇴 */
+  color: var(--destructive-foreground);
+}
+
+.btn-modal-confirm.is-primary {
+  background: var(--primary);           /* 되돌릴 수 있는 일반 확인 */
+  color: var(--primary-foreground);
+}
+
+.btn-modal-confirm:hover {
+  filter: brightness(0.92);
+}
+
+.modal-buttons button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* ============= 4. 스크롤 잠금 (모달 열림 시 body 에 부여) ========================== */
+
+body.modal-open {
+  overflow: hidden;
+}
+
+/* ============= 5. 반응형 ========================== */
+
+@media (max-width: 480px) {
+  .modal {
+    padding: 22px;
+  }
+
+  .modal-buttons button {
+    flex: 1;
+  }
+}

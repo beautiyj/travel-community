@@ -33,7 +33,7 @@ public class CommunityController {
     }
     
     // 이미지 저장
-    @Value("${file.upload-dir}")
+    @Value("${file.upload-community}")
     private String uploadDir;
     
     // 목록

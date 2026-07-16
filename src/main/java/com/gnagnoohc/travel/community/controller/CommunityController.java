@@ -26,6 +26,12 @@ import lombok.RequiredArgsConstructor;
 public class CommunityController {
     private final CommunityService service;
 	
+    // 인덱스 파일 실행
+    @GetMapping("/main/index")
+    public String index() {
+        return "main/index";
+    }
+    
     // 이미지 저장
     @Value("${file.upload-dir}")
     private String uploadDir;
@@ -43,18 +49,18 @@ public class CommunityController {
     
     // 상세 (조회수 증가 포함)
     @GetMapping("/community/detail")
-    public String detail(@RequestParam Long postId, Model model) {
- 
-        service.updateReadcount(postId);          // 조회수 +1
-        
-        // 게시글 + 이미지 + 댓글을 하나의 post DTO에 담아 전달
+    public String detail(@RequestParam("postId") Long postId, Model model) {
+
         CommunityDto post = service.selectOne(postId);
-        List<ImageDto> imageList = service.selectImages(postId);      // 이미지
-        List<CommentDto> commentList = service.selectComments(postId); // 댓글
-        
-        post.setImageList(imageList);
-        post.setCommentList(commentList);
- 
+        if (post == null) {
+            return "redirect:/community/list";   // 없는 글이면 목록으로
+        }
+
+        service.updateReadcount(postId);   // 글이 있을 때만 조회수 +1
+
+        post.setImageList(service.selectImages(postId));
+        post.setCommentList(service.selectComments(postId));
+
         model.addAttribute("post", post);
         
         return "community/detail";
@@ -102,7 +108,7 @@ public class CommunityController {
  
     // 수정 폼 열기 (기존 글 채워서)
     @GetMapping("/community/edit")
-    public String editForm(@RequestParam Long postId, Model model, HttpSession session) {
+    public String editForm(@RequestParam("postId") Long postId, Model model, HttpSession session) {
  
         CommunityDto post = service.selectOne(postId);
  
@@ -139,7 +145,7 @@ public class CommunityController {
  
     // 삭제
     @PostMapping("/community/delete")
-    public String delete(@RequestParam Long postId, HttpSession session) {
+    public String delete(@RequestParam("postId") Long postId, HttpSession session) {
  
         CommunityDto post = service.selectOne(postId);
         if (!isOwner(post, session)) {

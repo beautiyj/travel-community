@@ -8,9 +8,10 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Insert title here</title>
-</head>
 <title>${post.title}</title>
+<link rel="stylesheet" href="${cp}/css/common.css">
+<link rel="stylesheet" href="${cp}/css/components/confirmModal.css">
+<link rel="stylesheet" href="${cp}/css/community.css">
 </head>
 <body>
 <c:set var="cp" value="${pageContext.request.contextPath}" />
@@ -19,8 +20,9 @@
 <c:set var="loginMember" value="${sessionScope.loginMember}" />
 <c:set var="isLoggedIn" value="${not empty loginMember}" />
 
-<%-- 본인 글 여부: 로그인 회원 memberId 와 글 작성자 memberId 비교 --%>
-<c:set var="isOwner" value="${isLoggedIn and loginMember.memberId == post.memberId}" />
+<%-- 본인 글 여부: 세션의 loginMember 는 memberId(Long) 자체
+     ※ 로그인 담당자가 MemberDto 를 담기로 하면 loginMember.memberId 로 바꿀 것 --%>
+<c:set var="isOwner" value="${isLoggedIn and loginMember eq post.memberId}" />
 
 <div class="detail-container">
 
@@ -39,7 +41,7 @@
       <c:if test="${isOwner}">
         <div class="post-actions">
           <a href="${cp}/community/edit?postId=${post.postId}" class="btn-edit">수정</a>
-          <button type="button" class="btn-delete" onclick="openDeleteModal()">삭제</button>
+          <button type="button" class="btn-delete" onclick="openModal('postDeleteModal')">삭제</button>
         </div>
       </c:if>
     </div>
@@ -163,10 +165,19 @@
 
 <!-- ───────── 삭제 확인 모달 (조각 파일) ───────── -->
 <c:if test="${isOwner}">
-  <jsp:include page="../common/confirmModal.jsp" />
+  <jsp:include page="../common/confirmModal.jsp">
+    <jsp:param name="modalId"     value="postDeleteModal" />
+    <jsp:param name="action"      value="/community/delete" />
+    <jsp:param name="title"       value="게시글 삭제" />
+    <jsp:param name="message"     value="삭제 후 복구할 수 없습니다. 정말 삭제하시겠습니까?" />
+    <jsp:param name="confirmText" value="삭제" />
+    <jsp:param name="hiddenName"  value="postId" />
+    <jsp:param name="hiddenValue" value="${post.postId}" />
+  </jsp:include>
 </c:if>
 
 
+<script src="${cp}/js/common.js"></script>
 <script>
   // 답글 입력창 열고/닫기 (React의 replyTo 토글)
   function toggleReply(commentId) {
@@ -175,15 +186,7 @@
       form.style.display = (form.style.display === 'none') ? 'block' : 'none';
     }
   }
-
-  // 삭제 모달 (React의 showDel 상태)
-  function openDeleteModal() {
-    document.getElementById('deleteModal').style.display = 'flex';
-  }
-  
-  function closeDeleteModal() {
-    document.getElementById('deleteModal').style.display = 'none';
-  }
+  // 모달 열기/닫기(openModal/closeModal)는 common.js 에 있음
 </script>
 </body>
 </html>

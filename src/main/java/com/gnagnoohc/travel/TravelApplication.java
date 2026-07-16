@@ -3,28 +3,11 @@ package com.gnagnoohc.travel;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.FilterType;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
-// 0716 yun 브랜치 서버 구동용 로직 추가 - 다른 브랜치에서는 해당 코드 제거/수정 후 테스트 권장
 @SpringBootApplication
-@ComponentScan(
-    basePackages = "com.gnagnoohc.travel",
-    excludeFilters = {
-        @ComponentScan.Filter(
-            type = FilterType.REGEX,
-            pattern = {
-                "com\\.gnagnoohc\\.travel\\.admin\\..*",
-                "com\\.gnagnoohc\\.travel\\.auth\\..*",
-                "com\\.gnagnoohc\\.travel\\.batch\\..*",
-                "com\\.gnagnoohc\\.travel\\.community\\..*",
-                "com\\.gnagnoohc\\.travel\\.mypage\\..*",
-                "com\\.gnagnoohc\\.travel\\.reservation\\..*"
-            }
-        )
-    }
-)
-@MapperScan("com.gnagnoohc.travel.tour.**.mapper")
+@EnableScheduling   // 예약 만료 스케줄러(@Scheduled) 활성화
+@MapperScan("com.gnagnoohc.travel.tour.**.mapper")   // tour 파트 매퍼 스캔 (yun)
 public class TravelApplication {
 
 	public static void main(String[] args) {

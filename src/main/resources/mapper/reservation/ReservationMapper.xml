@@ -1,10 +1,63 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.gnagnoohc.travel.reservation.mapper.ReservationMapper">
 
-    <!-- <select id="selectReservationList" resultType="reservationDto">
-        SELECT * FROM reservation_table
-    </select> -->
+    <sql id="reservationColumns">
+        reservation_id AS reservationId,
+        member_id      AS memberId,
+        place_id       AS placeId,
+        visitor_name   AS visitorName,
+        phone,
+        visit_date     AS visitDate,
+        headcount,
+        status,
+        created_at     AS createdAt
+    </sql>
+
+    <insert id="insert" parameterType="com.gnagnoohc.travel.reservation.entity.Reservation"
+            useGeneratedKeys="true" keyProperty="reservationId">
+        INSERT INTO RESERVATION
+            (member_id, place_id, visitor_name, phone, visit_date, headcount, status)
+        VALUES
+            (#{memberId}, #{placeId}, #{visitorName}, #{phone}, #{visitDate}, #{headcount}, #{status})
+    </insert>
+
+    <select id="findById" resultType="com.gnagnoohc.travel.reservation.entity.Reservation">
+        SELECT <include refid="reservationColumns"/>
+        FROM RESERVATION
+        WHERE reservation_id = #{reservationId}
+    </select>
+
+    <select id="findByMemberId" resultType="com.gnagnoohc.travel.reservation.entity.Reservation">
+        SELECT <include refid="reservationColumns"/>
+        FROM RESERVATION
+        WHERE member_id = #{memberId}
+        ORDER BY created_at DESC
+    </select>
+
+    <update id="updateStatus">
+        UPDATE RESERVATION
+        SET status = #{status}
+        WHERE reservation_id = #{reservationId}
+    </update>
+
+    <!-- 슬롯 선점 체크: 활성 상태(예약중/예약완료)인 동일 장소·날짜 예약 수 -->
+    <select id="countActive" resultType="int">
+        SELECT COUNT(*)
+        FROM RESERVATION
+        WHERE member_id = #{memberId}
+          AND place_id = #{placeId}
+          AND visit_date = #{visitDate}
+          AND status IN ('예약중', '예약완료')
+    </select>
+
+    <!-- 스케줄러: 30분 지난 미결제 건 일괄 만료 -->
+    <update id="expirePending">
+        UPDATE RESERVATION
+        SET status = '예약만료'
+        WHERE status = '예약중'
+          AND created_at &lt; #{cutoff}
+    </update>
 
 </mapper>

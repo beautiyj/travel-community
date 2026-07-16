@@ -7,6 +7,9 @@
 <head>
 <meta charset="UTF-8">
 <title>게시글 수정</title>
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/common.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/buttonComponent.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/community.css">
 </head>
 <body>
 <c:set var="cp" value="${pageContext.request.contextPath}" />
@@ -79,15 +82,26 @@
       <div id="preview"></div>
     </div>
 
-    <!-- 버튼 -->
-    <div class="btn-group">
-      <a href="${cp}/community/detail?postId=${post.postId}" class="btn btn-cancel">취소</a>
-      <button type="submit" class="btn btn-submit">수정 완료</button>
+    <!-- 버튼: 취소는 buttonComponent 를 내비게이션 용도로, 수정 완료는 순수 제출 버튼으로 -->
+    <div class="form-actions">
+      <div class="btn-nav-wrap" data-btn-nav="${cp}/community/detail?postId=${post.postId}">
+        <jsp:include page="../common/buttonComponent.jsp">
+          <jsp:param name="text"  value="취소" />
+          <jsp:param name="color" value="var(--card)" />
+        </jsp:include>
+      </div>
+
+      <div class="btn-submit-wrap">
+        <jsp:include page="../common/buttonComponent.jsp">
+          <jsp:param name="text" value="수정 완료" />
+        </jsp:include>
+      </div>
     </div>
 
   </form>
 </div>
 
+<script src="${cp}/js/common.js"></script>
 <script>
   const input = document.getElementById('images');
   const preview = document.getElementById('preview');

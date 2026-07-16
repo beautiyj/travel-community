@@ -62,6 +62,7 @@
   <div class="table">
     <div class="table-head row">
       <span>카테고리</span>
+      <span></span>
       <span>제목</span>
       <span>작성자</span>
       <span>작성일</span>
@@ -87,6 +88,12 @@
               <jsp:param name="place_type" value="${placeType}" />
               <jsp:param name="text"       value="${post.category}" />
             </jsp:include>
+            <%-- 썸네일: 이 글의 sort_order=0 인 이미지. 없으면 빈 회색 박스 --%>
+            <span class="thumb">
+              <c:if test="${not empty post.thumbnailUrl}">
+                <img src="${cp}/upload/${post.thumbnailUrl}" alt="">
+              </c:if>
+            </span>
             <span class="post-title">${post.title}</span>
             <span class="cell-muted">${post.nickname}</span>
             <span class="cell-muted">
@@ -98,6 +105,7 @@
           </a>
         </c:forEach>
       </c:when>
+
 
       <%-- 게시글이 없을 때 --%>
       <c:otherwise>

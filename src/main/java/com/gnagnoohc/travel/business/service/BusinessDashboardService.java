@@ -69,7 +69,7 @@ public class BusinessDashboardService {
         return overview;
     }
 
-    private String todayLabel() {
+    public String todayLabel() {
         LocalDate today = LocalDate.now();
         String dow = KOREAN_DAY_OF_WEEK[today.getDayOfWeek().getValue() - 1];
         return today.format(DateTimeFormatter.ofPattern("yyyy년 M월 d일")) + " (" + dow + ")";

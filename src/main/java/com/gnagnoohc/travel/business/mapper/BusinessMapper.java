@@ -8,6 +8,7 @@ import com.gnagnoohc.travel.business.dto.BusinessPlaceRegisterDto;
 import com.gnagnoohc.travel.business.dto.BusinessPlaceUpdateDto;
 //import com.gnagnoohc.travel.business.dto.BusinessRegionOptionDto;
 import com.gnagnoohc.travel.business.dto.BusinessReservationDto;
+import com.gnagnoohc.travel.business.dto.BusinessReservationStatusCountsDto;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -28,6 +29,12 @@ public interface BusinessMapper {
             @Param("placeId") Long placeId,
             @Param("bizMemberId") Long bizMemberId,
             @Param("status") String status
+    );
+
+    // 예약 관리 화면 상태별 필터 탭에 표시할 개수 (대기중/확정/완료/취소)
+    BusinessReservationStatusCountsDto selectReservationStatusCounts(
+            @Param("placeId") Long placeId,
+            @Param("bizMemberId") Long bizMemberId
     );
 
     int updateReservationStatus(

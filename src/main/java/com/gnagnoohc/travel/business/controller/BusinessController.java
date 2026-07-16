@@ -73,6 +73,8 @@ public class BusinessController {
         model.addAttribute("cancelRequestCount", ctx.getCancelRequestCount());
         model.addAttribute("statusOptions", RESERVATION_STATUS_OPTIONS);
         model.addAttribute("statusFilter", status == null ? "전체" : status);
+        model.addAttribute("statusCounts", businessReservationService.getStatusCounts(ctx.getPlaceId(), memberId));
+        model.addAttribute("todayLabel", businessDashboardService.todayLabel());
         model.addAttribute("reservations", reservations);
 
         return "business/reservations";
@@ -92,6 +94,24 @@ public class BusinessController {
         return "redirect:/business/reservations?memberId=" + memberId;
     }
 
+    //마감 관리 : 즉시 예약 마감 토글 화면
+    @GetMapping("/business/closure")
+    public String closure(@RequestParam(defaultValue = "1") Long memberId, Model model) {
+        BusinessSidebarContextDto ctx = businessDashboardService.getSidebarContext(memberId);
+
+        model.addAttribute("memberId", memberId);
+        model.addAttribute("bizName", ctx.getPlaceName());
+        model.addAttribute("ownerName", ctx.getOwnerName());
+        model.addAttribute("isClosed", ctx.isClosed());
+        model.addAttribute("bizFirstImage", ctx.getFirstImage());
+        model.addAttribute("pendingCount", ctx.getPendingCount());
+        model.addAttribute("cancelRequestCount", ctx.getCancelRequestCount());
+        model.addAttribute("placeId", ctx.getPlaceId());
+
+        return "business/closure";
+    }
+
+    //업소관리
     @GetMapping("/business/venue")
     public String venue(
             @RequestParam(defaultValue = "1") Long memberId,
@@ -129,6 +149,7 @@ public class BusinessController {
         return "business/venue";
     }
 
+    //업소 등록
     @PostMapping("/business/venue/register")
     public String registerVenue(
             @RequestParam Long memberId,
@@ -143,6 +164,7 @@ public class BusinessController {
         return "redirect:/business/venue?memberId=" + memberId;
     }
 
+    //업소 정보 수정
     @PostMapping("/business/venue/update")
     public String updateVenue(
             @RequestParam Long memberId,

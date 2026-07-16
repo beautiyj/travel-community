@@ -1,6 +1,7 @@
 package com.gnagnoohc.travel.business.service;
 
 import com.gnagnoohc.travel.business.dto.BusinessReservationDto;
+import com.gnagnoohc.travel.business.dto.BusinessReservationStatusCountsDto;
 import com.gnagnoohc.travel.business.mapper.BusinessMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -15,6 +16,10 @@ public class BusinessReservationService {
 
     public List<BusinessReservationDto> getReservations(Long placeId, Long bizMemberId, String status) {
         return businessMapper.selectReservationsByPlace(placeId, bizMemberId, status);
+    }
+
+    public BusinessReservationStatusCountsDto getStatusCounts(Long placeId, Long bizMemberId) {
+        return businessMapper.selectReservationStatusCounts(placeId, bizMemberId);
     }
 
     public void accept(Long reservationId, Long bizMemberId) {

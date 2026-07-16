@@ -1,0 +1,190 @@
+/* cardComponent.jsp 일반 카드 컴포넌트(숙박 맛집 여행지) */
+
+/* 카드 전체 외부 컨테이너 */
+.tour-card-col {
+  background: var(--card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  padding: 2px;
+  margin-right: 25px;
+}
+
+/* 내부 콘텐츠 래퍼 */
+.tour-card-body {
+  align-self: stretch;
+  padding: 16px 15px;
+}
+
+.tour-card-full-width {
+  align-self: stretch;
+}
+
+/* 텍스트 정보 수직 레이아웃 */
+.tour-card-info-col {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding-top: 10px;
+  gap: 4px;
+}
+
+/* 카드 내 썸네일/아이콘 이미지 규격 */
+.tour-card-img-main {
+  width: 31px;
+  height: 31px;
+  object-fit: fill;
+}
+
+.tour-card-img-star {
+  width: 11px;
+  height: 11px;
+  object-fit: fill;
+}
+
+.tour-card-img-marker {
+  width: 13px;
+  height: 13px;
+  object-fit: fill;
+}
+
+/* 상단 카드 헤더 배경 (피그마 그라데이션 이미지 매핑) */
+.tour-card-header-bg {
+  align-self: stretch;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 11px 12px 148px 12px;
+  background-image: url('https://storage.googleapis.com/tagjs-prod.appspot.com/v1/sdkNAxW71L/kxj3k02n_expires_30_days.png');
+  background-size: 100% 100%;
+}
+
+/* 수평 정렬 뷰셋 */
+.tour-card-row-center {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  padding-top: 4px;
+  gap: 4px;
+}
+
+.tour-card-row-between {
+  align-self: stretch;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 8px;
+}
+
+.tour-card-row-gap5 {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.tour-card-row-gap4 {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tour-card-row-gap3 {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* 텍스트 스타일 세트 (디자인 토큰 바인딩) */
+.tour-card-txt-success {
+  color: #007A55;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-bold);
+}
+
+.tour-card-txt-title {
+  color: var(--foreground);
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-bold);
+}
+
+.tour-card-txt-muted {
+  color: var(--muted-foreground);
+  font-size: var(--text-sm);
+}
+
+.tour-card-txt-warning {
+  color: #E17100;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+}
+
+.tour-card-txt-caption {
+  color: var(--muted-foreground);
+  font-size: var(--text-xs);
+}
+
+.tour-card-txt-primary {
+  color: var(--primary);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+}
+
+.tour-card-txt-accent {
+  color: var(--accent-foreground);
+  font-size: var(--text-xs);
+}
+
+/* 배경 뱃지 전용 컨테이너 */
+.tour-card-badge-container {
+  align-self: stretch;
+  background: var(--secondary);
+}
+
+.tour-card-badge-col {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 3px;
+}
+
+.tour-card-badge-green {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  background: #D0FAE5;
+  border-radius: var(--radius-full);
+  padding-bottom: 4px;
+  padding-left: 9px;
+  padding-right: 9px;
+}
+
+.tour-card-badge-layout {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.tour-card-badge-sky {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  background: var(--secondary);
+  border-radius: var(--radius-full);
+  padding: 1px 7px;
+}
+
+.tour-card-badge-sky-alt {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  background: var(--secondary);
+  border-radius: var(--radius-full);
+  padding-top: 2px;
+  padding-left: 7px;
+  padding-right: 7px;
+}

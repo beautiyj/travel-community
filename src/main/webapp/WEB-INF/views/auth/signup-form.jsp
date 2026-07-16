@@ -7,6 +7,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${businessMember ? '사업자 회원가입' : '일반 회원가입'} | Travel Community</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/auth/auth.css">
+    <%-- 회원가입 검증 모듈을 먼저 로드한 뒤 화면·API 로직을 실행한다. --%>
+    <script defer src="${pageContext.request.contextPath}/js/auth/signup-validation.js"></script>
     <script defer src="${pageContext.request.contextPath}/js/auth/signup.js"></script>
 </head>
 <body class="auth-page">
@@ -54,14 +56,15 @@
 
         <div class="form-field">
             <label for="password">비밀번호</label>
-            <input id="password" name="password" type="password" maxlength="64"
+            <%-- 프론트 검증 및 SignUpRequest의 비밀번호 정책과 동일하게 최대 20자로 제한한다. --%>
+            <input id="password" name="password" type="password" maxlength="20"
                    autocomplete="new-password" placeholder="영문과 숫자를 포함한 8자 이상 20자 이하" required>
             <p id="passwordError" class="field-error" aria-live="polite"></p>
         </div>
 
         <div class="form-field">
             <label for="passwordConfirm">비밀번호 확인</label>
-            <input id="passwordConfirm" name="passwordConfirm" type="password" maxlength="64"
+            <input id="passwordConfirm" name="passwordConfirm" type="password" maxlength="20"
                    autocomplete="new-password" placeholder="비밀번호를 다시 입력하세요" required>
             <p id="passwordConfirmError" class="field-error" aria-live="polite"></p>
             <p id="passwordConfirmSuccess" class="field-success" aria-live="polite"></p>
@@ -103,7 +106,8 @@
         <div class="form-field">
             <label for="nickname">닉네임</label>
             <div class="input-action-row">
-                <input id="nickname" name="nickname" type="text" maxlength="20"
+                <%-- 닉네임 정책(2~10자)에 맞춰 브라우저 입력 길이를 제한한다. --%>
+                <input id="nickname" name="nickname" type="text" maxlength="10"
                        placeholder="2~10자로 입력하세요" required>
                 <button id="checkNicknameButton" class="secondary-button" type="button">중복 확인</button>
             </div>

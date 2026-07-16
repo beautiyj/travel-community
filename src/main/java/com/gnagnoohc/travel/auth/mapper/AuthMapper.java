@@ -3,23 +3,32 @@ package com.gnagnoohc.travel.auth.mapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
-import com.gnagnoohc.travel.auth.model.Member;
+import com.gnagnoohc.travel.auth.dto.VerifiedSignupEmail;
 import com.gnagnoohc.travel.auth.model.EmailVerification;
+import com.gnagnoohc.travel.auth.model.Member;
 import com.gnagnoohc.travel.auth.model.MemberLocalAuth;
 
 @Mapper
 public interface AuthMapper {
 
+	// 회원가입 정보 저장
 	int memberSignUp(Member member);
 
 	int localMemberJoin(MemberLocalAuth memberLocalAuth);
 
-	int checkNickname(@Param("nickname") String nickname);
+	// 로그인 검증
+	// 활성 로컬 계정의 로그인 검증에 필요한 member_id와 비밀번호 해시만 조회한다.
+	MemberLocalAuth findLocalLoginAuth(@Param("loginId") String loginId);
 
+	// 회원가입 입력값 중복 확인
 	int checkLoginId(@Param("loginId") String loginId);
 
-	// 회원가입 완료 전에 가장 최근 인증 성공 여부를 조회한다.
-	EmailVerification findLatestEmailVerification(
+	int checkNickname(@Param("nickname") String nickname);
+
+	// 이메일 인증
+	// 세션이 가리키는 정확한 인증 행을 잠가 가입 중 재사용을 막는다.
+	VerifiedSignupEmail findVerifiedSignupEmailForUpdate(
+			@Param("emailVerificationId") long emailVerificationId,
 			@Param("email") String email,
 			@Param("purpose") String purpose);
 
@@ -44,5 +53,10 @@ public interface AuthMapper {
 
 	// 인증 성공 시각을 기록한다.
 	int markEmailVerificationVerified(@Param("emailVerificationId") long emailVerificationId);
+
+	// 회원가입에 사용한 인증 행을 생성된 회원과 연결해 한 번만 소비한다.
+	int consumeSignupEmailVerification(
+			@Param("emailVerificationId") long emailVerificationId,
+			@Param("memberId") int memberId);
 
 }

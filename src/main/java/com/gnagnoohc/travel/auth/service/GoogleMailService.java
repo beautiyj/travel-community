@@ -14,12 +14,14 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class GoogleMailService {
 
+	// SMTP 발신 계정
 	// Google SMTP 계정은 코드에 직접 넣지 않고 spring.mail.username으로 주입한다.
 	private final JavaMailSender mailSender;
 
 	@Value("${spring.mail.username}")
 	private String fromAddress;
 
+	// 인증번호 이메일 발송
 	// 인증번호 메일의 제목과 본문을 만들고 SMTP 서버로 발송한다.
 	// 발신 주소는 클라이언트 입력을 받지 않아 다른 주소로 위조할 수 없게 한다.
 	public void sendVerificationCode(String recipient, String verificationCode) {

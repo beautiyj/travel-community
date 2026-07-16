@@ -163,7 +163,7 @@
 
 <!-- ───────── 삭제 확인 모달 (조각 파일) ───────── -->
 <c:if test="${isOwner}">
-  <jsp:include page="../common/deleteModal.jsp" />
+  <jsp:include page="../common/confirmModal.jsp" />
 </c:if>
 
 

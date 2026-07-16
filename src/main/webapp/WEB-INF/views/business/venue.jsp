@@ -39,7 +39,7 @@
 
                             <div class="business-form-group">
                                 <div class="venue-photo-header">
-                                    <label class="business-form-label">업체 사진 <span class="venue-photo-header__count">(<span id="venue-photos-count">0</span>/5)</span></label>
+                                    <label class="business-form-label">업체 사진 <span class="venue-photo-header__count">(<span class="venue-photos-count" id="venue-photos-count">0</span>/5)</span></label>
                                     <span class="venue-photo-header__hint">첫 번째 사진이 대표 이미지로 사용됩니다</span>
                                 </div>
 
@@ -79,11 +79,11 @@
 
                                     <div class="business-form-group">
                                         <div class="venue-photo-header">
-                                            <label class="business-form-label">업체 사진 <span class="venue-photo-header__count">(<span id="venue-photos-count">${placeDetail.images.size()}</span>/5)</span></label>
+                                            <label class="business-form-label">업체 사진 <span class="venue-photo-header__count">(<span class="venue-photos-count" id="venue-photos-count-edit">${placeDetail.images.size()}</span>/5)</span></label>
                                             <span class="venue-photo-header__hint">첫 번째 사진이 대표 이미지로 사용됩니다</span>
                                         </div>
 
-                                        <div id="venue-photos-grid" class="venue-photo-grid" data-order-field="photoOrder">
+                                        <div id="venue-photos-grid-edit" class="venue-photo-grid" data-order-field="photoOrder">
                                             <c:forEach var="img" items="${placeDetail.images}" varStatus="loop">
                                                 <div class="venue-photo-grid__item venue-photo-grid__item--existing${loop.index == 0 ? ' venue-photo-grid__item--main' : ''}" draggable="true">
                                                     <img src="${img}" alt="사진 ${loop.index + 1}" />

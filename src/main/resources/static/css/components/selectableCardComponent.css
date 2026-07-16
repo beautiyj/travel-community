@@ -8,8 +8,7 @@
   padding: 36px 32px;
   cursor: pointer;
   box-sizing: border-box;
-  width: 100%;
-  max-width: 480px;
+  width: 320px;
   position: relative;
   transition: background-color var(--transition-fast) ease,
               border-color var(--transition-fast) ease,

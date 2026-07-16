@@ -2,13 +2,12 @@
 
 .btn-selectable {
   display: inline-flex;
-  flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
   background: none;
-  border-radius: var(--radius-md);
-  padding: 7px 14px;
-  text-align: left;
+  border-radius: var(--radius-lg);
+  padding: 14px 32px;
+  text-align: center;
   cursor: pointer;
   transition: background-color var(--transition-fast) ease, 
               border-color var(--transition-fast) ease, 
@@ -20,9 +19,9 @@
 }
 
 .btn-selectable-text {
-  font-size: var(--text-xs);
+  font-size: var(--text-base);
   font-weight: var(--font-weight-bold);
-  line-height: 1.2;
+  white-space: nowrap;
 }
 
 /* 기본 계통 테마 (Primary) */

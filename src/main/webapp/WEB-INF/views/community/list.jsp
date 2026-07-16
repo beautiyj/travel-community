@@ -74,19 +74,9 @@
       <c:when test="${not empty postList}">
         <c:forEach var="post" items="${postList}">
 
-          <%-- 카테고리(한글) → tagButton 의 place_type(영문) 매핑
-               tagButton 은 원래 장소 분류(food/stay/tour)용이라 완전히 같은 색은 아니지만
-               가장 가까운 톤으로 맞춤: 후기→tour(초록) / 모집→food(주황) / 일반→default(회색) --%>
-          <c:choose>
-            <c:when test="${post.category eq '후기'}"><c:set var="placeType" value="tour" /></c:when>
-            <c:when test="${post.category eq '모집'}"><c:set var="placeType" value="food" /></c:when>
-            <c:otherwise><c:set var="placeType" value="" /></c:otherwise>
-          </c:choose>
-
           <a href="${cp}/community/detail?postId=${post.postId}" class="post-row row">
-            <jsp:include page="../common/tagButton.jsp">
-              <jsp:param name="place_type" value="${placeType}" />
-              <jsp:param name="text"       value="${post.category}" />
+            <jsp:include page="../common/postCategoryTag.jsp">
+              <jsp:param name="category" value="${post.category}" />
             </jsp:include>
             <%-- 썸네일: 이 글의 sort_order=0 인 이미지. 없으면 빈 회색 박스 --%>
             <span class="thumb">

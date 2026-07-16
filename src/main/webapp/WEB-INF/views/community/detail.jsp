@@ -240,15 +240,6 @@
 
 
 <script src="${cp}/js/common.js"></script>
-<script>
-  // 답글 입력창 열고/닫기 (React의 replyTo 토글)
-  function toggleReply(commentId) {
-    const form = document.getElementById('reply-form-' + commentId);
-    if (form) {
-      form.style.display = (form.style.display === 'none') ? 'block' : 'none';
-    }
-  }
-  // 모달 열기/닫기(openModal/closeModal)는 common.js 에 있음
-</script>
+<script src="${cp}/js/community/postDetail.js"></script>
 </body>
 </html>

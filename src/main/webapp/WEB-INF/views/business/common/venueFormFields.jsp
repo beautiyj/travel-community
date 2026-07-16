@@ -9,6 +9,7 @@
 - name        : 업소명 값 (등록은 미전달 → 빈 값, 수정은 기존 값 채움)
 - placeType   : 업종 코드 값 ("1"/"2"/"3", 등록은 미전달)
 - address     : 주소 값 (등록은 미전달)
+- addressDetail : 상세주소 값 (등록은 미전달)
 - description : 소개 값 (등록은 미전달)
 --%>
 <div class="business-form-group">
@@ -24,7 +25,7 @@
         <option value="3" ${param.placeType == '3' ? 'selected' : ''}>관광지</option>
     </select>
 </div>
-
+<%--todo:주석내용 처리후 삭제--%>
 <%-- 지역코드는 당분간 사업자 직접등록 업소엔 null로 두기로 해서 지역 선택 UI 잠시 주석처리
 <div class="business-form-group">
     <label class="business-form-label" for="${param.idPrefix}regionId">지역</label>
@@ -39,7 +40,11 @@
 
 <div class="business-form-group">
     <label class="business-form-label" for="${param.idPrefix}address">주소</label>
-    <input class="business-form-input" type="text" id="${param.idPrefix}address" name="address" value="${param.address}" required />
+    <div class="business-form-row">
+        <input class="business-form-input" type="text" id="${param.idPrefix}address" name="address" value="${param.address}" readonly required />
+        <button type="button" class="business-btn business-btn--outline js-address-search" data-target-prefix="${param.idPrefix}">주소 검색</button>
+    </div>
+    <input class="business-form-input" type="text" id="${param.idPrefix}addressDetail" name="addressDetail" placeholder="상세주소 입력" value="${param.addressDetail}" />
 </div>
 
 <div class="business-form-group">

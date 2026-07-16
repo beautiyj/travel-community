@@ -9,14 +9,15 @@ import lombok.Data;
 @Data
 @Alias("emailverification")
 public class EmailVerification {
-	private Long email_verification_id;
+	// Java 프로퍼티는 camelCase로 두고 DB snake_case 컬럼은 AuthMapper에서 연결한다.
+	private Long emailVerificationId;
 	private String email;
 	private String purpose;
-	private String code_hash;
-	private Timestamp expires_at;
-	private Timestamp verified_at;
-	private int attempt_count;
-	private int resend_count;
-	private Timestamp created_at;
-	private Long member_id;
+	private String codeHash;
+	private Timestamp expiresAt;
+	private Timestamp verifiedAt;
+	private int attemptCount;
+	private int resendCount;
+	private Timestamp createdAt;
+	private Long memberId;
 }

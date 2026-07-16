@@ -9,13 +9,14 @@ import lombok.Data;
 @Data
 @Alias("memberlocalauth")
 public class MemberLocalAuth {
+	// Java 프로퍼티는 camelCase로 두고 DB snake_case 컬럼은 AuthMapper에서 연결한다.
 	private String username;
-	private String password_hash;
-	private Timestamp password_updated_at;
-	private int failed_login_count;
-	private Timestamp locked_until;
-	private Timestamp created_at;
-	private Timestamp updated_at;
-	private int member_id;
+	private String passwordHash;
+	private Timestamp passwordUpdatedAt;
+	private int failedLoginCount;
+	private Timestamp lockedUntil;
+	private Timestamp createdAt;
+	private Timestamp updatedAt;
+	private int memberId;
 
 }

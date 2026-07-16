@@ -3,45 +3,81 @@
 
 <mapper namespace="com.gnagnoohc.travel.auth.mapper.AuthMapper">
 
+	<!-- 이메일 인증: 전체 컬럼 조회 결과를 camelCase Java 필드에 명시적으로 매핑한다. -->
+	<resultMap id="emailVerificationResultMap" type="emailverification">
+		<id column="email_verification_id" property="emailVerificationId"/>
+		<result column="email" property="email"/>
+		<result column="purpose" property="purpose"/>
+		<result column="code_hash" property="codeHash"/>
+		<result column="expires_at" property="expiresAt"/>
+		<result column="verified_at" property="verifiedAt"/>
+		<result column="attempt_count" property="attemptCount"/>
+		<result column="resend_count" property="resendCount"/>
+		<result column="created_at" property="createdAt"/>
+		<result column="member_id" property="memberId"/>
+	</resultMap>
+
+	<!-- 회원가입: 회원 공통 정보를 저장하고 생성된 member_id를 반환한다. -->
 	<insert id="memberSignUp" parameterType="member"
-		useGeneratedKeys="true" keyProperty="member_id" keyColumn="member_id">
-		insert into
-		member(name, login_id, email, nickname, member_type, phone, gender,
-		birth,
-		profile_img_url, signup_type, member_status, email_verified,
-		email_verified_at)
-		values(#{name},#{login_id},#{email}, #{nickname},#{member_type},#{phone},#{gender},#{birth},#{profile_img_url},'LOCAL', 'ACTIVE', #{email_verified},#{email_verified_at})
+		useGeneratedKeys="true" keyProperty="memberId" keyColumn="member_id">
+		insert into member(
+			name, login_id, email, nickname, member_type, phone, gender,
+			birth, profile_img_url, signup_type, member_status, email_verified,
+			email_verified_at
+		)
+		values(
+			#{name}, #{loginId}, #{email}, #{nickname}, #{memberType}, #{phone}, #{gender},
+			#{birth}, #{profileImgUrl}, 'LOCAL', 'ACTIVE', #{emailVerified}, #{emailVerifiedAt}
+		)
 	</insert>
 
+	<!-- 회원가입: 로컬 로그인 인증 정보를 저장한다. -->
 	<insert id="localMemberJoin" parameterType="memberlocalauth">
-		insert into
-		member_local_auth(username, password_hash, password_updated_at,
-		failed_login_count, member_id) values(#{username}, #{password_hash}, sysdate(), 0, #{member_id})
+		insert into member_local_auth(
+			username, password_hash, password_updated_at, failed_login_count, member_id
+		)
+		values(#{username}, #{passwordHash}, sysdate(), 0, #{memberId})
 	</insert>
-	
-	<select id="checkNickname" parameterType="String" resultType="int">
-		select count(*) from member where nickname=#{nickname}
+
+	<!-- 로그인: 활성·미탈퇴 로컬 계정의 member_id와 비밀번호 해시만 조회한다. -->
+	<select id="findLocalLoginAuth" resultType="memberlocalauth">
+		select local_auth.member_id AS memberId,
+			local_auth.password_hash AS passwordHash
+		from member_local_auth local_auth
+		inner join member member_info
+			on member_info.member_id = local_auth.member_id
+		where local_auth.username = #{loginId}
+			and member_info.member_status = 'ACTIVE'
+			and member_info.deleted_at is null
+		limit 1
 	</select>
 
+	<!-- 회원가입: 아이디와 닉네임의 중복 여부를 조회한다. -->
 	<select id="checkLoginId" parameterType="String" resultType="int">
 		select count(*) from member where login_id=#{loginId}
 	</select>
 
-	<!-- 회원가입에 사용할 가장 최근 인증 기록을 조회한다. -->
-	<select id="findLatestEmailVerification" resultType="emailverification">
-		select email_verification_id, email, purpose, code_hash, expires_at,
-			verified_at, attempt_count, resend_count, created_at, member_id
+	<select id="checkNickname" parameterType="String" resultType="int">
+		select count(*) from member where nickname=#{nickname}
+	</select>
+
+	<!-- 이메일 인증: 세션이 가리키는 정확한 인증 행을 잠가 가입 중 중복 소비를 방지한다. -->
+	<select id="findVerifiedSignupEmailForUpdate" resultType="verifiedsignupemail">
+		select email_verification_id AS emailVerificationId,
+			email,
+			verified_at AS verifiedAt
 		from email_verification
-		where email = #{email}
+		where email_verification_id = #{emailVerificationId}
+			and email = #{email}
 			and purpose = #{purpose}
-		order by email_verification_id desc
-		limit 1
+			and verified_at is not null
+			and member_id is null
+		for update
 	</select>
 
 	<!-- 발송/검증 중 같은 이메일의 최신 행을 잠가 동시 처리를 조정한다. -->
-	<select id="findLatestEmailVerificationForUpdate" resultType="emailverification">
-		select email_verification_id, email, purpose, code_hash, expires_at,
-			verified_at, attempt_count, resend_count, created_at, member_id
+	<select id="findLatestEmailVerificationForUpdate" resultMap="emailVerificationResultMap">
+		select *
 		from email_verification
 		where email = #{email}
 			and purpose = #{purpose}
@@ -68,14 +104,14 @@
 
 	<!-- 발송마다 새 행을 만들어 이력을 남기므로 resend_count 없이도 기간별 집계가 가능하다. -->
 	<insert id="insertEmailVerification" parameterType="emailverification"
-		useGeneratedKeys="true" keyProperty="email_verification_id"
+		useGeneratedKeys="true" keyProperty="emailVerificationId"
 		keyColumn="email_verification_id">
 		insert into email_verification(
 			email, purpose, code_hash, expires_at, attempt_count,
 			resend_count, member_id
 		)
 		values(
-			#{email}, #{purpose}, #{code_hash}, #{expires_at}, 0, 0, null
+			#{email}, #{purpose}, #{codeHash}, #{expiresAt}, 0, 0, null
 		)
 	</insert>
 
@@ -92,5 +128,15 @@
 		set verified_at = now()
 		where email_verification_id = #{emailVerificationId}
 			and verified_at is null
+	</update>
+
+	<!-- 회원가입: 인증 행을 회원과 연결하며 member_id가 비어 있을 때만 한 번 소비한다. -->
+	<update id="consumeSignupEmailVerification">
+		update email_verification
+		set member_id = #{memberId}
+		where email_verification_id = #{emailVerificationId}
+			and purpose = 'SIGNUP'
+			and verified_at is not null
+			and member_id is null
 	</update>
 </mapper>

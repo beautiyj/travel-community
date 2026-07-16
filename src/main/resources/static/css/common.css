@@ -51,6 +51,9 @@
 
   --ring:                   #7dd3fc;   /* 포커스 링 (입력창 클릭 시) */
 
+  --white:                  #ffffff;   /* selectableButton / selectableCardComponent 가 참조 */
+  --transition-fast:        150ms;     /* searchbar / selectableButton / smallButton / selectableCardComponent 가 참조 */
+
   /* 모서리 둥글기 토큰 (Radii) */
   --radius-sm:              6px;
   --radius-md:              12px;
@@ -213,3 +216,13 @@ a {
   cursor: pointer; 
 } /* 헤더 텍스트 링크 (기본: 흐린 글자). 페이지별로 색 override 가능 */
 
+.btn-primary {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 7px 16px;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+} /* 헤더의 '회원가입' 버튼. navbar 는 모든 페이지에서 공유하므로 여기(common.css)에 둠 */

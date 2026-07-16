@@ -2,51 +2,6 @@
 <%@ taglib prefix="c"  uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
-<%--
-  공통 확인 모달 (재사용 조각 파일) — 삭제 / 예약 취소 / 회원 탈퇴 등 되돌릴 수 없는 동작 전 확인
-  위치: /WEB-INF/views/common/confirmModal.jsp
-
-  파라미터
-    modalId     : 모달 DOM id. 한 페이지에 여러 개 둘 때 구분 (기본 confirmModal)
-    action      : [필수] 컨텍스트 경로를 뺀 폼 전송 경로 (예: /community/delete)
-    method      : 폼 method (기본 post)
-    title       : 모달 제목 (기본 확인)
-    message     : 본문 문구 (기본 이 작업은 되돌릴 수 없습니다. 계속하시겠습니까?)
-    hiddenName  : 함께 보낼 hidden 파라미터 이름. 여러 번 넘기면 여러 개 생성
-    hiddenValue : hidden 값. hiddenName 과 같은 순서로 짝을 맞출 것
-                  첫 번째 hidden 은 openModal(id, value) 로 값을 나중에 주입 가능
-    confirmText : 확정 버튼 라벨 (기본 확인)
-    cancelText  : 취소 버튼 라벨 (기본 취소)
-    tone        : 확정 버튼 색 — danger(기본, 빨강) | primary(파랑)
-                  ※ 버튼은 buttonComponent.jsp 를 include 해서 그림 (같은 폴더에 있어야 함)
-
-  사용 예 1) 게시글 삭제 — 값이 고정
-    <jsp:include page="/WEB-INF/views/common/confirmModal.jsp">
-      <jsp:param name="modalId"     value="postDeleteModal" />
-      <jsp:param name="action"      value="/community/delete" />
-      <jsp:param name="title"       value="게시글 삭제" />
-      <jsp:param name="message"     value="삭제 후 복구할 수 없습니다. 정말 삭제하시겠습니까?" />
-      <jsp:param name="confirmText" value="삭제" />
-      <jsp:param name="hiddenName"  value="postId" />
-      <jsp:param name="hiddenValue" value="${post.postId}" />
-    </jsp:include>
-
-  사용 예 2) 예약 취소 — 목록에서 행마다 값이 다를 때 (모달 1개 재사용)
-    <button type="button" onclick="openModal('reservationCancelModal', ${r.reservationId})">예약 취소</button>
-
-    <jsp:include page="/WEB-INF/views/common/confirmModal.jsp">
-      <jsp:param name="modalId"     value="reservationCancelModal" />
-      <jsp:param name="action"      value="/mypage/reservation/cancel" />
-      <jsp:param name="title"       value="예약 취소" />
-      <jsp:param name="message"     value="취소하면 되돌릴 수 없고 환불 규정에 따라 수수료가 발생할 수 있습니다." />
-      <jsp:param name="confirmText" value="예약 취소" />
-      <jsp:param name="cancelText"  value="닫기" />
-      <jsp:param name="hiddenName"  value="reservationId" />
-    </jsp:include>
-
-  필요 리소스: common.css → buttonComponent.css, confirmModal.css, common.js
-  ※ cp(contextPath)는 page scope 라 조각 파일에서 다시 선언
---%>
 <c:set var="cp" value="${pageContext.request.contextPath}" />
 
 <%-- 파라미터 기본값 처리 --%>

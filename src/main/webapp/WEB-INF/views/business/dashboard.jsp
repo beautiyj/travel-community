@@ -58,28 +58,13 @@
                     <c:otherwise>
                         <div class="business-reservation-list">
                             <c:forEach var="r" items="${todayReservations}">
-                                <c:choose>
-                                    <c:when test="${r.status == '확정'}"><c:set var="statusClass" value="confirmed"/></c:when>
-                                    <c:when test="${r.status == '대기중'}"><c:set var="statusClass" value="pending"/></c:when>
-                                    <c:when test="${r.status == '완료'}"><c:set var="statusClass" value="done"/></c:when>
-                                    <c:otherwise><c:set var="statusClass" value="cancelled"/></c:otherwise>
-                                </c:choose>
-                                <div class="business-reservation-row">
-                                    <div>
-                                        <span class="business-reservation-row__name">${r.visitorName}</span>
-                                        <span class="business-reservation-row__meta">${r.phone} · ${r.headcount}명</span>
-                                    </div>
-                                    <div class="business-reservation-row__right">
-                                        <c:if test="${r.amount != null}">
-                                            <span class="business-reservation-row__price"><fmt:formatNumber value="${r.amount}" type="number" groupingUsed="true"/>원</span>
-                                        </c:if>
-                                        <span class="business-badge-status business-badge-status--${statusClass}">${r.status}</span>
-                                        <c:if test="${r.status == '대기중'}">
-                                            <!-- 실제 수락 액션 연결은 예약 관리 탭 구현 시 진행 -->
-                                            <button type="button" class="business-btn business-btn--primary business-btn--sm">수락</button>
-                                        </c:if>
-                                    </div>
-                                </div>
+                                <jsp:include page="common/reservationRow.jsp">
+                                    <jsp:param name="name" value="${r.visitorName}" />
+                                    <jsp:param name="phone" value="${r.phone}" />
+                                    <jsp:param name="headcount" value="${r.headcount}" />
+                                    <jsp:param name="status" value="${r.status}" />
+                                    <jsp:param name="amount" value="${r.amount}" />
+                                </jsp:include>
                             </c:forEach>
                         </div>
                     </c:otherwise>

@@ -42,7 +42,8 @@ public class CommunityController {
                        @RequestParam(value = "q", required = false) String q,
                        Model model) {
     	
-        model.addAttribute("postList", service.selectAll(category, q));
+    	List<CommunityDto> postList = service.selectAll(category, q);
+    	model.addAttribute("postList", postList);
         
         return "community/list";
     }
@@ -58,8 +59,11 @@ public class CommunityController {
 
         service.updateReadcount(postId);   // 글이 있을 때만 조회수 +1
 
-        post.setImageList(service.selectImages(postId));
-        post.setCommentList(service.selectComments(postId));
+        List<ImageDto> imageList = service.selectImages(postId);
+        List<CommentDto> commentList = service.selectComments(postId);
+        
+        post.setImageList(imageList);
+        post.setCommentList(commentList);
 
         model.addAttribute("post", post);
         
@@ -164,7 +168,9 @@ public class CommunityController {
     private void saveImages(MultipartFile[] images, Long postId) throws IOException {
         if (images == null) return;
  
-        int order = 0;   // sort_order: 올린 순서대로 0, 1, 2 ...
+        List<ImageDto> existingImages = service.selectImages(postId);
+        int order = existingImages.size();   // 이어서 매길 시작 번호
+        
         for (MultipartFile image : images) {
             if (image == null || image.isEmpty()) continue;
  
@@ -177,7 +183,7 @@ public class CommunityController {
             image.transferTo(new File(folder, savedName));
  
             ImageDto img = new ImageDto();
-            img.setPostId2(postId);        // FK 컬럼명이 post_id2
+            img.setPostId(postId);        // FK 컬럼명이 post_id2
             img.setImageUrl(savedName);    // 저장된 파일명
             img.setSortOrder(order++);     // 정렬 순서
             service.insertImage(img);

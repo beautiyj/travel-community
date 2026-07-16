@@ -2,11 +2,7 @@
 
 <%--
 날짜별 마감 설정 카드 (마감 관리 탭 공용 컴포넌트)
-
-주의: UI만 구현된 상태. 마감 날짜를 저장할 테이블(PLACE_CLOSED_DATE, 설계만 해두고 보류)이
-아직 없어서 서버 연동이 안 돼 있고, /js/business-closure.js 안에서 날짜 목록을
-브라우저 메모리에만 담아 add/remove를 보여준다. 새로고침하면 초기화됨 - 테이블이
-생기면 그때 fetch 연동으로 교체 예정.
+todo: 기능 구현 예정
 --%>
 <div class="business-card business-closure-date-card">
     <h2 class="business-card__title" style="margin-bottom: 4px;">날짜별 마감 설정</h2>

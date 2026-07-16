@@ -37,6 +37,13 @@
         <result property="revenue"      column="revenue"/>
     </resultMap>
 
+    <resultMap id="reservationStatusCountsResultMap" type="com.gnagnoohc.travel.business.dto.BusinessReservationStatusCountsDto">
+        <result property="pendingCount"   column="pending_count"/>
+        <result property="confirmedCount" column="confirmed_count"/>
+        <result property="doneCount"      column="done_count"/>
+        <result property="cancelledCount" column="cancelled_count"/>
+    </resultMap>
+
     <!-- 지역코드는 당분간 사업자 직접등록 업소엔 null로 두기로 해서 관련 옵션 조회 잠시 주석처리
     <resultMap id="regionOptionResultMap" type="com.gnagnoohc.travel.business.dto.BusinessRegionOptionDto">
         <id     property="regionId"   column="region_id"/>
@@ -141,6 +148,19 @@
             AND r.status = #{status}
         </if>
         ORDER BY r.visit_date DESC, r.reservation_id DESC
+    </select>
+
+    <!-- 예약 관리 화면 상태별 필터 탭에 표시할 개수 (대기중/확정/완료/취소) -->
+    <select id="selectReservationStatusCounts" resultMap="reservationStatusCountsResultMap">
+        SELECT
+            COALESCE(SUM(CASE WHEN r.status = '대기중' THEN 1 ELSE 0 END), 0) AS pending_count,
+            COALESCE(SUM(CASE WHEN r.status = '확정' THEN 1 ELSE 0 END), 0) AS confirmed_count,
+            COALESCE(SUM(CASE WHEN r.status = '완료' THEN 1 ELSE 0 END), 0) AS done_count,
+            COALESCE(SUM(CASE WHEN r.status = '취소' THEN 1 ELSE 0 END), 0) AS cancelled_count
+        FROM RESERVATION r
+        JOIN PLACE p ON p.place_id = r.place_id
+        WHERE r.place_id = #{placeId}
+          AND p.member_id = #{bizMemberId}
     </select>
 
     <!-- 예약 상태 변경 (수락/거절). 소유자가 아니면 0건 UPDATE -->

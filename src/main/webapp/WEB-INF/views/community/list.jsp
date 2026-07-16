@@ -10,7 +10,7 @@
 <title>여행 커뮤니티</title>
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/common.css">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/buttonComponent.css">
-<link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/smallButton.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/selectableButton.css">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/tagButton.css">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/searchbar.css">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/community.css">
@@ -33,17 +33,17 @@
     </c:if>
   </div>
 
-  <!-- 카테고리 필터 (smallButton 재사용: 선택된 탭 = primary, 나머지 = secondary) -->
+  <!-- 카테고리 필터 (selectableButton 재사용: 선택 상태를 표현하는 전용 컴포넌트) -->
   <div class="tabs">
     <c:forEach var="c" items="전체,일반,모집,후기">
       <c:set var="label" value="${c}" />
       <c:if test="${c == '모집'}"><c:set var="label" value="모집 (동행)" /></c:if>
       <c:set var="isActive" value="${param.category == c or (empty param.category and c == '전체')}" />
 
-      <jsp:include page="../common/smallButton.jsp">
-        <jsp:param name="text"    value="${label}" />
-        <jsp:param name="theme"   value="${isActive ? 'primary' : 'secondary'}" />
-        <jsp:param name="onclick" value="location.href='${cp}/community/list?category=${c}&q=${param.q}'" />
+      <jsp:include page="../common/selectableButton.jsp">
+        <jsp:param name="text"     value="${label}" />
+        <jsp:param name="isActive" value="${isActive}" />
+        <jsp:param name="onclick"  value="location.href='${cp}/community/list?category=${c}&q=${param.q}'" />
       </jsp:include>
     </c:forEach>
   </div>

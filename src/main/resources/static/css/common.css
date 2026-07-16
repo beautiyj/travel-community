@@ -1,12 +1,3 @@
-/* ============================================================
-   common.css  —  사이트 전역 공통 스타일 (디자인 토큰 + 공통 컴포넌트)
-   - community.css / mypage.css 가 여기 정의된 var(--...) 와 공통 컴포넌트를 사용
-   - 2개 이상 페이지에서 쓰는 CSS(토큰·리셋·헤더·컨테이너)를 여기로 모음
-   - 페이지 CSS보다 먼저 불러올 것:
-       <link ... common.css>    ← 먼저
-       <link ... community.css> ← 나중
-   ============================================================ */
-
 /* ============= 1. 외부 리소스 및 폰트 정의 =================*/
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
@@ -215,14 +206,3 @@ a {
   font-weight: var(--font-weight-bold); 
   cursor: pointer; 
 } /* 헤더 텍스트 링크 (기본: 흐린 글자). 페이지별로 색 override 가능 */
-
-.btn-primary {
-  background: var(--primary);
-  color: var(--primary-foreground);
-  border: none;
-  border-radius: var(--radius-md);
-  padding: 7px 16px;
-  font-size: var(--text-sm);
-  font-weight: var(--font-weight-bold);
-  cursor: pointer;
-} /* 헤더의 '회원가입' 버튼. navbar 는 모든 페이지에서 공유하므로 여기(common.css)에 둠 */

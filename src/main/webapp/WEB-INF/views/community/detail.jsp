@@ -77,12 +77,33 @@
       <span>조회 <fmt:formatNumber value="${post.readcount}" pattern="#,##0" /></span>
     </div>
 
-    <!-- 이미지 (있을 때만) -->
+    <!-- 이미지: sort_order 순으로 저장되어 있다고 가정 (0번이 대표/썸네일 이미지)
+         1장뿐이면 화살표 없이 사진만, 여러 장이면 배너처럼 좌우 화살표로 넘김 -->
     <c:if test="${not empty post.imageList}">
-      <div class="post-images">
-        <c:forEach var="img" items="${post.imageList}">
-          <img src="${cp}/upload/${img.imageUrl}" alt="첨부 이미지">
-        </c:forEach>
+      <div class="post-gallery" data-gallery>
+        <div class="post-gallery-track" data-gallery-track>
+          <c:forEach var="img" items="${post.imageList}">
+            <div class="post-gallery-slide">
+              <img src="${cp}/upload/${img.imageUrl}" alt="첨부 이미지">
+            </div>
+          </c:forEach>
+        </div>
+
+        <c:if test="${fn:length(post.imageList) gt 1}">
+          <button type="button" class="post-gallery-arrow post-gallery-arrow-prev"
+                  data-gallery-prev aria-label="이전 사진">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <polyline points="15 5 8 12 15 19"></polyline>
+            </svg>
+          </button>
+          <button type="button" class="post-gallery-arrow post-gallery-arrow-next"
+                  data-gallery-next aria-label="다음 사진">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <polyline points="9 5 16 12 9 19"></polyline>
+            </svg>
+          </button>
+          <div class="post-gallery-counter" data-gallery-counter>1 / ${fn:length(post.imageList)}</div>
+        </c:if>
       </div>
     </c:if>
 

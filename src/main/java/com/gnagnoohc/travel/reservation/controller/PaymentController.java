@@ -86,9 +86,11 @@ public class PaymentController {
         return "reservation/paymentBridge";
     }
 
+    /** 결제창에서 취소하고 나온 경우: 실패 페이지가 아니라 결제하기 페이지로 복귀 */
     @GetMapping("/kakao/cancel")
-    public String kakaoCancel(Model model) {
-        return bridgeToFail(model, "결제를 취소했습니다.");
+    public String kakaoCancel(@RequestParam("reservationId") Long reservationId, Model model) {
+        model.addAttribute("target", "/payments/checkout/" + reservationId);
+        return "reservation/paymentBridge";
     }
 
     @GetMapping("/kakao/fail")

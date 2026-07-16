@@ -12,7 +12,7 @@
 
 /* ============= 2. 디자인 토큰 (Design Tokens) - 전역 변수 중앙 제어 ======================*/
 
-c/* ── 디자인 토큰 (색·모서리) ── */
+/* ── 디자인 토큰 (색·모서리) ── */
 /* community.css / mypage.css 등 모든 페이지 CSS가 이 변수를 var(--이름)으로 참조 */
 :root {
   --background:             #f8fafc;   /* 페이지 배경 (연한 회색) */
@@ -212,3 +212,4 @@ a {
   font-weight: var(--font-weight-bold); 
   cursor: pointer; 
 } /* 헤더 텍스트 링크 (기본: 흐린 글자). 페이지별로 색 override 가능 */
+

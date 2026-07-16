@@ -1,125 +1,168 @@
 /* selectableCardComponent.jsp 셀렉터블 카드 컴포넌트 */
 
-
-/* [기본 상태] 선택되지 않았을 때의 카드 (차분한 그레이/화이트 톤) */
-.sel-card-col-amber {
+[class^="sel-card-col-"] {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  background: var(--card); /* 기본 흰색 배경 */
-  border: 1px solid var(--border); /* 기본 회색 테두리 */
-  border-radius: var(--radius-lg);
-  padding-top: 13px;
-  padding-left: 25px;
-  padding-right: 12px;
-  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.05);
-  transition: all 0.2s ease; /* 선택 시 부드럽게 색상이 바뀌도록 애니메이션 추가 */
+  border-radius: 24px;
+  padding: 36px 32px;
   cursor: pointer;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 480px;
+  position: relative;
+  transition: background-color var(--transition-fast) ease,
+              border-color var(--transition-fast) ease,
+              box-shadow var(--transition-fast) ease,
+              transform var(--transition-fast) ease;
 }
 
-/* [선택 상태] 클릭하여 선택되었을 때 (.active 가 추가됨) */
+/* 호버 효과 */
+[class^="sel-card-col-"]:hover {
+  transform: translateY(-4px);
+}
+
+/* 기본회원 카드 (Blue 테마) */
+.sel-card-col-blue {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.02);
+}
+.sel-card-col-blue .sel-card-emoji-box {
+  background: #E0F2FE;
+}
+.sel-card-col-blue .sel-card-list-check {
+  color: #0284C7;
+}
+
+/* [블루 활성화 상태] */
+.sel-card-col-blue.active {
+  background: #F0F9FF;
+  border-color: #0284C7;
+  box-shadow: 0px 8px 24px rgba(2, 132, 199, 0.12);
+}
+.sel-card-col-blue.active .sel-card-badge-check {
+  background: #0284C7;
+  border-color: #0284C7;
+  transform: scale(1);
+  opacity: 1;
+}
+
+/* 사업자 회원 카드 (Amber 테마) */
+.sel-card-col-amber {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.02);
+}
+.sel-card-col-amber .sel-card-emoji-box {
+  background: #FEF3C7;
+}
+.sel-card-col-amber .sel-card-list-check {
+  color: #F59E0B;
+}
+
+/* [앰버 활성화 상태] */
 .sel-card-col-amber.active {
-  background: #FFFBEB; /* 호박색 아주 연한 배경 */
-  border-color: #FE9A00; /* 테두리 주황 강조 */
-  box-shadow: 0px 4px 10px rgba(254, 154, 0, 0.15); /* 주황빛 은은한 그림자 */
+  background: #FFFDF5;
+  border-color: #FE9A00;
+  box-shadow: 0px 8px 24px rgba(254, 154, 0, 0.15);
 }
-
-/* 내부 정렬 및 구조 (동일) */
-.sel-card-col-center {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding-top: 15px;
-  margin-bottom: 24px;
-}
-
-/* 이미지 및 썸네일 규격 */
-.sel-card-img-main {
-  border-radius: var(--radius-lg);
-  width: 20px;
-  height: 20px;
-  object-fit: fill;
-}
-
-.sel-card-img-sub {
-  width: 11px;
-  height: 11px;
-  margin-right: 6px;
-  object-fit: fill;
-}
-
-/* 레이아웃 로우 정렬 세트 */
-.sel-card-row-start {
-  display: flex;
-  align-items: flex-start;
-  margin-bottom: 1px;
+.sel-card-col-amber.active .sel-card-badge-check {
+  background: #FE9A00;
+  border-color: #FE9A00;
+  transform: scale(1);
+  opacity: 1;
 }
 
 .sel-card-row-center {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 28px;
+}
+
+.sel-card-emoji-box {
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sel-card-emoji-text {
+  font-size: 32px;
+}
+
+.sel-card-badge-check {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid transparent;
+  transform: scale(0.8);
+  opacity: 0;
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
+              opacity 0.2s ease;
+}
+
+.sel-card-check-svg {
+  width: 14px;
+  height: 14px;
+  color: var(--white);
+}
+
+.sel-card-view-center {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.sel-card-txt-xl {
+  color: #0F172A;
+  font-size: 28px;
+  font-weight: 800;
+  margin: 0 0 12px 0;
+}
+
+.sel-card-txt-base {
+  color: #475569;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.sel-card-view-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  gap: 12px;
+  border-top: 1.5px solid #F1F5F9;
+  padding-top: 24px;
 }
 
 .sel-card-row-padding {
   display: flex;
   align-items: center;
-  padding-top: 5px;
-  padding-bottom: 5px;
+  width: 100%;
 }
 
-/* 타이포그래피 (선택 여부와 관계없이 공통 유지) */
-.sel-card-txt-xl {
-  color: var(--foreground);
-  font-size: var(--text-2xl);
-  font-weight: var(--font-weight-bold);
-}
-
-.sel-card-txt-base {
-  color: var(--foreground);
-  font-size: var(--text-base);
-  font-weight: var(--font-weight-bold);
+.sel-card-list-check {
+  width: 18px;
+  height: 18px;
+  margin-right: 12px;
+  flex-shrink: 0;
 }
 
 .sel-card-txt-meta {
-  color: var(--muted-foreground);
-  font-size: var(--text-xs);
-  font-weight: var(--font-weight-bold);
-  width: 175px;
-}
-
-.sel-card-txt-meta-margin58 {
-  color: var(--muted-foreground);
-  font-size: var(--text-xs);
-  font-weight: var(--font-weight-bold);
-  margin-right: 58px;
-}
-
-.sel-card-txt-meta-margin49 {
-  color: var(--muted-foreground);
-  font-size: var(--text-xs);
-  font-weight: var(--font-weight-bold);
-  margin-right: 49px;
-}
-
-.sel-card-txt-meta-margin70 {
-  color: var(--muted-foreground);
-  font-size: var(--text-xs);
-  font-weight: var(--font-weight-bold);
-  margin-right: 70px;
-}
-
-/* 박스 정렬 프레임 */
-.sel-card-view-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  padding-top: 15px;
-  padding-right: 138px;
-}
-
-.sel-card-view-center {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding-top: 3px;
+  color: #334155;
+  font-size: 15px;
+  font-weight: 600;
 }

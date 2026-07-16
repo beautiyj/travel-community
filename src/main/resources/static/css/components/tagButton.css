@@ -1,15 +1,48 @@
 /* tagButton.jsp 태그 태그버튼 */
+
+/* 버튼 크기는 관광지 3글자 기준 크기 고정 및 정중앙 정렬 */
 .tag-view {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  background: var(--tag-bg);
+  display: inline-flex;                 /* 글자 크기에 상관없이 가로 고정을 위해 inline-flex 사용 */
+  justify-content: center;              /* 좌우 중앙 정렬 */
+  align-items: center;                  /* 상하 중앙 정렬 */
+  
+  width: 72px;
+  height: 28px;
   border-radius: var(--radius-full);
-  padding: 2px 9px;
 }
 
 .tag-text {
-  color: var(--tag-text);
   font-size: var(--text-xs);
   font-weight: var(--font-weight-bold);
+  line-height: 1;                      /* 텍스트 세로 정렬 치우침 방지 */
+}
+
+/* 기본 태그 디자인 */
+.tag-view.type-default {
+  background: var(--secondary);
+}
+.tag-view.type-default .tag-text {
+  color: var(--secondary-foreground);
+}
+
+/* place_type 데이터가 들어있을 경우 - 3분류에 따라 각기 다른 디자인셋 적용 */
+.tag-view.type-food {
+  background: #FFEFE0;
+}
+.tag-view.type-food .tag-text {
+  color: #C23A00;
+}
+
+.tag-view.type-stay {
+  background: #E5F0FF;
+}
+.tag-view.type-stay .tag-text {
+  color: #0056E0;
+}
+
+.tag-view.type-tour {
+  background: #D5F8E6;
+}
+.tag-view.type-tour .tag-text {
+  color: #007D55;
 }

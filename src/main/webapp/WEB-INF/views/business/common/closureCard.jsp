@@ -8,8 +8,6 @@
 - placeId, memberId : 토글 API(/api/business/place/closed) 호출에 필요 (필수)
 - isClosed          : 현재 마감 상태 (boolean, 필수)
 
-실제 상태 변경은 /js/business-closure.js 가 이벤트 위임으로 처리하므로,
-이 카드가 한 페이지에 여러 개 있어도(향후 재사용 시) 동일하게 동작한다.
 --%>
 <div class="business-card business-closure-card" data-place-id="${param.placeId}" data-member-id="${param.memberId}">
     <div class="business-closure-card__head">

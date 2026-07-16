@@ -14,9 +14,11 @@
 document.addEventListener("DOMContentLoaded", function () {
     var MAX_PHOTOS = 5;
 
-    var grid = document.getElementById("venue-photos-grid");
+    // register/edit 폼은 서로 배타적으로만 렌더링되지만 그리드/카운트 id는 폼마다 달라서
+    // (venue-photos-grid vs venue-photos-grid-edit) 항상 존재하는 공용 class로 찾는다.
+    var grid = document.querySelector(".venue-photo-grid");
     var fileInput = document.getElementById("venue-photos-input");
-    var countLabel = document.getElementById("venue-photos-count");
+    var countLabel = document.querySelector(".venue-photos-count");
     var remainingLabel = document.getElementById("venue-photos-remaining");
     var dropzone = document.getElementById("venue-photos-dropzone");
     if (!grid || !fileInput) return;

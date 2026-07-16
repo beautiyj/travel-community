@@ -156,5 +156,37 @@ document.addEventListener("DOMContentLoaded", function () {
         grid.insertBefore(draggedItem, insertBeforeTarget ? target : target.nextSibling);
     });
 
+    //주소검색 처리
+    document.querySelectorAll(".js-address-search").forEach(function (btn) {
+        var prefix = btn.dataset.targetPrefix || "";
+        var addressInput = document.getElementById(prefix + "address");
+        var detailInput = document.getElementById(prefix + "addressDetail");
+
+        btn.addEventListener("click", function () {
+            new daum.Postcode({
+                oncomplete: function (data) {
+                    addressInput.value = data.roadAddress || data.jibunAddress;
+                    detailInput.focus();
+                }
+            }).open();
+        });
+
+        // 주소 미입력 시 제출 막기 (readonly input은 required 검증 대상에서 제외되므로 직접 체크)
+        // + 제출 직전 상세주소를 address 값에 합쳐서 하나의 필드로 전송
+        if (btn.form) {
+            btn.form.addEventListener("submit", function (e) {
+                if (!addressInput.value) {
+                    e.preventDefault();
+                    window.alert("주소를 검색해 입력해주세요.");
+                    addressInput.focus();
+                    return;
+                }
+                if (detailInput.value) {
+                    addressInput.value = addressInput.value + " " + detailInput.value;
+                }
+            });
+        }
+    });
+
     refresh();
 });

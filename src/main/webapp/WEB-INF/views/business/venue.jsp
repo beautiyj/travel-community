@@ -6,6 +6,7 @@
     <meta charset="UTF-8">
     <title>업소 관리 - 관리자 - 트립어라운드</title>
     <link rel="stylesheet" href="/css/business.css">
+    <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 </head>
 <body>
 
@@ -73,7 +74,6 @@
                                         <jsp:param name="idPrefix" value="edit-" />
                                         <jsp:param name="name" value="${placeDetail.name}" />
                                         <jsp:param name="placeType" value="${placeDetail.placeType}" />
-                                        <jsp:param name="address" value="${placeDetail.address}" />
                                         <jsp:param name="description" value="${placeDetail.description}" />
                                     </jsp:include>
 

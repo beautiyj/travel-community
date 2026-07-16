@@ -102,39 +102,6 @@
 </div>
 
 <script src="${cp}/js/common.js"></script>
-<script>
-  const input = document.getElementById('images');
-  const preview = document.getElementById('preview');
-  let files = [];
-
-  input.addEventListener('change', () => {
-    for (const f of input.files) {
-      if (f.type.startsWith('image/')) files.push(f);
-    }
-    render();
-  });
-
-  function render() {
-    preview.innerHTML = '';
-    files.forEach((f, i) => {
-      const url = URL.createObjectURL(f);
-      const div = document.createElement('div');
-      div.className = 'thumb';
-      div.innerHTML = '<img src="' + url + '" width="110" height="110">' +
-                      '<button type="button" class="remove" data-i="' + i + '">&times;</button>';
-      preview.appendChild(div);
-    });
-    const dt = new DataTransfer();
-    files.forEach(f => dt.items.add(f));
-    input.files = dt.files;
-  }
-
-  preview.addEventListener('click', (e) => {
-    if (e.target.classList.contains('remove')) {
-      files.splice(Number(e.target.dataset.i), 1);
-      render();
-    }
-  });
-</script>
+<script src="${cp}/js/community/imageUpload.js"></script>
 </body>
 </html>

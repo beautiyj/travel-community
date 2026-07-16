@@ -113,3 +113,52 @@ document.addEventListener("DOMContentLoaded", function () {
     window.openModal = openModal;
     window.closeModal = closeModal;
 })();
+
+
+/* ============================================================
+   배너 슬라이더 (banner.jsp)
+   - 좌우 꺽쇠 / 인디케이터 클릭으로 슬라이드 이동
+   - 한 페이지에 배너가 여러 개 있어도 각각 독립 동작
+   - 실제 이동은 CSS 변수 --banner-index 를 바꾸면 .banner-track 이 transform 으로 처리
+   ============================================================ */
+(function () {
+    'use strict';
+
+    function initBanner(banner) {
+        const track  = banner.querySelector('[data-banner-track]');
+        const slides = banner.querySelectorAll('.banner-slide');
+        const dots   = banner.querySelectorAll('[data-banner-dot]');
+        if (!track || slides.length === 0) return;
+
+        let index = 0;
+
+        function move(next) {
+            // 끝에서 다음 → 처음으로, 처음에서 이전 → 끝으로 (순환)
+            index = (next + slides.length) % slides.length;
+
+            track.style.setProperty('--banner-index', index);
+
+            dots.forEach(function (dot, i) {
+                dot.classList.toggle('is-active', i === index);
+            });
+        }
+
+        const prev = banner.querySelector('[data-banner-prev]');
+        const next = banner.querySelector('[data-banner-next]');
+
+        if (prev) prev.addEventListener('click', function () { move(index - 1); });
+        if (next) next.addEventListener('click', function () { move(index + 1); });
+
+        dots.forEach(function (dot) {
+            dot.addEventListener('click', function () {
+                move(Number(dot.dataset.bannerDot));
+            });
+        });
+
+        move(0);
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('[data-banner]').forEach(initBanner);
+    });
+})();

@@ -53,3 +53,63 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 });
+
+/* ============================================================
+   공통 모달 (confirmModal.jsp) 열기/닫기
+   - 오버레이 클릭 / 취소 버튼([data-modal-close]) / ESC 로 닫힘
+   - openModal(id, value) : value 를 주면 hidden 필드에 주입
+     (목록에서 행마다 대상이 다를 때 모달 1개를 재사용)
+   ============================================================ */
+(function () {
+    'use strict';
+
+    function openModal(id, value) {
+        const overlay = document.getElementById(id);
+        if (!overlay) return;
+
+        // 목록에서 행마다 대상이 다른 경우 hidden 값 주입
+        if (value !== undefined && value !== null) {
+            const field = overlay.querySelector('[data-modal-value]');
+            if (field) field.value = value;
+        }
+
+        overlay.classList.add('is-open');
+        document.body.classList.add('modal-open');
+
+        const cancel = overlay.querySelector('[data-modal-close]');
+        if (cancel) cancel.focus();
+    }
+
+    function closeModal(id) {
+        const overlay = id ? document.getElementById(id)
+                           : document.querySelector('.modal-overlay.is-open');
+        if (!overlay) return;
+
+        overlay.classList.remove('is-open');
+        document.body.classList.remove('modal-open');
+    }
+
+    // 오버레이 바깥 클릭 / 취소 버튼 (이벤트 위임)
+    document.addEventListener('click', function (event) {
+        // 오버레이 자체를 클릭했을 때만 (모달 안쪽 클릭은 무시)
+        if (event.target.matches('[data-modal]')) {
+            closeModal(event.target.id);
+            return;
+        }
+
+        const closer = event.target.closest('[data-modal-close]');
+        if (closer) {
+            const overlay = closer.closest('[data-modal]');
+            if (overlay) closeModal(overlay.id);
+        }
+    });
+
+    // ESC 로 닫기
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') closeModal();
+    });
+
+    // 전역 노출 (JSP 의 onclick 에서 호출)
+    window.openModal = openModal;
+    window.closeModal = closeModal;
+})();

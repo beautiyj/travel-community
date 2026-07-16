@@ -1,0 +1,58 @@
+/* banner.jsp 배너 배너컴포넌트 배너 인디케이터 & 레이아웃 */
+.banner-dot-inactive {
+  width: 6px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.5); /* #FFFFFF80 치환 */
+  border-radius: var(--radius-full);
+  margin-right: 7px;
+}
+
+.banner-dot-inactive-alt {
+  width: 6px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.5); /* #FFFFFF80 치환 */
+  border-radius: var(--radius-full);
+  margin-right: 8px;
+}
+
+.banner-dot-active {
+  width: 24px;
+  height: 6px;
+  background: var(--card);
+  border-radius: var(--radius-full);
+}
+
+.banner-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: transparent; /* #FFFFFF00 치환 */
+  border-radius: var(--radius-lg);
+  padding-top: 122px;
+  margin-left: 222px;
+  margin-right: 222px;
+  box-shadow: 0px 8px 10px rgba(0, 0, 0, 0.1);
+}
+
+.banner-image {
+  border-radius: var(--radius-lg);
+  width: 36px;
+  height: 36px;
+  object-fit: fill;
+}
+
+.banner-row-between {
+  align-self: stretch;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 100px;
+  margin-left: 15px;
+  margin-right: 15px;
+}
+
+.banner-row-indicator {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="com.gnagnoohc.travel.community.dao.CommunityDao">
+<mapper namespace="com.gnagnoohc.travel.community.mapper.CommunityMapper">
 	
 	<!-- 목록: 검색어(q)와 카테고리로 동적 필터 -->
     <!-- nickname이 post 테이블에 직접 있으므로 member JOIN 불필요 -->

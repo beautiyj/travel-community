@@ -63,9 +63,30 @@ document.addEventListener("DOMContentLoaded", function () {
 (function () {
     'use strict';
 
+    /* buttonComponent.jsp 원본을 폼 안에서 쓰기 위한 보정
+       - <button> 에 type 이 없으면 브라우저가 submit 으로 봄 → 취소를 눌러도 폼이 전송됨
+       - 컴포넌트에 onclick="alert('Pressed!')" 가 박혀 있음 → 모달에서는 방해
+       ※ buttonComponent.jsp 를 고칠 수 있게 되면(type 파라미터 추가 + alert 제거)
+          이 함수는 지워도 됩니다. */
+    function normalizeButtons(overlay) {
+        const cancel  = overlay.querySelector('.modal-btn-cancel .btn-main');
+        const confirm = overlay.querySelector('.modal-btn-confirm .btn-main');
+
+        if (cancel) {
+            cancel.type = 'button';      // 폼 전송 막기
+            cancel.onclick = null;       // 컴포넌트의 alert 제거
+        }
+        if (confirm) {
+            confirm.type = 'submit';     // 확정만 전송
+            confirm.onclick = null;
+        }
+    }
+
     function openModal(id, value) {
         const overlay = document.getElementById(id);
         if (!overlay) return;
+
+        normalizeButtons(overlay);
 
         // 목록에서 행마다 대상이 다른 경우 hidden 값 주입
         if (value !== undefined && value !== null) {
@@ -107,6 +128,10 @@ document.addEventListener("DOMContentLoaded", function () {
     // ESC 로 닫기
     document.addEventListener('keydown', function (event) {
         if (event.key === 'Escape') closeModal();
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('[data-modal]').forEach(normalizeButtons);
     });
 
     // 전역 노출 (JSP 의 onclick 에서 호출)

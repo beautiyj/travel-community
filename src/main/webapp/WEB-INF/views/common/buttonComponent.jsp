@@ -5,7 +5,7 @@
 <c:set var="btnColor" value="${empty param.color ? 'var(--primary)' : param.color}" />
 <c:set var="fontSize" value="${empty param.size ? 'var(--text-base)' : param.size}" />
 
-<button class="btn-main" style="width: ${btnWidth}; background-color: ${btnColor};" onclick="alert('Pressed!')">
+<button class="btn-main" style="width: ${btnWidth}; background: ${btnColor};" onclick="alert('Pressed!')">
 	<span class="btn-main-text" style="font-size: ${fontSize};">
 		${param.text}
 	</span>

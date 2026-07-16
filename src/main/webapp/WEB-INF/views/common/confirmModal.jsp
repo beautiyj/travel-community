@@ -17,7 +17,8 @@
                   첫 번째 hidden 은 openModal(id, value) 로 값을 나중에 주입 가능
     confirmText : 확정 버튼 라벨 (기본 확인)
     cancelText  : 취소 버튼 라벨 (기본 취소)
-    tone        : 확정 버튼 색 — danger(기본) | primary
+    tone        : 확정 버튼 색 — danger(기본, 빨강) | primary(파랑)
+                  ※ 버튼은 buttonComponent.jsp 를 include 해서 그림 (같은 폴더에 있어야 함)
 
   사용 예 1) 게시글 삭제 — 값이 고정
     <jsp:include page="/WEB-INF/views/common/confirmModal.jsp">
@@ -43,7 +44,7 @@
       <jsp:param name="hiddenName"  value="reservationId" />
     </jsp:include>
 
-  필요 리소스: common.css → modal.css, modal.js
+  필요 리소스: common.css → buttonComponent.css, confirmModal.css, common.js
   ※ cp(contextPath)는 page scope 라 조각 파일에서 다시 선언
 --%>
 <c:set var="cp" value="${pageContext.request.contextPath}" />
@@ -89,12 +90,25 @@
           </c:choose>
 
           <div class="modal-buttons">
-            <button type="button" class="btn-modal-cancel" data-modal-close>
-              <c:out value="${mCancel}" />
-            </button>
-            <button type="submit" class="btn-modal-confirm is-${mTone}">
-              <c:out value="${mOk}" />
-            </button>
+            <%-- 취소: 흰 배경 + 검은 글자
+                 - color 로 배경만 넘기고, 글자색은 confirmModal.css 에서 override
+                 - 감싼 div 의 data-modal-close 로 닫힘 (클릭이 위로 전파됨) --%>
+            <div class="modal-btn modal-btn-cancel" data-modal-close>
+              <jsp:include page="buttonComponent.jsp">
+                <jsp:param name="text"  value="${mCancel}" />
+                <jsp:param name="color" value="var(--card)" />
+                <jsp:param name="size"  value="var(--text-sm)" />
+              </jsp:include>
+            </div>
+
+            <%-- 확정: tone=danger 면 빨강+흰 글자, primary 면 파랑 --%>
+            <div class="modal-btn modal-btn-confirm">
+              <jsp:include page="buttonComponent.jsp">
+                <jsp:param name="text"  value="${mOk}" />
+                <jsp:param name="color" value="${mTone eq 'primary' ? 'var(--primary)' : 'var(--destructive)'}" />
+                <jsp:param name="size"  value="var(--text-sm)" />
+              </jsp:include>
+            </div>
           </div>
         </form>
       </div>

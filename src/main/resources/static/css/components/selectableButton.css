@@ -1,0 +1,62 @@
+/* selectableButton.jsp 선택유무 컬러변경 버튼 셀렉터블 버튼 */
+
+.btn-selectable {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border-radius: var(--radius-lg);
+  padding: 14px 32px;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color var(--transition-fast) ease, 
+              border-color var(--transition-fast) ease, 
+              color var(--transition-fast) ease;
+  
+  /* 너비 제어 관련: 외부 인라인 스타일에 유연하게 대처하도록 기본값은 fit-content 처리 */
+  width: fit-content; 
+  box-sizing: border-box;
+}
+
+.btn-selectable-text {
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-bold);
+  white-space: nowrap;
+}
+
+/* 기본 계통 테마 (Primary) */
+.btn-selectable.theme-primary {
+  border: 1px solid var(--primary-soft);
+  background-color: transparent;
+}
+.btn-selectable.theme-primary .btn-selectable-text {
+  color: var(--primary);
+}
+
+/* Primary 활성화(On) 상태 */
+.btn-selectable.theme-primary.is-active {
+  background-color: var(--primary);
+  border-color: var(--primary);
+}
+.btn-selectable.theme-primary.is-active .btn-selectable-text {
+  color: var(--white); /* common.css 내 흰색 글자 변수 */
+}
+
+
+/* 댄저 계통 테마 (Danger) */
+.btn-selectable.theme-danger {
+  border: 1px solid var(--danger-soft);
+  background-color: transparent;
+}
+.btn-selectable.theme-danger .btn-selectable-text {
+  color: var(--danger);
+}
+
+/* Danger 활성화(On) 상태 */
+.btn-selectable.theme-danger.is-active {
+  background-color: var(--danger);
+  border-color: var(--danger);
+}
+.btn-selectable.theme-danger.is-active .btn-selectable-text {
+  color: var(--white);
+}

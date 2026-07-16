@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+s
 <%-- 카드 식별자 ID (실제 DB의 role 값과 매핑: ROLE_USER, ROLE_BUSINESS 등) --%>
 <c:set var="cardId" value="${empty param.id ? 'ROLE_USER' : param.id}" />
 <%-- 카드들을 하나의 단일선택 그룹으로 묶어줄 그룹명 (기본값: 'role-group') --%>
@@ -17,7 +18,7 @@ param.isActive가 'true'이면 활성화 스타일 클래스('active')
 <c:set var="cardTitle" value="${empty param.title ? '역할 타이틀' : param.title}" />
 <c:set var="cardDescription" value="${empty param.description ? '역할에 대한 상세한 기본 정의 설명입니다.' : param.description}" />
 
-<div class="sel-card-col-${cardTheme}${activeClass}"
+<div class="sel-card-col-${cardTheme} ${activeClass}"
 data-card-id="${cardId}"
 data-card-group="${cardGroup}">
 

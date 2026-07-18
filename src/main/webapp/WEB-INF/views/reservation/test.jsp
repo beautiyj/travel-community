@@ -6,32 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>예약/결제 테스트</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Pretendard', 'Malgun Gothic', sans-serif; background: #f5f6f8; }
-        .wrap { max-width: 720px; margin: 0 auto; padding: 32px 20px; }
-        h2 { margin-bottom: 4px; font-size: 22px; }
-        .sub { color: #888; font-size: 13px; margin-bottom: 24px; }
-        .card { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 16px;
-                box-shadow: 0 2px 12px rgba(0,0,0,.06); }
-        .card h3 { font-size: 15px; margin-bottom: 4px; }
-        .card p { font-size: 12px; color: #888; margin-bottom: 12px; }
-        .row { display: flex; gap: 8px; }
-        .row input { flex: 1; padding: 9px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
-        .row button { padding: 9px 18px; border: none; border-radius: 8px; background: #3b82f6;
-                      color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; }
-        .row button.danger { background: #ef4444; }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th, td { padding: 8px 6px; border-bottom: 1px solid #eee; text-align: left; }
-        th { color: #888; font-weight: 600; }
-        .status { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 12px; }
-        .s-pending  { background: #fef3c7; color: #92400e; }
-        .s-paid     { background: #dcfce7; color: #166534; }
-        .s-canceled { background: #fee2e2; color: #991b1b; }
-        .s-expired  { background: #e5e7eb; color: #4b5563; }
-        .empty { color: #aaa; text-align: center; padding: 16px 0; }
-        a.refresh { font-size: 12px; color: #3b82f6; text-decoration: none; float: right; }
-    </style>
+    <link rel="stylesheet" href="/css/reservation-test.css">
 </head>
 <body>
 <div class="wrap">
@@ -118,31 +93,6 @@
     </div>
 </div>
 
-<script>
-    function goCheckout() {
-        var id = document.getElementById('reservationId').value;
-        if (!id) { alert('reservationId를 입력하세요.'); return; }
-        location.href = '/payments/checkout/' + id;
-    }
-
-    function goComplete() {
-        var id = document.getElementById('completePaymentId').value;
-        if (!id) { alert('paymentId를 입력하세요.'); return; }
-        location.href = '/payments/complete/' + id;
-    }
-
-    function cancelPayment() {
-        var id = document.getElementById('cancelPaymentId').value;
-        if (!id) { alert('paymentId를 입력하세요.'); return; }
-        if (!confirm(id + '번 결제를 취소할까요?')) return;
-        fetch('/payments/' + id + '/cancel', { method: 'POST' })
-            .then(function (res) {
-                if (!res.ok) throw new Error();
-                alert('취소되었습니다.');
-                location.reload();
-            })
-            .catch(function () { alert('취소 실패 (이미 취소됐거나 없는 결제)'); });
-    }
-</script>
+<script src="/js/reservation-test.js"></script>
 </body>
 </html>

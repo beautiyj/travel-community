@@ -10,7 +10,7 @@
 <c:set var="btnText" value="${empty param.btnText ? '검색' : param.btnText}" />
 
 <div class="search-row-view">
-	<img src="${pageContext.request.contextPath}/resources/images/search.png" class="search-icon" alt="검색" />
+	<img src="${pageContext.request.contextPath}/images/icons/search.png" class="search-icon" alt="검색" />
 	<input type="text"
 	class="search-input"
 	name="${inputName}"

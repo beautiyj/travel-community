@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -67,5 +68,27 @@ public class PaymentService {
     @Transactional(readOnly = true)
     public Payment getById(Long paymentId) {
         return paymentMapper.findById(paymentId);
+    }
+
+    /**
+     * 관리자: 취소 요청 승인 → 이때 실제 환불 실행.
+     * '취소요청' 상태의 예약에 대해, 결제완료 건을 찾아 환불(cancel)한다.
+     * 환불 API가 실패하면 예외가 전파되어 트랜잭션이 롤백되고 '취소요청' 상태가 유지된다.
+     */
+    @Transactional
+    public void approveCancel(Long reservationId) {
+        Reservation r = reservationService.getById(reservationId);
+        if (!Reservation.STATUS_CANCEL_REQUESTED.equals(r.getStatus())) {
+            throw new IllegalStateException("취소 요청 상태인 예약만 승인할 수 있습니다. 현재 상태: " + r.getStatus());
+        }
+
+        List<Payment> payments = paymentMapper.findByReservationId(reservationId);
+        Payment paid = payments.stream()
+                .filter(p -> Payment.STATUS_DONE.equals(p.getPaymentStatus()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("환불할 결제완료 내역이 없습니다. reservationId=" + reservationId));
+
+        log.info("[취소 승인] reservationId={} → 환불 진행 (paymentId={})", reservationId, paid.getPaymentId());
+        cancel(paid.getPaymentId(), "관리자 취소 승인");   // 환불 + 결제취소 + 예약취소
     }
 }

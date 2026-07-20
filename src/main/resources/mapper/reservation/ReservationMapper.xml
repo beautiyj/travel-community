@@ -12,7 +12,9 @@
         visit_date     AS visitDate,
         headcount,
         status,
-        created_at     AS createdAt
+        created_at           AS createdAt,
+        cancel_reason        AS cancelReason,
+        cancel_requested_at  AS cancelRequestedAt
     </sql>
 
     <insert id="insert" parameterType="com.gnagnoohc.travel.reservation.entity.Reservation"
@@ -41,6 +43,23 @@
         SET status = #{status}
         WHERE reservation_id = #{reservationId}
     </update>
+
+    <!-- 취소 요청: 상태 '취소요청' + 사유/요청시각 기록 -->
+    <update id="requestCancel">
+        UPDATE RESERVATION
+        SET status = '취소요청',
+            cancel_reason = #{reason},
+            cancel_requested_at = NOW()
+        WHERE reservation_id = #{reservationId}
+    </update>
+
+    <!-- 관리자 목록용: 특정 상태의 예약 조회 -->
+    <select id="findByStatus" resultType="com.gnagnoohc.travel.reservation.entity.Reservation">
+        SELECT <include refid="reservationColumns"/>
+        FROM RESERVATION
+        WHERE status = #{status}
+        ORDER BY cancel_requested_at DESC, created_at DESC
+    </select>
 
     <!-- 슬롯 선점 체크: 활성 상태(예약중/예약완료)인 동일 장소·날짜 예약 수 -->
     <select id="countActive" resultType="int">

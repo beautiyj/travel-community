@@ -59,6 +59,40 @@ public class ReservationService {
     }
 
     /**
+     * 취소 요청 (결제완료 건). 상태를 '취소요청'으로 바꾸고 사유 기록. 환불은 관리자 승인 시 실행.
+     * 본인 예약 + '예약완료' 상태에서만 가능.
+     */
+    @Transactional
+    public void requestCancel(Long reservationId, Long memberId, String reason) {
+        Reservation r = getById(reservationId);
+        if (!r.getMemberId().equals(memberId)) {
+            throw new IllegalStateException("본인의 예약만 취소 요청할 수 있습니다.");
+        }
+        if (!Reservation.STATUS_PAID.equals(r.getStatus())) {
+            throw new IllegalStateException("결제완료된 예약만 취소 요청할 수 있습니다. 현재 상태: " + r.getStatus());
+        }
+        reservationMapper.requestCancel(reservationId, reason);
+    }
+
+    /**
+     * 관리자: 취소 요청 거절. '취소요청' → '예약완료'로 원복 (환불 없음).
+     */
+    @Transactional
+    public void rejectCancel(Long reservationId) {
+        Reservation r = getById(reservationId);
+        if (!Reservation.STATUS_CANCEL_REQUESTED.equals(r.getStatus())) {
+            throw new IllegalStateException("취소 요청 상태인 예약만 거절할 수 있습니다. 현재 상태: " + r.getStatus());
+        }
+        reservationMapper.updateStatus(reservationId, Reservation.STATUS_PAID);
+    }
+
+    /** 관리자 목록용: 특정 상태의 예약 조회 */
+    @Transactional(readOnly = true)
+    public List<Reservation> getByStatus(String status) {
+        return reservationMapper.findByStatus(status);
+    }
+
+    /**
      * 결제 금액 계산.
      * TODO: 숙박/맛집 팀원의 place(가격) 테이블이 나오면 placeId로 단가 조회하도록 교체
      */

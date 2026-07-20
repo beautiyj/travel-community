@@ -14,7 +14,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class TourApiResponseDto<T> {
+public class TourApiResponseDTO<T> {
  
     @JsonProperty("response")
     private Response<T> response;
@@ -29,6 +29,7 @@ public class TourApiResponseDto<T> {
     }
 
     // 헤더 영역 - 객체 2개 구분(성공유무 결과코드, 결과 메시지 매핑 - 헤더 실패 시 메타데이터도 안들어옴)
+    // + 중복되는 모든 api의 공통 헤더정보 추가(config로 나눈 요청파라미터와 비슷한 개념)
     @Getter
     @Setter
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -38,6 +39,7 @@ public class TourApiResponseDto<T> {
     }
 
     // 바디 영역 - 아이템 구분(메타데이터 + 알맹이 주머니 형태. 페이징 정보 등과 실제 데이터 구분용도)
+    // + 중복되는 모든 api의 공통 바디(페이징) 정보 추가(config로 나눈 요청파라미터와 비슷한 개념)
     @Getter
     @Setter
     @JsonIgnoreProperties(ignoreUnknown = true)

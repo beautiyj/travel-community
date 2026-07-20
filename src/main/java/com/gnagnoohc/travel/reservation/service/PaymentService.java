@@ -29,6 +29,14 @@ public class PaymentService {
     @Transactional
     public Payment saveSuccess(Long reservationId, int amount, String paymentKey,
                                String orderId, int paymentType) {
+        // 이중결제 방지: 같은 주문번호가 이미 저장돼 있으면 새로 저장하지 않고 기존 결제 반환 (멱등 처리)
+        Payment existing = paymentMapper.findByOrderId(orderId);
+        if (existing != null) {
+            log.info("[중복 승인 요청 무시] orderId={} 이미 처리됨 (paymentId={})",
+                    orderId, existing.getPaymentId());
+            return existing;
+        }
+
         Payment p = new Payment();
         p.setReservationId(reservationId);
         p.setAmount(amount);

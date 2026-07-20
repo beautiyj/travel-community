@@ -34,5 +34,9 @@ public class MypageServiceImpl implements MypageService {
     	return mypageRepository.getReservationList(memberId);
     }
 
+    @Override
+    public List<MypageDto> getWishlist(Long memberId){
+    	return mypageRepository.getWishlist(memberId);
+    }
     
 }

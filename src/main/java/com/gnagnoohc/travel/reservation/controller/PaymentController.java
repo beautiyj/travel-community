@@ -44,6 +44,12 @@ public class PaymentController {
     public Map<String, String> kakaoReady(@PathVariable("reservationId") Long reservationId,
                                           HttpSession session) {
         Reservation r = reservationService.getById(reservationId);
+
+        // 이중결제 방지: '예약중' 예약만 결제창을 열 수 있다 (이미 결제된 예약 차단)
+        if (!Reservation.STATUS_PENDING.equals(r.getStatus())) {
+            throw new IllegalStateException("결제 대기 중인 예약만 결제할 수 있습니다. 현재 상태: " + r.getStatus());
+        }
+
         int amount = reservationService.calculateAmount(r);
         String orderId = paymentService.generateOrderId(reservationId);
 

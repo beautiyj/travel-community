@@ -103,7 +103,14 @@ public class MypageController {
     }
         
     @GetMapping("/wishlist")
-    public String wishlist() {
+    public String wishlist(Model model) {
+    	
+    	List<MypageDto> wishlist = mypageService.getWishlist(1L);
+    	
+    	System.out.println("wishlist:" + wishlist);
+    	
+    	model.addAttribute("wishlist", wishlist);
+    	
     	return "mypage/wishlist";
     }
       

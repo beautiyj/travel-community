@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.gnagnoohc.travel.auth.dto.SignUpRequest;
+import com.gnagnoohc.travel.auth.dto.LocalLoginResult;
+import com.gnagnoohc.travel.auth.dto.LocalLoginResult.LoginStatus;
 import com.gnagnoohc.travel.auth.dto.VerifiedSignupEmail;
 import com.gnagnoohc.travel.auth.exception.EmailVerificationException;
 import com.gnagnoohc.travel.auth.exception.SignupException;
@@ -43,11 +45,28 @@ public class AuthController {
 	}
 
 	@PostMapping("/login")
-	public String login(@RequestParam("username") String username, @RequestParam("password") String password,
-			HttpServletRequest request) {
-		// 아이디와 비밀번호를 검증한 뒤, 성공한 회원의 ID만 세션에 저장한다.
-		Integer memberId = service.authenticateLocal(username, password);
-		if (memberId == null) {
+	public String login(@RequestParam(value = "username", required = false) String username,
+			@RequestParam(value = "password", required = false) String password,
+			HttpServletRequest request, Model model) {
+		// 공백 입력은 계정 인증 전에 검증해 각 입력칸에 맞는 메시지를 표시하고 DB를 조회하지 않는다.
+		boolean usernameBlank = username == null || username.isBlank();
+		boolean passwordBlank = password == null || password.isBlank();
+		if (usernameBlank || passwordBlank) {
+			if (usernameBlank) {
+				model.addAttribute("usernameError", "아이디를 입력해주세요.");
+			}
+			if (passwordBlank) {
+				model.addAttribute("passwordError", "비밀번호를 입력해주세요.");
+			}
+			return "auth/login";
+		}
+
+		// 잠금 상태는 사용자 안내가 필요하므로 일반 인증 실패와 구분해 로그인 화면으로 이동한다.
+		LocalLoginResult loginResult = service.authenticateLocal(username, password);
+		if (loginResult.status() == LoginStatus.LOCKED) {
+			return "redirect:/auth/login?locked";
+		}
+		if (!loginResult.isSuccess()) {
 			return "redirect:/auth/login?error";
 		}
 
@@ -58,7 +77,7 @@ public class AuthController {
 		}
 
 		HttpSession loginSession = request.getSession(true);
-		loginSession.setAttribute("id", memberId);
+		loginSession.setAttribute("id", loginResult.memberId());
 		return "redirect:/";
 	}
 

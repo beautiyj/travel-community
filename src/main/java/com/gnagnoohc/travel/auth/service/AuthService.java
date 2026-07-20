@@ -4,6 +4,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.gnagnoohc.travel.auth.dto.LocalLoginResult;
 import com.gnagnoohc.travel.auth.dto.SignUpRequest;
 import com.gnagnoohc.travel.auth.dto.VerifiedSignupEmail;
 import com.gnagnoohc.travel.auth.exception.EmailVerificationException;
@@ -17,27 +18,62 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class AuthService {
-	
+	private static final int MAX_FAILED_LOGIN_COUNT = 5;
+
 	private final AuthMapper mapper;
 	private final PasswordEncoder passEncoder;
 	private final EmailVerificationService emailVerificationService;
 
 	// 로그인
-	@Transactional(readOnly = true)
-	public Integer authenticateLocal(String loginId, String rawPassword) {
-		// 활성 로컬 계정을 조회하고 BCrypt로 비밀번호를 검증한다.
-		if (loginId == null || loginId.isBlank()
+	@Transactional
+	public LocalLoginResult authenticateLocal(String username, String rawPassword) {
+		// 같은 계정의 동시 요청을 직렬화해 실패 횟수와 잠금 시각을 일관되게 변경한다.
+		if (username == null || username.isBlank()
 				|| rawPassword == null || rawPassword.isBlank()) {
-			return null;
+			return LocalLoginResult.invalidCredentials();
 		}
 
-		MemberLocalAuth localAuth = mapper.findLocalLoginAuth(loginId.trim());
-		if (localAuth == null
-				|| !passEncoder.matches(rawPassword, localAuth.getPasswordHash())) {
-			return null;
+		// member_local_auth의 기본키인 username으로 로컬 인증 정보를 조회한다.
+		MemberLocalAuth localAuth = mapper.findLocalLoginAuthForUpdate(username.trim());
+		if (localAuth == null) {
+			return LocalLoginResult.invalidCredentials();
 		}
 
-		return localAuth.getMemberId();
+		// 잠금 중에는 비밀번호 검사, 실패 횟수 증가, 잠금시간 연장을 모두 하지 않는다.
+		if (localAuth.isCurrentlyLocked()) {
+			return LocalLoginResult.locked();
+		}
+
+		// 만료된 잠금은 다음 로그인 요청에서 초기화하므로 별도 스케줄러가 필요 없다.
+		if (localAuth.getLockedUntil() != null) {
+			updateOneRow(mapper.resetLoginFailure(localAuth.getUsername()));
+			localAuth.setFailedLoginCount(0);
+		}
+
+		if (passEncoder.matches(rawPassword, localAuth.getPasswordHash())) {
+			// 잠금 이력이 아닌 일반 실패 이력은 로그인 성공 시 초기화한다.
+			if (localAuth.getFailedLoginCount() > 0) {
+				updateOneRow(mapper.resetLoginFailure(localAuth.getUsername()));
+			}
+			return LocalLoginResult.success(localAuth.getMemberId());
+		}
+
+		int nextFailedLoginCount = localAuth.getFailedLoginCount() + 1;
+		if (nextFailedLoginCount >= MAX_FAILED_LOGIN_COUNT) {
+			// 다섯 번째 실패가 잠금을 만들며, 잠금시간은 이후 요청으로 연장되지 않는다.
+			updateOneRow(mapper.lockLocalLogin(localAuth.getUsername()));
+			return LocalLoginResult.locked();
+		}
+
+		updateOneRow(mapper.incrementFailedLoginCount(localAuth.getUsername()));
+		return LocalLoginResult.invalidCredentials();
+	}
+
+	// 행 잠금 후의 갱신이 누락되면 인증 상태가 불일치하므로 트랜잭션을 롤백한다.
+	private void updateOneRow(int updatedRowCount) {
+		if (updatedRowCount != 1) {
+			throw new IllegalStateException("로그인 인증 정보 갱신에 실패했습니다.");
+		}
 	}
 
 	// 회원가입

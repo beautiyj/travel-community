@@ -78,7 +78,8 @@ public class AuthController {
 		}
 
 		HttpSession loginSession = request.getSession(true);
-		loginSession.setAttribute("id", loginResult.memberId());
+		// 다른 패키지와 JSP에서 loginMember DTO를 동일한 세션 키로 사용한다.
+		loginSession.setAttribute("loginMember", loginResult.loginMember());
 		return "redirect:/";
 	}
 

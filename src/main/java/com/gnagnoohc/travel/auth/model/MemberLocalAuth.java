@@ -22,5 +22,8 @@ public class MemberLocalAuth {
 	private Timestamp createdAt;
 	private Timestamp updatedAt;
 	private int memberId;
+	// member 테이블과 JOIN하여 로그인 성공 세션을 만들 때 함께 조회하는 정보다.
+	private String nickname;
+	private String memberRole;
 
 }

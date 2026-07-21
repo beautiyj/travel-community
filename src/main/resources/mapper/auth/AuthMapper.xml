@@ -41,6 +41,9 @@
 	<select id="findLocalLoginAuthForUpdate" resultType="memberlocalauth">
 		select local_auth.username AS username,
 			local_auth.member_id AS memberId,
+			-- 로그인 성공 후 세션에 저장할 회원 표시·권한 정보도 함께 조회한다.
+			member_info.nickname AS nickname,
+			member_info.member_role AS memberRole,
 			local_auth.password_hash AS passwordHash,
 			local_auth.failed_login_count AS failedLoginCount,
 			local_auth.locked_until AS lockedUntil,

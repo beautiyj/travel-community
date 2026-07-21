@@ -4,6 +4,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.gnagnoohc.travel.auth.dto.LoginMemberDto;
 import com.gnagnoohc.travel.auth.dto.LocalLoginResult;
 import com.gnagnoohc.travel.auth.dto.SignUpRequest;
 import com.gnagnoohc.travel.auth.dto.VerifiedPasswordReset;
@@ -55,7 +56,11 @@ public class AuthService {
 			if (localAuth.getFailedLoginCount() > 0) {
 				updateOneRow(mapper.resetLoginFailure(localAuth.getUsername()));
 			}
-			return LocalLoginResult.success(localAuth.getMemberId());
+			// 비밀번호 검증까지 끝난 회원 정보만 로그인 세션 생성 대상으로 전달한다.
+			return LocalLoginResult.success(new LoginMemberDto(
+					localAuth.getMemberId(),
+					localAuth.getNickname(),
+					localAuth.getMemberRole()));
 		}
 
 		int nextFailedLoginCount = localAuth.getFailedLoginCount() + 1;

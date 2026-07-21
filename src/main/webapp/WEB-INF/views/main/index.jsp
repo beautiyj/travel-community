@@ -66,6 +66,8 @@
         <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/selectableButton.css">
         <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/selectableCardComponent.css">
         <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/dropdownSelector.css">
+        <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/buttonComponent.css">
+        <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/searchbar.css">
     </head>
     <body style="margin: 0; padding: 0;">
 
@@ -75,78 +77,57 @@
             <h2>컴포넌트추가_테스트인덱스파일</h2>
             <button onclick="location.href='/tour/test'">테스트 페이지</button>
 
-            <!-- ===================== 드롭다운 셀렉터 테스트 ===================== -->
-            <h3 style="margin-top:30px;">드롭다운 셀렉터 테스트</h3>
+            <!-- ===================== 검색창 컴포넌트 테스트 ===================== -->
+            <h3 style="margin-top:30px;">검색창 컴포넌트 테스트</h3>
 
-            <%--
-            - dropdownId       : (필수) 화면 내 고유 식별자 (JS/HTML id 중복 방지)
-            ex) "dropdown_basic", "regionSelect"
-            - listAttr         : (필수) Controller가 request.setAttribute("이름", list)로 전달한 데이터 변수명
-            ex) "sortList", "regionList"
-            - defaultLabel     : (선택) 선택 전 기본 노출 문구 (미지정 시 '선택')
-            ex) "지역 선택", "카테고리"
-            - iconSrc          : (선택) 버튼 좌측 이미지 경로 (PNG/SVG 모두 가능)
-            ex) "${pageContext.request.contextPath}/images/icons/search.png"
-            - width            : (선택) 너비 커스텀 지정 (미지정 시 기본 CSS max-width: 200px)
-            ex) "120px", "240px", "50%", "100%"
-            - selectedAttr     : (선택) 초기 선택되어 있을 값(Code) 변수명
-            - selectedNameAttr : (선택) 초기 선택되어 있을 라벨(Name) 변수명
-            - targetUrl        : (선택) 선택 시 이동할 URL 경로
-            - paramKey         : (선택) URL 전달용 파라미터 키 이름
-            --%>
+            <%-- 1. 파라미터 미전달 (기본 설정값 적용) --%>
+            <p style="margin-top:15px; color:#666;">1. 기본 검색창 (파라미터 미전달)</p>
+            <form action="/tour/list" method="get">
+                <jsp:include page="/WEB-INF/views/common/searchbar.jsp" />
+            </form>
 
-            <%-- 1. 필수값인 아이디(dropdownId), 데이터리스트(listAttr)만 전달한 기본 드롭다운 --%>
-            <p style="margin-top:15px; color:#666;">1. 필수값 기본 드롭다운</p>
-            <jsp:include page="/WEB-INF/views/common/dropdownSelector.jsp">
-                <jsp:param name="dropdownId" value="dropdown_basic" />
-                <jsp:param name="listAttr"   value="sortList" />
-            </jsp:include>
+            <%-- 2. 커스텀 설정 (플레이스홀더, 버튼 텍스트, 파라미터명 변경) --%>
+            <p style="margin-top:25px; color:#666;">2. 커스텀 검색창 (플레이스홀더, 버튼명, input name 변경)</p>
+            <form action="/community/list" method="get">
+                <jsp:include page="/WEB-INF/views/common/searchbar.jsp">
+                    <jsp:param name="placeholder" value="게시글 제목이나 내용을 입력하세요" />
+                    <jsp:param name="name"        value="query" />
+                    <jsp:param name="btnText"     value="조회" />
+                </jsp:include>
+            </form>
 
-            <%-- 2. png/svg 아이콘 포함된 드롭다운 --%>
-            <p style="margin-top:25px; color:#666;">2. 아이콘 포함 드롭다운</p>
-            <jsp:include page="/WEB-INF/views/common/dropdownSelector.jsp">
-                <jsp:param name="dropdownId"   value="dropdown_icon_region" />
-                <jsp:param name="listAttr"     value="regionList" />
-                <jsp:param name="defaultLabel" value="지역 선택" />
-                <jsp:param name="iconSrc"      value="${pageContext.request.contextPath}/images/icons/search.png" />
-                <jsp:param name="targetUrl"    value="/tour/list" />
-                <jsp:param name="paramKey"     value="region" />
-            </jsp:include>
+            <%-- 3. 검색어 유지 테스트 (value 전달) --%>
+            <p style="margin-top:25px; color:#666;">3. 검색어 유지를 위한 value 값 전달 (기존 검색어: 제주도)</p>
+            <form action="/tour/list" method="get">
+                <jsp:include page="/WEB-INF/views/common/searchbar.jsp">
+                    <jsp:param name="value" value="제주도" />
+                </jsp:include>
+            </form>
 
-            <%-- 3. 드롭다운 기본 너비/사이즈 설정 --%>
-            <p style="margin-top:25px; color:#666;">3. 드롭다운 사이즈 설정</p>
-            <jsp:include page="/WEB-INF/views/common/dropdownSelector.jsp">
-                <jsp:param name="dropdownId"   value="dropdown_size_default" />
-                <jsp:param name="listAttr"     value="sortList" />
-                <jsp:param name="defaultLabel" value="너비 미지정(기본값)" />
-                <jsp:param name="targetUrl"    value="/tour/list" />
-                <jsp:param name="paramKey"     value="sort" />
-            </jsp:include>
+            <%-- 4. 너비 확장, 드롭다운 포함 및 버튼 색상 변경 테스트 --%>
+            <p style="margin-top:25px; color:#666;">4. 너비 지정(600px), 드롭다운 포함, 버튼 색상 변경(#dc2626)</p>
+            <form action="/tour/list" method="get">
+                <jsp:include page="/WEB-INF/views/common/searchbar.jsp">
+                    <jsp:param name="width"       value="600px" />
+                    <jsp:param name="useDropdown"  value="true" />
+                    <jsp:param name="btnText"      value="검색" />
+                    <jsp:param name="btnColor"     value="#dc2626" />
+                </jsp:include>
+            </form>
 
-            <%-- 4. 드롭다운 컬러 변경 --%>
-            <p style="margin-top:25px; color:#666;">4. 드롭다운 컬러 변경</p>
-            <div style="display: flex; gap: 15px;">
-                <!-- --drop-bg와 --drop-text 지정 -->
-                <div style="--drop-border:#12b886; --drop-bg:#e6fcf5; --drop-text:#0ca678; --drop-active-bg:#c3fae8; --drop-active-text:#087f5b;">
-                    <jsp:include page="/WEB-INF/views/common/dropdownSelector.jsp">
-                        <jsp:param name="dropdownId"   value="dropdown_color_green" />
-                        <jsp:param name="listAttr"     value="sortList" />
-                        <jsp:param name="defaultLabel" value="그린 컬러" />
-                    </jsp:include>
-                </div>
-                <!-- --drop-bg와 --drop-text 지정 -->
-                <div style="--drop-border:#fa5252; --drop-active-bg:#fff5f5; --drop-active-text:#fa5252;">
-                    <jsp:include page="/WEB-INF/views/common/dropdownSelector.jsp">
-                        <jsp:param name="dropdownId"   value="dropdown_color_red" />
-                        <jsp:param name="listAttr"     value="sortList" />
-                        <jsp:param name="defaultLabel" value="레드 컬러" />
-                        <jsp:param name="targetUrl"    value="/tour/list" />
-                        <jsp:param name="paramKey"     value="sort" />
-                    </jsp:include>
-                </div>
-            </div>
-
-            <!-- ===================== 드롭다운 셀렉터 테스트 끝 ===================== -->
+            <%-- 5. 드롭다운 커스텀 데이터(regionList) 및 드롭다운 너비(140px) 지정 테스트 --%>
+            <p style="margin-top:25px; color:#666;">5. 커스텀 데이터 드롭다운 (지역 선택 data: regionList, 너비: 140px)</p>
+            <form action="/tour/list" method="get">
+                <jsp:include page="/WEB-INF/views/common/searchbar.jsp">
+                    <jsp:param name="width"         value="600px" />
+                    <jsp:param name="useDropdown"    value="true" />
+                    <jsp:param name="listAttr"       value="regionList" />
+                    <jsp:param name="defaultLabel"   value="지역 선택" />
+                    <jsp:param name="dropdownWidth"  value="140px" />
+                    <jsp:param name="btnText"        value="검색" />
+                    <jsp:param name="btnColor"       value="#dc2626" />
+                </jsp:include>
+            </form>
 
         </div>
 
@@ -156,16 +137,7 @@
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
         <script src="${pageContext.request.contextPath}/js/dropdownSelector.js"></script>
-
-        <script>
-            document.addEventListener("click", function () {
-                const roleInput = document.getElementById("memberRole");
-                const display = document.getElementById("memberRoleDisplay");
-                if (roleInput && display) {
-                    display.textContent = roleInput.value;
-                }
-            });
-        </script>
+        <script src="${pageContext.request.contextPath}/js/common.js"></script>
 
     </body>
 </html>

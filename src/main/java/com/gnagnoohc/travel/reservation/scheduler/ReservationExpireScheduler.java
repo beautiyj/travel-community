@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 
 /**
- * 결제 대기('예약중') 상태로 30분이 지난 예약을 자동으로 '예약만료' 처리.
+ * 결제 대기(PENDING) 상태로 30분이 지난 예약을 자동으로 EXPIRED 처리.
  * 주의: TravelApplication(또는 config 클래스)에 @EnableScheduling 필요!
  */
 @Slf4j

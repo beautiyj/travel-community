@@ -30,10 +30,10 @@
             <jsp:param name="onclick" value="location.href='/mypage/reservations'" />
         </jsp:include>
         <jsp:include page="/WEB-INF/views/common/smallButton.jsp">
-            <jsp:param name="text" value="결제 취소(환불)" />
+            <jsp:param name="text" value="예약 취소 요청" />
             <jsp:param name="width" value="100%" />
             <jsp:param name="theme" value="danger" />
-            <jsp:param name="onclick" value="cancelPayment()" />
+            <jsp:param name="onclick" value="requestCancel()" />
         </jsp:include>
     </div>
 </div>
@@ -41,6 +41,7 @@
 <%-- 서버값 주입 후 외부 JS 로드 --%>
 <script>
     var paymentId = "${payment.paymentId}";
+    var reservationId = "${payment.reservationId}";
 </script>
 <script src="/js/payment-success.js"></script>
 </body>

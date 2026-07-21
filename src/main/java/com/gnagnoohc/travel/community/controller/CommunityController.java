@@ -26,10 +26,10 @@ import lombok.RequiredArgsConstructor;
 public class CommunityController {
     private final CommunityService service;
 	
-    // 인덱스 파일 실행
-    @GetMapping("/main/index")
+    // 커뮤니티 테스트 파일 실행
+    @GetMapping("/community/test")
     public String index() {
-        return "main/index";
+        return "community/test";
     }
     
     // 이미지 저장
@@ -183,7 +183,7 @@ public class CommunityController {
             image.transferTo(new File(folder, savedName));
  
             ImageDto img = new ImageDto();
-            img.setPostId(postId);        // FK 컬럼명이 post_id2
+            img.setPostId(postId);        // FK 컬럼명이 post_id
             img.setImageUrl(savedName);    // 저장된 파일명
             img.setSortOrder(order++);     // 정렬 순서
             service.insertImage(img);

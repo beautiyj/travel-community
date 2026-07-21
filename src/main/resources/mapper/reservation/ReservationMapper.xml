@@ -44,12 +44,21 @@
         WHERE reservation_id = #{reservationId}
     </update>
 
-    <!-- 취소 요청: 상태 '취소요청' + 사유/요청시각 기록 -->
+    <!-- 취소 요청: 상태 CANCEL_REQUESTED + 사유/요청시각 기록 -->
     <update id="requestCancel">
         UPDATE RESERVATION
-        SET status = '취소요청',
+        SET status = 'CANCEL_REQUESTED',
             cancel_reason = #{reason},
             cancel_requested_at = NOW()
+        WHERE reservation_id = #{reservationId}
+    </update>
+
+    <!-- 취소 요청 거절: 상태 PAID로 원복 + 취소 요청 기록 제거 (requestCancel의 대칭) -->
+    <update id="rejectCancel">
+        UPDATE RESERVATION
+        SET status = 'PAID',
+            cancel_reason = NULL,
+            cancel_requested_at = NULL
         WHERE reservation_id = #{reservationId}
     </update>
 
@@ -61,21 +70,21 @@
         ORDER BY cancel_requested_at DESC, created_at DESC
     </select>
 
-    <!-- 슬롯 선점 체크: 활성 상태(예약중/예약완료)인 동일 장소·날짜 예약 수 -->
+    <!-- 슬롯 선점 체크: 활성 상태(PENDING/PAID)인 동일 장소·날짜 예약 수 -->
     <select id="countActive" resultType="int">
         SELECT COUNT(*)
         FROM RESERVATION
         WHERE member_id = #{memberId}
           AND place_id = #{placeId}
           AND visit_date = #{visitDate}
-          AND status IN ('예약중', '예약완료')
+          AND status IN ('PENDING', 'PAID')
     </select>
 
     <!-- 스케줄러: 30분 지난 미결제 건 일괄 만료 -->
     <update id="expirePending">
         UPDATE RESERVATION
-        SET status = '예약만료'
-        WHERE status = '예약중'
+        SET status = 'EXPIRED'
+        WHERE status = 'PENDING'
           AND created_at &lt; #{cutoff}
     </update>
 

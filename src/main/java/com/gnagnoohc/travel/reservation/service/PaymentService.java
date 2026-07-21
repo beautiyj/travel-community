@@ -19,6 +19,7 @@ public class PaymentService {
     private final PaymentMapper paymentMapper;
     private final ReservationService reservationService;
     private final KakaoPayService kakaoPayService;
+    private final TossPayService tossPayService;
 
     /** 주문번호 생성 규칙: ORDER-{예약ID}-{타임스탬프} */
     public String generateOrderId(Long reservationId) {
@@ -56,8 +57,11 @@ public class PaymentService {
             throw new IllegalStateException("이미 취소된 결제입니다.");
         }
 
-        // payment_key에 카카오 tid가 저장되어 있음
-        kakaoPayService.cancel(p.getPaymentKey(), p.getAmount());
+        if (p.getPaymentType() == Payment.TYPE_TOSS) {
+            tossPayService.cancel(p.getPaymentKey(), reason != null ? reason : "고객 요청");
+        } else {
+            kakaoPayService.cancel(p.getPaymentKey(), p.getAmount());
+        }
 
         paymentMapper.updateStatus(paymentId, Payment.STATUS_CANCELED);
         reservationService.updateStatus(p.getReservationId(), Reservation.STATUS_CANCELED);

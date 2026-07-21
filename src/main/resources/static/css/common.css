@@ -62,6 +62,10 @@
   --text-lg:                1.125rem;  /* 18px */
   --text-xl:                1.25rem;   /* 20px */
   --text-2xl:               1.5rem;    /* 24px */
+
+  /* 공통 트랜지션 & 색상 토큰 (셀렉터블 버튼/카드 등 인터랙션 컴포넌트에서 공유) */
+  --white:                  #ffffff;
+  --transition-fast:        0.2s;
 }
 
 

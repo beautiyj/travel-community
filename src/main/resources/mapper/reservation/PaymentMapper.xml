@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gnagnoohc.travel.reservation.mapper.PaymentMapper">
+
+    <sql id="paymentColumns">
+        payment_id     AS paymentId,
+        reservation_id AS reservationId,
+        amount,
+        payment_key    AS paymentKey,
+        payment_status AS paymentStatus,
+        order_id       AS orderId,
+        paid_at        AS paidAt,
+        payment_type   AS paymentType
+    </sql>
+
+    <insert id="insert" parameterType="com.gnagnoohc.travel.reservation.entity.Payment"
+            useGeneratedKeys="true" keyProperty="paymentId">
+        INSERT INTO PAYMENT
+            (reservation_id, amount, payment_key, payment_status, order_id, paid_at, payment_type)
+        VALUES
+            (#{reservationId}, #{amount}, #{paymentKey}, #{paymentStatus}, #{orderId}, #{paidAt}, #{paymentType})
+    </insert>
+
+    <select id="findById" resultType="com.gnagnoohc.travel.reservation.entity.Payment">
+        SELECT <include refid="paymentColumns"/>
+        FROM PAYMENT
+        WHERE payment_id = #{paymentId}
+    </select>
+
+    <select id="findByOrderId" resultType="com.gnagnoohc.travel.reservation.entity.Payment">
+        SELECT <include refid="paymentColumns"/>
+        FROM PAYMENT
+        WHERE order_id = #{orderId}
+    </select>
+
+    <select id="findByReservationId" resultType="com.gnagnoohc.travel.reservation.entity.Payment">
+        SELECT <include refid="paymentColumns"/>
+        FROM PAYMENT
+        WHERE reservation_id = #{reservationId}
+        ORDER BY payment_id DESC
+    </select>
+
+    <update id="updateStatus">
+        UPDATE PAYMENT
+        SET payment_status = #{status}
+        WHERE payment_id = #{paymentId}
+    </update>
+
+</mapper>

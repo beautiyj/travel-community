@@ -7,8 +7,6 @@
 /* 헤더의 '로그인' 링크는 진한 글자색으로 override */
 .link-text { color: var(--foreground); }
 
-/* '회원가입' 버튼은 common.css 로 이동 (모든 페이지 헤더에서 공통으로 쓰는 요소라서) */
-
 /* ---------- Page layout ---------- */
 .page { display: none; }
 .page.active { display: block; }
@@ -121,9 +119,6 @@
   padding: 13px 17px; font-size: 14px; font-family: inherit; resize: vertical;
   min-height: 44px; outline: none;
 }
-/* 등록 버튼은 이제 smallButton.jsp 가 그림 (smallButton.css 가 겉모습 담당)
-   ※ ".comment-form button" 처럼 태그 선택자를 남겨두면 .btn-small-row 보다
-     명시도(specificity)가 높아서 smallButton 의 스타일을 덮어써버리므로 삭제함 */
 
 /* ---------- 게시글 첨부 이미지 갤러리 (post_image.sort_order 순으로 슬라이드) ---------- */
 .post-gallery {
@@ -131,9 +126,10 @@
   overflow: hidden;
   border-radius: var(--radius-lg);
   background: var(--muted);
-  aspect-ratio: 16 / 10;
-  max-height: 480px;
-  margin: 16px 0 24px;
+  aspect-ratio: 16 / 9;
+  max-width: 480px;
+  max-height: 320px;
+  margin: 24px auto 0;
 }
 .post-gallery-track {
   display: flex;

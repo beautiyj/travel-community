@@ -69,8 +69,12 @@
       <span>조회 <fmt:formatNumber value="${post.readcount}" pattern="#,##0" /></span>
     </div>
 
+    <!-- 본문 (community.css 의 .detail-body, 줄바꿈 유지) -->
+    <p class="detail-body">${post.content}</p>
+
     <!-- 이미지: sort_order 순으로 저장되어 있다고 가정 (0번이 대표/썸네일 이미지)
-         1장뿐이면 화살표 없이 사진만, 여러 장이면 배너처럼 좌우 화살표로 넘김 -->
+         1장뿐이면 화살표 없이 사진만, 여러 장이면 배너처럼 좌우 화살표로 넘김
+         ※ 본문 아래로 위치 이동 (원래는 본문 위였음) -->
     <c:if test="${not empty post.imageList}">
       <div class="post-gallery" data-gallery>
         <div class="post-gallery-track" data-gallery-track>
@@ -98,9 +102,6 @@
         </c:if>
       </div>
     </c:if>
-
-    <!-- 본문 (community.css 의 .detail-body, 줄바꿈 유지) -->
-    <p class="detail-body">${post.content}</p>
   </div>
 
 

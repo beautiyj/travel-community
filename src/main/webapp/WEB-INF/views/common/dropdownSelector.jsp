@@ -1,6 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
 <%-- 고유 ID (한 페이지 내 멀티 드롭다운 충돌 방지) --%>
 <c:set var="dropdownId" value="${empty param.dropdownId ? 'defaultSelect' : param.dropdownId}" />
@@ -17,7 +16,10 @@
 <c:set var="targetUrl" value="${empty param.targetUrl ? '#' : param.targetUrl}" />
 <c:set var="paramKey" value="${empty param.paramKey ? 'type' : param.paramKey}" />
 <%-- 너비 커스텀 세팅 (px나 % 단위 포함 가능하게 처리, 미입력 시 CSS 기본값 작동) --%>
-<c:set var="widthStyle" value="${empty param.width ? '' : fn:concat('width: ', param.width, ';')}" />
+<c:set var="widthStyle" value="" />
+<c:if test="${not empty param.width}">
+    <c:set var="widthStyle" value="width: ${param.width};" />
+</c:if>
 
 
 <div class="drop-select-container" style="${widthStyle}">

@@ -12,15 +12,11 @@ public class Payment {
 	public static final int TYPE_TOSS = 1;
     public static final int TYPE_KAKAO = 2;
 
-    public static final String STATUS_DONE     = "결제완료";
-    public static final String STATUS_CANCELED = "결제취소";
-    public static final String STATUS_FAILED   = "결제실패";
-
     private Long paymentId;
     private Long reservationId;
     private int amount;
     private String paymentKey;      // 토스: paymentKey / 카카오: tid
-    private String paymentStatus;   // 결제완료 / 결제취소 / 결제실패
+    private PaymentStatus paymentStatus;   // DB 저장은 영어(DONE/CANCELED/FAILED), 표시는 paymentStatus.label
     private String orderId;
     private LocalDateTime paidAt;
     private int paymentType;        // 1 = 토스, 2 = 카카오

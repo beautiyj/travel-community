@@ -28,7 +28,7 @@
     <!-- 2. 결제 페이지 -->
     <div class="card">
         <h3>2. 결제 페이지 열기</h3>
-        <p>이미 만들어진 예약(예약중 상태)의 결제 페이지로 바로 이동</p>
+        <p>이미 만들어진 예약(PENDING 상태)의 결제 페이지로 바로 이동</p>
         <div class="row">
             <input type="number" id="reservationId" placeholder="reservationId" min="1">
             <button type="button" onclick="goCheckout()">결제 페이지로 이동</button>
@@ -76,11 +76,11 @@
                     <td>
                         <span class="status
                             <c:choose>
-                                <c:when test="${r.status == '예약중'}">s-pending</c:when>
-                                <c:when test="${r.status == '예약완료'}">s-paid</c:when>
-                                <c:when test="${r.status == '예약취소'}">s-canceled</c:when>
+                                <c:when test="${r.status == 'PENDING'}">s-pending</c:when>
+                                <c:when test="${r.status == 'PAID'}">s-paid</c:when>
+                                <c:when test="${r.status == 'CANCELED'}">s-canceled</c:when>
                                 <c:otherwise>s-expired</c:otherwise>
-                            </c:choose>">${r.status}</span>
+                            </c:choose>">${r.status.label}</span>
                     </td>
                     <td>${r.createdAt}</td>
                 </tr>

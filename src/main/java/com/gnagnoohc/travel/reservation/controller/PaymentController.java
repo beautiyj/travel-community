@@ -4,6 +4,7 @@ import com.gnagnoohc.travel.reservation.dto.KakaoApproveResponse;
 import com.gnagnoohc.travel.reservation.dto.KakaoReadyResponse;
 import com.gnagnoohc.travel.reservation.entity.Payment;
 import com.gnagnoohc.travel.reservation.entity.Reservation;
+import com.gnagnoohc.travel.reservation.entity.ReservationStatus;
 import com.gnagnoohc.travel.reservation.service.KakaoPayService;
 import com.gnagnoohc.travel.reservation.service.PaymentService;
 import com.gnagnoohc.travel.reservation.service.ReservationService;
@@ -45,9 +46,9 @@ public class PaymentController {
                                           HttpSession session) {
         Reservation r = reservationService.getById(reservationId);
 
-        // 이중결제 방지: '예약중' 예약만 결제창을 열 수 있다 (이미 결제된 예약 차단)
-        if (!Reservation.STATUS_PENDING.equals(r.getStatus())) {
-            throw new IllegalStateException("결제 대기 중인 예약만 결제할 수 있습니다. 현재 상태: " + r.getStatus());
+        // 이중결제 방지: PENDING 예약만 결제창을 열 수 있다 (이미 결제된 예약 차단)
+        if (r.getStatus() != ReservationStatus.PENDING) {
+            throw new IllegalStateException("결제 대기 중인 예약만 결제할 수 있습니다. 현재 상태: " + r.getStatus().getLabel());
         }
 
         int amount = reservationService.calculateAmount(r);

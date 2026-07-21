@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.gnagnoohc.travel.auth.dto.LocalLoginResult;
 import com.gnagnoohc.travel.auth.dto.SignUpRequest;
+import com.gnagnoohc.travel.auth.dto.VerifiedPasswordReset;
 import com.gnagnoohc.travel.auth.dto.VerifiedSignupEmail;
 import com.gnagnoohc.travel.auth.exception.EmailVerificationException;
 import com.gnagnoohc.travel.auth.exception.SignupException;
@@ -27,31 +28,30 @@ public class AuthService {
 	// 로그인
 	@Transactional
 	public LocalLoginResult authenticateLocal(String username, String rawPassword) {
-		// 같은 계정의 동시 요청을 직렬화해 실패 횟수와 잠금 시각을 일관되게 변경한다.
 		if (username == null || username.isBlank()
 				|| rawPassword == null || rawPassword.isBlank()) {
 			return LocalLoginResult.invalidCredentials();
 		}
 
-		// member_local_auth의 기본키인 username으로 로컬 인증 정보를 조회한다.
+		// 같은 아이디의 요청이 실패 횟수를 동시에 바꾸지 않도록 로그인 인증 정보를 잠가 조회한다.
 		MemberLocalAuth localAuth = mapper.findLocalLoginAuthForUpdate(username.trim());
 		if (localAuth == null) {
 			return LocalLoginResult.invalidCredentials();
 		}
 
-		// 잠금 중에는 비밀번호 검사, 실패 횟수 증가, 잠금시간 연장을 모두 하지 않는다.
+		// 잠금 중에는 비밀번호를 검사하지 않고 실패 횟수와 잠금 시간도 변경하지 않는다.
 		if (localAuth.isCurrentlyLocked()) {
 			return LocalLoginResult.locked();
 		}
 
-		// 만료된 잠금은 다음 로그인 요청에서 초기화하므로 별도 스케줄러가 필요 없다.
+		// 만료된 잠금 정보는 다음 로그인 요청에서 초기화한다.
 		if (localAuth.getLockedUntil() != null) {
 			updateOneRow(mapper.resetLoginFailure(localAuth.getUsername()));
 			localAuth.setFailedLoginCount(0);
 		}
 
 		if (passEncoder.matches(rawPassword, localAuth.getPasswordHash())) {
-			// 잠금 이력이 아닌 일반 실패 이력은 로그인 성공 시 초기화한다.
+			// 이전에 비밀번호를 틀린 기록이 있으면 로그인 성공 시 초기화한다.
 			if (localAuth.getFailedLoginCount() > 0) {
 				updateOneRow(mapper.resetLoginFailure(localAuth.getUsername()));
 			}
@@ -60,7 +60,7 @@ public class AuthService {
 
 		int nextFailedLoginCount = localAuth.getFailedLoginCount() + 1;
 		if (nextFailedLoginCount >= MAX_FAILED_LOGIN_COUNT) {
-			// 다섯 번째 실패가 잠금을 만들며, 잠금시간은 이후 요청으로 연장되지 않는다.
+			// 다섯 번째 실패에서 계정을 잠그고, 잠금 중인 요청으로 잠금 시간을 연장하지 않는다.
 			updateOneRow(mapper.lockLocalLogin(localAuth.getUsername()));
 			return LocalLoginResult.locked();
 		}
@@ -69,7 +69,7 @@ public class AuthService {
 		return LocalLoginResult.invalidCredentials();
 	}
 
-	// 행 잠금 후의 갱신이 누락되면 인증 상태가 불일치하므로 트랜잭션을 롤백한다.
+	// 인증 정보가 정확히 한 건 변경되지 않으면 트랜잭션을 롤백한다.
 	private void updateOneRow(int updatedRowCount) {
 		if (updatedRowCount != 1) {
 			throw new IllegalStateException("로그인 인증 정보 갱신에 실패했습니다.");
@@ -82,24 +82,8 @@ public class AuthService {
 			SignUpRequest signUpRequest,
 			VerifiedSignupEmail sessionVerification) {
 
-		// 사업자 등록증 파일 업로드는 관리자 승인 기능 추가 후 구현한다.
-		//		String filename = mf.getOriginalFilename();
-		//		int size = (int)mf.getSize();
-		//
-		//		String path = session.getServletContext().getRealPath("businessRegister");
-		//		int businessUpload = 0;
-		//		String newfilename = "";
-		//
-		//		String extension = filename.substring(filename.lastIndexOf("."), filename.length());
-		//
-		//		UUID uuid = UUID.randomUUID();
-		//
-		//		newfilename = path(저장소) + uuid.toString() + extension;
-		//		System.out.println("newfilename:" + newfilename);
-		//
-		//		member.setProfileImgUrl(newfilename);
-
-		// 회원가입 흐름은 검증, 회원 저장, 로컬 인증 저장, 이메일 인증 사용 처리 순으로 진행한다.
+		// TODO 사업자 승인 기능을 추가할 때 사업자등록증 업로드도 함께 구현한다.
+		// 입력값 검증부터 이메일 인증 결과를 회원과 연결하는 작업까지 하나의 트랜잭션으로 진행한다.
 		validateSignupRequest(signUpRequest);
 		VerifiedSignupEmail verifiedEmail = emailVerificationService
 				.requireVerifiedSignupEmail(signUpRequest.getEmail(), sessionVerification);
@@ -146,9 +130,9 @@ public class AuthService {
 		}
 	}
 
-	// 회원 공통 정보 저장
+	// 회원 공통 정보 생성
 	private Member createMember(SignUpRequest signUpRequest, VerifiedSignupEmail verifiedEmail) {
-		// 이메일은 클라이언트 입력값이 아닌 DB 인증 완료 상태의 값을 사용한다.
+		// 이메일은 요청값이 아니라 DB에서 인증 완료를 확인한 값을 사용한다.
 		Member member = new Member();
 		member.setName(signUpRequest.getName());
 		member.setLoginId(signUpRequest.getLoginId());
@@ -163,14 +147,14 @@ public class AuthService {
 		return member;
 	}
 
-	// 회원 공통 정보 DB 저장
+	// 회원 공통 정보 저장
 	private void saveMember(Member member) {
 		if (mapper.memberSignUp(member) != 1) {
 			throw new SignupException("회원가입에 실패했습니다. 값을 다시 입력하세요.");
 		}
 	}
 
-	// 로컬 로그인 인증 정보 저장
+	// 로컬 로그인 인증 정보 생성
 	private MemberLocalAuth createLocalAuth(Member member, String rawPassword) {
 		MemberLocalAuth memberLocalAuth = new MemberLocalAuth();
 		memberLocalAuth.setMemberId(member.getMemberId());
@@ -179,16 +163,16 @@ public class AuthService {
 		return memberLocalAuth;
 	}
 
-	// 로컬 로그인 인증 정보 DB 저장
+	// 로컬 로그인 인증 정보 저장
 	private void saveLocalAuth(MemberLocalAuth memberLocalAuth) {
 		if (mapper.localMemberJoin(memberLocalAuth) != 1) {
 			throw new SignupException("회원가입에 실패했습니다. 값을 다시 입력하세요.");
 		}
 	}
 
-	// 이메일 인증 이력 사용 처리
+	// 이메일 인증 결과를 회원과 연결
 	private void consumeSignupEmailVerification(VerifiedSignupEmail verifiedEmail, Member member) {
-		// 회원 정보 저장과 같은 트랜잭션에서 인증 행을 회원과 연결해 재사용을 막는다.
+		// 인증 행을 새 회원과 연결해 다른 회원가입에서 다시 사용할 수 없게 한다.
 		if (mapper.consumeSignupEmailVerification(
 				verifiedEmail.getEmailVerificationId(), member.getMemberId()) != 1) {
 			throw new EmailVerificationException(
@@ -198,10 +182,38 @@ public class AuthService {
 		}
 	}
 
-	// 공통 입력값 검증
+	// 입력값의 공백 포함 여부 확인
 	private void validateNoWhitespace(String fieldName, String value) {
 		if (value != null && value.chars().anyMatch(ch -> Character.isWhitespace(ch))) {
 			throw new SignupException(fieldName + "에는 공백을 입력할 수 없습니다.");
+		}
+	}
+
+	public String findId(String name, String email) {
+		
+		return mapper.findId(name, email);
+	}
+
+	// 비밀번호 변경과 인증 결과 소비는 반드시 함께 성공하거나 함께 롤백되어야 한다.
+	@Transactional
+	public void resetPassword(
+			String newPassword,
+			VerifiedPasswordReset sessionVerification) {
+		// 세션 값만 신뢰하지 않고 최신 DB 인증 행을 잠가 만료·재발송·재사용 여부를 확인한다.
+		emailVerificationService.requireVerifiedPasswordReset(sessionVerification);
+
+		String passwordHash = passEncoder.encode(newPassword);
+		// 인증 결과를 먼저 소비해 같은 이메일 인증으로 동시 변경 요청이 성공하지 못하게 한다.
+		if (mapper.consumePasswordResetVerification(
+				sessionVerification.getEmailVerificationId(), sessionVerification.getMemberId()) != 1) {
+			throw new EmailVerificationException(
+					EmailVerificationException.EMAIL_REVERIFICATION_REQUIRED,
+					"이메일 인증이 만료되었거나 이미 사용되었습니다. 다시 인증해주세요.");
+		}
+
+		// 비밀번호 변경 후에는 잠금과 실패 횟수를 초기화해 새 비밀번호로 로그인할 수 있게 한다.
+		if (mapper.updatePasswordByMemberId(sessionVerification.getMemberId(), passwordHash) != 1) {
+			throw new IllegalStateException("비밀번호 변경에 실패했습니다.");
 		}
 	}
 

@@ -7,10 +7,12 @@ import org.apache.ibatis.type.Alias;
 
 import lombok.Data;
 
+/**
+ * 회원 공통 정보를 담아 member 테이블과 주고받는다.
+ */
 @Data
 @Alias("member")
 public class Member {
-	// Java 프로퍼티는 camelCase로 두고 DB snake_case 컬럼은 AuthMapper에서 연결한다.
 	private int memberId;
 	private String name;
 	private String loginId;

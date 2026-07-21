@@ -21,7 +21,7 @@ public interface AuthMapper {
 	int localMemberJoin(MemberLocalAuth memberLocalAuth);
 
 	// 로컬 로그인 및 계정 잠금
-	// 동일 계정의 로그인 요청을 직렬화하기 위해 인증 행을 잠가 조회한다.
+	// 같은 계정의 로그인 요청이 동시에 처리되지 않도록 인증 행을 잠가 조회한다.
 	MemberLocalAuth findLocalLoginAuthForUpdate(@Param("username") String username);
 
 	int incrementFailedLoginCount(@Param("username") String username);
@@ -31,10 +31,14 @@ public interface AuthMapper {
 	int resetLoginFailure(@Param("username") String username);
 
 	// 이메일 인증번호 발송 및 검증
-	// 동일 이메일의 발송·검증 요청을 직렬화하기 위해 최신 인증 행을 잠가 조회한다.
+	// 같은 이메일의 발송과 검증이 동시에 처리되지 않도록 최신 인증 행을 잠가 조회한다.
 	EmailVerification findLatestEmailVerificationForUpdate(
 			@Param("email") String email,
 			@Param("purpose") String purpose);
+
+	EmailVerification findLatestPasswordResetVerificationForUpdate(
+			@Param("email") String email,
+			@Param("memberId") int memberId);
 
 	int countEmailVerificationRequestsInLastDay(
 			@Param("email") String email,
@@ -48,8 +52,8 @@ public interface AuthMapper {
 
 	int markEmailVerificationVerified(@Param("emailVerificationId") long emailVerificationId);
 
-	// 회원가입 이메일 인증 결과 소비
-	// 세션이 가리키는 인증 행을 잠가 한 번만 회원가입에 사용되도록 한다.
+	// 회원가입에 사용할 이메일 인증 확인
+	// 세션에 저장된 인증 행을 잠가 다른 회원가입에서 다시 사용하지 못하게 한다.
 	VerifiedSignupEmail findVerifiedSignupEmailForUpdate(
 			@Param("emailVerificationId") long emailVerificationId,
 			@Param("email") String email,
@@ -58,5 +62,19 @@ public interface AuthMapper {
 	int consumeSignupEmailVerification(
 			@Param("emailVerificationId") long emailVerificationId,
 			@Param("memberId") int memberId);
+
+	Integer findActiveLocalMemberId(
+			@Param("username") String username,
+			@Param("email") String email);
+
+	int consumePasswordResetVerification(
+			@Param("emailVerificationId") long emailVerificationId,
+			@Param("memberId") int memberId);
+
+	int updatePasswordByMemberId(
+			@Param("memberId") int memberId,
+			@Param("passwordHash") String passwordHash);
+
+	String findId(@Param("name") String name, @Param("email") String email);
 
 }

@@ -23,6 +23,30 @@ const signupSuccessElementIds = Object.freeze({
 	passwordConfirmError: "passwordConfirmSuccess"
 });
 
+// 아이디와 닉네임의 중복 확인 차이만 설정으로 두어 같은 흐름을 중복 구현하지 않는다.
+const duplicateCheckConfigs = Object.freeze([
+	Object.freeze({
+		inputKey: "loginId",
+		buttonKey: "checkUsernameButton",
+		stateKey: "loginId",
+		messageElementId: "usernameError",
+		validator: signupValidation.validateLoginId,
+		apiPath: "/auth/api/check-login-id",
+		queryName: "loginId",
+		changedMessage: "아이디가 변경되어 중복 확인이 필요합니다."
+	}),
+	Object.freeze({
+		inputKey: "nickname",
+		buttonKey: "checkNicknameButton",
+		stateKey: "nickname",
+		messageElementId: "nicknameError",
+		validator: signupValidation.validateNickname,
+		apiPath: "/auth/api/check-nickname",
+		queryName: "nickname",
+		changedMessage: "닉네임이 변경되어 중복 확인이 필요합니다."
+	})
+]);
+
 // 중복 확인을 통과한 당시의 값을 저장한다. 입력값이 바뀌면 다시 확인해야 한다.
 const duplicateCheckState = {
 	loginId: "",
@@ -40,10 +64,9 @@ let emailCooldownTimer = null;
 // 배포 경로가 루트가 아니어도 회원가입 API URL을 현재 앱 경로로 만든다.
 let appBasePath = "";
 
-// 화면 초기화 및 이벤트 연결
+// 화면이 준비되면 날짜 제한을 설정하고 회원가입 기능별 이벤트를 연결한다.
 document.addEventListener("DOMContentLoaded", () => {
 	const elements = getSignupElements();
-	// form action에서 애플리케이션 컨텍스트 경로를 한 번만 계산한다.
 	appBasePath = resolveAppBasePath(elements.form.action);
 	// UTC가 아닌 사용자 브라우저의 로컬 날짜를 기준으로 미래 날짜 선택을 막는다.
 	elements.birth.max = signupValidation.toLocalDateString(new Date());
@@ -56,7 +79,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	bindSignupSubmitEvent(elements);
 });
 
-// 회원가입 화면 요소 수집
+// 회원가입 기능에서 사용하는 화면 요소를 한 곳에서 조회한다.
 function getSignupElements() {
 	const form = document.querySelector("#signupForm");
 	const signupSubmitButton = form.querySelector("button[type='submit']");
@@ -79,10 +102,9 @@ function getSignupElements() {
 	};
 }
 
-// 비밀번호 일치 안내 이벤트 연결
+// 비밀번호와 비밀번호 확인값의 일치 여부를 입력 중에 안내한다.
 function bindPasswordMatchEvents({ password, passwordConfirm }) {
 	const updatePasswordMatchMessage = () => {
-		// 비밀번호 관련 값을 수정하면 이전 제출 요약 메시지도 제거한다.
 		clearMessage();
 		clearFieldMessage("passwordError");
 		clearFieldMessage("passwordConfirmError");
@@ -90,83 +112,63 @@ function bindPasswordMatchEvents({ password, passwordConfirm }) {
 			return;
 		}
 
-		// 실시간 일치 여부도 같은 검증 규칙을 사용해 제출 검증과 차이가 없게 한다.
-		const matchValidation = signupValidation.validatePasswordConfirm(
+		const validation = signupValidation.validatePasswordConfirm(
 			password.value,
 			passwordConfirm.value
 		);
-		if (matchValidation.valid) {
+		if (validation.valid) {
 			showFieldMessage("passwordConfirmError", "비밀번호가 일치합니다.", false);
 			return;
 		}
-
-		setError("passwordConfirmError", matchValidation.message);
+		setError("passwordConfirmError", validation.message);
 	};
 
-	password.addEventListener("change", updatePasswordMatchMessage);
-	passwordConfirm.addEventListener("change", updatePasswordMatchMessage);
-	// 비밀번호와 확인값을 한 글자씩 입력할 때마다 일치 여부를 갱신한다.
-	password.addEventListener("input", updatePasswordMatchMessage);
-	passwordConfirm.addEventListener("input", updatePasswordMatchMessage);
+	[password, passwordConfirm].forEach((input) => {
+		input.addEventListener("change", updatePasswordMatchMessage);
+		input.addEventListener("input", updatePasswordMatchMessage);
+	});
 }
 
-// 입력 변경 시 이전 오류 메시지 초기화 이벤트 연결
+// 입력값이 바뀌면 해당 필드의 오류와 이전 제출 안내를 지운다.
 function bindFieldMessageClearEvents() {
-	// 제출 유효성 메시지는 사용자가 해당 입력값을 변경할 때 즉시 제거한다.
 	[
 		["name", "nameError"],
 		["login_id", "usernameError"],
 		["email", "emailError"],
-		// 인증번호를 수정하면 인증번호 입력 오류도 함께 숨긴다.
 		["verificationCode", "verificationCodeError"],
 		["nickname", "nicknameError"],
 		["birth", "birthError"],
 		["phone", "phoneError"],
 		["privacyAgreed", "privacyAgreedError"]
 	].forEach(([fieldId, messageId]) => {
-		const field = document.querySelector(`#${fieldId}`);
-		field.addEventListener("change", () => {
-			// 변경한 입력의 필드 메시지와 약관 아래 제출 요약을 함께 숨긴다.
+		document.querySelector(`#${fieldId}`).addEventListener("change", () => {
 			clearFieldMessage(messageId);
 			clearMessage();
 		});
 	});
 }
 
-// 중복 확인과 이메일 인증 상태 무효화 이벤트 연결
+// 확인 완료 후 원본 값이 바뀌면 서버에서 확인했던 상태를 무효화한다.
 function bindWorkflowStateInvalidationEvents(elements) {
-	const { loginId, nickname, email } = elements;
-	// 아이디가 바뀌면 이전 중복 확인 결과를 무효화한다.
-	loginId.addEventListener("input", () => {
-		// 이전 제출 알림이 입력 변경 후 남지 않도록 초기화한다.
-		clearMessage();
-		if (duplicateCheckState.loginId !== "") {
-			duplicateCheckState.loginId = "";
-			setError("usernameError", "아이디가 변경되어 중복 확인이 필요합니다.");
-		}
-	});
-
-	// 닉네임이 바뀌면 이전 중복 확인 결과를 무효화한다.
-	nickname.addEventListener("input", () => {
-		// 이전 제출 알림이 입력 변경 후 남지 않도록 초기화한다.
-		clearMessage();
-		if (duplicateCheckState.nickname !== "") {
-			duplicateCheckState.nickname = "";
-			setError("nicknameError", "닉네임이 변경되어 중복 확인이 필요합니다.");
-		}
+	duplicateCheckConfigs.forEach((config) => {
+		elements[config.inputKey].addEventListener("input", () => {
+			clearMessage();
+			if (duplicateCheckState[config.stateKey] !== "") {
+				duplicateCheckState[config.stateKey] = "";
+				setError(config.messageElementId, config.changedMessage);
+			}
+		});
 	});
 
 	// 이메일이 변경되면 이전 인증 결과와 인증번호 입력값을 폐기한다.
-	email.addEventListener("input", () => {
-		// 이메일 입력을 다시 시작하면 이전 제출 알림을 숨긴다.
+	elements.email.addEventListener("input", () => {
 		clearMessage();
 		resetEmailVerification(elements);
 	});
 }
 
-// 이메일 인증 진행 상태 초기화
+// 이메일 인증 상태와 인증번호 입력 화면을 초기 상태로 되돌린다.
 function resetEmailVerification({ verificationCode, verificationField, verifyEmailButton, sendEmailButton }) {
-	// 인증 만료 또는 이메일 변경 시 인증 상태를 폐기하고 재발송 가능한 화면으로 되돌린다.
 	emailVerificationState.email = "";
 	emailVerificationState.verified = false;
 	verificationCode.value = "";
@@ -175,183 +177,127 @@ function resetEmailVerification({ verificationCode, verificationField, verifyEma
 	clearEmailCooldown(sendEmailButton);
 }
 
-// 이메일 인증번호 발송 및 검증 이벤트 연결
+// 이메일 인증번호 발송과 검증 버튼의 동작을 연결한다.
 function bindEmailVerificationEvents(elements) {
-	const {
-		email,
-		verificationCode,
-		verificationField,
-		sendEmailButton,
-		verifyEmailButton
-	} = elements;
+	elements.sendEmailButton.addEventListener("click", () => sendEmailVerificationCode(elements));
+	elements.verifyEmailButton.addEventListener("click", () => verifyEmailVerificationCode(elements));
+}
 
-	// 이메일 형식을 검사한 뒤 서버에 인증번호 발송을 요청한다.
-	sendEmailButton.addEventListener("click", async () => {
-		// 이메일 인증 결과는 약관 아래가 아닌 이메일 오류 태그에 표시한다.
-		clearMessage();
-		clearFieldMessage("emailError");
-		const emailValidation = signupValidation.validateEmail(email.value);
-		setError("emailError", emailValidation.message);
-		if (!emailValidation.valid || sendEmailButton.disabled) {
-			return;
-		}
+async function sendEmailVerificationCode(elements) {
+	const { email, verificationCode, verificationField, sendEmailButton } = elements;
+	clearMessage();
+	clearFieldMessage("emailError");
+	const validation = signupValidation.validateEmail(email.value);
+	setError("emailError", validation.message);
+	if (!validation.valid || sendEmailButton.disabled) {
+		return;
+	}
 
-		sendEmailButton.disabled = true;
-		try {
-			const response = await fetch(appUrl("/auth/api/email-verification/send"), {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/x-www-form-urlencoded",
-					Accept: "application/json"
-				},
-				body: new URLSearchParams({ email: email.value })
-			});
-			const result = await parseJsonResponse(response);
-
-			if (!response.ok || !result.success) {
-				showFieldMessage("emailError", result.message, true);
-				clearEmailCooldown(sendEmailButton);
-				return;
-			}
-
-			verificationField.hidden = false;
-			// 인증번호 발송 성공 결과는 이메일 아래 초록색 안내로 표시한다.
-			showFieldMessage("emailError", result.message, false);
-			startEmailCooldown(sendEmailButton, 60);
-			verificationCode.focus();
-		} catch (error) {
-			showRequestError(error, "emailError");
+	sendEmailButton.disabled = true;
+	try {
+		const { response, result } = await postUrlEncoded(
+			"/auth/api/email-verification/send",
+			{ email: email.value }
+		);
+		if (!response.ok || !result.success) {
+			showFieldMessage("emailError", result.message, true);
 			clearEmailCooldown(sendEmailButton);
-		}
-	});
-
-	// 6자리 형식을 확인한 뒤 서버에 인증번호 검증을 요청한다.
-	verifyEmailButton.addEventListener("click", async () => {
-		// 이메일 인증 결과는 이메일 입력 아래 emailError 태그에 표시한다.
-		clearMessage();
-		clearFieldMessage("emailError");
-		clearFieldMessage("verificationCodeError");
-		const emailValidation = signupValidation.validateEmail(email.value);
-		setError("emailError", emailValidation.message);
-		if (!emailValidation.valid) {
 			return;
 		}
 
-		const code = verificationCode.value.trim();
-		const codeValidation = signupValidation.validateVerificationCode(code);
-		if (!codeValidation.valid) {
-			setError("verificationCodeError", codeValidation.message);
-			return;
-		}
+		verificationField.hidden = false;
+		showFieldMessage("emailError", result.message, false);
+		startEmailCooldown(sendEmailButton, 60);
+		verificationCode.focus();
+	} catch (error) {
+		showRequestError(error, "emailError");
+		clearEmailCooldown(sendEmailButton);
+	}
+}
 
-		verifyEmailButton.disabled = true;
-		try {
-			const response = await fetch(appUrl("/auth/api/email-verification/verify"), {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/x-www-form-urlencoded",
-					Accept: "application/json"
-				},
-				body: new URLSearchParams({ email: email.value, code })
-			});
-			const result = await parseJsonResponse(response);
+async function verifyEmailVerificationCode(elements) {
+	const { email, verificationCode, sendEmailButton, verifyEmailButton } = elements;
+	clearMessage();
+	clearFieldMessage("emailError");
+	clearFieldMessage("verificationCodeError");
+	const emailValidation = signupValidation.validateEmail(email.value);
+	setError("emailError", emailValidation.message);
+	if (!emailValidation.valid) {
+		return;
+	}
 
-			if (!response.ok || !result.success) {
-				showFieldMessage("emailError", result.message, true);
-				verifyEmailButton.disabled = false;
-				return;
-			}
+	const code = verificationCode.value.trim();
+	const codeValidation = signupValidation.validateVerificationCode(code);
+	if (!codeValidation.valid) {
+		setError("verificationCodeError", codeValidation.message);
+		return;
+	}
 
-			emailVerificationState.email = email.value;
-			emailVerificationState.verified = true;
-			verifyEmailButton.disabled = true;
-			clearEmailCooldown(sendEmailButton);
-			sendEmailButton.disabled = true;
-			sendEmailButton.textContent = "인증 완료";
-			// 이메일 인증 완료 결과는 이메일 아래 초록색 안내로 표시한다.
-			showFieldMessage("emailError", result.message, false);
-		} catch (error) {
-			showRequestError(error, "emailError");
+	verifyEmailButton.disabled = true;
+	try {
+		const { response, result } = await postUrlEncoded(
+			"/auth/api/email-verification/verify",
+			{ email: email.value, code }
+		);
+		if (!response.ok || !result.success) {
+			showFieldMessage("emailError", result.message, true);
 			verifyEmailButton.disabled = false;
-		}
-	});
-}
-
-// 아이디와 닉네임 중복 확인 이벤트 연결
-function bindDuplicateCheckEvents({
-	loginId,
-	nickname,
-	checkUsernameButton,
-	checkNicknameButton
-}) {
-	// 아이디 형식을 검사한 뒤 서버 중복 확인 API를 비동기로 호출한다.
-	checkUsernameButton.addEventListener("click", async () => {
-		// 아이디 중복 확인 결과는 usernameError 태그에 표시한다.
-		clearMessage();
-		clearFieldMessage("usernameError");
-		const loginIdValidation = signupValidation.validateLoginId(loginId.value);
-		setError("usernameError", loginIdValidation.message);
-		if (!loginIdValidation.valid) {
 			return;
 		}
 
-		const checkedValue = loginId.value;
-		const available = await checkAvailability(
-			appUrl(`/auth/api/check-login-id?loginId=${encodeURIComponent(checkedValue)}`),
-			loginId,
-			checkedValue,
-			"usernameError"
-		);
-		duplicateCheckState.loginId = available ? checkedValue : "";
-	});
+		emailVerificationState.email = email.value;
+		emailVerificationState.verified = true;
+		verifyEmailButton.disabled = true;
+		clearEmailCooldown(sendEmailButton);
+		sendEmailButton.disabled = true;
+		sendEmailButton.textContent = "인증 완료";
+		showFieldMessage("emailError", result.message, false);
+	} catch (error) {
+		showRequestError(error, "emailError");
+		verifyEmailButton.disabled = false;
+	}
+}
 
-	// 닉네임 형식을 검사한 뒤 서버 중복 확인 API를 비동기로 호출한다.
-	checkNicknameButton.addEventListener("click", async () => {
-		// 닉네임 중복 확인 결과는 nicknameError 태그에 표시한다.
-		clearMessage();
-		clearFieldMessage("nicknameError");
-		const nicknameValidation = signupValidation.validateNickname(nickname.value);
-		setError("nicknameError", nicknameValidation.message);
-		if (!nicknameValidation.valid) {
-			return;
-		}
+// 설정에 정의된 아이디·닉네임 중복 확인 버튼을 같은 흐름으로 연결한다.
+function bindDuplicateCheckEvents(elements) {
+	duplicateCheckConfigs.forEach((config) => {
+		const input = elements[config.inputKey];
+		elements[config.buttonKey].addEventListener("click", async () => {
+			clearMessage();
+			clearFieldMessage(config.messageElementId);
+			const validation = config.validator(input.value);
+			setError(config.messageElementId, validation.message);
+			if (!validation.valid) {
+				return;
+			}
 
-		const checkedValue = nickname.value;
-		const available = await checkAvailability(
-			appUrl(`/auth/api/check-nickname?nickname=${encodeURIComponent(checkedValue)}`),
-			nickname,
-			checkedValue,
-			"nicknameError"
-		);
-		duplicateCheckState.nickname = available ? checkedValue : "";
+			const checkedValue = input.value;
+			const query = `${config.queryName}=${encodeURIComponent(checkedValue)}`;
+			const available = await checkAvailability(
+				appUrl(`${config.apiPath}?${query}`),
+				input,
+				checkedValue,
+				config.messageElementId
+			);
+			duplicateCheckState[config.stateKey] = available ? checkedValue : "";
+		});
 	});
 }
 
-// 회원가입 제출 이벤트 연결
+// 최종 입력값을 검증하고 회원가입 요청을 한 번만 전송한다.
 function bindSignupSubmitEvent(elements) {
-	const {
-		form,
-		birth,
-		email,
-		signupSubmitButton,
-		signupSubmitButtonText
-	} = elements;
-	// 가입 요청이 완료되기 전까지 같은 form의 재전송을 막는다.
+	const { form, birth, email, signupSubmitButton, signupSubmitButtonText } = elements;
 	let signupSubmitting = false;
 
-	// 브라우저 기본 제출을 막고, 전체 검증 후 회원가입 API를 호출한다.
 	form.addEventListener("submit", async (event) => {
 		event.preventDefault();
 		if (signupSubmitting) {
 			return;
 		}
 
-		// 제출 결과와 제출 요약 오류만 약관 아래 공통 알림에 표시한다.
 		clearMessage();
-		// 제출 시점의 날짜를 사용한다.
 		const localToday = signupValidation.toLocalDateString(new Date());
 		birth.max = localToday;
-		// 화면 값과 비동기 확인 상태의 스냅샷만 검증 모듈에 전달한다.
 		const validation = signupValidation.validateSignup(
 			readSignupValues(form),
 			readSignupWorkflowState(),
@@ -360,7 +306,6 @@ function bindSignupSubmitEvent(elements) {
 		renderSignupErrors(validation.errors);
 
 		if (!validation.valid) {
-			// 브라우저 alert 대신 약관 아래 제출 알림 영역에 유효성 요약을 표시한다.
 			showMessage("입력항목을 확인해주세요.", true);
 			return;
 		}
@@ -369,46 +314,37 @@ function bindSignupSubmitEvent(elements) {
 		signupSubmitting = true;
 		signupSubmitButton.disabled = true;
 		signupSubmitButton.textContent = "가입 처리 중...";
-		// 성공 응답 뒤 결과 페이지 이동이 시작될 때까지 잠금 상태를 유지한다.
 		let signupSucceeded = false;
 		try {
-			const response = await fetch(form.action, {
+			const { response, result } = await requestJson(form.action, {
 				method: "POST",
 				body: new FormData(form),
-				headers: {
-					Accept: "application/json"
-				}
+				headers: { Accept: "application/json" }
 			});
 
-			const data = await parseJsonResponse(response);
-
-			if (!response.ok || !data.success) {
-				// 인증 만료는 같은 이메일로 재발송할 수 있게 상태를 초기화하고 이메일 입력란으로 안내한다.
-				// 세션 없음·만료·이미 사용됨은 같은 재인증 흐름으로 초기화한다.
-				if (data.code === "EMAIL_REVERIFICATION_REQUIRED") {
+			if (!response.ok || !result.success) {
+				// 세션 없음·만료·사용 완료는 같은 이메일로 다시 인증할 수 있게 초기화한다.
+				if (result.code === "EMAIL_REVERIFICATION_REQUIRED") {
 					resetEmailVerification(elements);
 					clearFieldMessage("emailError");
 					clearFieldMessage("verificationCodeError");
-					showFieldMessage("emailError", data.message, true);
+					showFieldMessage("emailError", result.message, true);
 					email.focus();
 					return;
 				}
-				showMessage(data.message, true);
+				showMessage(result.message, true);
 				return;
 			}
 
-			// 회원가입 성공 시 결과 페이지 컨트롤러를 직접 요청한다.
 			window.location.assign(appUrl("/auth/signupresult"));
 			signupSucceeded = true;
-
 		} catch (error) {
 			showRequestError(error);
 		} finally {
-			// 성공 후 페이지가 이동하는 동안에는 버튼을 계속 잠가 재클릭을 막는다.
+			// 성공 후 페이지가 이동하는 동안에는 버튼을 잠근 상태로 유지한다.
 			if (signupSucceeded) {
 				return;
 			}
-			// 실패 응답이나 통신 오류 후에는 다시 제출할 수 있도록 원래 상태로 복구한다.
 			signupSubmitting = false;
 			signupSubmitButton.disabled = false;
 			signupSubmitButton.textContent = signupSubmitButtonText;
@@ -416,21 +352,19 @@ function bindSignupSubmitEvent(elements) {
 	});
 }
 
-// 중복 확인 서버 통신
+// 중복 확인 응답이 오기 전에 입력값이 바뀌면 해당 응답을 사용하지 않는다.
 async function checkAvailability(url, input, checkedValue, messageElementId) {
-	// 중복 확인 공통 함수: 응답 도착 전에 입력값이 바뀌었는지도 확인한다.
 	try {
-		const response = await fetch(url, {
+		const { response, result } = await requestJson(url, {
 			method: "GET",
-			headers: {
-				Accept: "application/json"
-			}
+			headers: { Accept: "application/json" }
 		});
-		const result = await parseJsonResponse(response);
-
 		if (!response.ok || !result.success) {
-			// 중복 확인 실패도 호출한 입력 필드 아래에 표시한다.
-			showFieldMessage(messageElementId, result.message || "중복 확인에 실패했습니다.", true);
+			showFieldMessage(
+				messageElementId,
+				result.message || "중복 확인에 실패했습니다.",
+				true
+			);
 			return false;
 		}
 
@@ -438,15 +372,11 @@ async function checkAvailability(url, input, checkedValue, messageElementId) {
 			return false;
 		}
 
-		// 중복 여부에 따른 안내와 오류를 필드 메시지로 처리한다.
-		// available=true(중복 없음)일 때 별도 field-success 태그를 초록색으로 사용한다.
 		showFieldMessage(messageElementId, result.message, !result.available);
-
 		if (!result.available) {
 			input.value = "";
 			input.focus();
 		}
-
 		return result.available;
 	} catch (error) {
 		showRequestError(error, messageElementId);
@@ -454,16 +384,32 @@ async function checkAvailability(url, input, checkedValue, messageElementId) {
 	}
 }
 
-// URL 및 응답 처리
 // form action 경로에서 현재 애플리케이션의 컨텍스트 경로를 추출한다.
 function resolveAppBasePath(action) {
 	const pathname = new URL(action, window.location.href).pathname;
 	return pathname.replace(/\/auth\/membersignup\/?$/, "");
 }
 
-// 추출한 컨텍스트 경로를 API 상대 경로 앞에 붙인다.
 function appUrl(path) {
 	return `${appBasePath}${path}`;
+}
+
+// fetch와 JSON 형식 검사를 한 곳에서 처리해 각 기능은 업무 결과만 판단한다.
+async function requestJson(url, options) {
+	const response = await fetch(url, options);
+	const result = await parseJsonResponse(response);
+	return { response, result };
+}
+
+function postUrlEncoded(path, values) {
+	return requestJson(appUrl(path), {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/x-www-form-urlencoded",
+			Accept: "application/json"
+		},
+		body: new URLSearchParams(values)
+	});
 }
 
 // HTML 또는 빈 응답을 JSON 응답으로 오인하지 않도록 응답 형식을 검증한다.
@@ -487,55 +433,56 @@ async function parseJsonResponse(response) {
 	}
 }
 
-// 화면 메시지 처리
 // 네트워크 또는 응답 형식 오류를 지정된 필드 또는 제출 공통 영역에 표시한다.
 function showRequestError(error, fieldMessageId = null) {
 	const message = error instanceof ResponseFormatError
 		? error.message
 		: "서버와 통신하지 못했습니다.";
-
 	if (fieldMessageId !== null) {
 		showFieldMessage(fieldMessageId, message, true);
 		return;
 	}
-
 	showMessage(message, true);
 }
 
-// 중복 확인이나 이메일 인증처럼 필드에 종속된 결과를 해당 태그에 표시한다.
+// 오류·성공 메시지 태그 조회를 공통화해 세 메시지 함수의 DOM 분기를 일치시킨다.
+function getFieldMessageElements(errorElementId) {
+	const successElementId = signupSuccessElementIds[errorElementId];
+	return {
+		errorElement: document.querySelector(`#${errorElementId}`),
+		successElement: successElementId
+			? document.querySelector(`#${successElementId}`)
+			: null
+	};
+}
+
 function showFieldMessage(elementId, message, isError) {
-	const messageElement = document.querySelector(`#${elementId}`);
+	const { errorElement, successElement } = getFieldMessageElements(elementId);
 	const hasMessage = typeof message === "string" && message.trim() !== "";
-	// field-error는 오류 전용으로 유지하고 성공 결과는 별도 태그에 표시한다.
-	const successElementId = getSuccessElementId(elementId);
-	const successElement = successElementId === ""
-		? null
-		: document.querySelector(`#${successElementId}`);
 	const displayMessage = hasMessage ? message : "요청 처리 중 오류가 발생했습니다.";
-	messageElement.textContent = !isError && hasMessage ? "" : displayMessage;
+	errorElement.textContent = !isError && hasMessage ? "" : displayMessage;
 	if (successElement) {
 		successElement.textContent = !isError && hasMessage ? message : "";
-		// 성공 안내 태그 자체에도 초록색을 지정해 이전 CSS 캐시의 영향을 받지 않게 한다.
 		successElement.style.color = !isError && hasMessage ? "#087f5b" : "";
 	}
 }
 
-// 새 요청 전에 필드별 이전 안내 메시지를 초기화한다.
 function clearFieldMessage(elementId) {
-	const messageElement = document.querySelector(`#${elementId}`);
-	messageElement.textContent = "";
-	const successElementId = getSuccessElementId(elementId);
-	const successElement = successElementId === ""
-		? null
-		: document.querySelector(`#${successElementId}`);
+	const { errorElement, successElement } = getFieldMessageElements(elementId);
+	errorElement.textContent = "";
 	if (successElement) {
 		successElement.textContent = "";
 		successElement.style.color = "";
 	}
 }
 
-function getSuccessElementId(errorElementId) {
-	return signupSuccessElementIds[errorElementId] || "";
+function setError(elementId, message) {
+	const { errorElement, successElement } = getFieldMessageElements(elementId);
+	errorElement.textContent = message;
+	if (successElement) {
+		successElement.textContent = "";
+		successElement.style.color = "";
+	}
 }
 
 // 응답 형식 오류를 네트워크 오류와 구분하기 위한 전용 오류다.
@@ -546,9 +493,8 @@ class ResponseFormatError extends Error {
 	}
 }
 
-// 회원가입 검증 데이터 구성
+// trim이나 정규화 없이 DTO로 전송될 원본 입력값을 복사한다.
 function readSignupValues(form) {
-	// trim이나 정규화 없이 DTO로 전송될 원본 입력값을 복사한다.
 	return {
 		name: form.elements.name.value,
 		loginId: form.elements.loginId.value,
@@ -563,7 +509,6 @@ function readSignupValues(form) {
 }
 
 function readSignupWorkflowState() {
-	// 비동기 작업이 관리하는 상태 자체는 UI 파일에 두고, 검증 시점의 값만 전달한다.
 	return {
 		checkedLoginId: duplicateCheckState.loginId,
 		checkedNickname: duplicateCheckState.nickname,
@@ -573,27 +518,12 @@ function readSignupWorkflowState() {
 }
 
 function renderSignupErrors(errors) {
-	// 모든 키를 순회해 기존처럼 한 번의 제출에서 전체 필드 오류를 함께 갱신한다.
 	Object.entries(signupErrorElementIds).forEach(([field, elementId]) => {
 		setError(elementId, errors[field] || "");
 	});
 }
 
-function setError(elementId, message) {
-	// 각 필드 아래의 오류 메시지를 갱신한다.
-	// 버튼별 사전검증도 이 함수를 사용해 같은 위치에 오류를 표시한다.
-	document.querySelector(`#${elementId}`).textContent = message;
-	// 오류가 갱신되면 같은 필드의 이전 성공 안내를 제거한다.
-	const successElementId = getSuccessElementId(elementId);
-	if (successElementId !== "") {
-		const successElement = document.querySelector(`#${successElementId}`);
-		successElement.textContent = "";
-		successElement.style.color = "";
-	}
-}
-
-// 이메일 재발송 버튼 상태
-// 발송 성공 후 60초 동안 버튼을 잠가 중복 클릭을 줄인다.
+// 발송 성공 후 지정 시간 동안 버튼을 잠가 중복 클릭을 줄인다.
 function startEmailCooldown(button, seconds) {
 	clearEmailCooldown(button);
 	let remainingSeconds = seconds;
@@ -610,7 +540,6 @@ function startEmailCooldown(button, seconds) {
 	}, 1000);
 }
 
-// 이메일 변경 또는 발송 실패 시 화면 카운트다운을 정리한다.
 function clearEmailCooldown(button) {
 	if (emailCooldownTimer !== null) {
 		window.clearInterval(emailCooldownTimer);
@@ -621,7 +550,6 @@ function clearEmailCooldown(button) {
 }
 
 function clearMessage() {
-	// 약관 아래 공통 알림은 제출 시작 시 이전 내용을 제거한다.
 	const messageBox = document.querySelector("#signupMessage");
 	messageBox.hidden = true;
 	messageBox.textContent = "";
@@ -629,7 +557,6 @@ function clearMessage() {
 }
 
 function showMessage(message, isError) {
-	// 제출 예외와 유효성 요약만 약관 아래 공통 알림 영역에 표시한다.
 	const messageBox = document.querySelector("#signupMessage");
 	const hasMessage = typeof message === "string" && message.trim() !== "";
 	messageBox.hidden = false;

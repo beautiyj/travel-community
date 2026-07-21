@@ -1,8 +1,8 @@
 package com.gnagnoohc.travel.auth.dto;
 
 /**
- * 로그인 처리의 정상적인 결과를 컨트롤러에 전달한다.
- * 실패 사유는 내부에서 구분하되 화면에서는 동일한 오류 메시지를 사용한다.
+ * 로컬 로그인 처리 결과를 서비스에서 컨트롤러로 전달한다.
+ * 로그인에 성공한 경우에만 세션에 저장할 회원 ID를 포함한다.
  */
 public record LocalLoginResult(LoginStatus status, Integer memberId) {
 
@@ -22,9 +22,5 @@ public record LocalLoginResult(LoginStatus status, Integer memberId) {
 
 	public static LocalLoginResult locked() {
 		return new LocalLoginResult(LoginStatus.LOCKED, null);
-	}
-
-	public boolean isSuccess() {
-		return status == LoginStatus.SUCCESS;
 	}
 }

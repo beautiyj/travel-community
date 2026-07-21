@@ -37,7 +37,7 @@
 	</insert>
 
 	<!-- 로컬 로그인 및 계정 잠금 -->
-	<!-- 동일 계정의 로그인 요청을 직렬화하기 위해 인증 행을 잠가 조회한다. -->
+	<!-- 같은 계정의 로그인 요청이 동시에 처리되지 않도록 인증 행을 잠가 조회한다. -->
 	<select id="findLocalLoginAuthForUpdate" resultType="memberlocalauth">
 		select local_auth.username AS username,
 			local_auth.member_id AS memberId,
@@ -95,14 +95,27 @@
 		<result column="resend_count" property="resendCount"/>
 		<result column="created_at" property="createdAt"/>
 		<result column="member_id" property="memberId"/>
+		<result column="consumed_at" property="consumedAt"/>
 	</resultMap>
 
-	<!-- 동일 이메일의 발송·검증 요청을 직렬화하기 위해 최신 인증 행을 잠가 조회한다. -->
+	<!-- 같은 이메일의 발송과 검증이 동시에 처리되지 않도록 최신 인증 행을 잠가 조회한다. -->
 	<select id="findLatestEmailVerificationForUpdate" resultMap="emailVerificationResultMap">
 		select *
 		from email_verification
 		where email = #{email}
 			and purpose = #{purpose}
+		order by email_verification_id desc
+		limit 1
+		for update
+	</select>
+
+	<!-- 비밀번호 재설정은 이메일뿐 아니라 인증 대상 회원까지 일치하는 최신 행만 사용한다. -->
+	<select id="findLatestPasswordResetVerificationForUpdate" resultMap="emailVerificationResultMap">
+		select *
+		from email_verification
+		where email = #{email}
+			and purpose = 'FIND_PASSWORD'
+			and member_id = #{memberId}
 		order by email_verification_id desc
 		limit 1
 		for update
@@ -133,7 +146,7 @@
 			resend_count, member_id
 		)
 		values(
-			#{email}, #{purpose}, #{codeHash}, #{expiresAt}, 0, 0, null
+			#{email}, #{purpose}, #{codeHash}, #{expiresAt}, 0, 0, #{memberId}
 		)
 	</insert>
 
@@ -152,8 +165,8 @@
 			and verified_at is null
 	</update>
 
-	<!-- 회원가입 이메일 인증 결과 소비 -->
-	<!-- 세션이 가리키는 인증 행을 잠가 중복 사용을 방지한다. -->
+	<!-- 회원가입에 사용할 이메일 인증 확인 -->
+	<!-- 세션에 저장된 인증 행을 잠가 다른 회원가입에서 다시 사용하지 못하게 한다. -->
 	<select id="findVerifiedSignupEmailForUpdate" resultType="verifiedsignupemail">
 		select email_verification_id AS emailVerificationId,
 			email,
@@ -167,7 +180,7 @@
 		for update
 	</select>
 
-	<!-- 인증 행을 생성된 회원과 연결하여 사용 처리 -->
+	<!-- 인증 행에 회원 ID를 기록해 다시 사용할 수 없게 한다. -->
 	<update id="consumeSignupEmailVerification">
 		update email_verification
 		set member_id = #{memberId}
@@ -176,4 +189,47 @@
 			and verified_at is not null
 			and member_id is null
 	</update>
+
+	<!-- 아이디·이메일이 일치하는 활성 로컬 로그인 회원만 비밀번호 재설정 대상으로 찾는다. -->
+	<select id="findActiveLocalMemberId" resultType="int">
+		select member_info.member_id
+		from member member_info
+		inner join member_local_auth local_auth
+			on local_auth.member_id = member_info.member_id
+		where local_auth.username = #{username}
+			and member_info.email = #{email}
+			and member_info.member_status = 'ACTIVE'
+			and member_info.deleted_at is null
+		limit 1
+	</select>
+
+	<!-- 인증 완료 후 한 번만 비밀번호를 바꿀 수 있도록 인증 결과를 소비한다. -->
+	<update id="consumePasswordResetVerification">
+		update email_verification
+		set consumed_at = now()
+		where email_verification_id = #{emailVerificationId}
+			and member_id = #{memberId}
+			and purpose = 'FIND_PASSWORD'
+			and verified_at is not null
+			and consumed_at is null
+	</update>
+
+	<!-- 비밀번호 변경 시 잠금과 실패 횟수도 함께 초기화한다. -->
+	<update id="updatePasswordByMemberId">
+		update member_local_auth local_auth
+		inner join member member_info
+			on member_info.member_id = local_auth.member_id
+		set password_hash = #{passwordHash},
+			password_updated_at = now(),
+			failed_login_count = 0,
+			locked_until = null
+		where local_auth.member_id = #{memberId}
+			and member_info.member_status = 'ACTIVE'
+			and member_info.deleted_at is null
+	</update>
+
+	<!-- ID 찾기 -->
+	<select id="findId" parameterType="String" resultType="String">
+	select login_id from member where name=#{name} and email=#{email} and member_status='ACTIVE' and deleted_at IS NULL
+	</select>
 </mapper>

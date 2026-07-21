@@ -37,6 +37,12 @@
         </div>
     </c:if>
 
+    <c:if test="${param.passwordReset != null}">
+        <div class="form-alert form-alert--success" role="status">
+            비밀번호가 변경되었습니다. 새 비밀번호로 로그인해주세요.
+        </div>
+    </c:if>
+
     <form id="loginForm" action="${pageContext.request.contextPath}/auth/login" method="post" novalidate>
         <div class="form-field">
             <label for="username">아이디</label>
@@ -59,9 +65,9 @@
     </form>
 
     <div class="auth-links">
-        <a href="#">아이디 찾기</a>
+        <a href="${pageContext.request.contextPath}/auth/find-id">아이디 찾기</a>
         <span aria-hidden="true">|</span>
-        <a href="#">비밀번호 찾기</a>
+        <a href="${pageContext.request.contextPath}/auth/find-password">비밀번호 찾기</a>
     </div>
 
     <p class="auth-switch">

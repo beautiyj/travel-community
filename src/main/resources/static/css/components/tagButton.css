@@ -15,17 +15,28 @@
   font-size: var(--text-xs);
   font-weight: var(--font-weight-bold);
   line-height: 1;                      /* 텍스트 세로 정렬 치우침 방지 */
+  white-space: nowrap;                 /* 태그 텍스트 줄바꿈 방지 */
 }
-
-/* 기본 태그 디자인 */
+/* 기본 태그 디자인 - 사이즈 고정 없이 텍스트 길이만큼 유동적으로 늘어남 */
 .tag-view.type-default {
   background: var(--secondary);
+  padding: 0 12px;                     /* 좌우 여백으로 텍스트 길이에 따라 자연스럽게 확장 */
+  height: 28px;
+  width: auto;
 }
 .tag-view.type-default .tag-text {
   color: var(--secondary-foreground);
 }
 
 /* place_type 데이터가 들어있을 경우 - 3분류에 따라 각기 다른 디자인셋 적용 */
+/* 관광지 3글자 기준 크기 고정 및 정중앙 정렬 */
+.tag-view.type-food,
+.tag-view.type-stay,
+.tag-view.type-tour {
+  width: 72px;
+  height: 28px;
+}
+
 .tag-view.type-food {
   background: #FFEFE0;
 }

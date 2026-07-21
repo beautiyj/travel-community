@@ -32,4 +32,7 @@ public interface ReservationMapper {
 
     /** 스케줄러: cutoff 이전에 생성됐는데 아직 PENDING인 건을 EXPIRED로 일괄 전환. 처리 건수 반환 */
     int expirePending(@Param("cutoff") LocalDateTime cutoff);
+
+    /** 스케줄러: 방문일이 지난 PAID 예약을 COMPLETED로 일괄 전환. 처리 건수 반환 */
+    int completeVisited();
 }

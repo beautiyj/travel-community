@@ -18,4 +18,6 @@ public interface MypageRepository {
     List<MypageDto> getReservationList(Long memberId);
     
     List<MypageDto> getWishlist(Long memberId);
+    
+    void withdrawMember(Long memberId);
 }

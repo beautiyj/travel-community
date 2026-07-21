@@ -57,4 +57,13 @@
 
     </select>
 
+<update id="withdrawMember" parameterType="long">
+    update member
+    set member_status = 'WITHDRAWN',
+        deleted_at = now(),
+        updated_at = now()
+    where member_id = #{memberId}
+</update>
+
+
 </mapper>

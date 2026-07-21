@@ -214,3 +214,67 @@
 
 /* ---------- 상세 페이지 수정/삭제 버튼 (smallButton 재사용) ---------- */
 .post-actions { display: flex; gap: 8px; }
+
+/* ---------- 폼 컨테이너 ---------- */
+.write-container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 48px 32px;
+}
+ 
+.page-title {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-weight-bold);
+  margin: 8px 0 32px;
+}
+ 
+/* ---------- 카테고리 카드 선택 (라디오 커스텀) ---------- */
+.category-group {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+ 
+/* 기본 라디오 동그라미는 숨기고 카드 전체를 클릭 영역으로 사용 */
+.category-group input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+ 
+.category-card {
+  display: block;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card);
+  padding: 16px;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+ 
+.category-card:hover {
+  border-color: var(--primary);
+}
+ 
+/* 선택된 카드 강조: 바로 앞 형제(sibling)인 input이 checked일 때 */
+.category-group input[type="radio"]:checked + .category-card {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+ 
+.cat-name {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--foreground);
+  margin-bottom: 4px;
+}
+ 
+.category-group input[type="radio"]:checked + .category-card .cat-name {
+  color: var(--primary);
+}
+ 
+.cat-desc {
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+}

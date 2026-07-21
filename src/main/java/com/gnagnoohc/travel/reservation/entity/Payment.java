@@ -8,7 +8,8 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 public class Payment {
-
+	
+	public static final int TYPE_TOSS = 1;
     public static final int TYPE_KAKAO = 2;
 
     public static final String STATUS_DONE     = "결제완료";

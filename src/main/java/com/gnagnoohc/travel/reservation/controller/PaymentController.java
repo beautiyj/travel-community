@@ -2,14 +2,19 @@ package com.gnagnoohc.travel.reservation.controller;
 
 import com.gnagnoohc.travel.reservation.dto.KakaoApproveResponse;
 import com.gnagnoohc.travel.reservation.dto.KakaoReadyResponse;
+import com.gnagnoohc.travel.reservation.dto.TossConfirmResponse;
 import com.gnagnoohc.travel.reservation.entity.Payment;
 import com.gnagnoohc.travel.reservation.entity.Reservation;
 import com.gnagnoohc.travel.reservation.service.KakaoPayService;
 import com.gnagnoohc.travel.reservation.service.PaymentService;
 import com.gnagnoohc.travel.reservation.service.ReservationService;
+import com.gnagnoohc.travel.reservation.service.TossPayService;
+
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -28,13 +33,18 @@ public class PaymentController {
     private final ReservationService reservationService;
     private final PaymentService paymentService;
     private final KakaoPayService kakaoPayService;
-
+    private final TossPayService tossPayService;
+    
+    @Value("${toss.client-key}")
+    private String tossClientKey;
+    
     /* ------------------- 결제 수단 선택 (부모 창) ------------------- */
     @GetMapping("/checkout/{reservationId}")
     public String checkout(@PathVariable("reservationId") Long reservationId, Model model) {
         Reservation r = reservationService.getById(reservationId);
         model.addAttribute("reservation", r);
         model.addAttribute("amount", reservationService.calculateAmount(r));
+        model.addAttribute("tossClientKey", tossClientKey);
         return "reservation/checkout";
     }
 
@@ -97,6 +107,60 @@ public class PaymentController {
     public String kakaoFail(Model model) {
         return bridgeToFail(model, "카카오페이 결제에 실패했습니다.");
     }
+    
+    /* ------------------- 토스페이먼츠 ------------------- */
+
+    /** 결제 준비: orderId 발급 + 위변조 방지용 금액을 세션에 저장. 프론트가 위젯 열기 전에 호출 */
+    @PostMapping("/toss/ready/{reservationId}")
+    @ResponseBody
+    public Map<String, Object> tossReady(@PathVariable("reservationId") Long reservationId,
+                                         HttpSession session) {
+        Reservation r = reservationService.getById(reservationId);
+        int amount = reservationService.calculateAmount(r);
+        String orderId = paymentService.generateOrderId(reservationId);
+
+        session.setAttribute("TOSS_ORDER_ID", orderId);
+        session.setAttribute("TOSS_AMOUNT", amount);
+        session.setAttribute("TOSS_RESERVATION_ID", reservationId);
+
+        return Map.of("orderId", orderId, "amount", amount);
+    }
+
+    @GetMapping("/toss/success")
+    public String tossSuccess(@RequestParam("paymentKey") String paymentKey,
+                              @RequestParam("orderId") String orderId,
+                              @RequestParam("amount") int amount,
+                              HttpSession session, Model model) {
+        String sessionOrderId = (String) session.getAttribute("TOSS_ORDER_ID");
+        Integer sessionAmount = (Integer) session.getAttribute("TOSS_AMOUNT");
+        Long reservationId = (Long) session.getAttribute("TOSS_RESERVATION_ID");
+
+        log.info("[토스 success 콜백] orderId={}, amount={}, 세션 orderId={}, 세션 amount={}",
+                orderId, amount, sessionOrderId, sessionAmount);
+
+        // 금액/주문번호 위변조 검증 — 반드시 서버가 기억한 값과 대조
+        if (sessionOrderId == null || !sessionOrderId.equals(orderId)
+                || sessionAmount == null || sessionAmount != amount) {
+            return bridgeToFail(model, "결제 정보가 일치하지 않습니다. 다시 시도해 주세요.");
+        }
+
+        TossConfirmResponse confirm = tossPayService.confirm(paymentKey, orderId, amount);
+        Payment payment = paymentService.saveSuccess(
+                reservationId, amount, paymentKey, orderId, Payment.TYPE_TOSS);
+
+        session.removeAttribute("TOSS_ORDER_ID");
+        session.removeAttribute("TOSS_AMOUNT");
+        session.removeAttribute("TOSS_RESERVATION_ID");
+
+        model.addAttribute("target", "/payments/complete/" + payment.getPaymentId());
+        return "reservation/paymentBridge";
+    }
+
+    @GetMapping("/toss/fail")
+    public String tossFail(@RequestParam(value = "message", required = false) String message) {
+        return bridgeToFail(new org.springframework.ui.ExtendedModelMap(),
+                message != null ? message : "토스페이먼츠 결제에 실패했습니다.");
+    }
 
     /* ------------------- 결제 취소(환불) ------------------- */
 
@@ -114,7 +178,7 @@ public class PaymentController {
     public String complete(@PathVariable("paymentId") Long paymentId, Model model) {
         Payment payment = paymentService.getById(paymentId);
         model.addAttribute("payment", payment);
-        model.addAttribute("method", "카카오페이");
+        model.addAttribute("method", payment.getPaymentType() == Payment.TYPE_TOSS ? "토스페이먼츠" : "카카오페이");
         return "reservation/success";
     }
 

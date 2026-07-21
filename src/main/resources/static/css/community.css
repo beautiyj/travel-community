@@ -200,7 +200,16 @@
 }
 
 /* ---------- 글쓰기/수정 폼 하단 버튼 (buttonComponent 재사용) ---------- */
-.form-actions { display: flex; gap: 8px; justify-content: flex-end; padding-top: 8px; }
+.form-actions { display: flex; gap: 8px; padding-top: 8px; }
+ 
+/* 취소/게시하기 버튼을 컨테이너 폭 기준 절반씩(50/50)으로 채움
+   ※ buttonComponent.jsp 의 inline style="width: auto"를 이겨야 하므로 !important 사용
+      (buttonComponent.jsp/css 는 수정 금지 규칙이라 CSS override로만 처리) */
+.btn-nav-wrap,
+.btn-submit-wrap { flex: 1 1 0; }
+ 
+.btn-nav-wrap .btn-main,
+.btn-submit-wrap .btn-main { width: 100% !important; }
 
 /* 취소 버튼: buttonComponent 를 흰 배경으로 쓸 때 글자색/테두리 보정
    (color 파라미터로 배경만 var(--card) 로 바꿨을 뿐, 글자색은 컴포넌트 기본값이 흰색이라 되돌려야 함) */

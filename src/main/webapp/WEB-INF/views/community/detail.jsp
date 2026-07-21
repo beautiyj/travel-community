@@ -147,18 +147,18 @@
             <!-- 답글 입력창 (기본 숨김, community.css 대상 아님) -->
             <c:if test="${isLoggedIn}">
               <div id="reply-form-${comment.commentId}" class="reply-form" style="display:none;">
-                <form action="${cp}/community/comment/write" method="post">
+                <form action="${cp}/community/comment/write" method="post" class="reply-form-row">
                   <input type="hidden" name="postId" value="${post.postId}">
                   <input type="hidden" name="parentId" value="${comment.commentId}">
                   <input type="hidden" name="depth" value="1">
-                  <input type="text" name="content"
+                  <input type="text" name="content" class="reply-input"
                          placeholder="${comment.memberName}님에게 답글..." required>
 
                   <jsp:include page="../common/smallButton.jsp">
                     <jsp:param name="text" value="등록" />
                   </jsp:include>
 
-                  <button type="button" onclick="toggleReply(${comment.commentId})">취소</button>
+                  <button type="button" class="reply-cancel-btn" onclick="toggleReply(${comment.commentId})">취소</button>
                 </form>
               </div>
             </c:if>

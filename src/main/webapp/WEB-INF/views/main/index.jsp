@@ -1,13 +1,71 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+
+<%
+    // =========================================================================
+    // 드롭다운 컴포넌트 테스트용 더미 데이터 생성 (request 영역 저장)
+    // =========================================================================
+    
+    // 1. 지역 리스트 더미
+    java.util.List<java.util.Map<String, String>> regionList = new java.util.ArrayList<>();
+    java.util.Map<String, String> r1 = new java.util.HashMap<>(); r1.put("code", "1"); r1.put("name", "서울"); regionList.add(r1);
+    java.util.Map<String, String> r2 = new java.util.HashMap<>(); r2.put("code", "6"); r2.put("name", "부산"); regionList.add(r2);
+    java.util.Map<String, String> r3 = new java.util.HashMap<>(); r3.put("code", "39"); r3.put("name", "제주"); regionList.add(r3);
+    java.util.Map<String, String> r4 = new java.util.HashMap<>(); r4.put("code", "32"); r4.put("name", "강원"); regionList.add(r4);
+    request.setAttribute("regionList", regionList);
+    
+    // 2. 카테고리 리스트 더미
+    java.util.List<java.util.Map<String, String>> categoryList = new java.util.ArrayList<>();
+    java.util.Map<String, String> c1 = new java.util.HashMap<>(); c1.put("code", "12"); c1.put("name", "관광지"); categoryList.add(c1);
+    java.util.Map<String, String> c2 = new java.util.HashMap<>(); c2.put("code", "39"); c2.put("name", "맛집"); categoryList.add(c2);
+    java.util.Map<String, String> c3 = new java.util.HashMap<>(); c3.put("code", "32"); c3.put("name", "숙박"); categoryList.add(c3);
+    request.setAttribute("categoryList", categoryList);
+    
+    // 3. 정렬 리스트 더미
+    java.util.List<java.util.Map<String, String>> sortList = new java.util.ArrayList<>();
+    java.util.Map<String, String> s1 = new java.util.HashMap<>(); s1.put("code", "latest"); s1.put("name", "최신순"); sortList.add(s1);
+    java.util.Map<String, String> s2 = new java.util.HashMap<>(); s2.put("code", "popular"); s2.put("name", "인기순"); sortList.add(s2);
+    java.util.Map<String, String> s3 = new java.util.HashMap<>(); s3.put("code", "rating"); s3.put("name", "평점 높은 순"); sortList.add(s3);
+    request.setAttribute("sortList", sortList);
+    
+    // 4. 개수별 데이터 테스트용 리스트 (2개, 4개, 8개)
+    java.util.List<java.util.Map<String, String>> twoItemList = new java.util.ArrayList<>();
+    java.util.Map<String, String> t1 = new java.util.HashMap<>(); t1.put("code", "Y"); t1.put("name", "공개"); twoItemList.add(t1);
+    java.util.Map<String, String> t2 = new java.util.HashMap<>(); t2.put("code", "N"); t2.put("name", "비공개"); twoItemList.add(t2);
+    request.setAttribute("twoItemList", twoItemList);
+    
+    java.util.List<java.util.Map<String, String>> fourItemList = new java.util.ArrayList<>();
+    java.util.Map<String, String> f1 = new java.util.HashMap<>(); f1.put("code", "SPRING"); f1.put("name", "봄 여행"); fourItemList.add(f1);
+    java.util.Map<String, String> f2 = new java.util.HashMap<>(); f2.put("code", "SUMMER"); f2.put("name", "여름 여행"); fourItemList.add(f2);
+    java.util.Map<String, String> f3 = new java.util.HashMap<>(); f3.put("code", "AUTUMN"); f3.put("name", "가을 여행"); fourItemList.add(f3);
+    java.util.Map<String, String> f4 = new java.util.HashMap<>(); f4.put("code", "WINTER"); f4.put("name", "겨울 여행"); fourItemList.add(f4);
+    request.setAttribute("fourItemList", fourItemList);
+    
+    java.util.List<java.util.Map<String, String>> eightItemList = new java.util.ArrayList<>();
+    for(int i = 1; i <= 8; i++) {
+        java.util.Map<String, String> item = new java.util.HashMap<>();
+        item.put("code", "OPT_" + i);
+        item.put("name", "옵션 항목 " + i);
+        eightItemList.add(item);
+    }
+    request.setAttribute("eightItemList", eightItemList);
+    
+    // 5. 기본 선택값 테스트용 데이터
+    request.setAttribute("selectedType", "SUMMER");
+    request.setAttribute("selectedTypeName", "여름 여행");
+%>
+
 <!DOCTYPE html>
 <html>
     <head>
         <meta charset="UTF-8">
         <title>여행 커뮤니티 메인</title>
 
+        <%-- 공통 CSS 및 컴포넌트 CSS 호출 --%>
         <link rel="stylesheet" href="${pageContext.request.contextPath}/css/common.css">
         <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/selectableButton.css">
         <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/selectableCardComponent.css">
+        <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/dropdownSelector.css">
     </head>
     <body style="margin: 0; padding: 0;">
 
@@ -17,112 +75,88 @@
             <h2>컴포넌트추가_테스트인덱스파일</h2>
             <button onclick="location.href='/tour/test'">테스트 페이지</button>
 
-            <!-- ===================== 셀렉터블 버튼 테스트 ===================== -->
-            <h3 style="margin-top:30px;">셀렉터블 버튼 테스트</h3>
-            <div style="display:flex; flex-wrap:wrap; gap:12px; margin-top:12px;">
+            <!-- ===================== 드롭다운 셀렉터 테스트 ===================== -->
+            <h3 style="margin-top:30px;">드롭다운 셀렉터 테스트</h3>
 
-                <!-- Case 1: 파라미터 전부 미전달 (기본값 확인 - text="선택", theme-primary, 비활성 상태) -->
-                <jsp:include page="/WEB-INF/views/common/selectableButton.jsp" />
+            <%--
+            - dropdownId       : (필수) 화면 내 고유 식별자 (JS/HTML id 중복 방지)
+            ex) "dropdown_basic", "regionSelect"
+            - listAttr         : (필수) Controller가 request.setAttribute("이름", list)로 전달한 데이터 변수명
+            ex) "sortList", "regionList"
+            - defaultLabel     : (선택) 선택 전 기본 노출 문구 (미지정 시 '선택')
+            ex) "지역 선택", "카테고리"
+            - iconSrc          : (선택) 버튼 좌측 이미지 경로 (PNG/SVG 모두 가능)
+            ex) "${pageContext.request.contextPath}/images/icons/search.png"
+            - width            : (선택) 너비 커스텀 지정 (미지정 시 기본 CSS max-width: 200px)
+            ex) "120px", "240px", "50%", "100%"
+            - selectedAttr     : (선택) 초기 선택되어 있을 값(Code) 변수명
+            - selectedNameAttr : (선택) 초기 선택되어 있을 라벨(Name) 변수명
+            - targetUrl        : (선택) 선택 시 이동할 URL 경로
+            - paramKey         : (선택) URL 전달용 파라미터 키 이름
+            --%>
 
-                <!-- Case 2: danger 테마 + 최초 활성화 상태 -->
-                <jsp:include page="/WEB-INF/views/common/selectableButton.jsp">
-                    <jsp:param name="text" value="삭제" />
-                    <jsp:param name="theme" value="danger" />
-                    <jsp:param name="isActive" value="true" />
-                </jsp:include>
+            <%-- 1. 필수값인 아이디(dropdownId), 데이터리스트(listAttr)만 전달한 기본 드롭다운 --%>
+            <p style="margin-top:15px; color:#666;">1. 필수값 기본 드롭다운</p>
+            <jsp:include page="/WEB-INF/views/common/dropdownSelector.jsp">
+                <jsp:param name="dropdownId" value="dropdown_basic" />
+                <jsp:param name="listAttr"   value="sortList" />
+            </jsp:include>
 
-                <!-- Case 3: primary 테마 + 최초 활성화 상태 + 커스텀 텍스트 -->
-                <jsp:include page="/WEB-INF/views/common/selectableButton.jsp">
-                    <jsp:param name="text" value="아침 포함" />
-                    <jsp:param name="theme" value="primary" />
-                    <jsp:param name="isActive" value="true" />
-                </jsp:include>
+            <%-- 2. png/svg 아이콘 포함된 드롭다운 --%>
+            <p style="margin-top:25px; color:#666;">2. 아이콘 포함 드롭다운</p>
+            <jsp:include page="/WEB-INF/views/common/dropdownSelector.jsp">
+                <jsp:param name="dropdownId"   value="dropdown_icon_region" />
+                <jsp:param name="listAttr"     value="regionList" />
+                <jsp:param name="defaultLabel" value="지역 선택" />
+                <jsp:param name="iconSrc"      value="${pageContext.request.contextPath}/images/icons/search.png" />
+                <jsp:param name="targetUrl"    value="/tour/list" />
+                <jsp:param name="paramKey"     value="region" />
+            </jsp:include>
 
-                <!-- Case 5: onclick 커스텀 스크립트 지정 확인 -->
-                <jsp:include page="/WEB-INF/views/common/selectableButton.jsp">
-                    <jsp:param name="text" value="알림 받기" />
-                    <jsp:param name="onclick" value="alert('커스텀 onclick 동작 확인')" />
-                </jsp:include>
+            <%-- 3. 드롭다운 기본 너비/사이즈 설정 --%>
+            <p style="margin-top:25px; color:#666;">3. 드롭다운 사이즈 설정</p>
+            <jsp:include page="/WEB-INF/views/common/dropdownSelector.jsp">
+                <jsp:param name="dropdownId"   value="dropdown_size_default" />
+                <jsp:param name="listAttr"     value="sortList" />
+                <jsp:param name="defaultLabel" value="너비 미지정(기본값)" />
+                <jsp:param name="targetUrl"    value="/tour/list" />
+                <jsp:param name="paramKey"     value="sort" />
+            </jsp:include>
 
-                <!-- 6 너비조정 + 고정형 길이 셀렉터블 -->
-                <jsp:include page="/WEB-INF/views/common/selectableButton.jsp">
-                    <jsp:param name="text" value="사이즈500px고정한긴셀렉터블버튼" />
-                    <jsp:param name="width" value="500px" />
-                </jsp:include>
-
-                <!-- 7 너비조정 + 반응형 길이 셀렉터블 -->
-                <jsp:include page="/WEB-INF/views/common/selectableButton.jsp">
-                    <jsp:param name="text" value="사이즈100%반응형긴셀렉터블버튼" />
-                    <jsp:param name="width" value="100%" />
-                </jsp:include>
-
-                <jsp:include page="/WEB-INF/views/common/selectableButton.jsp">
-                    <jsp:param name="text" value="나만 민트색" />
-                    <jsp:param name="style" value="--primary: #12b886; --primary-soft: #e6fcf5;" />
-                </jsp:include>
-
+            <%-- 4. 드롭다운 컬러 변경 --%>
+            <p style="margin-top:25px; color:#666;">4. 드롭다운 컬러 변경</p>
+            <div style="display: flex; gap: 15px;">
+                <!-- --drop-bg와 --drop-text 지정 -->
+                <div style="--drop-border:#12b886; --drop-bg:#e6fcf5; --drop-text:#0ca678; --drop-active-bg:#c3fae8; --drop-active-text:#087f5b;">
+                    <jsp:include page="/WEB-INF/views/common/dropdownSelector.jsp">
+                        <jsp:param name="dropdownId"   value="dropdown_color_green" />
+                        <jsp:param name="listAttr"     value="sortList" />
+                        <jsp:param name="defaultLabel" value="그린 컬러" />
+                    </jsp:include>
+                </div>
+                <!-- --drop-bg와 --drop-text 지정 -->
+                <div style="--drop-border:#fa5252; --drop-active-bg:#fff5f5; --drop-active-text:#fa5252;">
+                    <jsp:include page="/WEB-INF/views/common/dropdownSelector.jsp">
+                        <jsp:param name="dropdownId"   value="dropdown_color_red" />
+                        <jsp:param name="listAttr"     value="sortList" />
+                        <jsp:param name="defaultLabel" value="레드 컬러" />
+                        <jsp:param name="targetUrl"    value="/tour/list" />
+                        <jsp:param name="paramKey"     value="sort" />
+                    </jsp:include>
+                </div>
             </div>
 
-            <div style="display:flex; flex-wrap:wrap; gap:12px; margin-top:12px;">
-                <!-- Case 4: width 지정 + 긴 텍스트 (nowrap 처리 확인용, 글씨잘림) -->
-                <jsp:include page="/WEB-INF/views/common/selectableButton.jsp">
-                    <jsp:param name="text" value="반려동물 동반 가능 숙소" />
-                    <jsp:param name="width" value="100px" />
-                </jsp:include>
-            </div>
-
-            <!-- ===================== 셀렉터블 카드 테스트 ===================== -->
-            <h3 style="margin-top:30px;">셀렉터블 카드 테스트 (회원가입 role 선택 시나리오)</h3>
-            <div style="display:flex; gap:25px; margin-top:12px; flex-wrap:wrap;">
-
-                <!-- Card 1: 일반 사용자 (기본 선택 상태 - isActive=true) -->
-                <jsp:include page="/WEB-INF/views/common/selectableCardComponent.jsp">
-                    <jsp:param name="id" value="ROLE_USER" />
-                    <jsp:param name="group" value="role-group" />
-                    <jsp:param name="theme" value="blue" />
-                    <jsp:param name="isActive" value="true" />
-                    <jsp:param name="emoji" value="🧳" />
-                    <jsp:param name="title" value="일반 사용자" />
-                    <jsp:param name="description" value="여행지를 둘러보고 리뷰를 남길 수 있어요." />
-                    <jsp:param name="feat1" value="맛집/숙박/관광지 검색" />
-                    <jsp:param name="feat2" value="찜하기 및 리뷰 작성" />
-                    <jsp:param name="feat3" value="커뮤니티 게시글 작성" />
-                </jsp:include>
-
-                <!-- Card 2: 사업자 (미선택 상태) -->
-                <jsp:include page="/WEB-INF/views/common/selectableCardComponent.jsp">
-                    <jsp:param name="id" value="ROLE_BUSINESS" />
-                    <jsp:param name="group" value="role-group" />
-                    <jsp:param name="theme" value="amber" />
-                    <jsp:param name="emoji" value="🏨" />
-                    <jsp:param name="title" value="사업자" />
-                    <jsp:param name="description" value="내 업체를 등록하고 예약을 관리할 수 있어요." />
-                    <jsp:param name="feat1" value="업체 정보 등록" />
-                    <jsp:param name="feat2" value="예약 및 매출 관리" />
-                    <jsp:param name="feat3" value="리뷰 답글 작성" />
-                </jsp:include>
-
-                <!-- Card 3: 파라미터 전부 미전달 (기본값 확인용 - theme=blue, 미선택 상태) -->
-                <jsp:include page="/WEB-INF/views/common/selectableCardComponent.jsp">
-                    <jsp:param name="group" value="role-group-default-test" />
-                </jsp:include>
-
-            </div>
-
-            <!-- 회원가입 폼 연동 확인용 hidden input -->
-            <input type="hidden" id="memberRole" value="ROLE_USER" />
-            <p style="margin-top:12px; color:var(--muted-foreground); font-size:var(--text-sm);">
-                현재 선택된 memberRole 값: <span id="memberRoleDisplay">ROLE_USER</span>
-                (Card 1/Card 2 클릭 시 아래 값이 실시간으로 바뀌는지 확인 — Card 3은 group이 달라서 별도 동작합니다)
-            </p>
+            <!-- ===================== 드롭다운 셀렉터 테스트 끝 ===================== -->
 
         </div>
 
         <%@ include file="../common/footer.jsp" %>
 
-        <script src="${pageContext.request.contextPath}/js/common.js"></script>
+        <!-- 💡 부트스트랩 JS (드롭다운 토글 제어용) -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-        <!-- hidden input 값 변화를 화면에서 눈으로 확인하기 위한 테스트 전용 스크립트 -->
+        <script src="${pageContext.request.contextPath}/js/dropdownSelector.js"></script>
+
         <script>
             document.addEventListener("click", function () {
                 const roleInput = document.getElementById("memberRole");

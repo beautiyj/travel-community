@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import com.gnagnoohc.travel.mypage.dto.MypageDto;
 import com.gnagnoohc.travel.mypage.service.MypageService;
 
+import jakarta.servlet.http.HttpSession;
+
 @Controller
 @RequestMapping("/mypage")
 public class MypageController {
@@ -115,7 +117,25 @@ public class MypageController {
     }
       
     @GetMapping("/withdraw")
-    public String withdraw() {
-    	return "mypage/withdraw";
+    public String withdrawForm() {
+        return "mypage/withdraw";
+    }
+
+    @PostMapping("/withdraw")
+    public String withdrawMember(HttpSession session) {
+
+        mypageService.withdrawMember(1L);
+
+        session.invalidate();
+
+        return "redirect:/";
+    }
+    
+    @GetMapping("/logout")
+    public String logout(HttpSession session) {
+    	
+    	session.invalidate();
+    	
+    	return "redirect:/";
     }
 }

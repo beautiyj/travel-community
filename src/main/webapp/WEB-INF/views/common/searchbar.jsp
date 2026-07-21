@@ -15,7 +15,7 @@
 
 <%-- 내장 드롭다운 셀렉터 옵션 추가 (기본 OFF) --%>
 <c:set var="useDropdown"       value="${param.useDropdown eq 'true'}" />
-<%-- 드롭다운 파라미터 --%>--%>
+<%-- 드롭다운 파라미터 --%>
 <c:set var="dropdownId"        value="${empty param.dropdownId ? 'search_dropdown' : param.dropdownId}" />
 <c:set var="dropdownListAttr"  value="${empty param.listAttr ? 'categoryList' : param.listAttr}" />
 <c:set var="defaultLabel"      value="${empty param.defaultLabel ? '전체' : param.defaultLabel}" />

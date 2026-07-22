@@ -8,9 +8,14 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Insert title here</title>
-</head>
 <title>${post.title}</title>
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/common.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/buttonComponent.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/smallButton.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/tagButton.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/confirmModal.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/wishButton.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/community.css">
 </head>
 <body>
 <c:set var="cp" value="${pageContext.request.contextPath}" />
@@ -19,140 +24,191 @@
 <c:set var="loginMember" value="${sessionScope.loginMember}" />
 <c:set var="isLoggedIn" value="${not empty loginMember}" />
 
-<%-- 본인 글 여부: 로그인 회원 memberId 와 글 작성자 memberId 비교 --%>
-<c:set var="isOwner" value="${isLoggedIn and loginMember.memberId == post.memberId}" />
+<%-- 본인 글 여부: 세션의 loginMember 는 memberId(Long) 자체
+     ※ 로그인 담당자가 MemberDto 를 담기로 하면 loginMember.memberId 로 바꿀 것 --%>
+<c:set var="isOwner" value="${isLoggedIn and loginMember eq post.memberId}" />
 
-<div class="detail-container">
+<div class="container">
 
   <a href="${cp}/community/list" class="back-link">&lt; 목록으로</a>
 
-  <!-- ───────── 게시글 본문 ───────── -->
-  <div class="post-box">
+  <!-- ───────── 게시글 본문 (community.css 의 .detail-card) ───────── -->
+  <div class="detail-card">
 
-    <div class="post-head">
-      <div class="post-head-left">
-        <span class="badge badge-${post.category}">${post.category}</span>
-        <h1 class="post-title">${post.title}</h1>
+    <!-- 배지+제목 / 수정·삭제 버튼 (list.jsp 헤더와 같은 .list-topbar 재사용) -->
+    <div class="list-topbar">
+      <div>
+        <jsp:include page="../common/postCategoryTag.jsp">
+          <jsp:param name="category" value="${post.category}" />
+        </jsp:include>
+        <h2>${post.title}</h2>
       </div>
 
-      <!-- 수정/삭제: 본인 글일 때만 -->
+      <!-- 수정/삭제: 본인 글일 때만 (smallButton 재사용) -->
       <c:if test="${isOwner}">
         <div class="post-actions">
-          <a href="${cp}/community/edit?postId=${post.postId}" class="btn-edit">수정</a>
-          <button type="button" class="btn-delete" onclick="openDeleteModal()">삭제</button>
+          <jsp:include page="../common/smallButton.jsp">
+            <jsp:param name="text"    value="수정" />
+            <jsp:param name="onclick" value="location.href='${cp}/community/edit?postId=${post.postId}'" />
+          </jsp:include>
+
+          <%-- 삭제는 바로 지우지 않고 confirmModal 을 먼저 띄움 --%>
+          <jsp:include page="../common/smallButton.jsp">
+            <jsp:param name="text"    value="삭제" />
+            <jsp:param name="theme"   value="danger" />
+            <jsp:param name="onclick" value="openModal('postDeleteModal')" />
+          </jsp:include>
         </div>
       </c:if>
     </div>
 
-    <!-- 작성자 / 작성일 / 조회수 -->
-    <div class="post-meta">
+    <!-- 작성자 / 작성일 / 조회수 (community.css 의 .detail-meta) -->
+    <div class="detail-meta">
       <span>작성자 ${post.nickname}</span>
       <span><fmt:formatDate value="${post.createdAt}" pattern="yyyy-MM-dd HH:mm" /></span>
       <span>조회 <fmt:formatNumber value="${post.readcount}" pattern="#,##0" /></span>
     </div>
 
-    <!-- 이미지 (있을 때만) -->
+    <!-- 이미지: sort_order 순으로 저장되어 있다고 가정 (0번이 대표/썸네일 이미지)
+         1장뿐이면 화살표 없이 사진만, 여러 장이면 배너처럼 좌우 화살표로 넘김 -->
     <c:if test="${not empty post.imageList}">
-      <div class="post-images">
-        <c:forEach var="img" items="${post.imageList}">
-          <img src="${cp}/upload/${img.imageUrl}" alt="첨부 이미지">
-        </c:forEach>
+      <div class="post-gallery" data-gallery>
+        <div class="post-gallery-track" data-gallery-track>
+          <c:forEach var="img" items="${post.imageList}">
+            <div class="post-gallery-slide">
+              <img src="${cp}/upload/${img.imageUrl}" alt="첨부 이미지">
+            </div>
+          </c:forEach>
+        </div>
+
+        <c:if test="${fn:length(post.imageList) gt 1}">
+          <button type="button" class="post-gallery-arrow post-gallery-arrow-prev"
+                  data-gallery-prev aria-label="이전 사진">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <polyline points="15 5 8 12 15 19"></polyline>
+            </svg>
+          </button>
+          <button type="button" class="post-gallery-arrow post-gallery-arrow-next"
+                  data-gallery-next aria-label="다음 사진">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <polyline points="9 5 16 12 9 19"></polyline>
+            </svg>
+          </button>
+          <div class="post-gallery-counter" data-gallery-counter>1 / ${fn:length(post.imageList)}</div>
+        </c:if>
       </div>
     </c:if>
 
-    <!-- 본문 (줄바꿈 유지) -->
-    <p class="post-content">${post.content}</p>
+    <!-- 본문 (community.css 의 .detail-body, 줄바꿈 유지) -->
+    <p class="detail-body">${post.content}</p>
   </div>
 
 
-  <!-- ───────── 댓글 영역 ───────── -->
-  <div class="comment-box">
+  <!-- ───────── 댓글 영역 (community.css 의 .comments) ───────── -->
+  <div class="comments">
 
-    <h2 class="comment-title">
-      댓글 <span class="comment-count">${fn:length(post.commentList)}</span>
-    </h2>
+    <div class="comments-head">
+      <span class="title">댓글</span>
+      <span class="count">${fn:length(post.commentList)}</span>
+    </div>
 
-    <!-- 댓글 목록 -->
-    <div class="comment-list">
+    <c:choose>
+      <c:when test="${empty post.commentList}">
+        <p class="empty">첫 댓글을 남겨보세요!</p>
+      </c:when>
 
-      <c:choose>
-        <c:when test="${empty post.commentList}">
-          <p class="comment-empty">첫 댓글을 남겨보세요!</p>
-        </c:when>
+      <c:otherwise>
+        <%-- community.css 는 .comment 가 .comments 의 평평한 형제(sibling)로 이어지는 구조를 전제로 함
+             (.comment.reply 는 별도 래퍼 없이 margin-left 로만 들여쓰기) --%>
+        <c:forEach var="comment" items="${post.commentList}">
+          <c:if test="${empty comment.parentId}">
 
-        <c:otherwise>
-          <%-- 원댓글만 먼저 출력 (parentId 가 없는 것) --%>
-          <c:forEach var="comment" items="${post.commentList}">
-            <c:if test="${empty comment.parentId}">
-
-              <!-- 원댓글 -->
-              <div class="comment">
+            <!-- 원댓글 -->
+            <div class="comment">
+              <div class="avatar"></div>
+              <div>
                 <div class="comment-head">
                   <span class="comment-author">${comment.memberName}</span>
                   <span class="comment-date">
                     <fmt:formatDate value="${comment.createdAt}" pattern="yyyy-MM-dd HH:mm" />
                   </span>
                 </div>
-                <p class="comment-content">${comment.content}</p>
+                <p class="comment-text">${comment.content}</p>
 
                 <!-- 답글 달기 (로그인 시) -->
                 <c:if test="${isLoggedIn}">
-                  <button type="button" class="btn-reply"
-                          onclick="toggleReply(${comment.commentId})">답글 달기</button>
-
-                  <!-- 답글 입력창 (기본 숨김) -->
-                  <div id="reply-form-${comment.commentId}" class="reply-form" style="display:none;">
-                    <form action="${cp}/community/comment/write" method="post">
-                      <input type="hidden" name="postId" value="${post.postId}">
-                      <input type="hidden" name="parentId" value="${comment.commentId}">
-                      <input type="hidden" name="depth" value="1">
-                      <input type="text" name="content"
-                             placeholder="${comment.memberName}님에게 답글..." required>
-                      <button type="submit">등록</button>
-                      <button type="button" onclick="toggleReply(${comment.commentId})">취소</button>
-                    </form>
-                  </div>
+                  <span class="reply-link" role="button" tabindex="0"
+                        onclick="toggleReply(${comment.commentId})">답글 달기</span>
                 </c:if>
+              </div>
+            </div>
 
-                <!-- 이 원댓글에 달린 대댓글들 -->
-                <div class="reply-list">
-                  <c:forEach var="reply" items="${post.commentList}">
-                    <c:if test="${reply.parentId == comment.commentId}">
-                      <div class="reply">
-                        <div class="comment-head">
-                          <span class="comment-author">${reply.memberName}</span>
-                          <span class="comment-date">
-                            <fmt:formatDate value="${reply.createdAt}" pattern="yyyy-MM-dd HH:mm" />
-                          </span>
-                        </div>
-                        <p class="comment-content">${reply.content}</p>
-                      </div>
-                    </c:if>
-                  </c:forEach>
-                </div>
+            <!-- 답글 입력창 (기본 숨김, community.css 대상 아님) -->
+            <c:if test="${isLoggedIn}">
+              <div id="reply-form-${comment.commentId}" class="reply-form" style="display:none;">
+                <form action="${cp}/community/comment/write" method="post">
+                  <input type="hidden" name="postId" value="${post.postId}">
+                  <input type="hidden" name="parentId" value="${comment.commentId}">
+                  <input type="hidden" name="depth" value="1">
+                  <input type="text" name="content"
+                         placeholder="${comment.memberName}님에게 답글..." required>
 
+                  <jsp:include page="../common/smallButton.jsp">
+                    <jsp:param name="text" value="등록" />
+                  </jsp:include>
+
+                  <button type="button" onclick="toggleReply(${comment.commentId})">취소</button>
+                </form>
               </div>
             </c:if>
-          </c:forEach>
-        </c:otherwise>
-      </c:choose>
 
-    </div>
+            <!-- 이 원댓글에 달린 대댓글들: .comment.reply 로 평평하게 이어짐 -->
+            <c:forEach var="reply" items="${post.commentList}">
+              <c:if test="${reply.parentId == comment.commentId}">
+                <div class="comment reply">
+                  <div class="avatar sm"></div>
+                  <div>
+                    <div class="comment-head">
+                      <span class="comment-author">${reply.memberName}</span>
+                      <span class="comment-date">
+                        <fmt:formatDate value="${reply.createdAt}" pattern="yyyy-MM-dd HH:mm" />
+                      </span>
+                    </div>
+                    <p class="comment-text">${reply.content}</p>
+                  </div>
+                </div>
+              </c:if>
+            </c:forEach>
 
-    <!-- 새 댓글 작성 -->
+          </c:if>
+        </c:forEach>
+      </c:otherwise>
+    </c:choose>
+
+    <!-- 새 댓글 작성 (community.css 의 .comment-form + smallButton 등록 버튼) -->
     <c:choose>
       <c:when test="${isLoggedIn}">
         <form action="${cp}/community/comment/write" method="post" class="comment-form">
           <input type="hidden" name="postId" value="${post.postId}">
           <input type="hidden" name="depth" value="0">
           <textarea name="content" rows="2" placeholder="댓글을 입력하세요..." required></textarea>
-          <button type="submit">등록</button>
+
+          <jsp:include page="../common/smallButton.jsp">
+            <jsp:param name="text" value="등록" />
+          </jsp:include>
         </form>
       </c:when>
+
+      <%-- 비로그인: 안내 문구 + buttonComponent 로 만든 "로그인하기" 버튼 --%>
       <c:otherwise>
         <div class="comment-login">
           <p>댓글을 작성하려면 로그인이 필요합니다</p>
-          <a href="${cp}/member/login">로그인하기</a>
+
+          <div class="btn-nav-wrap" data-btn-nav="${cp}/member/login">
+            <jsp:include page="../common/buttonComponent.jsp">
+              <jsp:param name="text" value="로그인하기" />
+            </jsp:include>
+          </div>
         </div>
       </c:otherwise>
     </c:choose>
@@ -163,27 +219,19 @@
 
 <!-- ───────── 삭제 확인 모달 (조각 파일) ───────── -->
 <c:if test="${isOwner}">
-  <jsp:include page="../common/deleteModal.jsp" />
+  <jsp:include page="../common/confirmModal.jsp">
+    <jsp:param name="modalId"     value="postDeleteModal" />
+    <jsp:param name="action"      value="/community/delete" />
+    <jsp:param name="title"       value="게시글 삭제" />
+    <jsp:param name="message"     value="삭제 후 복구할 수 없습니다. 정말 삭제하시겠습니까?" />
+    <jsp:param name="confirmText" value="삭제" />
+    <jsp:param name="hiddenName"  value="postId" />
+    <jsp:param name="hiddenValue" value="${post.postId}" />
+  </jsp:include>
 </c:if>
 
 
-<script>
-  // 답글 입력창 열고/닫기 (React의 replyTo 토글)
-  function toggleReply(commentId) {
-    const form = document.getElementById('reply-form-' + commentId);
-    if (form) {
-      form.style.display = (form.style.display === 'none') ? 'block' : 'none';
-    }
-  }
-
-  // 삭제 모달 (React의 showDel 상태)
-  function openDeleteModal() {
-    document.getElementById('deleteModal').style.display = 'flex';
-  }
-  
-  function closeDeleteModal() {
-    document.getElementById('deleteModal').style.display = 'none';
-  }
-</script>
+<script src="${cp}/js/common.js"></script>
+<script src="${cp}/js/community/postDetail.js"></script>
 </body>
 </html>

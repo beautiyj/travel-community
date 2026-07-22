@@ -12,6 +12,7 @@ import com.gnagnoohc.travel.business.service.BusinessDashboardService;
 import com.gnagnoohc.travel.business.service.BusinessPlaceService;
 import com.gnagnoohc.travel.business.service.BusinessReservationService;
 import com.gnagnoohc.travel.business.service.BusinessReviewService;
+import com.gnagnoohc.travel.reservation.entity.ReservationStatus;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,8 +32,8 @@ import java.util.List;
 @Controller
 @RequiredArgsConstructor
 public class BusinessController {
-    // TODO: 예약상태 값 논의필요. 논의 후 리스트 값 변경 예정
-    private static final List<String> RESERVATION_STATUS_OPTIONS = List.of("전체", "대기중", "확정", "완료", "취소");
+    // 예약은 결제 즉시 확정되고 관리 대상은 취소요청 뿐이다
+    private static final List<String> RESERVATION_STATUS_OPTIONS = List.of("전체", "취소요청", "확정", "완료", "취소");
     private static final List<String> REVIEW_SENTIMENT_OPTIONS = List.of("전체", "긍정", "중립", "부정");
 
     private final BusinessDashboardService businessDashboardService;
@@ -86,7 +87,7 @@ public class BusinessController {
             Model model
     ) {
         BusinessSidebarContextDto ctx = businessDashboardService.getSidebarContext(memberId);
-        String statusParam = (status == null || "전체".equals(status)) ? null : status;
+        String statusParam = toReservationStatusName(status);
         List<BusinessReservationDto> reservations = businessReservationService.getReservations(ctx.getPlaceId(), memberId, statusParam);
 
         model.addAttribute("memberId", memberId);
@@ -105,18 +106,30 @@ public class BusinessController {
         return "business/reservations";
     }
 
-    //예약관리 : 수락
-    @PostMapping("/business/reservations/{reservationId}/accept")
-    public String acceptReservation(@PathVariable Long reservationId, @RequestParam Long memberId) {
-        businessReservationService.accept(reservationId, memberId);
+    //예약관리 : 취소 요청 승인 (환불 실행은 reservation 파트 PaymentService 호출)
+    @PostMapping("/business/reservations/{reservationId}/cancel-approve")
+    public String approveCancelReservation(@PathVariable Long reservationId, @RequestParam Long memberId) {
+        businessReservationService.approveCancel(reservationId, memberId);
         return "redirect:/business/reservations?memberId=" + memberId;
     }
 
-    //예약관리 : 거절
-    @PostMapping("/business/reservations/{reservationId}/reject")
-    public String rejectReservation(@PathVariable Long reservationId, @RequestParam Long memberId) {
-        businessReservationService.reject(reservationId, memberId);
+    //예약관리 : 취소 요청 거절 (PAID 원복은 reservation 파트 ReservationService 호출)
+    @PostMapping("/business/reservations/{reservationId}/cancel-reject")
+    public String rejectCancelReservation(@PathVariable Long reservationId, @RequestParam Long memberId) {
+        businessReservationService.rejectCancel(reservationId, memberId);
         return "redirect:/business/reservations?memberId=" + memberId;
+    }
+
+    //필터
+    private static String toReservationStatusName(String label) {
+        if (label == null || "전체".equals(label)) return null;
+        return switch (label) {
+            case "취소요청" -> ReservationStatus.CANCEL_REQUESTED.name();
+            case "확정" -> ReservationStatus.PAID.name();
+            case "완료" -> ReservationStatus.COMPLETED.name();
+            case "취소" -> ReservationStatus.CANCELED.name();
+            default -> label;
+        };
     }
 
     //마감 관리 : 즉시 예약 마감 토글 화면

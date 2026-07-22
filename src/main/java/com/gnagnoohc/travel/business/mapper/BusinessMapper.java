@@ -33,16 +33,16 @@ public interface BusinessMapper {
             @Param("status") String status
     );
 
-    // 예약 관리 화면 상태별 필터 탭에 표시할 개수 (대기중/확정/완료/취소)
+    // 예약 관리 화면 상태별 필터 탭에 표시할 개수 (취소요청/확정/완료/취소)
     BusinessReservationStatusCountsDto selectReservationStatusCounts(
             @Param("placeId") Long placeId,
             @Param("bizMemberId") Long bizMemberId
     );
 
-    int updateReservationStatus(
+    // 취소 승인/거절 전 소유자 확인
+    boolean existsReservationForBizMember(
             @Param("reservationId") Long reservationId,
-            @Param("bizMemberId") Long bizMemberId,
-            @Param("status") String status
+            @Param("bizMemberId") Long bizMemberId
     );
 
     int updatePlaceClosed(

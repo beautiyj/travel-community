@@ -38,10 +38,10 @@
     </resultMap>
 
     <resultMap id="reservationStatusCountsResultMap" type="com.gnagnoohc.travel.business.dto.BusinessReservationStatusCountsDto">
-        <result property="pendingCount"   column="pending_count"/>
-        <result property="confirmedCount" column="confirmed_count"/>
-        <result property="doneCount"      column="done_count"/>
-        <result property="cancelledCount" column="cancelled_count"/>
+        <result property="cancelRequestCount" column="cancel_request_count"/>
+        <result property="confirmedCount"     column="confirmed_count"/>
+        <result property="doneCount"          column="done_count"/>
+        <result property="cancelledCount"     column="cancelled_count"/>
     </resultMap>
 
     <!-- 지역코드는 당분간 사업자 직접등록 업소엔 null로 두기로 해서 관련 옵션 조회 잠시 주석처리
@@ -105,9 +105,9 @@
     <select id="selectDashboardCounts" resultMap="dashboardCountsResultMap">
         SELECT
             COALESCE(SUM(CASE WHEN YEAR(r.visit_date) = YEAR(CURDATE()) AND MONTH(r.visit_date) = MONTH(CURDATE()) THEN 1 ELSE 0 END), 0) AS monthly_count,
-            COALESCE(SUM(CASE WHEN r.status = '대기중' THEN 1 ELSE 0 END), 0) AS pending_count,
-            COALESCE(SUM(CASE WHEN r.visit_date = CURDATE() AND r.status = '확정' THEN r.headcount ELSE 0 END), 0) AS today_visitors,
-            COALESCE(SUM(CASE WHEN r.status = '취소요청중' THEN 1 ELSE 0 END), 0) AS cancel_request_count
+            COALESCE(SUM(CASE WHEN r.status = 'PENDING' THEN 1 ELSE 0 END), 0) AS pending_count,
+            COALESCE(SUM(CASE WHEN r.visit_date = CURDATE() AND r.status = 'PAID' THEN r.headcount ELSE 0 END), 0) AS today_visitors,
+            COALESCE(SUM(CASE WHEN r.status = 'CANCEL_REQUESTED' THEN 1 ELSE 0 END), 0) AS cancel_request_count
         FROM RESERVATION r
         WHERE r.place_id = #{placeId}
     </select>
@@ -159,27 +159,27 @@
         ORDER BY r.visit_date DESC, r.reservation_id DESC
     </select>
 
-    <!-- 예약 관리 화면 상태별 필터 탭에 표시할 개수 (대기중/확정/완료/취소) -->
+    <!-- 예약 관리 화면 상태별 필터 탭에 표시할 개수 (취소요청/확정/완료/취소) -->
     <select id="selectReservationStatusCounts" resultMap="reservationStatusCountsResultMap">
         SELECT
-            COALESCE(SUM(CASE WHEN r.status = '대기중' THEN 1 ELSE 0 END), 0) AS pending_count,
-            COALESCE(SUM(CASE WHEN r.status = '확정' THEN 1 ELSE 0 END), 0) AS confirmed_count,
-            COALESCE(SUM(CASE WHEN r.status = '완료' THEN 1 ELSE 0 END), 0) AS done_count,
-            COALESCE(SUM(CASE WHEN r.status = '취소' THEN 1 ELSE 0 END), 0) AS cancelled_count
+            COALESCE(SUM(CASE WHEN r.status = 'CANCEL_REQUESTED' THEN 1 ELSE 0 END), 0) AS cancel_request_count,
+            COALESCE(SUM(CASE WHEN r.status = 'PAID' THEN 1 ELSE 0 END), 0) AS confirmed_count,
+            COALESCE(SUM(CASE WHEN r.status = 'COMPLETED' THEN 1 ELSE 0 END), 0) AS done_count,
+            COALESCE(SUM(CASE WHEN r.status = 'CANCELED' THEN 1 ELSE 0 END), 0) AS cancelled_count
         FROM RESERVATION r
         JOIN PLACE p ON p.place_id = r.place_id
         WHERE r.place_id = #{placeId}
           AND p.member_id = #{bizMemberId}
     </select>
 
-    <!-- 예약 상태 변경 (수락/거절). 소유자가 아니면 0건 UPDATE -->
-    <update id="updateReservationStatus">
-        UPDATE RESERVATION r
+    <!-- 취소 승인/거절 전 소유자 확인용. 예약 상태 변경 자체는 reservation 파트 서비스(PaymentService/ReservationService)가 처리한다 -->
+    <select id="existsReservationForBizMember" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM RESERVATION r
         JOIN PLACE p ON p.place_id = r.place_id
-        SET r.status = #{status}
         WHERE r.reservation_id = #{reservationId}
           AND p.member_id = #{bizMemberId}
-    </update>
+    </select>
 
     <!-- 즉시 예약마감 토글 -->
     <update id="updatePlaceClosed">

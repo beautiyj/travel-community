@@ -31,8 +31,8 @@
                     <p class="business-kpi-card__value">${monthlyCount}<span class="business-kpi-card__unit">건</span></p>
                 </div>
                 <div class="business-kpi-card business-kpi-card--warn">
-                    <p class="business-kpi-card__label">대기중 예약</p>
-                    <p class="business-kpi-card__value">${pendingCount}<span class="business-kpi-card__unit">건 처리 필요</span></p>
+                    <p class="business-kpi-card__label">결제 대기 예약</p>
+                    <p class="business-kpi-card__value">${pendingCount}<span class="business-kpi-card__unit">건</span></p>
                 </div>
                 <div class="business-kpi-card business-kpi-card--good">
                     <p class="business-kpi-card__label">오늘 방문 예정</p>
@@ -95,6 +95,7 @@
                                     <jsp:param name="phone" value="${r.phone}" />
                                     <jsp:param name="headcount" value="${r.headcount}" />
                                     <jsp:param name="status" value="${r.status}" />
+                                    <jsp:param name="statusLabel" value="${r.status.label}" />
                                     <jsp:param name="amount" value="${r.amount}" />
                                 </jsp:include>
                             </c:forEach>

@@ -1,0 +1,979 @@
+/* 관리자(업소 대시보드) 전용 스타일. 사이트 공용 CSS가 아직 없어서 business 범위에 한해 별도 파일로 관리합니다. */
+
+:root {
+    --business-primary: #0284c7;
+    --business-primary-dark: #0369a1;
+    --business-bg: #f8fafc;
+    --business-border: #e2e8f0;
+    --business-text: #1e293b;
+    --business-muted: #64748b;
+    --business-danger: #ef4444;
+    --business-warn: #f59e0b;
+    --business-good: #16a34a;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    background: var(--business-bg);
+    color: var(--business-text);
+    font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+}
+
+.business-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* ── Sidebar ── */
+.business-sidebar {
+    width: 224px;
+    flex-shrink: 0;
+    background: #fff;
+    border-right: 1px solid var(--business-border);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+}
+
+.business-sidebar__logo {
+    height: 64px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--business-border);
+    font-weight: 800;
+    color: var(--business-primary);
+}
+
+.business-sidebar__logo-badge {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--business-primary);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+}
+
+.business-sidebar__biz {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--business-border);
+}
+
+.business-sidebar__biz-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.business-sidebar__biz-avatar {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    background: #fef3c7;
+    color: #d97706;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.business-sidebar__biz-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.business-sidebar__biz-avatar-icon {
+    width: 16px;
+    height: 16px;
+}
+
+.business-sidebar__biz-text {
+    min-width: 0;
+}
+
+.business-sidebar__biz-name {
+    margin: 0;
+    font-weight: 700;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.business-sidebar__biz-owner {
+    margin: 2px 0 0;
+    font-size: 12px;
+    color: var(--business-muted);
+}
+
+.business-sidebar__status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.business-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+.business-status-dot--open { background: #4ade80; }
+.business-status-dot--closed { background: #f87171; }
+.business-status-label--open { color: #16a34a; }
+.business-status-label--closed { color: #ef4444; }
+
+.business-sidebar__nav {
+    flex: 1;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow-y: auto;
+}
+
+.business-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    color: var(--business-muted);
+}
+
+.business-nav-item:hover {
+    background: var(--business-bg);
+    color: var(--business-text);
+}
+
+.business-nav-item.is-active {
+    background: rgba(2, 132, 199, 0.1);
+    color: var(--business-primary);
+}
+
+.business-nav-item--danger {
+    color: var(--business-danger);
+}
+
+.business-badge {
+    margin-left: auto;
+    background: var(--business-danger);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 800;
+    border-radius: 999px;
+    min-width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 5px;
+}
+
+.business-sidebar__footer {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+/* ── Main ── */
+.business-main {
+    flex: 1;
+    margin-left: 224px;
+    min-height: 100vh;
+}
+
+.business-topbar {
+    height: 64px;
+    background: #fff;
+    border-bottom: 1px solid var(--business-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+}
+
+.business-topbar__title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.business-topbar__date {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: var(--business-muted);
+}
+
+.business-topbar__date-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+.business-content {
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* ── KPI cards ── */
+.business-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.business-kpi-card {
+    background: #fff;
+    border: 1px solid var(--business-border);
+    border-radius: 16px;
+    padding: 20px;
+}
+
+.business-kpi-card__label {
+    margin: 0;
+    font-size: 14px;
+    color: var(--business-muted);
+}
+
+.business-kpi-card__value {
+    margin: 6px 0 0;
+    font-size: 28px;
+    font-weight: 800;
+}
+
+.business-kpi-card__unit {
+    margin-left: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--business-muted);
+}
+
+.business-kpi-card--warn .business-kpi-card__value { color: var(--business-warn); }
+.business-kpi-card--good .business-kpi-card__value { color: var(--business-good); }
+
+/* ── Generic card ── */
+.business-card {
+    background: #fff;
+    border: 1px solid var(--business-border);
+    border-radius: 16px;
+    padding: 24px;
+}
+
+.business-card__title {
+    margin: 0 0 16px;
+    font-size: 16px;
+    font-weight: 800;
+}
+
+.business-card__subtitle {
+    font-weight: 400;
+    font-size: 13px;
+    color: var(--business-muted);
+    margin-left: 4px;
+}
+
+.business-chart-wrap {
+    position: relative;
+    height: 280px;
+}
+
+.business-empty {
+    text-align: center;
+    color: var(--business-muted);
+    font-size: 14px;
+    padding: 24px 0;
+}
+
+/* ── Closure (즉시 예약 마감 토글) ── */
+.business-closure-page {
+    max-width: 520px;
+}
+
+.business-closure-card__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.business-closure-card__desc {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: var(--business-muted);
+}
+
+.business-toggle {
+    position: relative;
+    flex-shrink: 0;
+    width: 52px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: 999px;
+    background: var(--business-border);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.business-toggle.is-on {
+    background: var(--business-danger);
+}
+
+.business-toggle__thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease;
+}
+
+.business-toggle.is-on .business-toggle__thumb {
+    transform: translateX(24px);
+}
+
+.business-closure-banner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.business-closure-banner--open {
+    background: #f0fdf4;
+    color: var(--business-good);
+}
+
+.business-closure-banner--closed {
+    background: #fef2f2;
+    color: var(--business-danger);
+}
+
+.business-closure-date-card {
+    margin-top: 16px;
+}
+
+.business-closure-date-form {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.business-closure-date-form .business-form-input {
+    flex: 1;
+}
+
+.business-closure-date-form .business-btn {
+    padding: 10px 18px;
+    font-size: 14px;
+}
+
+.business-closure-date-form .business-btn:disabled {
+    background: var(--business-border);
+    color: var(--business-muted);
+    cursor: not-allowed;
+}
+
+.business-closure-date-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.business-closure-date-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    background: #fef2f2;
+    border: 1px solid #fee2e2;
+    border-radius: 12px;
+}
+
+.business-closure-date-row__info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.business-closure-date-row__date {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--business-danger);
+}
+
+.business-closure-date-row__tag {
+    font-size: 12px;
+    color: #f87171;
+}
+
+.business-closure-date-row__remove {
+    border: none;
+    background: none;
+    padding: 4px;
+    font-size: 16px;
+    line-height: 1;
+    color: #f87171;
+    cursor: pointer;
+}
+
+.business-closure-date-row__remove:hover {
+    color: var(--business-danger);
+}
+
+/* ── Reservation list rows ── */
+.business-reservation-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.business-reservation-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--business-border);
+}
+
+.business-reservation-row:last-child {
+    border-bottom: none;
+}
+
+.business-reservation-row__name {
+    font-weight: 700;
+}
+
+.business-reservation-row__meta {
+    margin-left: 8px;
+    font-size: 13px;
+    color: var(--business-muted);
+}
+
+.business-reservation-row__right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.business-reservation-row__price {
+    font-weight: 700;
+    color: var(--business-primary);
+}
+
+/* ── Status badges ── */
+.business-badge-status {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 999px;
+}
+.business-badge-status--confirmed { background: #dcfce7; color: #15803d; }
+.business-badge-status--pending { background: #fef3c7; color: #b45309; }
+.business-badge-status--done { background: #dbeafe; color: #1d4ed8; }
+.business-badge-status--cancelled { background: #fee2e2; color: #dc2626; }
+
+/* ── Buttons ── */
+.business-btn {
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.business-btn--sm {
+    font-size: 12px;
+    padding: 6px 12px;
+}
+.business-btn--primary {
+    background: var(--business-primary);
+    color: #fff;
+}
+.business-btn--primary:hover {
+    background: var(--business-primary-dark);
+}
+.business-btn--danger {
+    background: #fff;
+    color: var(--business-danger);
+    border: 1px solid #fecaca;
+}
+.business-btn--danger:hover {
+    background: #fef2f2;
+}
+
+/* ── Filter row ── */
+.business-filter-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.business-filter-btn {
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    text-decoration: none;
+    background: #fff;
+    border: 1px solid var(--business-border);
+    color: var(--business-text);
+}
+
+.business-filter-btn.is-active {
+    background: var(--business-primary);
+    color: #fff;
+    border-color: var(--business-primary);
+}
+
+.business-filter-btn__count {
+    margin-left: 2px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #94a3b8;
+}
+
+.business-filter-btn.is-active .business-filter-btn__count {
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.business-filter-row__total {
+    margin-left: auto;
+    font-size: 13px;
+    color: var(--business-muted);
+}
+
+/* ── Reservation table (예약 관리 목록) ── */
+.business-reservation-table {
+    display: flex;
+    flex-direction: column;
+}
+
+.business-reservation-table__row {
+    display: grid;
+    grid-template-columns: 1.3fr 1.3fr 1fr 0.6fr 1fr 1.8fr;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--business-border);
+}
+
+.business-reservation-table__row:last-child {
+    border-bottom: none;
+}
+
+.business-reservation-table__row--head {
+    background: rgba(2, 132, 199, 0.06);
+    border-radius: 10px;
+    border-bottom: none;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--business-muted);
+}
+
+.business-reservation-table__cell {
+    font-size: 14px;
+    min-width: 0;
+}
+
+.business-reservation-table__cell--name {
+    font-weight: 700;
+}
+
+.business-reservation-table__cell--amount {
+    font-weight: 700;
+    color: var(--business-primary);
+}
+
+.business-reservation-table__cell--action {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.business-inline-form {
+    display: inline-block;
+    margin: 0;
+}
+
+/* ── Form ── */
+.business-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 480px;
+}
+
+.business-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.business-form-group--row {
+    flex-direction: row;
+    gap: 16px;
+}
+
+.business-form-group--row > div {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.business-form-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--business-text);
+}
+
+.business-form-input,
+.business-form-select,
+.business-form-textarea {
+    border: 1px solid var(--business-border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--business-text);
+}
+
+.business-form-textarea {
+    resize: vertical;
+}
+
+.business-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 8px;
+}
+
+.business-form-actions .business-btn {
+    padding: 10px 20px;
+    font-size: 14px;
+}
+
+/* ── Venue detail / edit (React 참고 화면과 동일하게 max-w-2xl 유지) ── */
+.venue-panel {
+    max-width: 672px;
+}
+
+.venue-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.venue-gallery {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.venue-gallery__item {
+    position: relative;
+    height: 128px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #e0f2fe;
+}
+
+.venue-gallery__item--main {
+    grid-column: span 3;
+    height: 208px;
+}
+
+.venue-gallery__item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.venue-gallery__badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 2px 10px;
+    border-radius: 999px;
+}
+
+.venue-detail-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.venue-detail-row {
+    display: flex;
+    padding: 16px 0;
+    border-top: 1px solid var(--business-border);
+}
+
+.venue-detail-row:first-child {
+    border-top: none;
+    padding-top: 0;
+}
+
+.venue-detail-row__label {
+    width: 112px;
+    flex-shrink: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--business-muted);
+}
+
+.venue-detail-row__value {
+    font-size: 14px;
+    font-weight: 600;
+    white-space: pre-line;
+}
+
+/* ── Photo edit grid (기존 사진 + 새 사진 카드를 함께 드래그로 순서 변경) ── */
+.venue-photo-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.venue-photo-header__count {
+    font-weight: 400;
+    color: var(--business-muted);
+}
+
+.venue-photo-header__hint {
+    font-size: 12px;
+    color: var(--business-muted);
+    white-space: nowrap;
+}
+
+.venue-photo-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.venue-photo-grid__item {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #e0f2fe;
+    border: 2px solid transparent;
+    cursor: grab;
+}
+
+.venue-photo-grid__item.is-dragging {
+    opacity: 0.4;
+}
+
+.venue-photo-grid__item.is-removed {
+    display: none;
+}
+
+.venue-photo-grid__item--main {
+    border-color: var(--business-primary);
+}
+
+.venue-photo-grid__item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    pointer-events: none;
+}
+
+/* 대표사진 배너: React 참고 화면처럼 카드 하단 전체를 덮는 띠 형태 */
+.venue-photo-grid__badge {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    text-align: center;
+    display: none;
+    font-size: 10px;
+    font-weight: 700;
+    color: #fff;
+    background: rgba(2, 132, 199, 0.8);
+    padding: 2px 0;
+}
+
+.venue-photo-grid__item--main .venue-photo-grid__badge {
+    display: block;
+}
+
+.venue-photo-grid__new-tag {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #fff;
+    background: rgba(2, 132, 199, 0.85);
+    padding: 2px 6px;
+    border-radius: 999px;
+}
+
+/* 삭제(×) 버튼: 카드에 마우스를 올렸을 때만 노출 (React 참고 화면의 group-hover와 동일) */
+.venue-photo-preview__remove {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 20px;
+    height: 20px;
+    border: none;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s ease, background-color 0.15s ease;
+}
+
+.venue-photo-grid__item:hover .venue-photo-preview__remove {
+    opacity: 1;
+}
+
+.venue-photo-preview__remove:hover {
+    background: var(--business-danger);
+}
+
+/* ── 사진 추가 드롭존 ── */
+.venue-photo-dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 28px 20px;
+    border: 2px dashed var(--business-border);
+    border-radius: 12px;
+    color: var(--business-muted);
+    cursor: pointer;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.venue-photo-dropzone:hover {
+    border-color: rgba(2, 132, 199, 0.5);
+    background: rgba(2, 132, 199, 0.05);
+}
+
+.venue-photo-dropzone.is-hidden {
+    display: none;
+}
+
+.venue-photo-dropzone__icon {
+    width: 32px;
+    height: 32px;
+    margin-bottom: 6px;
+    opacity: 0.4;
+}
+
+.venue-photo-dropzone__title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--business-text);
+}
+
+.venue-photo-dropzone__hint {
+    margin: 2px 0 0;
+    font-size: 12px;
+    text-align: center;
+}
+
+.venue-photo-dropzone__input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.venue-photo-caption {
+    margin: 8px 0 0;
+    font-size: 12px;
+    color: var(--business-muted);
+}
+
+/* ── 취소/저장 버튼 (React 참고 화면과 동일하게 50/50 분할) ── */
+.venue-form-actions {
+    display: flex;
+    gap: 12px;
+    padding-top: 8px;
+}
+
+.venue-btn {
+    flex: 1;
+    padding: 14px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 14px;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.venue-btn--outline {
+    background: #fff;
+    border: 2px solid var(--business-border);
+    color: var(--business-text);
+}
+
+.venue-btn--outline:hover {
+    background: var(--business-bg);
+}
+
+.venue-btn--solid {
+    background: var(--business-primary);
+    border: 2px solid var(--business-primary);
+    color: #fff;
+}
+
+.venue-btn--solid:hover {
+    background: var(--business-primary-dark);
+    border-color: var(--business-primary-dark);
+}

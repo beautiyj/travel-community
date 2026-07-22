@@ -2,6 +2,7 @@ package com.gnagnoohc.travel.reservation.service;
 
 import com.gnagnoohc.travel.reservation.dto.ReservationCreateRequest;
 import com.gnagnoohc.travel.reservation.entity.Reservation;
+import com.gnagnoohc.travel.reservation.entity.ReservationStatus;
 import com.gnagnoohc.travel.reservation.mapper.ReservationMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,7 +19,7 @@ public class ReservationService {
 
     private final ReservationMapper reservationMapper;
 
-    /** 예약 생성 (결제 전이므로 '예약중' 상태). 같은 장소·날짜 중복 예약은 거부 */
+    /** 예약 생성 (결제 전이므로 PENDING 상태). 같은 장소·날짜 중복 예약은 거부 */
     @Transactional
     public Long create(Long memberId, ReservationCreateRequest req) {
         // 슬롯 선점: 이미 활성 예약이 있으면 선점 실패
@@ -34,7 +35,7 @@ public class ReservationService {
         r.setPhone(req.getPhone());
         r.setVisitDate(req.getVisitDate());
         r.setHeadcount(req.getHeadcount());
-        r.setStatus(Reservation.STATUS_PENDING);
+        r.setStatus(ReservationStatus.PENDING);
         reservationMapper.insert(r);
         return r.getReservationId();
     }
@@ -54,8 +55,43 @@ public class ReservationService {
     }
 
     @Transactional
-    public void updateStatus(Long reservationId, String status) {
+    public void updateStatus(Long reservationId, ReservationStatus status) {
         reservationMapper.updateStatus(reservationId, status);
+    }
+
+    /**
+     * 취소 요청 (결제완료 건). 상태를 CANCEL_REQUESTED로 바꾸고 사유 기록. 환불은 관리자 승인 시 실행.
+     * 본인 예약 + PAID 상태에서만 가능.
+     */
+    @Transactional
+    public void requestCancel(Long reservationId, Long memberId, String reason) {
+        Reservation r = getById(reservationId);
+        if (!r.getMemberId().equals(memberId)) {
+            throw new IllegalStateException("본인의 예약만 취소 요청할 수 있습니다.");
+        }
+        if (r.getStatus() != ReservationStatus.PAID) {
+            throw new IllegalStateException("결제완료된 예약만 취소 요청할 수 있습니다. 현재 상태: " + r.getStatus().getLabel());
+        }
+        reservationMapper.requestCancel(reservationId, reason);
+    }
+
+    /**
+     * 관리자: 취소 요청 거절. CANCEL_REQUESTED → PAID로 원복 (환불 없음).
+     * 거절된 예약에 취소 사유·요청시각이 남아 있으면 혼란스러우므로 함께 지운다.
+     */
+    @Transactional
+    public void rejectCancel(Long reservationId) {
+        Reservation r = getById(reservationId);
+        if (r.getStatus() != ReservationStatus.CANCEL_REQUESTED) {
+            throw new IllegalStateException("취소 요청 상태인 예약만 거절할 수 있습니다. 현재 상태: " + r.getStatus().getLabel());
+        }
+        reservationMapper.rejectCancel(reservationId);
+    }
+
+    /** 관리자 목록용: 특정 상태의 예약 조회 */
+    @Transactional(readOnly = true)
+    public List<Reservation> getByStatus(ReservationStatus status) {
+        return reservationMapper.findByStatus(status);
     }
 
     /**

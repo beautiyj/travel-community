@@ -1,0 +1,333 @@
+:root {
+    color: #1f2937;
+    font-family: Arial, "Noto Sans KR", sans-serif;
+    background: #f3f7f6;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+}
+
+button,
+input {
+    font: inherit;
+}
+
+.auth-page {
+    display: flex;
+    min-height: 100vh;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 16px;
+    background: linear-gradient(145deg, #eef7f4 0%, #f8fafc 55%, #edf6ff 100%);
+}
+
+.auth-card {
+    width: min(100%, 620px);
+    padding: 36px;
+    border: 1px solid #dfe7e5;
+    border-radius: 18px;
+    background: #ffffff;
+    box-shadow: 0 16px 45px rgba(31, 41, 55, 0.09);
+}
+
+.auth-card--small {
+    width: min(100%, 440px);
+}
+
+.auth-brand {
+    color: #087f5b;
+    font-size: 18px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.auth-header {
+    margin: 30px 0;
+}
+
+.auth-header h1 {
+    margin: 0 0 8px;
+    font-size: 30px;
+}
+
+.auth-header p,
+.field-help,
+.optional-label {
+    color: #6b7280;
+}
+
+.auth-header p,
+.field-help {
+    margin: 0;
+}
+
+.form-field {
+    margin: 0 0 20px;
+    padding: 0;
+    border: 0;
+}
+
+.form-field label,
+.form-field legend {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 700;
+}
+
+.form-field input[type="text"],
+.form-field input[type="password"],
+.form-field input[type="email"],
+.form-field input[type="tel"],
+.form-field input[type="date"],
+.form-field input[type="file"] {
+    width: 100%;
+    min-height: 46px;
+    padding: 10px 12px;
+    border: 1px solid #cfd8d5;
+    border-radius: 8px;
+    background: #ffffff;
+}
+
+.form-field input:focus {
+    border-color: #0ca678;
+    outline: 3px solid rgba(12, 166, 120, 0.14);
+}
+
+.input-action-row,
+.password-field {
+    display: flex;
+    gap: 8px;
+}
+
+.input-action-row input,
+.password-field input {
+    flex: 1;
+}
+
+.choice-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 20px;
+}
+
+.choice-row label {
+    margin: 0;
+    font-weight: 400;
+}
+
+.choice-box {
+    flex: 1;
+    min-width: 160px;
+    padding: 14px;
+    border: 1px solid #cfd8d5;
+    border-radius: 8px;
+}
+
+.primary-button,
+.secondary-button,
+.text-button {
+    cursor: pointer;
+}
+
+.primary-button {
+    width: 100%;
+    min-height: 48px;
+    border: 0;
+    border-radius: 8px;
+    color: #ffffff;
+    background: #087f5b;
+    font-weight: 700;
+}
+
+.primary-button:hover {
+    background: #066b4c;
+}
+
+.secondary-button {
+    flex: 0 0 auto;
+    min-width: 100px;
+    border: 1px solid #087f5b;
+    border-radius: 8px;
+    color: #087f5b;
+    background: #ffffff;
+    font-weight: 700;
+}
+
+.text-button {
+    border: 0;
+    color: #087f5b;
+    background: transparent;
+}
+
+.field-error {
+    min-height: 18px;
+    margin: 6px 0 0;
+    color: #c92a2a;
+    font-size: 13px;
+}
+
+/* [수정] 중복 확인/이메일 인증 성공 안내를 오류 태그와 분리해 초록색으로 표시한다. */
+.field-success {
+	min-height: 18px;
+	margin: 6px 0 0;
+    color: #087f5b;
+    font-size: 13px;
+}
+
+.field-help {
+    margin-top: 6px;
+    font-size: 13px;
+}
+
+.agreement-box {
+    margin-bottom: 20px;
+    padding: 16px;
+    border-radius: 8px;
+    background: #f3f7f6;
+}
+
+.form-alert {
+    margin-bottom: 18px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.form-alert--error {
+    color: #a51111;
+    background: #fff0f0;
+}
+
+.form-alert--success,
+.form-alert--notice {
+    color: #075c42;
+    background: #e9f8f2;
+}
+
+.auth-links,
+.auth-switch {
+    margin: 22px 0 0;
+    text-align: center;
+}
+
+.auth-links {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    font-size: 14px;
+}
+
+.auth-links a,
+.auth-switch a {
+    color: #087f5b;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.signup-type-card {
+    width: min(100%, 560px);
+}
+
+.signup-type-list {
+    display: grid;
+    gap: 14px;
+}
+
+.signup-type-option {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 22px 20px;
+    border: 1px solid #cfd8d5;
+    border-radius: 12px;
+    color: #1f2937;
+    text-decoration: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.signup-type-option:hover,
+.signup-type-option:focus-visible {
+    border-color: #0ca678;
+    box-shadow: 0 8px 20px rgba(12, 166, 120, 0.12);
+    outline: none;
+    transform: translateY(-1px);
+}
+
+.signup-type-icon {
+    display: grid;
+    flex: 0 0 46px;
+    height: 46px;
+    place-items: center;
+    border-radius: 50%;
+    color: #087f5b;
+    background: #e9f8f2;
+    font-size: 22px;
+    font-weight: 700;
+}
+
+.signup-type-content {
+    display: grid;
+    flex: 1;
+    gap: 5px;
+}
+
+.signup-type-content strong {
+    font-size: 18px;
+}
+
+.signup-type-content span {
+    color: #6b7280;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.signup-type-arrow {
+    color: #087f5b;
+    font-size: 30px;
+}
+
+.selected-member-type {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 24px;
+    padding: 14px 16px;
+    border-radius: 8px;
+    background: #f3f7f6;
+}
+
+.selected-member-type span {
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.selected-member-type strong {
+    flex: 1;
+    color: #075c42;
+}
+
+.selected-member-type a {
+    color: #087f5b;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+@media (max-width: 560px) {
+    .auth-card {
+        padding: 24px 18px;
+    }
+
+    .input-action-row {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .secondary-button {
+        min-height: 42px;
+    }
+}

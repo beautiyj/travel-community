@@ -22,6 +22,7 @@ public class CommunityDto {
     
     // ── 화면 표시용 (post 테이블에 없는 조인/조립 값) ──
     private String nickname;               // 작성자 이름 (member 테이블 JOIN으로 채움)
+    private String thumbnailUrl;           // 목록 썸네일 (image 테이블에서 sort_order=0 인 이미지, 없으면 null)
     private List<ImageDto> imageList;       // 이미지 목록
     private List<CommentDto> commentList;   // 댓글 목록
 }

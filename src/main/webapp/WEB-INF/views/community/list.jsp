@@ -8,82 +8,103 @@
 <head>
 <meta charset="UTF-8">
 <title>여행 커뮤니티</title>
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/common.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/buttonComponent.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/selectableButton.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/tagButton.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/searchbar.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/community.css">
 </head>
 <body>
 <c:set var="cp" value="${pageContext.request.contextPath}" />
 
-<div class="community-container">
+<div class="container">
 
-  <!-- 헤더 -->
-  <div class="community-header">
+  <!-- 헤더: 타이틀 + 글쓰기 버튼 (community.css 의 .list-topbar) -->
+  <div class="list-topbar">
     <div>
       <h1>여행 커뮤니티</h1>
       <p>여행 경험을 나누고 함께 소통해보세요</p>
     </div>
 
-    <%-- 로그인 시에만 글쓰기 버튼 노출 (React의 isLoggedIn 조건) --%>
+    <%-- 로그인 시에만 글쓰기 버튼 노출 --%>
     <c:if test="${not empty sessionScope.loginMember}">
-      <a href="${cp}/community/write" class="btn-write">+ 글쓰기</a>
+      <a href="${cp}/community/write" class="write-btn">+ 글쓰기</a>
     </c:if>
   </div>
 
-  <!-- 카테고리 필터 (React의 cat state → GET 파라미터) -->
-  <div class="category-filter">
+  <!-- 카테고리 필터 (selectableButton 재사용: 선택 상태를 표현하는 전용 컴포넌트) -->
+  <div class="tabs">
     <c:forEach var="c" items="전체,일반,모집,후기">
-      <a href="${cp}/community/list?category=${c}&q=${param.q}"
-         class="cat-btn ${param.category == c or (empty param.category and c == '전체') ? 'active' : ''}">
-        <c:choose>
-          <c:when test="${c == '모집'}">모집 (동행)</c:when>
-          <c:otherwise>${c}</c:otherwise>
-        </c:choose>
-      </a>
+      <c:set var="label" value="${c}" />
+      <c:if test="${c == '모집'}"><c:set var="label" value="모집 (동행)" /></c:if>
+      <c:set var="isActive" value="${param.category == c or (empty param.category and c == '전체')}" />
+
+      <jsp:include page="../common/selectableButton.jsp">
+        <jsp:param name="text"     value="${label}" />
+        <jsp:param name="isActive" value="${isActive}" />
+        <jsp:param name="onclick"  value="location.href='${cp}/community/list?category=${c}&q=${param.q}'" />
+      </jsp:include>
     </c:forEach>
   </div>
 
-  <!-- 검색 -->
-  <form action="${cp}/community/list" method="get" class="search-box">
+  <!-- 검색 (searchbar 컴포넌트 재사용) -->
+  <form action="${cp}/community/list" method="get" class="search-wrap">
     <input type="hidden" name="category" value="${param.category}">
-    <input type="text" name="q" value="${param.q}" placeholder="제목, 작성자 검색">
-    <button type="submit">검색</button>
+    <jsp:include page="../common/searchbar.jsp">
+      <jsp:param name="name"        value="q" />
+      <jsp:param name="value"       value="${param.q}" />
+      <jsp:param name="placeholder" value="제목, 작성자 검색" />
+    </jsp:include>
   </form>
 
-  <!-- 목록 테이블 -->
-  <div class="post-table">
-    <div class="post-table-head">
-      <span class="col-category">카테고리</span>
-      <span class="col-title">제목</span>
-      <span class="col-author">작성자</span>
-      <span class="col-date">작성일</span>
-      <span class="col-views">조회수</span>
+  <!-- 목록 테이블 (community.css 의 .table / .row / .table-head / .post-row) -->
+  <div class="table">
+    <div class="table-head row">
+      <span>카테고리</span>
+      <span></span>
+      <span>제목</span>
+      <span>작성자</span>
+      <span>작성일</span>
+      <span>조회수</span>
     </div>
 
     <c:choose>
       <%-- 게시글이 있을 때 --%>
       <c:when test="${not empty postList}">
         <c:forEach var="post" items="${postList}">
-          <a href="${cp}/community/detail?postId=${post.postId}" class="post-row">
-            <span class="col-category">
-              <%-- React의 PostCategoryBadge --%>
-              <span class="badge badge-${post.category}">${post.category}</span>
+
+          <a href="${cp}/community/detail?postId=${post.postId}" class="post-row row">
+            <jsp:include page="../common/postCategoryTag.jsp">
+              <jsp:param name="category" value="${post.category}" />
+            </jsp:include>
+            <%-- 썸네일: 이 글의 sort_order=0 인 이미지. 없으면 빈 회색 박스 --%>
+            <span class="thumb">
+              <c:if test="${not empty post.thumbnailUrl}">
+                <img src="${cp}/upload/${post.thumbnailUrl}" alt="">
+              </c:if>
             </span>
-            <span class="col-title">${post.title}</span>
-            <span class="col-author">${post.nickname}</span>
-            <span class="col-date">
+            <span class="post-title">${post.title}</span>
+            <span class="cell-muted">${post.nickname}</span>
+            <span class="cell-muted">
               <fmt:formatDate value="${post.createdAt}" pattern="yyyy-MM-dd" />
             </span>
-            <span class="col-views">
+            <span class="cell-muted">
               <fmt:formatNumber value="${post.readcount}" pattern="#,##0" />
             </span>
           </a>
         </c:forEach>
       </c:when>
 
-      <%-- 게시글이 없을 때 (React의 filtered.length === 0) --%>
+
+      <%-- 게시글이 없을 때 --%>
       <c:otherwise>
         <div class="empty">게시글이 없습니다</div>
       </c:otherwise>
     </c:choose>
   </div>
 </div>
+
+<script src="${cp}/js/common.js"></script>
 </body>
 </html>

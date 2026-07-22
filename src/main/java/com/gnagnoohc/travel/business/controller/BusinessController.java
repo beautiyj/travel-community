@@ -3,11 +3,13 @@ package com.gnagnoohc.travel.business.controller;
 import com.gnagnoohc.travel.business.dto.BusinessDashboardViewDto;
 import com.gnagnoohc.travel.business.dto.BusinessPlaceOverviewDto;
 import com.gnagnoohc.travel.business.dto.BusinessReservationDto;
+import com.gnagnoohc.travel.business.dto.BusinessReviewDto;
 import com.gnagnoohc.travel.business.dto.BusinessSidebarContextDto;
 import com.gnagnoohc.travel.business.exception.NoPlaceRegisteredException;
 import com.gnagnoohc.travel.business.service.BusinessDashboardService;
 import com.gnagnoohc.travel.business.service.BusinessPlaceService;
 import com.gnagnoohc.travel.business.service.BusinessReservationService;
+import com.gnagnoohc.travel.business.service.BusinessReviewService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -31,6 +33,7 @@ public class BusinessController {
     private final BusinessDashboardService businessDashboardService;
     private final BusinessReservationService businessReservationService;
     private final BusinessPlaceService businessPlaceService;
+    private final BusinessReviewService businessReviewService;
 
     // TODO: 로그인/세션 붙으면 memberId 파라미터 제거하고 인증 정보에서 가져오기
     @GetMapping("/business/dashboard")
@@ -181,6 +184,24 @@ public class BusinessController {
     ) {
         businessPlaceService.updatePlace(memberId, name, placeType, regionId, address, description, photoOrder, removeImageUrls, newImages);
         return "redirect:/business/venue?memberId=" + memberId;
+    }
+
+    //후기 확인 : 답글은 커뮤니티 상세(댓글)에서 처리하므로 여기서는 목록만 보여준다
+    @GetMapping("/business/reviews")
+    public String reviews(@RequestParam(defaultValue = "1") Long memberId, Model model) {
+        BusinessSidebarContextDto ctx = businessDashboardService.getSidebarContext(memberId);
+        List<BusinessReviewDto> reviews = businessReviewService.getReviews(ctx.getPlaceId());
+
+        model.addAttribute("memberId", memberId);
+        model.addAttribute("bizName", ctx.getPlaceName());
+        model.addAttribute("ownerName", ctx.getOwnerName());
+        model.addAttribute("isClosed", ctx.isClosed());
+        model.addAttribute("bizFirstImage", ctx.getFirstImage());
+        model.addAttribute("pendingCount", ctx.getPendingCount());
+        model.addAttribute("cancelRequestCount", ctx.getCancelRequestCount());
+        model.addAttribute("reviews", reviews);
+
+        return "business/reviews";
     }
 
     // 아직 업소를 등록하지 않은 사업자가 dashboard/reservations에 접근하면 등록 화면으로 안내

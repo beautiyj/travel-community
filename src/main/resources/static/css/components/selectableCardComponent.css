@@ -1,0 +1,167 @@
+/* selectableCardComponent.jsp 셀렉터블 카드 컴포넌트 */
+
+[class^="sel-card-col-"] {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  border-radius: 24px;
+  padding: 36px 32px;
+  cursor: pointer;
+  box-sizing: border-box;
+  width: 320px;
+  position: relative;
+  transition: background-color var(--transition-fast) ease,
+              border-color var(--transition-fast) ease,
+              box-shadow var(--transition-fast) ease,
+              transform var(--transition-fast) ease;
+}
+
+/* 호버 효과 */
+[class^="sel-card-col-"]:hover {
+  transform: translateY(-4px);
+}
+
+/* 기본회원 카드 (Blue 테마) */
+.sel-card-col-blue {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.02);
+}
+.sel-card-col-blue .sel-card-emoji-box {
+  background: #E0F2FE;
+}
+.sel-card-col-blue .sel-card-list-check {
+  color: #0284C7;
+}
+
+/* [블루 활성화 상태] */
+.sel-card-col-blue.active {
+  background: #F0F9FF;
+  border-color: #0284C7;
+  box-shadow: 0px 8px 24px rgba(2, 132, 199, 0.12);
+}
+.sel-card-col-blue.active .sel-card-badge-check {
+  background: #0284C7;
+  border-color: #0284C7;
+  transform: scale(1);
+  opacity: 1;
+}
+
+/* 사업자 회원 카드 (Amber 테마) */
+.sel-card-col-amber {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.02);
+}
+.sel-card-col-amber .sel-card-emoji-box {
+  background: #FEF3C7;
+}
+.sel-card-col-amber .sel-card-list-check {
+  color: #F59E0B;
+}
+
+/* [앰버 활성화 상태] */
+.sel-card-col-amber.active {
+  background: #FFFDF5;
+  border-color: #FE9A00;
+  box-shadow: 0px 8px 24px rgba(254, 154, 0, 0.15);
+}
+.sel-card-col-amber.active .sel-card-badge-check {
+  background: #FE9A00;
+  border-color: #FE9A00;
+  transform: scale(1);
+  opacity: 1;
+}
+
+.sel-card-row-center {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 28px;
+}
+
+.sel-card-emoji-box {
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sel-card-emoji-text {
+  font-size: 32px;
+}
+
+.sel-card-badge-check {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid transparent;
+  transform: scale(0.8);
+  opacity: 0;
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
+              opacity 0.2s ease;
+}
+
+.sel-card-check-svg {
+  width: 14px;
+  height: 14px;
+  color: var(--white);
+}
+
+.sel-card-view-center {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.sel-card-txt-xl {
+  color: #0F172A;
+  font-size: 28px;
+  font-weight: 800;
+  margin: 0 0 12px 0;
+}
+
+.sel-card-txt-base {
+  color: #475569;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.sel-card-view-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  gap: 12px;
+  border-top: 1.5px solid #F1F5F9;
+  padding-top: 24px;
+}
+
+.sel-card-row-padding {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.sel-card-list-check {
+  width: 18px;
+  height: 18px;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.sel-card-txt-meta {
+  color: #334155;
+  font-size: 15px;
+  font-weight: 600;
+}

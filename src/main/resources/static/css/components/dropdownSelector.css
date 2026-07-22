@@ -1,112 +1,167 @@
 /* dropdownSelector.jsp 드롭다운셀렉터 드롭다운버튼 드롭다운 */
+/* dropdownSelector.jsp 드롭다운셀렉터 드롭다운버튼 드롭다운 */
+/* ==========================================================================
+   dropdownSelector.css - 커스텀 드롭다운 셀렉터
+   ========================================================================== */
 
-/* 드롭다운 전체 감싸는 외부 컨테이너 */
 .drop-select-container {
   position: relative;
   display: inline-block;
   width: 100%;
   max-width: 200px;
+  box-sizing: border-box;
 }
 
-/* 일체형 선택 버튼 트리거 */
 .drop-select-trigger {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 12px 16px;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  padding: 10px 14px;
+  background: var(--drop-bg, var(--card, #ffffff));
+  border: 1px solid var(--drop-border, var(--border, #e2e8f0));
+  border-radius: var(--radius-lg, 8px);
   cursor: pointer;
   box-sizing: border-box;
-  transition: border-color var(--transition-fast) ease,
-              box-shadow var(--transition-fast) ease;
+  transition: all 0.15s ease;
 }
 
-/* 호버 및 포커스 시 테두리 반응 */
 .drop-select-trigger:hover,
 .drop-select-trigger[aria-expanded="true"] {
-  border-color: #64748B;
-  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.02);
+  border-color: var(--drop-border, #64748B);
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-/* 내부 왼쪽 아이콘 + 텍스트 정렬 박스 */
 .drop-select-left-box {
   display: flex;
   align-items: center;
   gap: 8px;
   overflow: hidden;
+  white-space: nowrap;
 }
 
-/* 온오프형 탈착 이미지 아이콘 */
 .drop-select-icon {
   width: 18px;
   height: 18px;
   object-fit: contain;
   flex-shrink: 0;
+  display: block;
 }
 
-/* 표시 텍스트 */
 .drop-select-text {
-  color: var(--foreground);
-  font-size: var(--text-sm);
+  color: var(--drop-text, var(--foreground, #1e293b));
+  font-size: 14px;
   font-weight: 500;
-  white-space: normal;     /* 필요 시 줄바꿈 허용 */
-  word-break: keep-all;    /* 단어 단위로 깔끔하게 떨어지도록 설정 */
-  text-overflow: clip;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* 값이 선택되었을 때 강조 텍스트 색상 */
 .drop-select-trigger.is-selected .drop-select-text {
-  color: var(--primary);
-  font-weight: var(--font-weight-bold);
+  color: var(--drop-active-text, var(--primary, #0284c7));
+  font-weight: 700;
 }
 
-/* 꺾쇠 화살표 아이콘 (드롭다운 열리면 위로 회전 가능) */
 .drop-select-chevron {
   width: 16px;
   height: 16px;
-  color: #64748B;
+  color: var(--drop-text, var(--drop-border, #64748B));
   flex-shrink: 0;
-  margin-left: 8px;
-  transition: transform var(--transition-fast) ease;
+  margin-left: 6px;
+  transition: transform 0.15s ease;
 }
 
 .drop-select-trigger[aria-expanded="true"] .drop-select-chevron {
-  transform: rotate(180deg); /* 드롭다운 활성화 시 회전 연출 */
+  transform: rotate(180deg);
 }
+
+/* ==========================================================================
+   드롭다운 메뉴 박스 레이아웃 & 밀착 보정
+   ========================================================================== */
 
 .drop-select-menu.dropdown-menu {
-  width: 100%;
-  min-width: 100%;
-  margin-top: 6px !important;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: 0px 12px 32px rgba(15, 23, 42, 0.08);
-  padding: 6px;
-  background: var(--card);
+  --bs-dropdown-margin-top: 2px !important;
+  --bs-dropdown-spacer: 0px !important;
+
+  position: absolute !important;
+  top: 100% !important;
+  left: 0 !important;
+  transform: none !important;
+  z-index: 1000 !important;
+  
+  display: none;
+  
+  width: 100% !important;
+  min-width: 100% !important;
+  max-height: 240px;
+  overflow-y: auto;
+  
+  margin: 2px 0 0 0 !important; 
+  padding: 4px !important;
+  
+  border: 1px solid var(--drop-border, var(--border, #e2e8f0));
+  border-radius: var(--radius-lg, 8px);
+  box-shadow: 0px 8px 24px rgba(15, 23, 42, 0.12);
+  background: var(--drop-menu-bg, var(--card, #ffffff));
+  box-sizing: border-box !important;
 }
 
-/* 개별 메뉴 아이템 리스트 */
+.drop-select-menu.dropdown-menu.show {
+  display: block !important;
+}
+
+.drop-select-container ul,
+.drop-select-menu,
+.drop-select-menu li {
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* ==========================================================================
+   메뉴 아이템
+   ========================================================================== */
+
 .drop-menu-item.dropdown-item {
-  padding: 10px 12px;
-  color: #334155;
-  font-size: var(--text-sm);
+  display: block !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  padding: 8px 12px !important;
+  margin: 1px 0 !important;
+  
+  color: var(--drop-text, #334155);
+  font-size: 14px;
   font-weight: 500;
-  border-radius: var(--radius-md);
-  transition: background var(--transition-fast) ease,
-              color var(--transition-fast) ease;
+  text-align: left;
+  background: transparent !important;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
-/* 호버 시 */
 .drop-menu-item.dropdown-item:hover {
-  background: #F1F5F9;
-  color: var(--foreground);
+  background: var(--drop-active-bg, #F1F5F9) !important;
+  color: var(--drop-active-text, #0f172a) !important;
 }
 
-.drop-menu-item.dropdown-item.active {
-  background: #F0F9FF;
-  color: #0284C7;
-  font-weight: var(--font-weight-bold);
+.drop-menu-item.dropdown-item.is-active {
+  background: var(--drop-active-bg, #F0F9FF) !important;
+  color: var(--drop-active-text, #0284C7) !important;
+  font-weight: 700;
+}
+
+.drop-select-menu::-webkit-scrollbar {
+  width: 6px;
+}
+.drop-select-menu::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+.drop-select-menu::-webkit-scrollbar-track {
+  background: transparent;
 }

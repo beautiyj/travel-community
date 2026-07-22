@@ -35,7 +35,7 @@
   padding-top: 24px;
   flex-wrap: wrap;
 }
-.tabs { display: flex; gap: 8px; }
+.tabs { display: flex; gap: 8px; flex-wrap: wrap; }
  
 /* 카테고리 필터 버튼(selectableButton 재사용): 원본(selectableButton.css)은 건드리지 않고
    .tabs 안에서만 더 작고 타원(pill)에 가깝게 override. .tab 클래스와 동일한 사이즈 톤으로 맞춤 */
@@ -57,7 +57,9 @@
 .table { background: #fff; border: 1px solid var(--border); border-radius: 16px; margin-top: 24px; overflow: hidden; }
 .row {
   display: grid;
-  grid-template-columns: 72px 1fr 110px 110px 64px;
+  /* 카테고리 칸: 기존 72px -> 108px
+     "방문자인증후기" / "모집(동행)" 처럼 길어진 라벨이 잘리지 않도록 확장 */
+  grid-template-columns: 108px 1fr 110px 110px 64px;
   align-items: center;
   gap: 12px;
   padding: 16px 24px;
@@ -71,10 +73,12 @@
   display: inline-block; border-radius: 9999px;
   padding: 2px 8px; font-size: 12px; font-weight: bold; text-align: center;
   justify-self: start;
+  white-space: nowrap; /* 라벨이 길어져도 줄바꿈되지 않게 */
 }
-.badge.review  { background: #D0FAE5; color: #007A55; }
-.badge.recruit { background: #EDE9FE; color: #7008E7; }
-.badge.general { background: #F1F5F9; color: #45556C; }
+.badge.review   { background: #D0FAE5; color: #007A55; }
+.badge.recruit  { background: #EDE9FE; color: #7008E7; }
+.badge.general  { background: #F1F5F9; color: #45556C; }
+.badge.verified { background: #DBEAFE; color: #1D4ED8; } /* 방문자인증후기 전용 색상 */
 
 .post-title { font-size: 16px; font-weight: bold; color: var(--foreground); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cell-muted { color: var(--muted-foreground); font-size: 14px; font-weight: bold; }
@@ -273,8 +277,17 @@
 /* ---------- 카테고리 카드 선택 (라디오 커스텀) ---------- */
 .category-group {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  /* 카테고리가 3개 -> 4개(일반/모집/일반후기/방문자인증후기)로 늘어나면서 3열 -> 4열 */
+  grid-template-columns: repeat(4, 1fr);
   gap: 12px;
+}
+
+/* write-container(max-width:720px) 안에서 4열이면 카드 폭이 좁아 설명 텍스트가
+   빡빡해질 수 있어, 좁은 화면에서는 2열로 줄여 가독성 확보 */
+@media (max-width: 640px) {
+  .category-group {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
  
 /* 기본 라디오 동그라미는 숨기고 카드 전체를 클릭 영역으로 사용 */

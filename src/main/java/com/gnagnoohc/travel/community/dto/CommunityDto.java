@@ -25,6 +25,31 @@ public class CommunityDto {
     private String thumbnailUrl;           // 목록 썸네일 (image 테이블에서 sort_order=0 인 이미지, 없으면 null)
     private List<ImageDto> imageList;       // 이미지 목록
     private List<CommentDto> commentList;   // 댓글 목록
+
+    // ── 카테고리 화면 표시용 (community.css 의 .badge 클래스와 매칭) ──
+    // JSP 에서 postCategoryTag.jsp 같은 별도 컴포넌트 없이 이 getter들을 바로 사용
+    public String getCategoryLabel() {
+        try {
+            return PostCategory.fromValue(this.category).getDisplayLabel();
+        } catch (IllegalArgumentException e) {
+            return this.category; // 알 수 없는 값이면 원본 그대로 표시 (화면이 죽지 않게)
+        }
+    }
+
+    // .badge 뒤에 붙일 클래스명 (review / recruit / general / verified)
+    public String getCategoryCss() {
+        try {
+            switch (PostCategory.fromValue(this.category)) {
+                case NORMAL:          return "general";
+                case RECRUIT:         return "recruit";
+                case GENERAL_REVIEW:  return "review";
+                case VERIFIED_REVIEW: return "verified";
+                default:              return "general";
+            }
+        } catch (IllegalArgumentException e) {
+            return "general";
+        }
+    }
     
     public enum PostCategory {
         NORMAL("일반", "일반", "자유로운 여행 이야기"),

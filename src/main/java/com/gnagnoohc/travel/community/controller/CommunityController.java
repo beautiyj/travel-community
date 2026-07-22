@@ -96,7 +96,7 @@ public class CommunityController {
         //    nickname은 저장 안 함 (조회 시 member JOIN으로 가져옴)
         Object login = session.getAttribute("loginMember");
         if (login == null) {
-            return "redirect:/member/login";
+            return "redirect:/auth/login";
         }
         dto.setMemberId(getMemberId(login));
  

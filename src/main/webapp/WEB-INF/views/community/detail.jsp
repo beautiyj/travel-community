@@ -20,13 +20,13 @@
 <body>
 <c:set var="cp" value="${pageContext.request.contextPath}" />
 
-<%-- 로그인 회원 (로그인 담당자의 세션 구조에 맞춰 key 확인) --%>
+<%-- 로그인 회원: 세션엔 LoginMemberDto(memberId, nickname, memberRole)가 통째로 들어있음 --%>
 <c:set var="loginMember" value="${sessionScope.loginMember}" />
 <c:set var="isLoggedIn" value="${not empty loginMember}" />
 
-<%-- 본인 글 여부: 세션의 loginMember 는 memberId(Long) 자체
-     ※ 로그인 담당자가 MemberDto 를 담기로 하면 loginMember.memberId 로 바꿀 것 --%>
-<c:set var="isOwner" value="${isLoggedIn and loginMember eq post.memberId}" />
+<%-- 본인 글 여부: loginMember.memberId 로 LoginMemberDto의 getMemberId() 호출
+     ※ EL의 == 비교는 int/Long이 섞여도 숫자로 변환해서 비교하므로 캐스팅 불필요 --%>
+<c:set var="isOwner" value="${isLoggedIn and loginMember.memberId == post.memberId}" />
 
 <div class="container">
 
@@ -38,9 +38,8 @@
     <!-- 배지+제목 / 수정·삭제 버튼 (list.jsp 헤더와 같은 .list-topbar 재사용) -->
     <div class="list-topbar">
       <div>
-        <jsp:include page="../common/postCategoryTag.jsp">
-          <jsp:param name="category" value="${post.category}" />
-        </jsp:include>
+        <%-- postCategoryTag.jsp 컴포넌트 파일이 없어서 DTO getter로 직접 렌더링 --%>
+        <span class="badge ${post.categoryCss}">${post.categoryLabel}</span>
         <h2>${post.title}</h2>
       </div>
 

@@ -21,7 +21,7 @@
 
   <form action="${cp}/community/write" method="post" enctype="multipart/form-data">
 
-    <!-- 카테고리 -->
+    <!-- 카테고리: value 는 PostCategory enum 의 value 와 동일해야 함 -->
     <div class="field">
       <label class="field-label">카테고리</label>
       <div class="category-group">
@@ -33,14 +33,20 @@
 
         <input type="radio" name="category" id="cat-companion" value="모집">
         <label for="cat-companion" class="category-card">
-          <div class="cat-name">모집 (동행)</div>
+          <div class="cat-name">모집(동행)</div>
           <div class="cat-desc">동행자를 구하는 글</div>
         </label>
 
-        <input type="radio" name="category" id="cat-review" value="후기">
-        <label for="cat-review" class="category-card">
-          <div class="cat-name">후기</div>
+        <input type="radio" name="category" id="cat-general-review" value="일반후기">
+        <label for="cat-general-review" class="category-card">
+          <div class="cat-name">일반후기</div>
           <div class="cat-desc">다녀온 여행 후기</div>
+        </label>
+
+        <input type="radio" name="category" id="cat-verified-review" value="방문자인증후기">
+        <label for="cat-verified-review" class="category-card">
+          <div class="cat-name">방문자인증후기</div>
+          <div class="cat-desc">방문 인증 후 남기는 후기</div>
         </label>
       </div>
     </div>

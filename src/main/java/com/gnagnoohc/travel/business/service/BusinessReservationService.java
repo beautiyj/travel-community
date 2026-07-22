@@ -26,8 +26,6 @@ public class BusinessReservationService {
         return businessMapper.selectReservationStatusCounts(placeId, bizMemberId);
     }
 
-    // TODO(보안, 팀 논의 필요): ReservationController에도 같은 로직이 존재. 논의후 죽은코드 삭제 예정
-
     /** 취소 요청 승인 → 카카오 환불 실행 + CANCELED 전환 (예약 파트 소유 로직, 여기서는 소유자 확인만 담당) */
     public void approveCancel(Long reservationId, Long bizMemberId) {
         requireOwner(reservationId, bizMemberId);

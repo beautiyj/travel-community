@@ -9,6 +9,7 @@ import com.gnagnoohc.travel.business.dto.BusinessPlaceUpdateDto;
 //import com.gnagnoohc.travel.business.dto.BusinessRegionOptionDto;
 import com.gnagnoohc.travel.business.dto.BusinessReservationDto;
 import com.gnagnoohc.travel.business.dto.BusinessReservationStatusCountsDto;
+import com.gnagnoohc.travel.business.dto.BusinessReviewDto;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -68,4 +69,7 @@ public interface BusinessMapper {
     int updatePlace(BusinessPlaceUpdateDto place);
 
     int deletePlaceImage(@Param("placeId") Long placeId, @Param("imageUrl") String imageUrl);
+
+    // 후기 확인 : 업소에 달린 후기(category='후기') 목록. 답글은 커뮤니티 상세(댓글)에서 다룬다
+    List<BusinessReviewDto> selectReviewsByPlace(@Param("placeId") Long placeId);
 }

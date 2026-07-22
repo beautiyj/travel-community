@@ -51,6 +51,15 @@
     </resultMap>
     -->
 
+    <resultMap id="reviewResultMap" type="com.gnagnoohc.travel.business.dto.BusinessReviewDto">
+        <id     property="postId"        column="post_id"/>
+        <result property="title"         column="title"/>
+        <result property="content"       column="content"/>
+        <result property="createdAt"     column="created_at"/>
+        <result property="nickname"      column="nickname"/>
+        <result property="readcount"     column="readcount"/>
+    </resultMap>
+
     <resultMap id="placeDetailResultMap" type="com.gnagnoohc.travel.business.dto.BusinessPlaceDetailDto">
         <id     property="placeId"    column="place_id"/>
         <result property="name"       column="name"/>
@@ -249,5 +258,20 @@
         WHERE place_id = #{placeId}
           AND image_url = #{imageUrl}
     </delete>
+
+    <!-- 후기 확인 목록. 후기는 별도 테이블 없이 post(category='후기') + place_id로 식별.
+         답글은 커뮤니티 상세(댓글)에서 처리하므로 여기서는 목록 표시에 필요한 값만 조회한다 -->
+    <!-- p.nickname은 커뮤니티 글쓰기(insert)에서 채워지지 않는 경우가 있어(NULL) member 조인으로 폴백 -->
+    <select id="selectReviewsByPlace" resultMap="reviewResultMap">
+        SELECT p.post_id, p.title, p.content, p.created_at,
+               COALESCE(p.nickname, m.nickname) AS nickname,
+               p.readcount
+        FROM post p
+        JOIN member m ON m.member_id = p.member_id
+        WHERE p.place_id = #{placeId}
+--           todo: category value값은 추후 전달받기로 하였음 (아직 미정)
+          AND p.category = '후기'
+        ORDER BY p.post_id DESC
+    </select>
 
 </mapper>

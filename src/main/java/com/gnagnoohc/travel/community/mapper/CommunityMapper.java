@@ -24,4 +24,5 @@ public interface CommunityMapper {
 	void insertImage(ImageDto img);
 	void insertComment(CommentDto comment);
 	void deleteComment(Long commentId);
+	CommentDto selectComment(Long commentId);
 }

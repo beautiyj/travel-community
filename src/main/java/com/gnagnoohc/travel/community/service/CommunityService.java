@@ -59,5 +59,9 @@ public class CommunityService {
 	public void deleteComment(Long commentId) {
 		dao.deleteComment(commentId);
 	}
+
+	public CommentDto selectComment(Long commentId) {
+	    return dao.selectComment(commentId);
+	}
 	
 }

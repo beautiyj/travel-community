@@ -37,7 +37,7 @@
                         </c:if>
                     </c:url>
                     <c:choose>
-                        <c:when test="${s == '대기중'}"><c:set var="filterCount" value="${statusCounts.pendingCount}" /></c:when>
+                        <c:when test="${s == '취소요청'}"><c:set var="filterCount" value="${statusCounts.cancelRequestCount}" /></c:when>
                         <c:when test="${s == '확정'}"><c:set var="filterCount" value="${statusCounts.confirmedCount}" /></c:when>
                         <c:when test="${s == '완료'}"><c:set var="filterCount" value="${statusCounts.doneCount}" /></c:when>
                         <c:when test="${s == '취소'}"><c:set var="filterCount" value="${statusCounts.cancelledCount}" /></c:when>
@@ -71,6 +71,7 @@
                                     <jsp:param name="visitDate" value="${r.visitDate}" />
                                     <jsp:param name="headcount" value="${r.headcount}" />
                                     <jsp:param name="status" value="${r.status}" />
+                                    <jsp:param name="statusLabel" value="${r.status.label}" />
                                     <jsp:param name="amount" value="${r.amount}" />
                                     <jsp:param name="mode" value="actionable" />
                                     <jsp:param name="reservationId" value="${r.reservationId}" />

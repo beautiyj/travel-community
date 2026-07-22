@@ -24,30 +24,30 @@
   </c:when>
   <c:otherwise>
     <div id="${mId}" class="modal-overlay" data-modal
-         role="dialog" aria-modal="true" aria-labelledby="${mId}-title">
-      <div class="modal">
-        <h2 class="modal-title" id="${mId}-title"><c:out value="${mTitle}" /></h2>
-        <p class="modal-message"><c:out value="${mMessage}" /></p>
+    role="dialog" aria-modal="true" aria-labelledby="${mId}-title">
+    <div class="modal">
+      <h2 class="modal-title" id="${mId}-title"><c:out value="${mTitle}" /></h2>
+      <p class="modal-message"><c:out value="${mMessage}" /></p>
 
-        <form action="${cp}${param.action}" method="${mMethod}">
-          <c:choose>
-            <c:when test="${hCount eq 0}">
-              <input type="hidden" name="id" value="" data-modal-value>
-            </c:when>
-            <c:otherwise>
-              <c:forEach var="i" begin="0" end="${hCount - 1}">
-                <input type="hidden"
-                       name="${hNames[i]}"
-                       value="${paramValues.hiddenValue[i]}"
-                       <c:if test="${i eq 0}">data-modal-value</c:if>>
+      <form action="${cp}${param.action}" method="${mMethod}">
+        <c:choose>
+          <c:when test="${hCount eq 0}">
+            <input type="hidden" name="id" value="" data-modal-value>
+          </c:when>
+          <c:otherwise>
+            <c:forEach var="i" begin="0" end="${hCount - 1}">
+              <input type="hidden"
+              name="${hNames[i]}"
+              value="${paramValues.hiddenValue[i]}"
+              <c:if test="${i eq 0}">data-modal-value</c:if>>
               </c:forEach>
             </c:otherwise>
           </c:choose>
 
           <div class="modal-buttons">
             <%-- 취소: 흰 배경 + 검은 글자
-                 - color 로 배경만 넘기고, 글자색은 confirmModal.css 에서 override
-                 - 감싼 div 의 data-modal-close 로 닫힘 (클릭이 위로 전파됨) --%>
+            - color 로 배경만 넘기고, 글자색은 confirmModal.css 에서 override
+            - 감싼 div 의 data-modal-close 로 닫힘 (클릭이 위로 전파됨) --%>
             <div class="modal-btn modal-btn-cancel" data-modal-close>
               <jsp:include page="buttonComponent.jsp">
                 <jsp:param name="text"  value="${mCancel}" />

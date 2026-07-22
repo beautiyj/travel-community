@@ -3,13 +3,36 @@
 
 <mapper namespace="com.gnagnoohc.travel.tour.mapper.TourMapper">
 
-    <!-- <select id="selectTourList" resultType="tourDto">
-        SELECT * FROM tour_table
-    </select> -->
+    <!-- 배치용 - 외부 공공데이터 수집 후 PLACE 테이블 알박기(UPSERT) -->
+    <insert id="upsertPlace">
+        INSERT INTO place (
+            content_id, 
+            title, 
+            address, 
+            tel, 
+            overview, 
+            is_closed
+        ) VALUES (
+            #{contentid}, 
+            #{title}, 
+            #{addr1}, 
+            #{tel}, 
+            #{overview}, 
+            #{isClosed}
+        )
+        ON DUPLICATE KEY UPDATE
+            title = VALUES(title),
+            address = VALUES(address),
+            tel = VALUES(tel),
+            overview = VALUES(overview),
+            is_closed = VALUES(is_closed);
+    </insert>
 
-    <!-- <select id="selectByAreaCode" resultType="...PlaceEntity">
-        SELECT * FROM PLACE WHERE region_id = #{areaCode}
-        admin_type 조건 없음
-    </select> -->
+    <!-- 서비스 조회용 - 사용자 서비스 쿼리 영역 -->
+    <!-- 
+    <select id="selectTourList" resultType="tourDto">
+        SELECT * FROM tour_table
+    </select>
+    -->
 
 </mapper>

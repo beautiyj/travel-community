@@ -1,6 +1,7 @@
 package com.gnagnoohc.travel.batch.client;
 
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -21,6 +22,11 @@ public class TourApiClient {
         this.webClient = tourWebClient;
     }
 
+    // 테스트용 공공데이터 조회량 - 500/1페이지
+    @Value("${tour.api.batch-size}") private String batchSize;
+    @Value("${tour.api.default-page}") private String defaultPage;
+
+
     /**
      * 위치기반 관광정보조회 /locationBasedList2
      * @param mapX GPS X좌표 (필수)
@@ -35,8 +41,8 @@ public class TourApiClient {
             return this.webClient.get()                    // HTTP GET 방식 요청
                 .uri(uriBuilder -> uriBuilder
                     .path("/locationBasedList2")
-                    .queryParam("numOfRows", "20")
-                    .queryParam("pageNo", "1")
+                    .queryParam("numOfRows", batchSize)
+                    .queryParam("pageNo", defaultPage)
                     .queryParam("arrange", arrange)
                     .queryParam("mapX", mapX)
                     .queryParam("mapY", mapY)
@@ -63,8 +69,8 @@ public class TourApiClient {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
                     .path("/areaBasedList2")
-                    .queryParam("numOfRows", "20")
-                    .queryParam("pageNo", "1")
+                    .queryParam("numOfRows", batchSize)
+                    .queryParam("pageNo", defaultPage)
                     .queryParam("arrange", arrange)
                     .queryParam("contentTypeId", contentTypeId)
                     .queryParam("lDongRegnCd", lDongRegnCd)
@@ -88,8 +94,8 @@ public class TourApiClient {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
                     .path("/searchKeyword2")
-                    .queryParam("numOfRows", "20")
-                    .queryParam("pageNo", "1")
+                    .queryParam("numOfRows", batchSize)
+                    .queryParam("pageNo", defaultPage)
                     .queryParam("arrange", arrange)
                     .queryParam("keyword", keyword)
                     .build())
@@ -112,8 +118,8 @@ public class TourApiClient {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
                     .path("/searchStay2")
-                    .queryParam("numOfRows", "20")
-                    .queryParam("pageNo", "1")
+                    .queryParam("numOfRows", batchSize)
+                    .queryParam("pageNo", defaultPage)
                     .queryParam("arrange", arrange)             // 정렬필터 (A, C, D 등)
                     .queryParam("lDongRegnCd", lDongRegnCd)     // 법정동 시도
                     .queryParam("lDongSignguCd", lDongSignguCd) // 법정동 시군구
@@ -219,14 +225,16 @@ public class TourApiClient {
      * 파라미터에 따라 제목순, 수정일순(최신순), 등록일순 정렬 검색 제공
      * @param modifiedtime 콘텐츠변경일자 (옵션)
      * @param showflag 콘텐츠표출여부 1/0 (옵션, 1=표출 0=비표출)
+     * 
+     * 동기화 목록에서만 페이징 매개변수 처리
      */
-    public String fetchAreaBasedSyncList(String modifiedtime, String showflag, String arrange) {
+    public String fetchAreaBasedSyncList(int pageNo, String modifiedtime, String showflag, String arrange) {
         try {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
                     .path("/areaBasedSyncList2")
-                    .queryParam("numOfRows", "20")
-                    .queryParam("pageNo", "1")
+                    .queryParam("numOfRows", batchSize)
+                    .queryParam("pageNo", pageNo)
                     .queryParam("arrange", arrange)
                     .queryParam("modifiedtime", modifiedtime)
                     .queryParam("showflag", showflag)
@@ -248,8 +256,8 @@ public class TourApiClient {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
                     .path("/detailPetTour2")
-                    .queryParam("numOfRows", "10")
-                    .queryParam("pageNo", "1")
+                    .queryParam("numOfRows", batchSize)
+                    .queryParam("pageNo", defaultPage)
                     .queryParam("contentId", contentId)
                     .build())
                 .retrieve()
@@ -271,8 +279,8 @@ public class TourApiClient {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
                     .path("/ldongCode2")
-                    .queryParam("numOfRows", "50")
-                    .queryParam("pageNo", "1")
+                    .queryParam("numOfRows", batchSize)
+                    .queryParam("pageNo", defaultPage)
                     .queryParam("lDongRegnCd", lDongRegnCd)
                     .queryParam("lDongListYn", lDongListYn)
                     .build())
@@ -296,8 +304,8 @@ public class TourApiClient {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
                     .path("/lclsSystmCode2")
-                    .queryParam("numOfRows", "50")
-                    .queryParam("pageNo", "1")
+                    .queryParam("numOfRows", batchSize)
+                    .queryParam("pageNo", defaultPage)
                     .queryParam("lclsSystm1", lclsSystm1)
                     .queryParam("lclsSystm2", lclsSystm2)
                     .queryParam("lclsSystmListYn", lclsSystmListYn)

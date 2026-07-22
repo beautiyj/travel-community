@@ -1,15 +1,18 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8"%>
+<%@ page import="com.gnagnoohc.travel.auth.dto.LoginMemberDto" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%
     // ============================================================
     // ⚠ 테스트 전용 세팅 - 실제 배포 시 반드시 삭제할 것!
-    // 로그인 담당자 세션 구조: loginMember = Long (memberId)
-    // 여기서는 memberId = 1L 회원으로 로그인한 것처럼 세션을 강제로 채워둔다.
-    // ============================================================
-    Long testMemberId = 1L;
-    session.setAttribute("loginMember", testMemberId);
+    // 로그인 담당자 세션 구조: loginMember = LoginMemberDto(memberId, nickname, memberRole)
+    // ※ 실제 로그인(AuthController)이 세션에 넣는 것과 동일한 타입으로 맞춰야
+    //    CommunityController.getMemberId()/isOwner() 의 (LoginMemberDto) 캐스팅이 안 깨진다.
+    //    (예전엔 여기서 Long 하나만 넣어서 캐스팅 에러가 났었음)
+    LoginMemberDto testLoginMember = new LoginMemberDto(1, "테스트유저", "USER");
+    session.setAttribute("loginMember", testLoginMember);
 %>
+<c:set var="testMemberId" value="${sessionScope.loginMember.memberId}" />
 <c:set var="testPlaceId" value="1" />
 <!DOCTYPE html>
 <html>
@@ -37,7 +40,7 @@
 <h1>🧪 커뮤니티(TripAround) 게시판 통합 테스트 페이지</h1>
 
 <div class="info">
-    현재 세션 <code>loginMember</code> = <b>${testMemberId}</b> 로 강제 세팅됨 (테스트용)<br>
+    현재 세션 <code>loginMember</code> = <b>LoginMemberDto(memberId=${testMemberId})</b> 로 강제 세팅됨 (테스트용)<br>
     글쓰기 테스트 시 <code>placeId</code> = <b>${testPlaceId}</b> 로 하드코딩되어 전송됩니다.<br>
     ※ <code>CommunityDto</code>의 placeId 필드명이 다르면 아래 hidden input의 <code>name</code> 값을 실제 필드명에 맞게 바꿔주세요.
 </div>

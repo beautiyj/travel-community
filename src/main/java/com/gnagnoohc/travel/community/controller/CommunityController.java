@@ -51,7 +51,7 @@ public class CommunityController {
     
     // 상세 (조회수 증가 포함)
     @GetMapping("/community/detail")
-    public String detail(@RequestParam("postId") Long postId, Model model) {
+    public String detail(@RequestParam("postId") int postId, Model model) {
 
         CommunityDto post = service.selectOne(postId);
         if (post == null) {
@@ -104,7 +104,7 @@ public class CommunityController {
         service.insert(dto);
  
      // 3) 저장된 글 번호를 변수로 받아 이미지 연결
-        Long postId = dto.getPostId();
+        int postId = dto.getPostId();
         saveImages(images, postId);
  
         return "redirect:/community/list";
@@ -113,7 +113,7 @@ public class CommunityController {
  
     // 수정 폼 열기 (기존 글 채워서)
     @GetMapping("/community/edit")
-    public String editForm(@RequestParam("postId") Long postId, Model model, HttpSession session) {
+    public String editForm(@RequestParam("postId") int postId, Model model, HttpSession session) {
  
         CommunityDto post = service.selectOne(postId);
  
@@ -139,7 +139,7 @@ public class CommunityController {
         if (!isOwner(origin, session)) {
             return "redirect:/community/detail?postId=" + dto.getPostId();
         }
-        Long postId = dto.getPostId();
+        int postId = dto.getPostId();
  
         service.update(dto);                 // 제목/내용/카테고리 수정
         saveImages(images, postId);          // 새 이미지가 있으면 추가
@@ -150,7 +150,7 @@ public class CommunityController {
  
     // 삭제
     @PostMapping("/community/delete")
-    public String delete(@RequestParam("postId") Long postId, HttpSession session) {
+    public String delete(@RequestParam("postId") int postId, HttpSession session) {
  
         CommunityDto post = service.selectOne(postId);
         if (!isOwner(post, session)) {
@@ -166,7 +166,7 @@ public class CommunityController {
     // 공통
  
     // 이미지 파일들을 디스크에 저장하고 경로를 DB(IMAGE 테이블)에 기록
-    private void saveImages(MultipartFile[] images, Long postId) throws IOException {
+    private void saveImages(MultipartFile[] images, int postId) throws IOException {
         if (images == null) return;
  
         List<ImageDto> existingImages = service.selectImages(postId);
@@ -194,9 +194,9 @@ public class CommunityController {
     // 세션 로그인 정보에서 memberId 꺼내기
     // session.setAttribute("loginMember", loginResult.loginMember())로
     // LoginMemberDto(memberId: int, nickname, memberRole)가 세션에 그대로 들어옴
-    // ※ LoginMemberDto.memberId는 int라서 커뮤니티 쪽 Long과 안 맞음 → 명시적으로 변환
-    private Long getMemberId(Object login) {
-        return (long) ((LoginMemberDto) login).getMemberId();
+    // ※ LoginMemberDto.memberId는 int, 커뮤니티 쪽도 이제 int라서 타입 그대로 맞음
+    private int getMemberId(Object login) {
+        return ((LoginMemberDto) login).getMemberId();
     }
  
     // 세션 로그인 정보에서 nickname 꺼내기 (필요한 화면에서 바로 쓰고 싶을 때)
@@ -209,7 +209,7 @@ public class CommunityController {
         Object login = session.getAttribute("loginMember");
         if (login == null || post == null) return false;
         
-        return post.getMemberId().equals(getMemberId(login));
+        return post.getMemberId() == getMemberId(login);
     }
     
 }

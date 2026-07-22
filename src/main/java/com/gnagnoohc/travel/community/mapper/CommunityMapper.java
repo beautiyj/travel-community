@@ -14,15 +14,15 @@ import com.gnagnoohc.travel.community.dto.ImageDto;
 public interface CommunityMapper {
 
 	List<CommunityDto> selectAll(@Param("category") String category, @Param("q") String q);
-	void updateReadcount(Long postId);
-	CommunityDto selectOne(Long postId);
-	List<ImageDto> selectImages(Long postId);
-	List<CommentDto> selectComments(Long postId);
+	void updateReadcount(int postId);
+	CommunityDto selectOne(int postId);
+	List<ImageDto> selectImages(int postId);
+	List<CommentDto> selectComments(int postId);
 	void insert(CommunityDto dto);
 	void update(CommunityDto dto);
-	void delete(Long postId);
+	void delete(int postId);
 	void insertImage(ImageDto img);
 	void insertComment(CommentDto comment);
-	void deleteComment(Long commentId);
-	CommentDto selectComment(Long commentId);
+	void deleteComment(int commentId);
+	CommentDto selectComment(int commentId);
 }

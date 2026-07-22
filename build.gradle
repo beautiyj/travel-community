@@ -19,6 +19,9 @@ repositories {
 }
 
 dependencies {
+	// webClient
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
 	// JSP
     implementation 'org.apache.tomcat.embed:tomcat-embed-jasper'
     implementation 'jakarta.servlet:jakarta.servlet-api'

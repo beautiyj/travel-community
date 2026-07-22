@@ -239,27 +239,3 @@ function initSlider(container, config) {
         document.querySelectorAll('[data-gallery]').forEach(initGallery);
     });
 })();
-
-/* ============================================================
-   폼 안의 buttonComponent 정규화 (모달이 아닌 일반 폼용)
-   - .btn-nav-wrap  : 페이지 이동 버튼 → type=button, alert 제거, data-btn-nav로 이동
-   - .btn-submit-wrap : 폼 제출 버튼 → type=submit, alert 제거
-   ============================================================ */
-document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('.btn-nav-wrap .btn-main').forEach(function (btn) {
-        btn.type = 'button';
-        btn.onclick = null;
-    });
-    document.querySelectorAll('.btn-submit-wrap .btn-main').forEach(function (btn) {
-        btn.type = 'submit';
-        btn.onclick = null;
-    });
-
-    // .btn-nav-wrap[data-btn-nav="경로"] 클릭 시 해당 경로로 이동
-    document.addEventListener('click', function (event) {
-        const navWrap = event.target.closest('.btn-nav-wrap[data-btn-nav]');
-        if (navWrap) {
-            window.location.href = navWrap.getAttribute('data-btn-nav');
-        }
-    });
-});

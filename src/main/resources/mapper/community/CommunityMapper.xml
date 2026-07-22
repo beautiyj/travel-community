@@ -79,6 +79,13 @@
 		c.comment_id asc
 	</select>
 	
+	<select id="selectComment" parameterType="long" resultType="comment">
+    	select c.comment_id, c.content, c.depth, c.created_at, c.updated_at,
+    	c.parent_id, c.post_id, c.member_id, m.nickname as member_name 
+    	from comment c join member m on c.member_id = m.member_id 
+    	where c.comment_id = #{commentId}
+	</select>
+	
 	<!-- 댓글 등록 -->
 	<insert id="insertComment" parameterType="comment" useGeneratedKeys="true" keyProperty="commentId"> 
 		insert into comment (content, depth, parent_id, post_id, member_id) 

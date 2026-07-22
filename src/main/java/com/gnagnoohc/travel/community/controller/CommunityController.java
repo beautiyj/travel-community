@@ -17,6 +17,7 @@ import com.gnagnoohc.travel.community.dto.CommentDto;
 import com.gnagnoohc.travel.community.dto.CommunityDto;
 import com.gnagnoohc.travel.community.dto.ImageDto;
 import com.gnagnoohc.travel.community.service.CommunityService;
+import com.gnagnoohc.travel.auth.dto.LoginMemberDto;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -191,13 +192,16 @@ public class CommunityController {
     }
  
     // 세션 로그인 정보에서 memberId 꺼내기
-    // ※ 로그인 담당자가 세션에 무엇을 담는지에 따라 이 부분만 맞추면 됨
+    // session.setAttribute("loginMember", loginResult.loginMember())로
+    // LoginMemberDto(memberId: int, nickname, memberRole)가 세션에 그대로 들어옴
+    // ※ LoginMemberDto.memberId는 int라서 커뮤니티 쪽 Long과 안 맞음 → 명시적으로 변환
     private Long getMemberId(Object login) {
-        // 예시 1) 세션에 회원 객체(MemberDto)를 담는 경우:
-        //   return ((MemberDto) login).getMemberId();
-        // 예시 2) 세션에 memberId(Long)만 담는 경우:
-        //   return (Long) login;
-        return (Long) login;   // ← 실제 구조에 맞춰 수정
+        return (long) ((LoginMemberDto) login).getMemberId();
+    }
+ 
+    // 세션 로그인 정보에서 nickname 꺼내기 (필요한 화면에서 바로 쓰고 싶을 때)
+    private String getNickname(Object login) {
+        return ((LoginMemberDto) login).getNickname();
     }
  
     // 로그인한 사람이 글 작성자인지 확인

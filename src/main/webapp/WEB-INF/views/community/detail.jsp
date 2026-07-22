@@ -135,11 +135,22 @@
                 </div>
                 <p class="comment-text">${comment.content}</p>
 
-                <!-- 답글 달기 (로그인 시) -->
-                <c:if test="${isLoggedIn}">
-                  <span class="reply-link" role="button" tabindex="0"
-                        onclick="toggleReply(${comment.commentId})">답글 달기</span>
-                </c:if>
+                <div class="comment-actions">
+                  <!-- 답글 달기 (로그인 시) -->
+                  <c:if test="${isLoggedIn}">
+                    <span class="reply-link" role="button" tabindex="0"
+                          onclick="toggleReply(${comment.commentId})">답글 달기</span>
+                  </c:if>
+
+                  <!-- 삭제: 본인 댓글일 때만, 확인창 없이 바로 삭제 (comment/delete 는 서버에서 본인 확인 후 처리) -->
+                  <c:if test="${isLoggedIn and loginMember.memberId == comment.memberId}">
+                    <form action="${cp}/community/comment/delete" method="post" class="comment-delete-form">
+                      <input type="hidden" name="commentId" value="${comment.commentId}">
+                      <input type="hidden" name="postId" value="${post.postId}">
+                      <button type="submit" class="comment-delete-btn">삭제</button>
+                    </form>
+                  </c:if>
+                </div>
               </div>
             </div>
 
@@ -175,6 +186,17 @@
                       </span>
                     </div>
                     <p class="comment-text">${reply.content}</p>
+
+                    <!-- 삭제: 본인 답글일 때만, 확인창 없이 바로 삭제 -->
+                    <c:if test="${isLoggedIn and loginMember.memberId == reply.memberId}">
+                      <div class="comment-actions">
+                        <form action="${cp}/community/comment/delete" method="post" class="comment-delete-form">
+                          <input type="hidden" name="commentId" value="${reply.commentId}">
+                          <input type="hidden" name="postId" value="${post.postId}">
+                          <button type="submit" class="comment-delete-btn">삭제</button>
+                        </form>
+                      </div>
+                    </c:if>
                   </div>
                 </div>
               </c:if>
@@ -199,16 +221,15 @@
         </form>
       </c:when>
 
-      <%-- 비로그인: 안내 문구 + buttonComponent 로 만든 "로그인하기" 버튼 --%>
+      <%-- 비로그인: 안내 문구 + smallButton 으로 만든 "로그인하기" 버튼 --%>
       <c:otherwise>
         <div class="comment-login">
           <p>댓글을 작성하려면 로그인이 필요합니다</p>
 
-          <div class="btn-nav-wrap" data-btn-nav="${cp}/member/login">
-            <jsp:include page="../common/buttonComponent.jsp">
-              <jsp:param name="text" value="로그인하기" />
-            </jsp:include>
-          </div>
+          <jsp:include page="../common/smallButton.jsp">
+            <jsp:param name="text" value="로그인하기" />
+            <jsp:param name="onclick" value="location.href='${cp}/member/login'" />
+          </jsp:include>
         </div>
       </c:otherwise>
     </c:choose>

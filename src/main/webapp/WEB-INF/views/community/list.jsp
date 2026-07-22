@@ -33,36 +33,39 @@
     </c:if>
   </div>
 
-  <!-- 카테고리 필터 (selectableButton 재사용: 선택 상태를 표현하는 전용 컴포넌트) -->
-  <div class="tabs">
-    <c:forEach var="c" items="전체,일반,모집,후기">
-      <c:set var="label" value="${c}" />
-      <c:if test="${c == '모집'}"><c:set var="label" value="모집 (동행)" /></c:if>
-      <c:set var="isActive" value="${param.category == c or (empty param.category and c == '전체')}" />
+  <!-- 카테고리 필터 + 검색 (한 줄 배치: 카테고리 왼쪽, 검색 오른쪽) -->
+  <div class="list-filter-row">
+    <!-- 카테고리 필터 (selectableButton 재사용: 선택 상태를 표현하는 전용 컴포넌트) -->
+    <div class="tabs">
+      <c:forEach var="c" items="전체,일반,모집,후기">
+        <c:set var="label" value="${c}" />
+        <c:if test="${c == '모집'}"><c:set var="label" value="모집 (동행)" /></c:if>
+        <c:set var="isActive" value="${param.category == c or (empty param.category and c == '전체')}" />
 
-      <jsp:include page="../common/selectableButton.jsp">
-        <jsp:param name="text"     value="${label}" />
-        <jsp:param name="isActive" value="${isActive}" />
-        <jsp:param name="onclick"  value="location.href='${cp}/community/list?category=${c}&q=${param.q}'" />
-      </jsp:include>
-    </c:forEach>
-  </div>
+        <jsp:include page="../common/selectableButton.jsp">
+          <jsp:param name="text"     value="${label}" />
+          <jsp:param name="isActive" value="${isActive}" />
+          <jsp:param name="onclick"  value="location.href='${cp}/community/list?category=${c}&q=${param.q}'" />
+        </jsp:include>
+      </c:forEach>
+    </div>
 
-  <!-- 검색 (searchbar 컴포넌트 재사용) -->
-  <form action="${cp}/community/list" method="get" class="search-wrap">
-    <input type="hidden" name="category" value="${param.category}">
-    <jsp:include page="../common/searchbar.jsp">
-      <jsp:param name="name"        value="q" />
-      <jsp:param name="value"       value="${param.q}" />
-      <jsp:param name="placeholder" value="제목, 작성자 검색" />
+    <!-- 검색 (searchbar 컴포넌트 재사용) -->
+    <form action="/community/list" method="get" class="search-wrap">
+      <input type="hidden" name="category" value="${param.category}">
+    <jsp:include page="/WEB-INF/views/common/searchbar.jsp">
+       	<jsp:param name="name"        value="q" />
+        <jsp:param name="value"       value="${param.q}" />
+        <jsp:param name="btnText"     value="조회" />
+        <jsp:param name="placeholder" value="제목, 작성자 검색" />
     </jsp:include>
-  </form>
+</form>
+  </div>
 
   <!-- 목록 테이블 (community.css 의 .table / .row / .table-head / .post-row) -->
   <div class="table">
     <div class="table-head row">
       <span>카테고리</span>
-      <span></span>
       <span>제목</span>
       <span>작성자</span>
       <span>작성일</span>
@@ -78,12 +81,6 @@
             <jsp:include page="../common/postCategoryTag.jsp">
               <jsp:param name="category" value="${post.category}" />
             </jsp:include>
-            <%-- 썸네일: 이 글의 sort_order=0 인 이미지. 없으면 빈 회색 박스 --%>
-            <span class="thumb">
-              <c:if test="${not empty post.thumbnailUrl}">
-                <img src="${cp}/upload/${post.thumbnailUrl}" alt="">
-              </c:if>
-            </span>
             <span class="post-title">${post.title}</span>
             <span class="cell-muted">${post.nickname}</span>
             <span class="cell-muted">

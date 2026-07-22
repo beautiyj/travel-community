@@ -22,7 +22,7 @@
 	</select>
 	
 	<!-- 단건 조회 -->
-	<select id="selectOne" parameterType="long" resultType="community"> 
+	<select id="selectOne" parameterType="int" resultType="community"> 
 		select p.post_id, p.member_id, p.place_id, p.title, p.content, p.created_at, p.updated_at, p.readcount, 
 		p.category, m.nickname as nickname 
 		from post p join member m on p.member_id = m.member_id 
@@ -30,7 +30,7 @@
 	</select>
 	
 	<!-- 조회수 증가 -->
-	<update id="updateReadcount" parameterType="long"> 
+	<update id="updateReadcount" parameterType="int"> 
 		update post set readcount = readcount + 1 where post_id = #{postId} 
 	</update>
 	
@@ -47,7 +47,7 @@
 	</update>
 	
 	<!-- 삭제 -->
-	<delete id="delete" parameterType="long"> 
+	<delete id="delete" parameterType="int"> 
 		delete from post where post_id = #{postId} 
 	</delete>
 	
@@ -59,7 +59,7 @@
 	</insert>
 	
 	<!-- 게시글의 이미지 목록 (정렬 순서대로) -->
-	<select id="selectImages" parameterType="long" resultType="image"> 
+	<select id="selectImages" parameterType="int" resultType="image"> 
 		select image_id, post_id, image_url, sort_order, created_at 
 		from image where post_id = #{postId} 
 		order by sort_order asc, image_id asc 
@@ -67,7 +67,7 @@
 	
 	<!-- ── 댓글 (comment 테이블) ── -->
 	<!-- 게시글의 댓글 목록 (작성자 이름 join) -->
-	<select id="selectComments" parameterType="long" resultType="comment">
+	<select id="selectComments" parameterType="int" resultType="comment">
 		select c.comment_id, c.content, c.depth, c.created_at, c.updated_at,
 		c.parent_id, c.post_id, c.member_id, m.nickname as member_name 
 		from comment c join member m on c.member_id = m.member_id 
@@ -79,7 +79,7 @@
 		c.comment_id asc
 	</select>
 	
-	<select id="selectComment" parameterType="long" resultType="comment">
+	<select id="selectComment" parameterType="int" resultType="comment">
     	select c.comment_id, c.content, c.depth, c.created_at, c.updated_at,
     	c.parent_id, c.post_id, c.member_id, m.nickname as member_name 
     	from comment c join member m on c.member_id = m.member_id 
@@ -93,7 +93,7 @@
 	</insert>
 	
 	<!-- 댓글 삭제 -->
-	<delete id="deleteComment" parameterType="long"> 
+	<delete id="deleteComment" parameterType="int"> 
 		delete from comment where comment_id = #{commentId} 
 	</delete>
 </mapper>

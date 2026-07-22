@@ -20,19 +20,19 @@ public class CommunityService {
 		return dao.selectAll(category, q);
 	}
 
-	public void updateReadcount(Long postId) {
+	public void updateReadcount(int postId) {
 		dao.updateReadcount(postId);
 	}
 
-	public CommunityDto selectOne(Long postId) {
+	public CommunityDto selectOne(int postId) {
 		return dao.selectOne(postId);
 	}
 
-	public List<ImageDto> selectImages(Long postId) {
+	public List<ImageDto> selectImages(int postId) {
 		return dao.selectImages(postId);
 	}
 
-	public List<CommentDto> selectComments(Long postId) {
+	public List<CommentDto> selectComments(int postId) {
 		return dao.selectComments(postId);
 	}
 
@@ -44,7 +44,7 @@ public class CommunityService {
 		dao.update(dto);
 	}
 
-	public void delete(Long postId) {
+	public void delete(int postId) {
 		dao.delete(postId);
 	}
 
@@ -56,11 +56,11 @@ public class CommunityService {
 		dao.insertComment(comment);
 	}
 
-	public void deleteComment(Long commentId) {
+	public void deleteComment(int commentId) {
 		dao.deleteComment(commentId);
 	}
 
-	public CommentDto selectComment(Long commentId) {
+	public CommentDto selectComment(int commentId) {
 	    return dao.selectComment(commentId);
 	}
 	

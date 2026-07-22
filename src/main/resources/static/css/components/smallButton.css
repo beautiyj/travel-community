@@ -1,0 +1,63 @@
+/* smallButton.jsp 스몰버튼 작은 버튼 */
+
+.btn-small-row {
+  display: inline-flex; /* 너비가 콘텐츠에 맞게 자동 조절되도록 inline-flex 세팅 */
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-lg);
+  border: none;
+  padding: 10px 19px;
+  gap: 8px;
+  cursor: pointer;
+  transition: opacity var(--transition-fast) ease, 
+              transform var(--transition-fast) ease;
+  box-sizing: border-box;
+}
+
+.btn-small-row:hover {
+  opacity: 0.9;
+}
+.btn-small-row:active {
+  transform: scale(0.98);
+}
+
+/* 내부 이미지 아이콘 규격 */
+.btn-small-icon {
+  border-radius: var(--radius-lg);
+  width: 16px;
+  height: 16px;
+  object-fit: fill;
+  flex-shrink: 0;
+}
+
+/* 내부 텍스트 스타일 */
+.btn-small-text {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+  line-height: 1;
+}
+
+/* 기본 테마 (Primary - 메인 컬러 배경에 흰 글씨) */
+.btn-small-row.theme-primary {
+  background: var(--primary);
+}
+.btn-small-row.theme-primary .btn-small-text {
+  color: var(--primary-foreground);
+}
+
+/* 보조 테마 (Secondary - 회색 배경에 어두운 글씨 / 추가 확장 대비용) */
+.btn-small-row.theme-secondary {
+  background: var(--secondary);
+}
+.btn-small-row.theme-secondary .btn-small-text {
+  color: var(--secondary-foreground);
+}
+
+/* 위험 동작 테마 (Danger - 환불/삭제 등. 흰 배경 + 빨간 테두리) : reservation 파트에서 추가 */
+.btn-small-row.theme-danger {
+  background: var(--card);
+  border: 1px solid var(--danger);
+}
+.btn-small-row.theme-danger .btn-small-text {
+  color: var(--danger);
+}

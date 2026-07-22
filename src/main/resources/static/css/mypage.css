@@ -1,0 +1,78 @@
+/* ============================================================
+   mypage.css — 마이페이지 전용 스타일
+   ※ common.css 를 먼저 불러온 뒤 이 파일을 불러오세요.
+   (토큰·리셋·헤더·컨테이너는 common.css 에 있음)
+   ============================================================ */
+
+/* 헤더의 '마이페이지' 링크 (아이콘+텍스트) */
+.nav-user { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: bold; color: var(--foreground); cursor: pointer; }
+
+/* ---------- Page layout ---------- */
+.page-title { font-size: 24px; font-weight: bold; }
+.mypage-layout { display: flex; align-items: flex-start; gap: 32px; padding-top: 32px; }
+
+/* ---------- Sidebar ---------- */
+.sidebar { flex-shrink: 0; width: 260px; }
+.profile-card { background: var(--primary); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+.avatar-lg { width: 56px; height: 56px; border-radius: 16px; object-fit: cover; background: #ffffff40; }
+.profile-name { color: #fff; font-size: 18px; font-weight: bold; margin-top: 12px; }
+.profile-email { color: #fff; font-size: 14px; margin-top: 4px; }
+.menu { display: flex; flex-direction: column; margin-top: 16px; }
+.menu-item { display: flex; align-items: center; gap: 12px; border-radius: 16px; padding: 12px 16px; font-size: 14px; font-weight: bold; color: var(--foreground); cursor: pointer; }
+.menu-item:hover { background: var(--background); }
+.menu-item.active { background: var(--primary-soft); color: var(--primary); }
+.menu-item.danger { color: var(--danger); }
+.menu-item .icon { width: 16px; height: 16px; }
+
+/* ---------- Content ---------- */
+.content { flex: 1; }
+.content-head { display: flex; justify-content: space-between; align-items: center; }
+.section-title { font-size: 20px; font-weight: bold; }
+.btn-edit { background: var(--primary); color: #fff; border: none; border-radius: 12px; padding: 8px 16px; font-size: 14px; font-weight: bold; cursor: pointer; }
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* ---------- Member info card ---------- */
+.info-card { background: #fff; border: 1px solid var(--border); border-radius: 16px; margin-top: 24px; padding: 4px 21px; }
+.info-row { display: flex; align-items: center; padding: 16px 0; }
+.info-label { width: 140px; color: var(--muted-foreground); font-size: 14px; font-weight: bold; }
+.info-value { color: var(--foreground); font-size: 14px; font-weight: bold; }
+.withdraw { text-align: center; margin-top: 16px; }
+.withdraw a { color: #FF6467; font-size: 14px; font-weight: bold; cursor: pointer; }
+
+/* ---------- Reservation list ---------- */
+.reservation-list { display: flex; flex-direction: column; gap: 16px; margin-top: 24px; }
+.reservation-card { background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 21px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.res-info { flex: 1; }
+.res-name { font-size: 18px; font-weight: bold; }
+.res-meta { display: flex; flex-wrap: wrap; gap: 12px; padding: 8px 0; }
+.res-meta-item { display: flex; align-items: center; gap: 4px; color: var(--muted-foreground); font-size: 14px; }
+.res-meta-item .icon { width: 14px; height: 14px; }
+.status-badge { display: inline-block; border-radius: 9999px; padding: 3px 10px; font-size: 12px; font-weight: bold; }
+.status-badge.paid { background: #DCFCE7; color: #008236; }
+.status-badge.confirmed { background: #DBEAFE; color: #1447E6; }
+.res-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.res-price { color: var(--primary); font-size: 20px; font-weight: bold; }
+.btn-cancel { background: none; border: 1px solid #FFC9C9; border-radius: 12px; padding: 7px 14px; color: var(--danger); font-size: 14px; font-weight: bold; cursor: pointer; }
+
+/* ---------- Cancel modal ---------- */
+.modal-overlay { display: none; position: fixed; inset: 0; background: #00000080; z-index: 100; align-items: center; justify-content: center; padding: 24px; }
+.modal-overlay.open { display: flex; }
+.modal { width: 480px; max-width: 100%; background: #fff; border-radius: 16px; box-shadow: 0 25px 50px #00000040; overflow: hidden; }
+.modal-head { display: flex; justify-content: space-between; align-items: flex-start; padding: 28px 27px 16px; }
+.modal-title { font-size: 20px; font-weight: bold; }
+.modal-subtitle { color: var(--muted-foreground); font-size: 14px; margin-top: 2px; }
+.modal-close { color: var(--muted-foreground); font-size: 18px; font-weight: bold; background: none; border: none; cursor: pointer; }
+.modal-body { padding: 0 27px 8px; }
+.summary-box { background: var(--secondary); border-radius: 16px; padding: 11px 15px; }
+.summary-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; }
+.summary-label { color: var(--muted-foreground); font-size: 14px; }
+.summary-value { color: var(--foreground); font-size: 14px; font-weight: bold; }
+.summary-value.price { color: var(--primary); }
+.field { padding-top: 20px; }
+.field-label { color: var(--foreground); font-size: 14px; font-weight: bold; }
+.select-box { width: 100%; height: 48px; margin-top: 7px; background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 0 15px; font-size: 14px; color: var(--muted-foreground); }
+.notice { margin-top: 20px; background: #FFF7ED; border: 1px solid #FFEDD4; border-radius: 16px; padding: 12px 16px; color: var(--muted-foreground); font-size: 12px; line-height: 1.6; }
+.modal-actions { display: flex; gap: 12px; padding: 24px 27px 28px; }
+.btn-outline { flex: 1; background: none; border: 2px solid var(--border); border-radius: 16px; padding: 13px; font-size: 16px; font-weight: bold; color: var(--foreground); cursor: pointer; }
+.btn-danger { flex: 1; background: var(--danger); border: none; border-radius: 16px; padding: 13px; font-size: 16px; font-weight: bold; color: #fff; cursor: pointer; }

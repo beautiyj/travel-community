@@ -1,58 +1,171 @@
-/* banner.jsp 배너 배너컴포넌트 배너 인디케이터 & 레이아웃 */
-.banner-dot-inactive {
-  width: 6px;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.5); /* #FFFFFF80 치환 */
-  border-radius: var(--radius-full);
-  margin-right: 7px;
+.banner {
+  position: relative;                   /* 화살표·인디케이터의 기준점 */
+  overflow: hidden;                     /* 옆으로 밀린 슬라이드를 잘라냄 */
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 10px rgba(0, 0, 0, 0.1);
+  aspect-ratio: 16 / 5;                 /* 높이를 픽셀로 박지 않고 비율로 */
+  max-height: 380px;
 }
 
-.banner-dot-inactive-alt {
-  width: 6px;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.5); /* #FFFFFF80 치환 */
-  border-radius: var(--radius-full);
-  margin-right: 8px;
+/* 슬라이드를 가로로 늘어놓고, JS 가 --banner-index 를 바꾸면 옆으로 밀림 */
+.banner-track {
+  display: flex;
+  height: 100%;
+  transform: translateX(calc(var(--banner-index, 0) * -100%));
+  transition: transform 400ms ease;
 }
 
-.banner-dot-active {
-  width: 24px;
-  height: 6px;
-  background: var(--card);
-  border-radius: var(--radius-full);
+.banner-slide {
+  position: relative;
+  flex: 0 0 100%;                       /* 한 화면에 딱 한 장 */
+  height: 100%;
 }
 
-.banner-column {
+.banner-bg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;                    /* 비율 유지하며 꽉 채움 (fill 은 찌그러짐) */
+  display: block;
+}
+
+/* 사진 위 글자 대비 확보용 어두운 막
+   - 왼쪽(캡션 자리)은 진하게, 오른쪽으로 갈수록 사진이 그대로 보이도록
+   - 아래쪽은 인디케이터가 묻히지 않게 살짝 어둡게
+   ※ 밝은 사진이 많으면 0.75 를 0.85 정도로 올리세요 */
+.banner-slide::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to right, rgba(15, 23, 42, 0.75), rgba(15, 23, 42, 0.35) 55%, rgba(15, 23, 42, 0.15)),
+    linear-gradient(to top, rgba(15, 23, 42, 0.35), transparent 45%);
+}
+
+/* 왼쪽 세로 중앙 정렬 (참고 디자인) */
+.banner-caption {
+  position: absolute;
+  inset: 0 auto 0 56px;                 /* 위·아래 0 → 세로 중앙 정렬 기준 */
+  z-index: 1;                           /* ::after 막 위로 */
+  max-width: 60%;
+
   display: flex;
   flex-direction: column;
-  align-items: center;
-  background: transparent; /* #FFFFFF00 치환 */
-  border-radius: var(--radius-lg);
-  padding-top: 122px;
-  margin-left: 222px;
-  margin-right: 222px;
-  box-shadow: 0px 8px 10px rgba(0, 0, 0, 0.1);
+  justify-content: center;
+  align-items: flex-start;
+  gap: 10px;
 }
 
-.banner-image {
-  border-radius: var(--radius-lg);
-  width: 36px;
-  height: 36px;
-  object-fit: fill;
+.banner-title {
+  color: var(--card);
+  font-size: var(--text-2xl);
+  font-weight: var(--font-weight-bold);
+  line-height: 1.35;
+  margin: 0;
 }
 
-.banner-row-between {
-  align-self: stretch;
+.banner-desc {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: var(--text-sm);
+  margin: 0;
+}
+
+/* CTA 버튼은 smallButton.jsp 를 재사용 (기본은 파란 배경이라 이 페이지에서만 흰 배경으로 override) */
+.banner-cta-wrap .btn-small-row {
+  background: var(--card);
+  transition: transform 150ms ease;
+}
+
+.banner-cta-wrap .btn-small-text {
+  color: var(--foreground);
+}
+
+.banner-cta-wrap .btn-small-row:hover {
+  background: var(--card);
+  opacity: 1;                 /* smallButton 기본 hover(opacity:0.9) 대신 이동 효과만 */
+  transform: translateY(-1px);
+}
+
+.banner-cta-wrap .btn-small-row:focus-visible {
+  outline: 2px solid var(--card);
+  outline-offset: 3px;
+}
+
+/* 화살표 크기·모양(48x48 원형, 그림자, hover)은 wishButton.css 의 .btn-wish-trigger 가 담당.
+   여기서는 배너 안에서의 위치(양옆 절대좌표)만 지정 */
+.banner-arrow-prev,
+.banner-arrow-next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+}
+
+.banner-arrow-prev { left: 12px; }
+.banner-arrow-next { right: 12px; }
+
+.banner-chevron {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: var(--foreground);           /* .btn-wish-trigger 배경이 흰색이라 진한 색으로 */
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.banner-dots {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 2;
+
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 100px;
-  margin-left: 15px;
-  margin-right: 15px;
+  gap: 7px;
 }
 
-.banner-row-indicator {
-  display: flex;
-  align-items: center;
-  margin-bottom: 16px;
+.banner-dot {
+  width: 6px;
+  height: 6px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.5);
+  transition: width 250ms ease, background 250ms ease;
+}
+
+/* 현재 슬라이드만 길쭉한 알약 모양 */
+.banner-dot.is-active {
+  width: 24px;
+  background: var(--card);
+}
+
+.banner-dot:focus-visible {
+  outline: 2px solid var(--card);
+  outline-offset: 2px;
+}
+
+@media (max-width: 768px) {
+  .banner {
+    aspect-ratio: 4 / 3;
+    border-radius: var(--radius-md);
+  }
+
+  .banner-caption {
+    inset: 0 auto 0 24px;
+    max-width: 78%;
+  }
+
+  .banner-title {
+    font-size: var(--text-lg);
+  }
+}
+
+/* 모션 최소화를 켠 사용자에게는 밀리는 애니메이션 제거 */
+@media (prefers-reduced-motion: reduce) {
+  .banner-track,
+  .banner-cta {
+    transition: none;
+  }
 }

@@ -21,13 +21,28 @@
 
         <div class="business-content">
             <div class="business-filter-row">
+                <c:forEach var="s" items="${sentimentOptions}">
+                    <c:url value="/business/reviews" var="filterUrl">
+                        <c:param name="memberId" value="${memberId}" />
+                        <c:if test="${s != '전체'}">
+                            <c:param name="sentiment" value="${s}" />
+                        </c:if>
+                    </c:url>
+                    <c:choose>
+                        <c:when test="${s == '긍정'}"><c:set var="filterCount" value="${sentimentCounts.positiveCount}" /></c:when>
+                        <c:when test="${s == '중립'}"><c:set var="filterCount" value="${sentimentCounts.neutralCount}" /></c:when>
+                        <c:when test="${s == '부정'}"><c:set var="filterCount" value="${sentimentCounts.negativeCount}" /></c:when>
+                        <c:otherwise><c:set var="filterCount" value="" /></c:otherwise>
+                    </c:choose>
+                    <a href="${filterUrl}" class="business-filter-btn${sentimentFilter == s ? ' is-active' : ''}">${s}<c:if test="${not empty filterCount}"> <span class="business-filter-btn__count">${filterCount}</span></c:if></a>
+                </c:forEach>
                 <span class="business-filter-row__total">총 ${reviews.size()}건</span>
             </div>
 
             <c:choose>
                 <c:when test="${empty reviews}">
                     <div class="business-card">
-                        <p class="business-empty">아직 등록된 후기가 없습니다</p>
+                        <p class="business-empty">해당 조건의 후기가 없습니다</p>
                     </div>
                 </c:when>
                 <c:otherwise>

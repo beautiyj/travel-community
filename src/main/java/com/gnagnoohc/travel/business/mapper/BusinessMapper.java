@@ -10,6 +10,7 @@ import com.gnagnoohc.travel.business.dto.BusinessPlaceUpdateDto;
 import com.gnagnoohc.travel.business.dto.BusinessReservationDto;
 import com.gnagnoohc.travel.business.dto.BusinessReservationStatusCountsDto;
 import com.gnagnoohc.travel.business.dto.BusinessReviewDto;
+import com.gnagnoohc.travel.business.dto.BusinessReviewSentimentCountsDto;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -70,6 +71,22 @@ public interface BusinessMapper {
 
     int deletePlaceImage(@Param("placeId") Long placeId, @Param("imageUrl") String imageUrl);
 
-    // 후기 확인 : 업소에 달린 후기(category='후기') 목록. 답글은 커뮤니티 상세(댓글)에서 다룬다
-    List<BusinessReviewDto> selectReviewsByPlace(@Param("placeId") Long placeId);
+    // 후기 확인 : 업소에 달린 후기(category='후기') 목록. sentiment가 null이면 전체, 아니면 -1/0/1로 필터링.
+    // 답글은 커뮤니티 상세(댓글)에서 다룬다
+    List<BusinessReviewDto> selectReviewsByPlace(@Param("placeId") Long placeId, @Param("sentiment") Integer sentiment);
+
+    // 후기 감성분석 : 아직 REVIEW_ANALYSIS에 결과가 없는 후기 (postId, content만 채워짐)
+    List<BusinessReviewDto> selectUnanalyzedReviews(@Param("placeId") Long placeId);
+
+    int insertReviewAnalysis(
+            @Param("postId") Long postId,
+            @Param("placeId") Long placeId,
+            @Param("sentiment") int sentiment,
+            @Param("keywordsJson") String keywordsJson
+    );
+
+    BusinessReviewSentimentCountsDto selectSentimentCounts(@Param("placeId") Long placeId);
+
+    // 워드클라우드용 : 분석완료된 후기들의 keywords(JSON) 원본. 집계는 Java 쪽에서 수행
+    List<String> selectAnalyzedKeywordsJsonByPlace(@Param("placeId") Long placeId);
 }

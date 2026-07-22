@@ -1,17 +1,20 @@
 package com.gnagnoohc.travel.business.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gnagnoohc.travel.business.dto.BusinessDashboardViewDto;
 import com.gnagnoohc.travel.business.dto.BusinessPlaceOverviewDto;
 import com.gnagnoohc.travel.business.dto.BusinessReservationDto;
 import com.gnagnoohc.travel.business.dto.BusinessReviewDto;
 import com.gnagnoohc.travel.business.dto.BusinessSidebarContextDto;
 import com.gnagnoohc.travel.business.exception.NoPlaceRegisteredException;
+import com.gnagnoohc.travel.business.sentiment.KeywordCount;
 import com.gnagnoohc.travel.business.service.BusinessDashboardService;
 import com.gnagnoohc.travel.business.service.BusinessPlaceService;
 import com.gnagnoohc.travel.business.service.BusinessReservationService;
 import com.gnagnoohc.travel.business.service.BusinessReviewService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -24,16 +27,19 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
+@Slf4j
 @Controller
 @RequiredArgsConstructor
 public class BusinessController {
     // TODO: 예약상태 값 논의필요. 논의 후 리스트 값 변경 예정
     private static final List<String> RESERVATION_STATUS_OPTIONS = List.of("전체", "대기중", "확정", "완료", "취소");
+    private static final List<String> REVIEW_SENTIMENT_OPTIONS = List.of("전체", "긍정", "중립", "부정");
 
     private final BusinessDashboardService businessDashboardService;
     private final BusinessReservationService businessReservationService;
     private final BusinessPlaceService businessPlaceService;
     private final BusinessReviewService businessReviewService;
+    private final ObjectMapper objectMapper;
 
     // TODO: 로그인/세션 붙으면 memberId 파라미터 제거하고 인증 정보에서 가져오기
     @GetMapping("/business/dashboard")
@@ -52,8 +58,24 @@ public class BusinessController {
         model.addAttribute("pendingCount", view.getPendingCount());
         model.addAttribute("todayVisitors", view.getTodayVisitors());
         model.addAttribute("cancelRequestCount", view.getCancelRequestCount());
+        model.addAttribute("reviewSentiment", view.getReviewSentiment());
+        model.addAttribute("keywordCloudJson", toKeywordCloudJson(view.getReviewSentiment().getKeywords()));
 
         return "business/dashboard";
+    }
+
+    // wordcloud2.js가 기대하는 [[word, weight], ...] 형태로 직렬화. JSP에 <script>로 그대로 삽입되므로
+    // Jackson으로 안전하게 이스케이프한다 (후기 키워드는 사용자가 작성한 텍스트에서 추출된 값이라 직접 문자열 결합하지 않음)
+    private String toKeywordCloudJson(List<KeywordCount> keywords) {
+        try {
+            List<List<Object>> pairs = keywords.stream()
+                    .map(k -> List.<Object>of(k.word(), k.count()))
+                    .toList();
+            return objectMapper.writeValueAsString(pairs);
+        } catch (Exception e) {
+            log.warn("워드클라우드 키워드 JSON 직렬화 실패", e);
+            return "[]";
+        }
     }
 
     //예약 관리
@@ -186,11 +208,16 @@ public class BusinessController {
         return "redirect:/business/venue?memberId=" + memberId;
     }
 
-    //후기 확인 : 답글은 커뮤니티 상세(댓글)에서 처리하므로 여기서는 목록만 보여준다
+    //후기 확인 : 답글은 커뮤니티 상세(댓글)에서 처리하므로 여기서는 목록만 보여준다. 감성분석 결과(긍정/중립/부정)로 필터링 가능
     @GetMapping("/business/reviews")
-    public String reviews(@RequestParam(defaultValue = "1") Long memberId, Model model) {
+    public String reviews(
+            @RequestParam(defaultValue = "1") Long memberId,
+            @RequestParam(required = false) String sentiment,
+            Model model
+    ) {
         BusinessSidebarContextDto ctx = businessDashboardService.getSidebarContext(memberId);
-        List<BusinessReviewDto> reviews = businessReviewService.getReviews(ctx.getPlaceId());
+        Integer sentimentParam = toSentimentValue(sentiment);
+        List<BusinessReviewDto> reviews = businessReviewService.getReviews(ctx.getPlaceId(), sentimentParam);
 
         model.addAttribute("memberId", memberId);
         model.addAttribute("bizName", ctx.getPlaceName());
@@ -199,9 +226,25 @@ public class BusinessController {
         model.addAttribute("bizFirstImage", ctx.getFirstImage());
         model.addAttribute("pendingCount", ctx.getPendingCount());
         model.addAttribute("cancelRequestCount", ctx.getCancelRequestCount());
+        model.addAttribute("sentimentOptions", REVIEW_SENTIMENT_OPTIONS);
+        model.addAttribute("sentimentFilter", sentiment == null ? "전체" : sentiment);
+        model.addAttribute("sentimentCounts", businessReviewService.getSentimentCounts(ctx.getPlaceId()));
         model.addAttribute("reviews", reviews);
 
         return "business/reviews";
+    }
+
+    // 필터 탭의 한글 라벨 -> REVIEW_ANALYSIS.sentiment 값 (긍정=1, 중립=0, 부정=-1, 전체/미지정=null)
+    private Integer toSentimentValue(String sentimentLabel) {
+        if (sentimentLabel == null) {
+            return null;
+        }
+        return switch (sentimentLabel) {
+            case "긍정" -> 1;
+            case "중립" -> 0;
+            case "부정" -> -1;
+            default -> null;
+        };
     }
 
     // 아직 업소를 등록하지 않은 사업자가 dashboard/reservations에 접근하면 등록 화면으로 안내

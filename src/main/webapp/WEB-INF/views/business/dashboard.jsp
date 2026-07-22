@@ -8,6 +8,7 @@
     <title>대시보드 - 관리자 - 트립어라운드</title>
     <link rel="stylesheet" href="/css/business.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/wordcloud@1.2.2/src/wordcloud2.js"></script>
 </head>
 <body>
 
@@ -45,6 +46,37 @@
                 <div class="business-chart-wrap">
                     <canvas id="monthlyTrendChart"></canvas>
                 </div>
+            </div>
+
+            <!-- 후기 감성분석 -->
+            <div class="business-card">
+                <h2 class="business-card__title">후기 감성분석</h2>
+                <div class="business-kpi-grid">
+                    <div class="business-kpi-card business-kpi-card--good">
+                        <p class="business-kpi-card__label">긍정 후기</p>
+                        <p class="business-kpi-card__value">${reviewSentiment.positiveCount}<span class="business-kpi-card__unit">건</span></p>
+                    </div>
+                    <div class="business-kpi-card">
+                        <p class="business-kpi-card__label">중립 후기</p>
+                        <p class="business-kpi-card__value">${reviewSentiment.neutralCount}<span class="business-kpi-card__unit">건</span></p>
+                    </div>
+                    <div class="business-kpi-card business-kpi-card--warn">
+                        <p class="business-kpi-card__label">부정 후기</p>
+                        <p class="business-kpi-card__value">${reviewSentiment.negativeCount}<span class="business-kpi-card__unit">건</span></p>
+                    </div>
+                </div>
+
+                <h3 class="business-card__subtitle2">키워드 워드클라우드</h3>
+                <c:choose>
+                    <c:when test="${empty reviewSentiment.keywords}">
+                        <p class="business-empty">아직 분석된 후기 키워드가 없습니다</p>
+                    </c:when>
+                    <c:otherwise>
+                        <div class="business-wordcloud-wrap">
+                            <canvas id="reviewWordcloud"></canvas>
+                        </div>
+                    </c:otherwise>
+                </c:choose>
             </div>
 
             <!-- 오늘 예약 현황 -->
@@ -122,6 +154,35 @@
             }
         }
     });
+
+    const keywordCloudData = ${keywordCloudJson};
+    const wordcloudCanvas = document.getElementById('reviewWordcloud');
+    if (wordcloudCanvas && keywordCloudData.length > 0) {
+        const wrap = wordcloudCanvas.parentElement;
+        wordcloudCanvas.width = wrap.clientWidth;
+        wordcloudCanvas.height = 360;
+
+        const cloudWeights = keywordCloudData.map(function (pair) { return pair[1]; });
+        const minWeight = Math.min.apply(null, cloudWeights);
+        const maxWeight = Math.max.apply(null, cloudWeights);
+
+        WordCloud(wordcloudCanvas, {
+            list: keywordCloudData,
+            weightFactor: function (count) {
+                return 18 + count * 18;
+            },
+            fontFamily: '"Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif',
+            // 색조는 브랜드 블루(hue 200)로 통일하고, 빈도가 높을수록 진하게(명도만 차등)
+            color: function (word, weight) {
+                const ratio = maxWeight === minWeight ? 1 : (weight - minWeight) / (maxWeight - minWeight);
+                const lightness = 60 - ratio * 32;
+                return 'hsl(200, 80%, ' + lightness + '%)';
+            },
+            backgroundColor: 'transparent',
+            rotateRatio: 0,
+            gridSize: 8
+        });
+    }
 </script>
 
 </body>

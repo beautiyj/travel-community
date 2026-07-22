@@ -141,49 +141,101 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 /* ============================================================
+   공통 슬라이더 엔진
+   - 배너(banner.jsp)와 게시글 갤러리(detail.jsp)가 이 로직을 공유
+   - 각자 다른 CSS 변수(--banner-index / --gallery-index), 다른 셀렉터를
+     설정값(config)으로 넘겨서 자기 마크업에 맞게 동작
+   - 실제 이동은 track에 CSS 변수를 세팅하면 각 CSS의 transform이 처리
+   ============================================================ */
+function initSlider(container, config) {
+    const track  = container.querySelector(config.trackSelector);
+    const slides = container.querySelectorAll(config.slideSelector);
+    if (!track || slides.length === 0) return null;
+ 
+    let index = 0;
+ 
+    function move(next) {
+        // 끝에서 다음 → 처음으로, 처음에서 이전 → 끝으로 (순환)
+        index = (next + slides.length) % slides.length;
+ 
+        track.style.setProperty(config.cssVar, index);
+ 
+        if (config.onMove) config.onMove(index, slides.length);
+    }
+ 
+    const prev = container.querySelector(config.prevSelector);
+    const next = container.querySelector(config.nextSelector);
+ 
+    if (prev) prev.addEventListener('click', function () { move(index - 1); });
+    if (next) next.addEventListener('click', function () { move(index + 1); });
+ 
+    move(0);
+ 
+    return { move: move };
+}
+ 
+ 
+/* ============================================================
    배너 슬라이더 (banner.jsp)
    - 좌우 꺽쇠 / 인디케이터 클릭으로 슬라이드 이동
    - 한 페이지에 배너가 여러 개 있어도 각각 독립 동작
-   - 실제 이동은 CSS 변수 --banner-index 를 바꾸면 .banner-track 이 transform 으로 처리
    ============================================================ */
 (function () {
     'use strict';
-
+ 
     function initBanner(banner) {
-        const track  = banner.querySelector('[data-banner-track]');
-        const slides = banner.querySelectorAll('.banner-slide');
-        const dots   = banner.querySelectorAll('[data-banner-dot]');
-        if (!track || slides.length === 0) return;
-
-        let index = 0;
-
-        function move(next) {
-            // 끝에서 다음 → 처음으로, 처음에서 이전 → 끝으로 (순환)
-            index = (next + slides.length) % slides.length;
-
-            track.style.setProperty('--banner-index', index);
-
-            dots.forEach(function (dot, i) {
-                dot.classList.toggle('is-active', i === index);
-            });
-        }
-
-        const prev = banner.querySelector('[data-banner-prev]');
-        const next = banner.querySelector('[data-banner-next]');
-
-        if (prev) prev.addEventListener('click', function () { move(index - 1); });
-        if (next) next.addEventListener('click', function () { move(index + 1); });
-
+        const dots = banner.querySelectorAll('[data-banner-dot]');
+ 
+        const slider = initSlider(banner, {
+            trackSelector: '[data-banner-track]',
+            slideSelector: '.banner-slide',
+            cssVar: '--banner-index',
+            prevSelector: '[data-banner-prev]',
+            nextSelector: '[data-banner-next]',
+            onMove: function (index) {
+                dots.forEach(function (dot, i) {
+                    dot.classList.toggle('is-active', i === index);
+                });
+            }
+        });
+        if (!slider) return;
+ 
         dots.forEach(function (dot) {
             dot.addEventListener('click', function () {
-                move(Number(dot.dataset.bannerDot));
+                slider.move(Number(dot.dataset.bannerDot));
             });
         });
-
-        move(0);
     }
-
+ 
     document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('[data-banner]').forEach(initBanner);
+    });
+})();
+ 
+ 
+/* ============================================================
+   게시글 이미지 갤러리 (detail.jsp)
+   - 화살표(prev/next) 클릭 + 카운터(1 / N) 갱신
+   ============================================================ */
+(function () {
+    'use strict';
+ 
+    function initGallery(gallery) {
+        const counter = gallery.querySelector('[data-gallery-counter]');
+ 
+        initSlider(gallery, {
+            trackSelector: '[data-gallery-track]',
+            slideSelector: '.post-gallery-slide',
+            cssVar: '--gallery-index',
+            prevSelector: '[data-gallery-prev]',
+            nextSelector: '[data-gallery-next]',
+            onMove: function (index, total) {
+                if (counter) counter.textContent = (index + 1) + ' / ' + total;
+            }
+        });
+    }
+ 
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('[data-gallery]').forEach(initGallery);
     });
 })();

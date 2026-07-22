@@ -1,0 +1,112 @@
+/* dropdownSelector.jsp 드롭다운셀렉터 드롭다운버튼 드롭다운 */
+
+/* 드롭다운 전체 감싸는 외부 컨테이너 */
+.drop-select-container {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  max-width: 200px;
+}
+
+/* 일체형 선택 버튼 트리거 */
+.drop-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: border-color var(--transition-fast) ease,
+              box-shadow var(--transition-fast) ease;
+}
+
+/* 호버 및 포커스 시 테두리 반응 */
+.drop-select-trigger:hover,
+.drop-select-trigger[aria-expanded="true"] {
+  border-color: #64748B;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.02);
+}
+
+/* 내부 왼쪽 아이콘 + 텍스트 정렬 박스 */
+.drop-select-left-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+}
+
+/* 온오프형 탈착 이미지 아이콘 */
+.drop-select-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+/* 표시 텍스트 */
+.drop-select-text {
+  color: var(--foreground);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  white-space: normal;     /* 필요 시 줄바꿈 허용 */
+  word-break: keep-all;    /* 단어 단위로 깔끔하게 떨어지도록 설정 */
+  text-overflow: clip;
+}
+
+/* 값이 선택되었을 때 강조 텍스트 색상 */
+.drop-select-trigger.is-selected .drop-select-text {
+  color: var(--primary);
+  font-weight: var(--font-weight-bold);
+}
+
+/* 꺾쇠 화살표 아이콘 (드롭다운 열리면 위로 회전 가능) */
+.drop-select-chevron {
+  width: 16px;
+  height: 16px;
+  color: #64748B;
+  flex-shrink: 0;
+  margin-left: 8px;
+  transition: transform var(--transition-fast) ease;
+}
+
+.drop-select-trigger[aria-expanded="true"] .drop-select-chevron {
+  transform: rotate(180deg); /* 드롭다운 활성화 시 회전 연출 */
+}
+
+.drop-select-menu.dropdown-menu {
+  width: 100%;
+  min-width: 100%;
+  margin-top: 6px !important;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0px 12px 32px rgba(15, 23, 42, 0.08);
+  padding: 6px;
+  background: var(--card);
+}
+
+/* 개별 메뉴 아이템 리스트 */
+.drop-menu-item.dropdown-item {
+  padding: 10px 12px;
+  color: #334155;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  transition: background var(--transition-fast) ease,
+              color var(--transition-fast) ease;
+}
+
+/* 호버 시 */
+.drop-menu-item.dropdown-item:hover {
+  background: #F1F5F9;
+  color: var(--foreground);
+}
+
+.drop-menu-item.dropdown-item.active {
+  background: #F0F9FF;
+  color: #0284C7;
+  font-weight: var(--font-weight-bold);
+}

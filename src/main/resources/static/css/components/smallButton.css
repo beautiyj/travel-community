@@ -52,3 +52,12 @@
 .btn-small-row.theme-secondary .btn-small-text {
   color: var(--secondary-foreground);
 }
+
+/* 위험 동작 테마 (Danger - 환불/삭제 등. 흰 배경 + 빨간 테두리) : reservation 파트에서 추가 */
+.btn-small-row.theme-danger {
+  background: var(--card);
+  border: 1px solid var(--danger);
+}
+.btn-small-row.theme-danger .btn-small-text {
+  color: var(--danger);
+}

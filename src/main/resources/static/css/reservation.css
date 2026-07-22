@@ -1,0 +1,144 @@
+/* =========================================================
+   reservation.css — 예약/결제 페이지 전용 스타일
+   - 디자인 토큰(색·모서리·타이포)은 common.css 참조
+   - 로드 순서: common.css 먼저 → reservation.css 나중
+   - 사용: reservationForm.jsp, checkout.jsp
+   ========================================================= */
+
+/* ---------- 페이지 공통 레이아웃 ---------- */
+.page-wrap { max-width: 960px; margin: 0 auto; padding: 48px 32px; }
+.back-link {
+    display: inline-flex; align-items: center; gap: 6px; margin-bottom: 32px;
+    font-size: var(--text-sm); font-weight: var(--font-weight-medium); color: var(--muted-foreground);
+    background: none; border: none; cursor: pointer; text-decoration: none;
+}
+.back-link:hover { color: var(--foreground); }
+.page-title { font-size: var(--text-2xl); font-weight: var(--font-weight-bold); margin-bottom: 32px; }
+
+.booking-grid { display: grid; grid-template-columns: 1fr 300px; gap: 32px; align-items: start; }
+@media (max-width: 768px) { .booking-grid { grid-template-columns: 1fr; } }
+
+/* ---------- 장소 정보 카드 ---------- */
+.place-card {
+    background: var(--secondary); border-radius: var(--radius-md);
+    padding: 16px; display: flex; gap: 16px; align-items: center; margin-bottom: 20px;
+}
+.place-card .thumb {
+    width: 80px; height: 56px; border-radius: var(--radius-md); background: var(--accent);
+    display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0;
+}
+.place-card .name { font-weight: var(--font-weight-bold); }
+.place-card .desc { font-size: var(--text-sm); color: var(--muted-foreground); }
+
+/* ---------- 폼 필드 (날짜·인원 등 특수 필드용. 기본 입력창은 inputField 컴포넌트 사용) ---------- */
+.field { margin-bottom: 20px; }
+.field > label { display: block; font-size: var(--text-sm); font-weight: var(--font-weight-bold); margin-bottom: 8px; }
+
+.input-box {
+    display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+    border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--card);
+}
+.input-box .icon { color: var(--muted-foreground); font-size: 15px; }
+.input-box input[type=date] { flex: 1; border: none; outline: none; font-size: 15px;
+                              background: transparent; font-family: inherit; }
+
+/* 인원 스테퍼 */
+.stepper-btn {
+    width: 32px; height: 32px; border-radius: var(--radius-full); border: none; background: var(--secondary);
+    font-size: 16px; font-weight: var(--font-weight-bold); cursor: pointer; color: var(--foreground);
+}
+.stepper-btn:hover { background: var(--muted); }
+.stepper-value { width: 32px; text-align: center; font-weight: var(--font-weight-bold); border: none; font-size: 15px;
+                 background: transparent; }
+.stepper-unit { font-size: var(--text-sm); color: var(--muted-foreground); }
+
+/* ---------- 버튼 (폼 제출/취소용 - 검증·disabled 필요해 컴포넌트 대신 전용 스타일) ---------- */
+.btn-row { display: flex; gap: 12px; padding-top: 8px; }
+.btn {
+    flex: 1; padding: 14px; border-radius: var(--radius-md); font-size: 15px;
+    font-weight: var(--font-weight-bold); cursor: pointer; font-family: inherit; transition: all .15s;
+}
+.btn-outline { background: var(--card); border: 2px solid var(--border); color: var(--foreground); }
+.btn-outline:hover { background: var(--secondary); }
+.btn-primary {
+    background: var(--primary); border: none; color: var(--primary-foreground);
+    box-shadow: 0 8px 20px var(--primary-soft);
+}
+.btn-primary:hover { background: #0270ab; }
+.btn-primary:disabled {
+    background: var(--muted); color: var(--muted-foreground);
+    box-shadow: none; cursor: not-allowed;
+}
+
+/* ---------- 요약 카드 (예약 요약 / 결제 정보) ---------- */
+.summary-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.04);
+}
+.summary-card h3 { font-size: var(--text-base); font-weight: var(--font-weight-bold); margin-bottom: 16px; }
+.summary-row { display: flex; justify-content: space-between; font-size: var(--text-sm); padding: 6px 0; }
+.summary-row .label { color: var(--muted-foreground); }
+.summary-row .value { font-weight: var(--font-weight-medium); }
+.summary-divider { border-top: 1px solid var(--border); margin-top: 8px; padding-top: 14px; }
+.summary-total { display: flex; justify-content: space-between; font-size: var(--text-base);
+                 font-weight: var(--font-weight-bold); color: var(--primary); padding-top: 6px; }
+
+/* ---------- 결제 수단 선택 (checkout) ---------- */
+.section-title { font-size: var(--text-base); font-weight: var(--font-weight-bold); margin-bottom: 12px; }
+.method-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+.method-btn {
+    padding: 13px; border: 2px solid var(--border); border-radius: var(--radius-md);
+    background: var(--card); font-size: var(--text-sm); font-weight: var(--font-weight-bold); cursor: pointer;
+    color: var(--foreground); font-family: inherit; transition: all .15s;
+}
+.method-btn:hover { border-color: var(--muted-foreground); }
+.method-btn.active { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); }
+
+/* 간편결제 안내 패널 */
+.simple-pay-panel {
+    text-align: center; padding: 48px 0; background: var(--secondary);
+    border-radius: var(--radius-lg); margin-bottom: 24px;
+}
+.simple-pay-panel .pay-logo {
+    width: 64px; height: 64px; border-radius: var(--radius-lg); margin: 0 auto 12px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--white); font-size: 22px; font-weight: var(--font-weight-bold);
+}
+.pay-logo.kakao { background: #facc15; color: #191919; }
+.pay-logo.toss  { background: #3b82f6; }
+.simple-pay-panel .pay-name { font-weight: var(--font-weight-bold); }
+.simple-pay-panel .pay-desc { font-size: var(--text-sm); color: var(--muted-foreground); margin-top: 4px; }
+
+/* 동의 체크 */
+.agree-box {
+    display: flex; align-items: flex-start; gap: 12px; padding: 16px;
+    background: var(--secondary); border-radius: var(--radius-md); margin-bottom: 24px; cursor: pointer;
+}
+.agree-box input[type=checkbox] { width: 20px; height: 20px; margin-top: 1px;
+                                  accent-color: var(--primary); cursor: pointer; }
+.agree-box .agree-text { font-size: var(--text-sm); }
+.agree-box .agree-text .link { color: var(--primary); font-weight: var(--font-weight-medium); }
+
+#waiting { display: none; text-align: center; color: var(--muted-foreground);
+           font-size: var(--text-sm); margin-top: 12px; }
+
+/* ---------- 결제 결과 페이지 (success.jsp / fail.jsp 공용) ---------- */
+.result-card {
+    max-width: 480px; margin: 60px auto; background: var(--card); text-align: center;
+    border-radius: var(--radius-md); padding: 40px 32px; box-shadow: 0 2px 12px rgba(0,0,0,.06);
+}
+.result-icon {
+    width: 64px; height: 64px; margin: 0 auto 16px; border-radius: var(--radius-full);
+    color: var(--white); font-size: 34px; line-height: 64px;
+}
+.result-icon.ok   { background: #22c55e; }
+.result-icon.fail { background: var(--destructive); font-size: 30px; }
+.result-card h2 { margin-bottom: 24px; font-size: var(--text-xl); font-weight: var(--font-weight-bold); }
+.result-card .desc { color: var(--muted-foreground); margin-bottom: 28px; font-size: var(--text-sm); }
+.result-info {
+    background: var(--input-background); border-radius: var(--radius-sm); padding: 16px;
+    margin-bottom: 24px; font-size: var(--text-sm); text-align: left;
+}
+.result-info div { display: flex; justify-content: space-between; padding: 4px 0; color: var(--muted-foreground); }
+.result-actions { display: flex; flex-direction: column; gap: 10px; }
+.result-actions .btn-small-row { width: 100%; }

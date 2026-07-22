@@ -35,11 +35,12 @@
 
   <!-- 카테고리 필터 + 검색 (한 줄 배치: 카테고리 왼쪽, 검색 오른쪽) -->
   <div class="list-filter-row">
-    <!-- 카테고리 필터 (selectableButton 재사용: 선택 상태를 표현하는 전용 컴포넌트) -->
+    <!-- 카테고리 필터 (selectableButton 재사용: 선택 상태를 표현하는 전용 컴포넌트)
+         ※ 값은 PostCategory enum 의 value 와 동일해야 함 (일반후기 / 방문자인증후기로 분리됨) -->
     <div class="tabs">
-      <c:forEach var="c" items="전체,일반,모집,후기">
+      <c:forEach var="c" items="전체,일반,모집,일반후기,방문자인증후기">
         <c:set var="label" value="${c}" />
-        <c:if test="${c == '모집'}"><c:set var="label" value="모집 (동행)" /></c:if>
+        <c:if test="${c == '모집'}"><c:set var="label" value="모집(동행)" /></c:if>
         <c:set var="isActive" value="${param.category == c or (empty param.category and c == '전체')}" />
 
         <jsp:include page="../common/selectableButton.jsp">
@@ -78,9 +79,9 @@
         <c:forEach var="post" items="${postList}">
 
           <a href="${cp}/community/detail?postId=${post.postId}" class="post-row row">
-            <jsp:include page="../common/postCategoryTag.jsp">
-              <jsp:param name="category" value="${post.category}" />
-            </jsp:include>
+            <%-- postCategoryTag.jsp 컴포넌트 파일이 없어서 DTO getter로 직접 렌더링
+                 (community.css 의 .badge.review/.recruit/.general/.verified 사용) --%>
+            <span class="badge ${post.categoryCss}">${post.categoryLabel}</span>
             <span class="post-title">${post.title}</span>
             <span class="cell-muted">${post.nickname}</span>
             <span class="cell-muted">

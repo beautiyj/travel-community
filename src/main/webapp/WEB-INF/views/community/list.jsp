@@ -13,7 +13,7 @@
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/selectableButton.css">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/tagButton.css">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/searchbar.css">
-<link rel="stylesheet" href="${pageContext.request.contextPath}/css/community.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/community/community.css">
 </head>
 <body>
 <c:set var="cp" value="${pageContext.request.contextPath}" />
@@ -59,6 +59,7 @@
         <jsp:param name="value"       value="${param.q}" />
         <jsp:param name="btnText"     value="조회" />
         <jsp:param name="placeholder" value="제목, 작성자 검색" />
+        <jsp:param name="width"       value="100%" />
     </jsp:include>
 </form>
   </div>

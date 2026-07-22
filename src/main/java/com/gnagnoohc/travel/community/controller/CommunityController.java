@@ -3,6 +3,7 @@ package com.gnagnoohc.travel.community.controller;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -11,6 +12,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.gnagnoohc.travel.community.dto.CommentDto;
@@ -99,6 +101,10 @@ public class CommunityController {
             return "redirect:/auth/login";
         }
         dto.setMemberId(getMemberId(login));
+
+        // 1-1) 장소 태그 검증: 방문자인증후기 카테고리가 아니면 placeId 무시
+        //      (화면에서 필드를 숨겨도, 폼 조작으로 placeId가 넘어올 수 있으니 서버에서 한 번 더 막음)
+        enforcePlaceTagRule(dto);
  
         // 2) 게시글 저장 (insert 후 dto.postId 가 채워짐)
         service.insert(dto);
@@ -140,8 +146,11 @@ public class CommunityController {
             return "redirect:/community/detail?postId=" + dto.getPostId();
         }
         int postId = dto.getPostId();
+
+        // 장소 태그 검증: 방문자인증후기 카테고리가 아니면 placeId 무시
+        enforcePlaceTagRule(dto);
  
-        service.update(dto);                 // 제목/내용/카테고리 수정
+        service.update(dto);                 // 제목/내용/카테고리/장소태그 수정
         saveImages(images, postId);          // 새 이미지가 있으면 추가
  
         return "redirect:/community/detail?postId=" + dto.getPostId();
@@ -160,6 +169,18 @@ public class CommunityController {
         service.delete(postId);
         
         return "redirect:/community/list";
+    }
+
+
+    // 장소 검색 (방문자인증후기 글쓰기/수정 시 장소 태그 검색 모달에서 AJAX로 호출)
+    // ※ CommunityService에 searchPlaces(keyword) 메서드를 추가해야 함 (mapper.searchPlaces 위임)
+    @GetMapping("/community/place/search")
+    @ResponseBody
+    public List<Map<String, Object>> searchPlaces(@RequestParam("keyword") String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return List.of();
+        }
+        return service.searchPlaces(keyword.trim());
     }
     
 
@@ -210,6 +231,14 @@ public class CommunityController {
         if (login == null || post == null) return false;
         
         return post.getMemberId() == getMemberId(login);
+    }
+
+    // 장소 태그는 "방문자인증후기" 카테고리에서만 허용 (1게시글 1장소)
+    // 다른 카테고리인데 placeId가 넘어왔다면(폼 조작 등) 무시하고 null 처리
+    private void enforcePlaceTagRule(CommunityDto dto) {
+        if (!"방문자인증후기".equals(dto.getCategory())) {
+            dto.setPlaceId(null);
+        }
     }
     
 }

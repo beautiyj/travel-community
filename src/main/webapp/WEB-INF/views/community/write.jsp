@@ -9,7 +9,8 @@
 <title>새 글쓰기</title>
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/common.css">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/buttonComponent.css">
-<link rel="stylesheet" href="${pageContext.request.contextPath}/css/community.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/community/placeSearchModal.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/community/community.css">
 </head>
 <body>
 <c:set var="cp" value="${pageContext.request.contextPath}" />
@@ -57,6 +58,20 @@
       <input type="text" id="title" name="title" class="text-input"
              placeholder="제목을 입력하세요" required>
     </div>
+    
+    <!-- 장소 태그: "방문자인증후기" 카테고리일 때만 노출 (placeTag.js가 카테고리 변경에 맞춰 토글)
+         한 게시글에 장소 1개만 태그 가능 -->
+    <div class="field" id="place-tag-field" style="display:none;">
+      <label class="field-label">장소 태그</label>
+      <input type="hidden" id="placeId" name="placeId" value="">
+
+      <div id="place-tag-selected" class="place-tag-selected" style="display:none;">
+        <span id="place-tag-selected-name"></span>
+        <button type="button" id="place-tag-remove" class="place-tag-remove">✕</button>
+      </div>
+
+      <button type="button" id="place-tag-open-btn" class="place-tag-open-btn">장소 검색해서 태그하기</button>
+    </div>
 
     <!-- 내용 -->
     <div class="field">
@@ -94,7 +109,13 @@
   </form>
 </div>
 
+<jsp:include page="placeSearchModal.jsp">
+  <jsp:param name="modalId" value="placeSearchModal" />
+</jsp:include>
+
+<script>window.CP = "${cp}";</script>
 <script src="${cp}/js/common.js"></script>
 <script src="${cp}/js/community/imageUpload.js"></script>
+<script src="${cp}/js/community/placeTag.js"></script>
 </body>
 </html>

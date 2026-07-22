@@ -15,7 +15,7 @@
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/tagButton.css">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/confirmModal.css">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/wishButton.css">
-<link rel="stylesheet" href="${pageContext.request.contextPath}/css/community.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/community/community.css">
 </head>
 <body>
 <c:set var="cp" value="${pageContext.request.contextPath}" />
@@ -67,6 +67,15 @@
       <span><fmt:formatDate value="${post.createdAt}" pattern="yyyy-MM-dd HH:mm" /></span>
       <span>조회 <fmt:formatNumber value="${post.readcount}" pattern="#,##0" /></span>
     </div>
+
+    <!-- 장소 태그: 방문자인증후기로 태그된 장소가 있을 때만 노출 (community.css 의 .place-tag)
+         사진 없이 장소 이름만 다른 색 링크로 표시, 클릭하면 해당 장소 상세페이지로 이동
+         ※ 장소 상세페이지 URL은 place 모듈 담당자 라우팅에 맞춰 조정 필요 (지금은 가정한 경로) -->
+    <c:if test="${not empty post.placeId}">
+      <div class="place-tag">
+        <a href="${cp}/place/detail?placeId=${post.placeId}" class="place-tag-link">📍 ${post.placeName}</a>
+      </div>
+    </c:if>
 
     <!-- 본문 (community.css 의 .detail-body, 줄바꿈 유지) -->
     <p class="detail-body">${post.content}</p>

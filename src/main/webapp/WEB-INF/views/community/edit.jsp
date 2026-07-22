@@ -9,7 +9,8 @@
 <title>게시글 수정</title>
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/common.css">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/buttonComponent.css">
-<link rel="stylesheet" href="${pageContext.request.contextPath}/css/community.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/community/placeSearchModal.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/community/community.css">
 </head>
 <body>
 <c:set var="cp" value="${pageContext.request.contextPath}" />
@@ -57,6 +58,23 @@
           <div class="cat-desc">방문 인증 후 남기는 후기</div>
         </label>
       </div>
+    </div>
+
+    <!-- 장소 태그: "방문자인증후기" 카테고리일 때만 노출 (placeTag.js가 카테고리 변경에 맞춰 토글)
+         이미 태그된 장소가 있으면 미리 채워서 보여줌. 한 게시글에 장소 1개만 태그 가능 -->
+    <div class="field" id="place-tag-field"
+         style="${post.category == '방문자인증후기' ? '' : 'display:none;'}">
+      <label class="field-label">장소 태그</label>
+      <input type="hidden" id="placeId" name="placeId" value="${post.placeId}">
+
+      <div id="place-tag-selected" class="place-tag-selected"
+           style="${empty post.placeId ? 'display:none;' : ''}">
+        <span id="place-tag-selected-name">${post.placeName}</span>
+        <button type="button" id="place-tag-remove" class="place-tag-remove">✕</button>
+      </div>
+
+      <button type="button" id="place-tag-open-btn" class="place-tag-open-btn"
+              style="${empty post.placeId ? '' : 'display:none;'}">장소 검색해서 태그하기</button>
     </div>
 
     <!-- 작성자: 읽기 전용 -->
@@ -108,7 +126,13 @@
   </form>
 </div>
 
+<jsp:include page="placeSearchModal.jsp">
+  <jsp:param name="modalId" value="placeSearchModal" />
+</jsp:include>
+
+<script>window.CP = "${cp}";</script>
 <script src="${cp}/js/common.js"></script>
 <script src="${cp}/js/community/imageUpload.js"></script>
+<script src="${cp}/js/community/placeTag.js"></script>
 </body>
 </html>

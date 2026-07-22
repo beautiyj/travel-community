@@ -114,11 +114,47 @@
 .comment-date { color: var(--muted-foreground); font-size: 12px; }
 .comment-text { font-size: 14px; color: var(--foreground); margin: 4px 0 8px; }
 .reply-link { display: inline-flex; align-items: center; gap: 4px; color: var(--muted-foreground); font-size: 12px; font-weight: bold; cursor: pointer; }
-.comment-form { display: flex; gap: 11px; align-items: flex-start; padding-top: 24px; border-top: 1px solid var(--border); margin-top: 8px; }
+
+/* 댓글/답글 하단 액션 줄 (답글 달기 + 삭제를 한 줄에) */
+.comment-actions { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
+
+/* 댓글 삭제 버튼: 본인 댓글에만 노출, 클릭 시 확인창 없이 바로 삭제되는 폼 제출 버튼
+   (buttonComponent/smallButton 컴포넌트를 쓰지 않는 순수 button - reply-cancel-btn과 같은 톤) */
+.comment-delete-form { display: inline-flex; margin: 0; }
+.comment-delete-btn {
+  background: none;
+  border: none;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-weight: bold;
+  padding: 0;
+  cursor: pointer;
+}
+.comment-delete-btn:hover { color: #DC2626; }
+.comment-form { display: flex; gap: 11px; align-items: stretch; padding-top: 24px; border-top: 1px solid var(--border); margin-top: 8px; }
 .comment-form textarea {
   flex: 1; border: 1px solid var(--border); border-radius: 16px;
   padding: 13px 17px; font-size: 14px; font-family: inherit; resize: vertical;
   min-height: 44px; outline: none;
+}
+
+/* 비로그인 안내 (문구 + smallButton 로그인하기 버튼), 가운데 정렬 */
+.comment-login { text-align: center; padding: 24px 0 8px; }
+.comment-login p {
+  color: var(--muted-foreground);
+  font-size: 14px;
+  margin: 0 0 12px;
+}
+
+/* 댓글 등록 버튼(smallButton.jsp 재사용, 실제 마크업은 button.btn-small-row > span.btn-small-text)을
+   .comment-form 안에서만 확대. 답글 등록 버튼(.reply-form-row 안의 동일 컴포넌트)은 원래 크기 그대로 둠.
+   위에서 .comment-form 을 align-items: stretch 로 바꿔서 textarea 높이만큼 버튼도 커지고,
+   여기서 좌우 padding/글자 크기만 살짝 키워 존재감을 더함 */
+.comment-form .btn-small-row {
+  padding: 0 28px;
+}
+.comment-form .btn-small-text {
+  font-size: 15px;
 }
 
 /* ---------- 게시글 첨부 이미지 갤러리 (post_image.sort_order 순으로 슬라이드) ---------- */
@@ -220,8 +256,9 @@
 .btn-nav-wrap .btn-main-text { color: var(--foreground); }
 .btn-nav-wrap .btn-main:hover { background: var(--muted) !important; }
 
-/* 답글 입력창 위치 (원댓글과 같은 들여쓰기) */
-.reply-form { margin: 8px 0 8px 51px; }
+/* 답글 입력창 위치 (원댓글과 같은 들여쓰기)
+   max-width 로 전체 폭을 살짝 줄임 -> reply-input이 flex:1이라 자동으로 같이 좁아짐 */
+.reply-form { margin: 8px 0 8px 51px; max-width: 520px; }
 
 .reply-form-row {
   display: flex;

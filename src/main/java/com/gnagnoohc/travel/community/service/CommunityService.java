@@ -60,6 +60,10 @@ public class CommunityService {
 		dao.deleteComment(commentId);
 	}
 
+	public void deleteReplies(int parentId) {
+		dao.deleteReplies(parentId);
+	}
+
 	public CommentDto selectComment(int commentId) {
 	    return dao.selectComment(commentId);
 	}

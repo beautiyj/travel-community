@@ -233,6 +233,14 @@
 
 	<!-- ID 찾기 -->
 	<select id="findId" parameterType="String" resultType="String">
-	select login_id from member where name=#{name} and email=#{email} and member_status='ACTIVE' and deleted_at IS NULL
+		<!-- 소셜 전용 내부 login_id는 노출하지 않고 실제 로컬 인증 행이 있는 회원만 찾는다. -->
+		select local_auth.username
+		from member member_info
+		inner join member_local_auth local_auth
+			on local_auth.member_id = member_info.member_id
+		where member_info.name = #{name}
+			and member_info.email = #{email}
+			and member_info.member_status = 'ACTIVE'
+			and member_info.deleted_at is null
 	</select>
 </mapper>

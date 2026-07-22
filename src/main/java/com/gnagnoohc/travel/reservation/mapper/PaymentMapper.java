@@ -1,6 +1,7 @@
 package com.gnagnoohc.travel.reservation.mapper;
 
 import com.gnagnoohc.travel.reservation.entity.Payment;
+import com.gnagnoohc.travel.reservation.entity.PaymentStatus;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -12,5 +13,5 @@ public interface PaymentMapper {
     Payment findById(Long paymentId);
     Payment findByOrderId(String orderId);
     List<Payment> findByReservationId(Long reservationId);
-    void updateStatus(@Param("paymentId") Long paymentId, @Param("status") String status);
+    void updateStatus(@Param("paymentId") Long paymentId, @Param("status") PaymentStatus status);
 }

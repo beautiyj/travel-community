@@ -1,6 +1,7 @@
 package com.gnagnoohc.travel.community.mapper;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -26,4 +27,7 @@ public interface CommunityMapper {
 	void deleteComment(int commentId);
 	void deleteReplies(int parentId);
 	CommentDto selectComment(int commentId);
+
+	// 장소 태그: 이름으로 장소 검색 (방문자인증후기 글쓰기/수정 시 검색 모달에서 사용)
+	List<Map<String, Object>> searchPlaces(String keyword);
 }

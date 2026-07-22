@@ -5,6 +5,7 @@
 (function exposeSignupValidation(global) {
 	"use strict";
 
+	// 검증 결과 생성
 	function result(valid, message) {
 		return {
 			valid,
@@ -18,12 +19,11 @@
 
 	// 입력값 형식 검증
 	function validateName(value) {
-		// DB member.name VARCHAR(20)과 동일한 최대 길이를 적용한다.
 		const valid = typeof value === "string"
 			&& value.length >= 2
-			&& value.length <= 20
+			&& value.length <= 50
 			&& !hasWhitespace(value);
-		return result(valid, "이름은 공백 없이 2~20자로 입력해주세요.");
+		return result(valid, "이름은 공백 없이 2~50자로 입력해주세요.");
 	}
 
 	function validateLoginId(value) {
@@ -115,7 +115,7 @@
 
 	// 회원가입 제출 가능 여부 검증
 	function validateSignup(values, workflowState, today = toLocalDateString(new Date())) {
-		// 모든 입력값과 비동기 확인 상태의 최종 가입 가능 여부를 이 함수에서 판단한다.
+		// 회원가입 제출 가능 여부는 이 함수 한 곳에서 결정한다.
 		const input = values || {};
 		const state = workflowState || {};
 		const validations = {

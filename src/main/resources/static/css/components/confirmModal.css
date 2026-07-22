@@ -49,9 +49,7 @@
   margin-bottom: 24px;
 }
 
-/* ============= 3. 버튼 영역 ==========================
-   버튼 자체는 buttonComponent.jsp / buttonComponent.css 가 담당.
-   여기서는 배치와, 모달 안에서만 필요한 최소 override 만. */
+/* ============= 3. 버튼 영역 ========================== */
 
 .modal-buttons {
   display: flex;

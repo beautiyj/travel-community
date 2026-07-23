@@ -50,7 +50,7 @@
         </a>
         <a href="/business/closure" class="business-nav-item${activeTab == 'closure' ? ' is-active' : ''}">마감 관리</a>
         <a href="/business/venue" class="business-nav-item${activeTab == 'venue' ? ' is-active' : ''}">업소 관리</a>
-        <a href="/business/reviews" class="business-nav-item${activeTab == 'reviews' ? ' is-active' : ''}">후기 확인</a>
+        <a href="/business/reviews?memberId=${memberId}" class="business-nav-item${activeTab == 'reviews' ? ' is-active' : ''}">후기 확인</a>
     </nav>
 
     <div class="business-sidebar__footer">

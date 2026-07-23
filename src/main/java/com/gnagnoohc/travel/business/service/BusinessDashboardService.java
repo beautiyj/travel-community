@@ -22,6 +22,7 @@ public class BusinessDashboardService {
     private static final String[] KOREAN_DAY_OF_WEEK = {"월", "화", "수", "목", "금", "토", "일"};
 
     private final BusinessMapper businessMapper;
+    private final ReviewSentimentService reviewSentimentService;
 
     // 사이드바(업소명/대표명/마감상태/뱃지 카운트)에만 필요한 최소 데이터. 대시보드 외 다른 business 페이지에서도 재사용
     public BusinessSidebarContextDto getSidebarContext(Long bizMemberId) {
@@ -58,6 +59,7 @@ public class BusinessDashboardService {
                 .pendingCount(counts.getPendingCount())
                 .todayVisitors(counts.getTodayVisitors())
                 .cancelRequestCount(counts.getCancelRequestCount())
+                .reviewSentiment(reviewSentimentService.getSentimentSummary(overview.getPlaceId()))
                 .build();
     }
 

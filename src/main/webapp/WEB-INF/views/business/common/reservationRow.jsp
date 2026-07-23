@@ -42,16 +42,25 @@
                         <c:when test="${param.mode == 'actionable'}">
                             <form method="post" action="/business/reservations/${param.reservationId}/cancel-approve" class="business-inline-form">
                                 <input type="hidden" name="memberId" value="${param.memberId}" />
-                                <button type="submit" class="business-btn business-btn--primary business-btn--sm">취소 승인</button>
+                                <jsp:include page="/WEB-INF/views/common/smallButton.jsp">
+                                    <jsp:param name="text" value="취소 승인" />
+                                    <jsp:param name="theme" value="primary" />
+                                </jsp:include>
                             </form>
                             <form method="post" action="/business/reservations/${param.reservationId}/cancel-reject" class="business-inline-form">
                                 <input type="hidden" name="memberId" value="${param.memberId}" />
-                                <button type="submit" class="business-btn business-btn--danger business-btn--sm">취소 거절</button>
+                                <jsp:include page="/WEB-INF/views/common/smallButton.jsp">
+                                    <jsp:param name="text" value="취소 거절" />
+                                    <jsp:param name="theme" value="danger" />
+                                </jsp:include>
                             </form>
                         </c:when>
                         <c:otherwise>
                             <!-- 실제 취소 승인/거절 액션 연결은 예약 관리 탭 구현 시 진행 -->
-                            <button type="button" class="business-btn business-btn--primary business-btn--sm">취소 승인</button>
+                            <jsp:include page="/WEB-INF/views/common/smallButton.jsp">
+                                <jsp:param name="text" value="취소 승인" />
+                                <jsp:param name="theme" value="primary" />
+                            </jsp:include>
                         </c:otherwise>
                     </c:choose>
                 </c:if>
@@ -74,16 +83,25 @@
                         <c:when test="${param.mode == 'actionable'}">
                             <form method="post" action="/business/reservations/${param.reservationId}/cancel-approve" class="business-inline-form">
                                 <input type="hidden" name="memberId" value="${param.memberId}" />
-                                <button type="submit" class="business-btn business-btn--primary business-btn--sm">취소 승인</button>
+                                <jsp:include page="/WEB-INF/views/common/smallButton.jsp">
+                                    <jsp:param name="text" value="취소 승인" />
+                                    <jsp:param name="theme" value="primary" />
+                                </jsp:include>
                             </form>
                             <form method="post" action="/business/reservations/${param.reservationId}/cancel-reject" class="business-inline-form">
                                 <input type="hidden" name="memberId" value="${param.memberId}" />
-                                <button type="submit" class="business-btn business-btn--danger business-btn--sm">취소 거절</button>
+                                <jsp:include page="/WEB-INF/views/common/smallButton.jsp">
+                                    <jsp:param name="text" value="취소 거절" />
+                                    <jsp:param name="theme" value="danger" />
+                                </jsp:include>
                             </form>
                         </c:when>
                         <c:otherwise>
                             <!-- 실제 취소 승인/거절 액션 연결은 예약 관리 탭 구현 시 진행 -->
-                            <button type="button" class="business-btn business-btn--primary business-btn--sm">취소 승인</button>
+                            <jsp:include page="/WEB-INF/views/common/smallButton.jsp">
+                                <jsp:param name="text" value="취소 승인" />
+                                <jsp:param name="theme" value="primary" />
+                            </jsp:include>
                         </c:otherwise>
                     </c:choose>
                 </c:if>

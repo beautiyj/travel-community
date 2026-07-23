@@ -25,7 +25,7 @@ import lombok.Setter;
 public class SignUpRequest {
 
 	// 회원 유형
-	// 검증을 우회한 회원 유형 요청도 검증한다.
+	// 화면 값을 조작해도 일반 회원(1)과 사업자 회원(2)만 가입할 수 있다.
 	@Min(value = 1, message = "회원 유형이 올바르지 않습니다.")
 	@Max(value = 2, message = "회원 유형이 올바르지 않습니다.")
 	private int memberType;
@@ -33,7 +33,8 @@ public class SignUpRequest {
 	// 기본 회원 정보
 	// 회원가입 입력 규칙을 서버에서도 동일하게 검증한다.
 	@NotBlank(message = "이름을 입력해주세요.")
-	@Size(min = 2, max = 50, message = "이름은 2~50자로 입력해주세요.")
+	// DB member.name VARCHAR(20)과 동일한 최대 길이를 적용한다.
+	@Size(min = 2, max = 20, message = "이름은 2~20자로 입력해주세요.")
 	@Pattern(regexp = "^[^\\s]+$", message = "이름에는 공백을 입력할 수 없습니다.")
 	private String name;
 

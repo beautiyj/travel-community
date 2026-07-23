@@ -71,12 +71,47 @@ function payKakao() {
         });
 }
 
+/* ── 토스 SDK 초기화 ── */
+var toss = (typeof TossPayments !== "undefined" && tossClientKey)
+    ? TossPayments(tossClientKey)
+    : null;
+
+// 토스: SDK 가 결제창 이동까지 직접 처리 (팝업 불필요, requestPayment 가 알아서 리다이렉트)
+function payToss() {
+    if (!toss) {
+        alert("결제 모듈을 불러오지 못했습니다. 새로고침 후 다시 시도해 주세요.");
+        return;
+    }
+    lockButtons(true);
+
+    fetch("/payments/toss/ready/" + reservationId, { method: "POST" })
+        .then(function (res) {
+            if (!res.ok) throw new Error("ready 실패");
+            return res.json();
+        })
+        .then(function (data) {
+            return toss.requestPayment("카드", {
+                amount: data.amount,
+                orderId: data.orderId,
+                orderName: "여행 예약 #" + reservationId,
+                successUrl: window.location.origin + "/payments/toss/success",
+                failUrl: window.location.origin + "/payments/toss/fail"
+            });
+            // 성공 시 브라우저가 successUrl 로 이동해버려서 이 아래 then 은 보통 안 탐
+        })
+        .catch(function (err) {
+            lockButtons(false);
+            // 사용자가 결제창을 그냥 닫은 경우 err.code === "USER_CANCEL" 로 들어옴
+            if (err && err.code !== "USER_CANCEL") {
+                alert("토스페이 결제 준비에 실패했습니다.");
+            }
+        });
+}
+
 document.getElementById("payBtn").addEventListener("click", function () {
     if (currentMethod === "kakao") {
         payKakao();
     } else {
-        // TODO(토스 담당): 카카오와 동일 패턴으로 교체
-        // (팝업 열기 -> /payments/toss/ready/{id} POST -> redirectUrl 이동)
-        alert("토스페이 결제는 준비 중입니다. 카카오페이를 이용해 주세요.");
+        payToss();
     }
 });

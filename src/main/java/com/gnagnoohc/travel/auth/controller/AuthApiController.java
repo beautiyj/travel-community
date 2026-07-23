@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.gnagnoohc.travel.auth.dto.VerifiedSignupEmail;
+import com.gnagnoohc.travel.auth.dto.VerifiedPasswordReset;
 import com.gnagnoohc.travel.auth.exception.EmailVerificationException;
 import com.gnagnoohc.travel.auth.service.AuthService;
 import com.gnagnoohc.travel.auth.service.EmailVerificationService;
@@ -80,7 +81,7 @@ public class AuthApiController {
 	}
 
 	// 이메일 인증번호 검증
-	// 인증 결과는 서버 DB의 verified_at을 기준으로 판단한다.
+	// 클라이언트가 보낸 값이 아니라 DB에 기록된 인증 완료 상태를 기준으로 판단한다.
 	@PostMapping("/email-verification/verify")
 	public ResponseEntity<Map<String, Object>> verifyEmailCode(
 			@RequestParam("email") String email,
@@ -97,7 +98,7 @@ public class AuthApiController {
 						));
 			}
 
-			// DB에서 검증한 인증 결과만 세션에 저장하고 세션 ID를 교체한다.
+			// 확인된 인증 정보만 세션에 저장하고, 세션 고정 공격을 막기 위해 세션 ID를 변경한다.
 			HttpSession session = request.getSession(true);
 			if (!session.isNew()) {
 				request.changeSessionId();
@@ -114,6 +115,52 @@ public class AuthApiController {
 							"success", false,
 							"message", e.getMessage()
 					));
+		}
+	}
+
+	// 비밀번호 찾기 인증번호 발송: 활성 로컬 회원의 아이디와 이메일이 일치할 때만 발송한다.
+	@PostMapping("/password-reset/send")
+	public ResponseEntity<Map<String, Object>> sendPasswordResetCode(
+			@RequestParam(value = "username", required = false) String username,
+			@RequestParam(value = "email", required = false) String email,
+			HttpServletRequest request) {
+		try {
+			emailVerificationService.sendPasswordResetVerificationCode(username, email);
+			// 새 인증번호를 발송하면 이전 비밀번호 재설정 증표는 즉시 무효화한다.
+			HttpSession session = request.getSession(false);
+			if (session != null) {
+				session.removeAttribute("verifiedPasswordReset");
+			}
+			return ResponseEntity.ok(Map.of("success", true, "message", "인증번호를 발송했습니다."));
+		} catch (EmailVerificationException e) {
+			return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+		}
+	}
+
+	// 비밀번호 찾기 인증번호 검증: 성공한 DB 인증 결과만 새 비밀번호 화면 접근 세션에 저장한다.
+	@PostMapping("/password-reset/verify")
+	public ResponseEntity<Map<String, Object>> verifyPasswordResetCode(
+			@RequestParam(value = "username", required = false) String username,
+			@RequestParam(value = "email", required = false) String email,
+			@RequestParam(value = "code", required = false) String code,
+			HttpServletRequest request) {
+		try {
+			VerifiedPasswordReset verifiedPasswordReset = emailVerificationService
+					.verifyPasswordResetCode(username, email, code);
+			if (verifiedPasswordReset == null) {
+				return ResponseEntity.badRequest()
+						.body(Map.of("success", false, "message", "인증번호가 일치하지 않습니다."));
+			}
+
+			// 인증 성공 직전에 세션 ID를 교체해 세션 고정 공격을 방지한다.
+			HttpSession session = request.getSession(true);
+			if (!session.isNew()) {
+				request.changeSessionId();
+			}
+			session.setAttribute("verifiedPasswordReset", verifiedPasswordReset);
+			return ResponseEntity.ok(Map.of("success", true, "message", "이메일 인증이 완료되었습니다."));
+		} catch (EmailVerificationException e) {
+			return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
 		}
 	}
 }

@@ -5,8 +5,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.gnagnoohc.travel.community.dto.CommentDto;
-import com.gnagnoohc.travel.community.service.CommunityService;
-import com.gnagnoohc.travel.auth.dto.LoginMemberDto;
+import com.gnagnoohc.travel.community.service.CommentService;
+import com.gnagnoohc.travel.community.service.CommonService;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +14,8 @@ import lombok.RequiredArgsConstructor;
 @Controller
 @RequiredArgsConstructor
 public class CommentController {
-	private final CommunityService service;
+	private final CommentService service;
+	private final CommonService commonService;   // 장소 소유주 체크 (community/comment 공통)
 
 	// 댓글, 대댓글 등록
 	@PostMapping("/community/comment/write")
@@ -28,14 +29,14 @@ public class CommentController {
 
 		// 작성자(memberId) 세팅
 		// ※ getMemberId 방식은 로그인 담당자의 세션 구조에 맞춰 수정
-		comment.setMemberId(getMemberId(login));
+		comment.setMemberId(SessionUtil.getMemberId(login));
 
 		// 사장님(business) 권한 체크
 		// - place가 태그된 리뷰 글일 때만 검증 (place 미태그 일반 글은 사장님도 자유롭게 댓글 가능)
 		// - 태그된 글이면, 그 place의 소유주(member_id)가 본인일 때만 댓글 작성 허용
-		if ("BUSINESS".equalsIgnoreCase(getMemberRole(login))) {
-			Integer placeOwnerId = service.selectPlaceOwnerId(comment.getPostId());
-			if (placeOwnerId != null && placeOwnerId != getMemberId(login)) {
+		if ("BUSINESS".equalsIgnoreCase(SessionUtil.getMemberRole(login))) {
+			Integer placeOwnerId = commonService.selectPlaceOwnerId(comment.getPostId());
+			if (placeOwnerId != null && placeOwnerId != SessionUtil.getMemberId(login)) {
 				// 본인 업소의 리뷰가 아니면 등록 거부 → 안내 모달 띄우기 위한 파라미터
 				return "redirect:/community/detail?postId=" + comment.getPostId() + "&commentDenied=true";
 			}
@@ -56,7 +57,6 @@ public class CommentController {
 		}
 
 		// 본인 댓글인지 확인
-		// ※ service.selectComment(int)이 아직 없다면 Mapper/Dao/Service에 단건 조회 추가 필요
 		CommentDto comment = service.selectComment(commentId);
 		if (!isOwner(comment, login)) {
 			return "redirect:/community/detail?postId=" + postId;
@@ -77,19 +77,6 @@ public class CommentController {
 	private boolean isOwner(CommentDto comment, Object login) {
 		if (login == null || comment == null)
 			return false;
-		return comment.getMemberId() == getMemberId(login);
-	}
-
-	// 세션 로그인 정보에서 memberId 꺼내기
-	// session.setAttribute("loginMember", loginResult.loginMember())로
-	// LoginMemberDto(memberId: int, nickname, memberRole)가 세션에 그대로 들어옴
-	// ※ LoginMemberDto.memberId는 int, 커뮤니티 쪽도 이제 int라서 타입 그대로 맞음
-	private int getMemberId(Object login) {
-		return ((LoginMemberDto) login).getMemberId();
-	}
-
-	// 세션 로그인 정보에서 memberRole 꺼내기 ('USER' / 'BUSINESS' / 'ADMIN')
-	private String getMemberRole(Object login) {
-		return ((LoginMemberDto) login).getMemberRole();
+		return comment.getMemberId() == SessionUtil.getMemberId(login);
 	}
 }

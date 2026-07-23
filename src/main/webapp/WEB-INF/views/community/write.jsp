@@ -1,6 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8"%>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 
 <!DOCTYPE html>
 <html>
@@ -9,7 +9,8 @@
 <title>새 글쓰기</title>
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/common.css">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/buttonComponent.css">
-<link rel="stylesheet" href="${pageContext.request.contextPath}/css/community.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/community/placeSearchModal.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/community/community.css">
 </head>
 <body>
 <c:set var="cp" value="${pageContext.request.contextPath}" />
@@ -21,7 +22,7 @@
 
   <form action="${cp}/community/write" method="post" enctype="multipart/form-data">
 
-    <!-- 카테고리 -->
+    <!-- 카테고리: value 는 PostCategory enum 의 value 와 동일해야 함 -->
     <div class="field">
       <label class="field-label">카테고리</label>
       <div class="category-group">
@@ -33,14 +34,20 @@
 
         <input type="radio" name="category" id="cat-companion" value="모집">
         <label for="cat-companion" class="category-card">
-          <div class="cat-name">모집 (동행)</div>
+          <div class="cat-name">모집(동행)</div>
           <div class="cat-desc">동행자를 구하는 글</div>
         </label>
 
-        <input type="radio" name="category" id="cat-review" value="후기">
-        <label for="cat-review" class="category-card">
-          <div class="cat-name">후기</div>
+        <input type="radio" name="category" id="cat-general-review" value="일반후기">
+        <label for="cat-general-review" class="category-card">
+          <div class="cat-name">일반후기</div>
           <div class="cat-desc">다녀온 여행 후기</div>
+        </label>
+
+        <input type="radio" name="category" id="cat-verified-review" value="방문자인증후기">
+        <label for="cat-verified-review" class="category-card">
+          <div class="cat-name">방문자인증후기</div>
+          <div class="cat-desc">방문 인증 후 남기는 후기</div>
         </label>
       </div>
     </div>
@@ -50,6 +57,20 @@
       <label class="field-label" for="title">제목</label>
       <input type="text" id="title" name="title" class="text-input"
              placeholder="제목을 입력하세요" required>
+    </div>
+    
+    <!-- 장소 태그: "방문자인증후기" 카테고리일 때만 노출 (placeTag.js가 카테고리 변경에 맞춰 토글)
+         한 게시글에 장소 1개만 태그 가능 -->
+    <div class="field" id="place-tag-field" style="display:none;">
+      <label class="field-label">장소 태그</label>
+      <input type="hidden" id="placeId" name="placeId" value="">
+
+      <div id="place-tag-selected" class="place-tag-selected" style="display:none;">
+        <span id="place-tag-selected-name"></span>
+        <button type="button" id="place-tag-remove" class="place-tag-remove">✕</button>
+      </div>
+
+      <button type="button" id="place-tag-open-btn" class="place-tag-open-btn">장소 검색해서 태그하기</button>
     </div>
 
     <!-- 내용 -->
@@ -88,7 +109,13 @@
   </form>
 </div>
 
+<jsp:include page="placeSearchModal.jsp">
+  <jsp:param name="modalId" value="placeSearchModal" />
+</jsp:include>
+
+<script>window.CP = "${cp}";</script>
 <script src="${cp}/js/common.js"></script>
 <script src="${cp}/js/community/imageUpload.js"></script>
+<script src="${cp}/js/community/placeTag.js"></script>
 </body>
 </html>

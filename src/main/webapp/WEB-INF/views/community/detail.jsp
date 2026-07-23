@@ -15,18 +15,18 @@
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/tagButton.css">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/confirmModal.css">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/wishButton.css">
-<link rel="stylesheet" href="${pageContext.request.contextPath}/css/community.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/community/community.css">
 </head>
 <body>
 <c:set var="cp" value="${pageContext.request.contextPath}" />
 
-<%-- 로그인 회원 (로그인 담당자의 세션 구조에 맞춰 key 확인) --%>
+<%-- 로그인 회원: 세션엔 LoginMemberDto(memberId, nickname, memberRole)가 통째로 들어있음 --%>
 <c:set var="loginMember" value="${sessionScope.loginMember}" />
 <c:set var="isLoggedIn" value="${not empty loginMember}" />
 
-<%-- 본인 글 여부: 세션의 loginMember 는 memberId(Long) 자체
-     ※ 로그인 담당자가 MemberDto 를 담기로 하면 loginMember.memberId 로 바꿀 것 --%>
-<c:set var="isOwner" value="${isLoggedIn and loginMember eq post.memberId}" />
+<%-- 본인 글 여부: loginMember.memberId 로 LoginMemberDto의 getMemberId() 호출
+     ※ EL의 == 비교는 int/Long이 섞여도 숫자로 변환해서 비교하므로 캐스팅 불필요 --%>
+<c:set var="isOwner" value="${isLoggedIn and loginMember.memberId == post.memberId}" />
 
 <div class="container">
 
@@ -38,9 +38,8 @@
     <!-- 배지+제목 / 수정·삭제 버튼 (list.jsp 헤더와 같은 .list-topbar 재사용) -->
     <div class="list-topbar">
       <div>
-        <jsp:include page="../common/postCategoryTag.jsp">
-          <jsp:param name="category" value="${post.category}" />
-        </jsp:include>
+        <%-- postCategoryTag.jsp 컴포넌트 파일이 없어서 DTO getter로 직접 렌더링 --%>
+        <span class="badge ${post.categoryCss}">${post.categoryLabel}</span>
         <h2>${post.title}</h2>
       </div>
 
@@ -69,8 +68,21 @@
       <span>조회 <fmt:formatNumber value="${post.readcount}" pattern="#,##0" /></span>
     </div>
 
+    <!-- 장소 태그: 방문자인증후기로 태그된 장소가 있을 때만 노출 (community.css 의 .place-tag)
+         사진 없이 장소 이름만 다른 색 링크로 표시, 클릭하면 해당 장소 상세페이지로 이동
+         ※ 장소 상세페이지 URL은 place 모듈 담당자 라우팅에 맞춰 조정 필요 (지금은 가정한 경로) -->
+    <c:if test="${not empty post.placeId}">
+      <div class="place-tag">
+        <a href="${cp}/place/detail?placeId=${post.placeId}" class="place-tag-link">📍 ${post.placeName}</a>
+      </div>
+    </c:if>
+
+    <!-- 본문 (community.css 의 .detail-body, 줄바꿈 유지) -->
+    <p class="detail-body">${post.content}</p>
+
     <!-- 이미지: sort_order 순으로 저장되어 있다고 가정 (0번이 대표/썸네일 이미지)
-         1장뿐이면 화살표 없이 사진만, 여러 장이면 배너처럼 좌우 화살표로 넘김 -->
+         1장뿐이면 화살표 없이 사진만, 여러 장이면 배너처럼 좌우 화살표로 넘김
+         ※ 본문 아래로 위치 이동 (원래는 본문 위였음) -->
     <c:if test="${not empty post.imageList}">
       <div class="post-gallery" data-gallery>
         <div class="post-gallery-track" data-gallery-track>
@@ -98,9 +110,6 @@
         </c:if>
       </div>
     </c:if>
-
-    <!-- 본문 (community.css 의 .detail-body, 줄바꿈 유지) -->
-    <p class="detail-body">${post.content}</p>
   </div>
 
 
@@ -129,35 +138,50 @@
               <div>
                 <div class="comment-head">
                   <span class="comment-author">${comment.memberName}</span>
+                  <%-- 업소 사장님이 자신의 사업장 리뷰에 남긴 댓글이면 뱃지 표시 --%>
+                  <c:if test="${comment.ownerComment}">
+                    <span class="badge-owner">사장님</span>
+                  </c:if>
                   <span class="comment-date">
                     <fmt:formatDate value="${comment.createdAt}" pattern="yyyy-MM-dd HH:mm" />
                   </span>
                 </div>
                 <p class="comment-text">${comment.content}</p>
 
-                <!-- 답글 달기 (로그인 시) -->
-                <c:if test="${isLoggedIn}">
-                  <span class="reply-link" role="button" tabindex="0"
-                        onclick="toggleReply(${comment.commentId})">답글 달기</span>
-                </c:if>
+                <div class="comment-actions">
+                  <!-- 답글 달기 (로그인 시) -->
+                  <c:if test="${isLoggedIn}">
+                    <span class="reply-link" role="button" tabindex="0"
+                          onclick="toggleReply(${comment.commentId})">답글 달기</span>
+                  </c:if>
+
+                  <!-- 삭제: 본인 댓글일 때만, 확인창 없이 바로 삭제 (comment/delete 는 서버에서 본인 확인 후 처리) -->
+                  <c:if test="${isLoggedIn and loginMember.memberId == comment.memberId}">
+                    <form action="${cp}/community/comment/delete" method="post" class="comment-delete-form">
+                      <input type="hidden" name="commentId" value="${comment.commentId}">
+                      <input type="hidden" name="postId" value="${post.postId}">
+                      <button type="submit" class="comment-delete-btn">삭제</button>
+                    </form>
+                  </c:if>
+                </div>
               </div>
             </div>
 
             <!-- 답글 입력창 (기본 숨김, community.css 대상 아님) -->
             <c:if test="${isLoggedIn}">
               <div id="reply-form-${comment.commentId}" class="reply-form" style="display:none;">
-                <form action="${cp}/community/comment/write" method="post">
+                <form action="${cp}/community/comment/write" method="post" class="reply-form-row">
                   <input type="hidden" name="postId" value="${post.postId}">
                   <input type="hidden" name="parentId" value="${comment.commentId}">
                   <input type="hidden" name="depth" value="1">
-                  <input type="text" name="content"
+                  <input type="text" name="content" class="reply-input"
                          placeholder="${comment.memberName}님에게 답글..." required>
 
                   <jsp:include page="../common/smallButton.jsp">
                     <jsp:param name="text" value="등록" />
                   </jsp:include>
 
-                  <button type="button" onclick="toggleReply(${comment.commentId})">취소</button>
+                  <button type="button" class="reply-cancel-btn" onclick="toggleReply(${comment.commentId})">취소</button>
                 </form>
               </div>
             </c:if>
@@ -170,11 +194,26 @@
                   <div>
                     <div class="comment-head">
                       <span class="comment-author">${reply.memberName}</span>
+                      <%-- 업소 사장님이 자신의 사업장 리뷰에 남긴 대댓글이면 뱃지 표시 --%>
+                      <c:if test="${reply.ownerComment}">
+                        <span class="badge-owner">사장님</span>
+                      </c:if>
                       <span class="comment-date">
                         <fmt:formatDate value="${reply.createdAt}" pattern="yyyy-MM-dd HH:mm" />
                       </span>
                     </div>
                     <p class="comment-text">${reply.content}</p>
+
+                    <!-- 삭제: 본인 답글일 때만, 확인창 없이 바로 삭제 -->
+                    <c:if test="${isLoggedIn and loginMember.memberId == reply.memberId}">
+                      <div class="comment-actions">
+                        <form action="${cp}/community/comment/delete" method="post" class="comment-delete-form">
+                          <input type="hidden" name="commentId" value="${reply.commentId}">
+                          <input type="hidden" name="postId" value="${post.postId}">
+                          <button type="submit" class="comment-delete-btn">삭제</button>
+                        </form>
+                      </div>
+                    </c:if>
                   </div>
                 </div>
               </c:if>
@@ -199,16 +238,15 @@
         </form>
       </c:when>
 
-      <%-- 비로그인: 안내 문구 + buttonComponent 로 만든 "로그인하기" 버튼 --%>
+      <%-- 비로그인: 안내 문구 + smallButton 으로 만든 "로그인하기" 버튼 --%>
       <c:otherwise>
         <div class="comment-login">
           <p>댓글을 작성하려면 로그인이 필요합니다</p>
 
-          <div class="btn-nav-wrap" data-btn-nav="${cp}/member/login">
-            <jsp:include page="../common/buttonComponent.jsp">
-              <jsp:param name="text" value="로그인하기" />
-            </jsp:include>
-          </div>
+          <jsp:include page="../common/smallButton.jsp">
+            <jsp:param name="text" value="로그인하기" />
+            <jsp:param name="onclick" value="location.href='${cp}/member/login'" />
+          </jsp:include>
         </div>
       </c:otherwise>
     </c:choose>
@@ -230,8 +268,27 @@
   </jsp:include>
 </c:if>
 
+<!-- ───────── 댓글 권한 없음 안내 모달 ─────────
+     사장님(business)이 본인 소유가 아닌 업소 리뷰에 댓글을 시도하면
+     CommentController가 ?commentDenied=true 를 붙여 이 페이지로 되돌려보냄 -->
+<c:if test="${param.commentDenied == 'true'}">
+  <jsp:include page="../common/confirmModal.jsp">
+    <jsp:param name="modalId"     value="commentDeniedModal" />
+    <jsp:param name="action"      value="/community/detail" />
+    <jsp:param name="method"      value="get" />
+    <jsp:param name="tone"        value="primary" />
+    <jsp:param name="title"       value="댓글 작성 불가" />
+    <jsp:param name="message"     value="본인 업소의 리뷰 게시글에만 댓글을 남길 수 있습니다." />
+    <jsp:param name="confirmText" value="확인" />
+    <jsp:param name="cancelText"  value="닫기" />
+    <jsp:param name="hiddenName"  value="postId" />
+    <jsp:param name="hiddenValue" value="${post.postId}" />
+  </jsp:include>
+</c:if>
+
 
 <script src="${cp}/js/common.js"></script>
 <script src="${cp}/js/community/postDetail.js"></script>
+<script src="${cp}/js/community/commentDeniedModal.js"></script>
 </body>
 </html>

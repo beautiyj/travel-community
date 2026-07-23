@@ -84,7 +84,7 @@ public class AuthController {
 	}
 
 	// 로그아웃
-	@GetMapping("/logout")
+	@PostMapping("/logout")
 	public String logout(HttpServletRequest request) {
 		HttpSession session = request.getSession(false);
 		if (session != null) {

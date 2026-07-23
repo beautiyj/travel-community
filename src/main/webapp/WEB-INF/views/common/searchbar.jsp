@@ -21,6 +21,9 @@
 <c:set var="defaultLabel"      value="${empty param.defaultLabel ? '전체' : param.defaultLabel}" />
 <c:set var="dropdownWidth"     value="${empty param.dropdownWidth ? '' : param.dropdownWidth}" />
 
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/buttonComponent.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/dropdownSelector.css">
+
 
 <div class="search-row-view" style="width: ${barWidth};">
 	<c:if test="${useDropdown}">

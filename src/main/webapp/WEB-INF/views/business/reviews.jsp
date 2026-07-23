@@ -4,7 +4,8 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>후기 확인 - 관리자 - 트립어라운드</title>
+    <title>후기 확인 - 관리자 - 갈래말래</title>
+    <link rel="stylesheet" href="/css/common.css">
     <link rel="stylesheet" href="/css/business.css">
 </head>
 <body>

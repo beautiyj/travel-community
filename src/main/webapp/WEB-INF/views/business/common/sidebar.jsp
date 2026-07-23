@@ -4,7 +4,7 @@
 
 <aside class="business-sidebar">
     <div class="business-sidebar__logo">
-        <span class="business-sidebar__logo-badge">TA</span> 트립어라운드
+        <span class="business-sidebar__logo-badge">TA</span> 갈래말래
     </div>
 
     <div class="business-sidebar__biz">

@@ -4,7 +4,8 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>업소 관리 - 관리자 - 트립어라운드</title>
+    <title>업소 관리 - 관리자 - 갈래말래</title>
+    <link rel="stylesheet" href="/css/common.css">
     <link rel="stylesheet" href="/css/business.css">
     <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 </head>

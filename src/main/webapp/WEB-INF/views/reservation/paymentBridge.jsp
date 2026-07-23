@@ -9,6 +9,6 @@
 <script>
     var bridgeTarget = "${target}";
 </script>
-<script src="/js/payment-bridge.js"></script>
+<script src="/js/reservation/payment-bridge.js"></script>
 </body>
 </html>

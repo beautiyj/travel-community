@@ -103,6 +103,6 @@
 <script>
     window.RESERVATION_UNIT_PRICE = ${price};   // 서버에서 내려준 1인 단가
 </script>
-<script src="/js/reservation-form.js"></script>
+<script src="/js/reservation/reservation-form.js"></script>
 </body>
 </html>

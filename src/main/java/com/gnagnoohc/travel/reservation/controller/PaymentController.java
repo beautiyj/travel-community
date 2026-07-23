@@ -164,9 +164,9 @@ public class PaymentController {
     }
 
     @GetMapping("/toss/fail")
-    public String tossFail(@RequestParam(value = "message", required = false) String message) {
-        return bridgeToFail(new org.springframework.ui.ExtendedModelMap(),
-                message != null ? message : "토스페이먼츠 결제에 실패했습니다.");
+    public String tossFail(@RequestParam(value = "message", required = false) String message,
+                           Model model) {
+        return bridgeToFail(model, message != null ? message : "토스페이먼츠 결제에 실패했습니다.");
     }
 
     /* ------------------- 결제 취소(환불) ------------------- */

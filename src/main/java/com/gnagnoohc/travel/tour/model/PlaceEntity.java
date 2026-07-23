@@ -12,18 +12,24 @@ public class PlaceEntity {
     public static final int ADMIN_TYPE_OWNER_CLAIMED = 1; // 사업자 등록/클레임
 
     private Long placeId;
-    private String contentId;
-    private String contentTypeId;
+
+    // private String contentId;
+    // private String contentTypeId;
+
     private Integer placeType;
+
     private Long regionId;
     private Long memberId;
-    private String name;
+
+    private String name;  // title공공데이터 -> name으로받아와서저장
     private String description;
     private String address;
     private BigDecimal mapx;
     private BigDecimal mapy;
     private boolean isClosed;
-    private int adminType;
+
+    // private int adminType;
+    
     private String firstImage;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

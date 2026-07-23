@@ -59,9 +59,8 @@ public class TourApiService {
 
     // TourLdongCodeDTO 법정동코드 -> RegionEntity 데이터 변환
     // (lDongListYN 값 Y/N 차이에 대응)
+    // 최종 배치서비스단에서 컨버터처리하는 배치함수만들때convertToRegionEntity 넣으면됨
     private RegionEntity convertToRegionEntity(TourLdongCodeDTO ldongCodeDTO) {
-        // RegionEntity region = new RegionEntity();
-
         // 법정동 코드, 법정동 명칭
         String rawCode;
         String rawName;
@@ -86,15 +85,10 @@ public class TourApiService {
             rawName = ldongCodeDTO.getName();
         }
 
-        // // 3. 위에서 완성된 rawCode, rawName을 Entity에 최종 세팅!
-        // if (rawCode != null && !rawCode.isBlank()) {
-        //     region.setRegionId(Long.parseLong(rawCode)); // ID 타입이 Long인 경우
-        // }
-        // region.setRegionName(rawName); // 👈 조합된 결과 전달
-        // 4. 추출한 String rawCode -> Long 타입의 regionId로 변환
+        // 3. 추출한 String rawCode -> Long 타입의 regionId로 변환
         Long regionId = (rawCode != null && !rawCode.isBlank()) ? Long.parseLong(rawCode) : null;
 
-        // 🎯 Setter 없이 생성자로 닫혀있는 순수한 RegionEntity 객체 한 번에 생성!
+        // 4. Setter 없이 생성자로 닫혀있는 순수한 RegionEntity 객체 한 번에 생성
         return new RegionEntity(regionId, rawName);
     }
 

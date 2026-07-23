@@ -30,6 +30,20 @@
 .place-card .name { font-weight: var(--font-weight-bold); }
 .place-card .desc { font-size: var(--text-sm); color: var(--muted-foreground); }
 
+/* ---------- 연락처 형식 오류 메시지 (reservation-form.js가 표시 토글) ---------- */
+.field-error {
+    display: none;
+    margin: -14px 0 20px;
+    font-size: var(--text-sm);
+    color: var(--danger, #d92d20);
+}
+.input-field input.input-invalid {
+    border-color: var(--danger, #d92d20);
+}
+.input-field input.input-invalid:focus {
+    box-shadow: 0 0 0 3px rgba(217, 45, 32, 0.15);
+}
+
 /* ---------- 폼 필드 (날짜·인원 등 특수 필드용. 기본 입력창은 inputField 컴포넌트 사용) ---------- */
 .field { margin-bottom: 20px; }
 .field > label { display: block; font-size: var(--text-sm); font-weight: var(--font-weight-bold); margin-bottom: 8px; }
@@ -121,3 +135,24 @@
 
 #waiting { display: none; text-align: center; color: var(--muted-foreground);
            font-size: var(--text-sm); margin-top: 12px; }
+
+/* ---------- 결제 결과 페이지 (success.jsp / fail.jsp 공용) ---------- */
+.result-card {
+    max-width: 480px; margin: 60px auto; background: var(--card); text-align: center;
+    border-radius: var(--radius-md); padding: 40px 32px; box-shadow: 0 2px 12px rgba(0,0,0,.06);
+}
+.result-icon {
+    width: 64px; height: 64px; margin: 0 auto 16px; border-radius: var(--radius-full);
+    color: var(--white); font-size: 34px; line-height: 64px;
+}
+.result-icon.ok   { background: #22c55e; }
+.result-icon.fail { background: var(--destructive); font-size: 30px; }
+.result-card h2 { margin-bottom: 24px; font-size: var(--text-xl); font-weight: var(--font-weight-bold); }
+.result-card .desc { color: var(--muted-foreground); margin-bottom: 28px; font-size: var(--text-sm); }
+.result-info {
+    background: var(--input-background); border-radius: var(--radius-sm); padding: 16px;
+    margin-bottom: 24px; font-size: var(--text-sm); text-align: left;
+}
+.result-info div { display: flex; justify-content: space-between; padding: 4px 0; color: var(--muted-foreground); }
+.result-actions { display: flex; flex-direction: column; gap: 10px; }
+.result-actions .btn-small-row { width: 100%; }

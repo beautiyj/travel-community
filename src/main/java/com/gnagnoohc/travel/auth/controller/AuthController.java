@@ -83,7 +83,7 @@ public class AuthController {
 		return "redirect:/";
 	}
 
-	// 세션을 변경하므로 GET이 아닌 POST 요청으로만 로그아웃을 처리한다.
+	// 로그아웃
 	@PostMapping("/logout")
 	public String logout(HttpServletRequest request) {
 		HttpSession session = request.getSession(false);

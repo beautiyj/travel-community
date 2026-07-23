@@ -1,9 +1,11 @@
 package com.gnagnoohc.travel.batch.service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -52,7 +54,7 @@ public class TourApiService {
         TourItemDTO 공통필드선언되어있는걸안쓰고 필드에 공통필드까지선언된 TourAreaBasedSyncListDTO
         - 관광정보 동기화 목록 조회 /areaBasedSyncList2 - 배치 수집 전용 API (DB 최신상태 유지용 API)
         필드 TourLdongCodeDTO
-        - 법정동코드조회 /ldongCode2       
+        - 법정동코드조회 /ldongCode2        
         필드 TourLclsSystmCodeDTO.java
         - 분류체계 코드조회 /lclsSystmCode2
     */
@@ -88,8 +90,14 @@ public class TourApiService {
         // 3. 추출한 String rawCode -> Long 타입의 regionId로 변환
         Long regionId = (rawCode != null && !rawCode.isBlank()) ? Long.parseLong(rawCode) : null;
 
+        // 💡 [2단 드롭다운 지원] rawCode의 앞 2자리를 상위 parentRegionId(시/도)로 파싱 (예: "11110" -> 11L)
+        Long parentRegionId = null;
+        if (rawCode != null && rawCode.length() >= 5) {
+            parentRegionId = Long.parseLong(rawCode.substring(0, 2));
+        }
+
         // 4. Setter 없이 생성자로 닫혀있는 순수한 RegionEntity 객체 한 번에 생성
-        return new RegionEntity(regionId, rawName);
+        return new RegionEntity(regionId, rawName, parentRegionId);
     }
 
     /**
@@ -155,6 +163,10 @@ public class TourApiService {
                     if (!"0".equals(syncItem.getShowflag())) {
                         enrichTourItemDetails(tourItem);
                     }
+
+                    // 💡 [해시태그 파싱] TourItemDTO에 가공된 hashtags 컬럼 문자열 세팅 (#food,#대표메뉴 등)
+                    String generatedHashtags = generateHashtags(tourItem);
+                    tourItem.setHashtags(generatedHashtags);
                     
                     // TourItemDTO 객체로 Mapper 호출 (사용자 원본 방식)
                     tourMapper.upsertPlace(tourItem);
@@ -176,35 +188,35 @@ public class TourApiService {
         log.info("=== [Batch] 공공데이터 수집 및 PLACE 적재 완료 ===");
     }
 
-    // /**
-    //  * TourAreaBasedSyncListDTO -> TourItemDTO 변환 메서드
-    //  */
-    // private TourItemDTO convertToTourItemDTO(TourAreaBasedSyncListDTO syncItem) {
-    //     TourItemDTO item = new TourItemDTO();
-    //     item.setContentid(syncItem.getContentid());
-    //     item.setContenttypeid(syncItem.getContenttypeid());
-    //     item.setCreatedtime(syncItem.getCreatedtime());
-    //     item.setModifiedtime(syncItem.getModifiedtime());
-    //     item.setTitle(syncItem.getTitle());
-    //     item.setAddr1(syncItem.getAddr1());
-    //     item.setAddr2(syncItem.getAddr2());
-    //     item.setFirstimage(syncItem.getFirstimage());
-    //     item.setFirstimage2(syncItem.getFirstimage2());
-    //     item.setCpyrhtDivCd(syncItem.getCpyrhtDivCd());
-    //     item.setMapx(syncItem.getMapx());
-    //     item.setMapy(syncItem.getMapy());
-    //     item.setMlevel(syncItem.getMlevel());
-    //     item.setTel(syncItem.getTel());
-    //     item.setZipcode(syncItem.getZipcode());
+    /**
+     * TourAreaBasedSyncListDTO -> TourItemDTO 변환 메서드
+     */
+    private TourItemDTO convertToTourItemDTO(TourAreaBasedSyncListDTO syncItem) {
+        TourItemDTO item = new TourItemDTO();
+        item.setContentid(syncItem.getContentid());
+        item.setContenttypeid(syncItem.getContenttypeid());
+        item.setCreatedtime(syncItem.getCreatedtime());
+        item.setModifiedtime(syncItem.getModifiedtime());
+        item.setTitle(syncItem.getTitle());
+        item.setAddr1(syncItem.getAddr1());
+        item.setAddr2(syncItem.getAddr2());
+        item.setFirstimage(syncItem.getFirstimage());
+        item.setFirstimage2(syncItem.getFirstimage2());
+        item.setCpyrhtDivCd(syncItem.getCpyrhtDivCd());
+        item.setMapx(syncItem.getMapx());
+        item.setMapy(syncItem.getMapy());
+        item.setMlevel(syncItem.getMlevel());
+        item.setTel(syncItem.getTel());
+        item.setZipcode(syncItem.getZipcode());
         
-    //     // 원본 DTO 소문자 lDong / lcls 필드 스펙에 맞춘 Getter 호출
-    //     item.setLDongRegnCd(syncItem.getLDongRegnCd());
-    //     item.setLDongSignguCd(syncItem.getLDongSignguCd());
-    //     item.setLclsSystm1(syncItem.getLclsSystm1());
-    //     item.setLclsSystm2(syncItem.getLclsSystm2());
-    //     item.setLclsSystm3(syncItem.getLclsSystm3());
-    //     return item;
-    // }
+        // 원본 DTO 소문자 lDong / lcls 필드 스펙에 맞춘 Getter 호출
+        item.setLDongRegnCd(syncItem.getLDongRegnCd());
+        item.setLDongSignguCd(syncItem.getLDongSignguCd());
+        item.setLclsSystm1(syncItem.getLclsSystm1());
+        item.setLclsSystm2(syncItem.getLclsSystm2());
+        item.setLclsSystm3(syncItem.getLclsSystm3());
+        return item;
+    }
 
     /**
      * 1:1 상세 API 연쇄 호출로 TourItemDTO의 상세 필드를 채우는 메서드
@@ -282,5 +294,45 @@ public class TourApiService {
         } catch (Exception e) {
             log.warn("[Batch] 상세 정보 연쇄 호출 실패 - contentId: {}, 사유: {}", contentId, e.getMessage());
         }
+    }
+
+    // =========================================================================
+    // 💡 [공통 헬퍼 메서드] 배치 가공용 해시태그 및 분류 매핑 유틸 (최하단 위치)
+    // =========================================================================
+
+    /**
+     * TourItemDTO의 수집 데이터를 파싱하여 DB hashtags 컬럼용 문자열 생성 (#food,#흑돼지구이,#주차가능)
+     */
+    private String generateHashtags(TourItemDTO item) {
+        List<String> tags = new ArrayList<>();
+        
+        // 1. contentTypeId -> place_type 기본 해시태그 생성 (#tour, #stay, #food)
+        String placeType = convertContentType(item.getContenttypeid());
+        tags.add("#" + placeType);
+
+        // 2. 관광지(12) 특성상 입장료 필드가 없으므로 기본값 세팅
+        if ("tour".equals(placeType)) {
+            tags.add("#무료"); // 기본 입장료 태그 보장
+        }
+
+        // 3. 반려동물 정보 존재 시 태그 자동 추가
+        if (StringUtils.hasText(item.getAcmpyPsblCpam()) || StringUtils.hasText(item.getPetTursmInfo())) {
+            tags.add("#반려동물동반");
+        }
+
+        // 결과 예시: "#food,#반려동물동반"
+        return String.join(",", tags);
+    }
+
+    /**
+     * 공공데이터 contentTypeId -> 서비스 표준 place_type (tour, stay, food) 변환
+     */
+    private String convertContentType(String contentTypeId) {
+        if (contentTypeId == null) return "tour";
+        return switch (contentTypeId) {
+            case "32" -> "stay";
+            case "39" -> "food";
+            default   -> "tour"; // 12(관광지), 14(문화시설), 25(여행코스), 28(레포츠) -> tour로 통합
+        };
     }
 }

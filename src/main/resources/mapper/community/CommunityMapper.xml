@@ -73,10 +73,13 @@
 	     - 작성자 이름: 기본은 member.nickname, 단 댓글 작성자가 그 게시글에 태그된 place의 소유주(사장님)면
 	       "업체명(title)+사장"으로 오버라이드
 	     - owner_comment: 사장님 댓글 여부 (화면 뱃지 표시용)
-	     - 정렬: 원댓글 중 사장님 댓글을 맨 위로 고정, 그 다음 나머지 원댓글은 comment_id asc,
+	     - 정렬: "방문자인증 후기" 카테고리 글에 한해서만 사장님 댓글을 맨 위로 고정.
+	       그 외 카테고리는 place가 우연히 태그되어 있어도 고정하지 않고 comment_id asc 그대로.
+	       고정 대상 원댓글 다음은 나머지 원댓글 comment_id asc,
 	       각 원댓글에 딸린 대댓글은 그 뒤로 comment_id asc
 	       (대댓글 그룹핑은 detail.jsp에서 parentId로 다시 필터링하므로,
-	        여기서는 원댓글들의 상대 순서만 정확하면 됨) -->
+	        여기서는 원댓글들의 상대 순서만 정확하면 됨)
+	     ※ 카테고리 저장값은 PostCategory.VERIFIED_REVIEW의 value인 "방문자인증후기"(공백 없음) 기준 -->
 	<select id="selectComments" parameterType="int" resultType="comment">
 		select c.comment_id, c.content, c.depth, c.created_at, c.updated_at,
 		c.parent_id, c.post_id, c.member_id,
@@ -89,7 +92,10 @@
 		left join place pl on p.place_id = pl.place_id
 		where c.post_id = #{postId}
 		order by
-		case when c.parent_id is null and pl.member_id = c.member_id then 0 else 1 end,
+		case when c.parent_id is null
+		          and pl.member_id = c.member_id
+		          and p.category = '방문자인증후기'
+		     then 0 else 1 end,
 		coalesce(c.parent_id, c.comment_id) asc,
 		c.parent_id is not null,
 		c.comment_id asc

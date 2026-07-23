@@ -5,7 +5,8 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>대시보드 - 관리자 - 트립어라운드</title>
+    <title>대시보드 - 관리자 - 갈래말래</title>
+    <link rel="stylesheet" href="/css/common.css">
     <link rel="stylesheet" href="/css/business.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/wordcloud@1.2.2/src/wordcloud2.js"></script>

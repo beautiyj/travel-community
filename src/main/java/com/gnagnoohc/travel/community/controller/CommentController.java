@@ -29,13 +29,17 @@ public class CommentController {
 		// 작성자(memberId) 세팅
 		// ※ getMemberId 방식은 로그인 담당자의 세션 구조에 맞춰 수정
 		comment.setMemberId(getMemberId(login));
-		
-		// TODO: post.category == "방문자인증 후기" 인 글이면 댓글 권한 제한 필요
-        //   - 대상: 해당 place_id의 사장님 + 일반 유저만 댓글 가능
-        //   - PLACE.member_id / admin_type 값 의미가 아직 안 정해져서 보류 중
-        //     (API 등록 장소는 진짜 사장님이 없는데 member_id가 null인지,
-        //      admin_type으로 API/직접등록 여부를 구분해야 하는지 등)
-        //   - 정해지면: post 조회 → place 조회 → place.member_id로 사장님 여부 판별 후 검증
+
+		// 사장님(business) 권한 체크
+		// - place가 태그된 리뷰 글일 때만 검증 (place 미태그 일반 글은 사장님도 자유롭게 댓글 가능)
+		// - 태그된 글이면, 그 place의 소유주(member_id)가 본인일 때만 댓글 작성 허용
+		if ("BUSINESS".equalsIgnoreCase(getMemberRole(login))) {
+			Integer placeOwnerId = service.selectPlaceOwnerId(comment.getPostId());
+			if (placeOwnerId != null && placeOwnerId != getMemberId(login)) {
+				// 본인 업소의 리뷰가 아니면 등록 거부 → 안내 모달 띄우기 위한 파라미터
+				return "redirect:/community/detail?postId=" + comment.getPostId() + "&commentDenied=true";
+			}
+		}
 
 		service.insertComment(comment);
 
@@ -82,5 +86,10 @@ public class CommentController {
 	// ※ LoginMemberDto.memberId는 int, 커뮤니티 쪽도 이제 int라서 타입 그대로 맞음
 	private int getMemberId(Object login) {
 		return ((LoginMemberDto) login).getMemberId();
+	}
+
+	// 세션 로그인 정보에서 memberRole 꺼내기 ('USER' / 'BUSINESS' / 'ADMIN')
+	private String getMemberRole(Object login) {
+		return ((LoginMemberDto) login).getMemberRole();
 	}
 }

@@ -20,6 +20,7 @@ public class CommentDto {
     private int memberId;             // member_id   INT      NOT NULL (FK → member)
  
     // ── 화면 표시용 (테이블에 없는 조인/조립 값) ──
-    private String memberName;        // 작성자 이름 (member 테이블 JOIN)
+    private String memberName;        // 작성자 이름 (member 테이블 JOIN, 사장님이면 "업체명+사장"으로 오버라이드됨)
+    private boolean ownerComment;     // 업소 사장님이 자신의 사업장 리뷰에 남긴 댓글인지 (뱃지 표시용)
     private List<CommentDto> replies; // 이 댓글에 달린 대댓글 목록
 }

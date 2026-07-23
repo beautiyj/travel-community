@@ -1,7 +1,6 @@
 package com.gnagnoohc.travel.reservation.controller;
 
 import com.gnagnoohc.travel.reservation.dto.ReservationCreateRequest;
-import com.gnagnoohc.travel.reservation.service.PaymentService;
 import com.gnagnoohc.travel.reservation.service.ReservationService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
@@ -21,7 +20,6 @@ import java.util.Map;
 public class ReservationController {
 
     private final ReservationService reservationService;
-    private final PaymentService paymentService;
 
     /** 개발용 테스트 허브. 예약~결제~취소 흐름을 수동으로 확인하는 페이지 */
     @GetMapping("/test")
@@ -76,22 +74,6 @@ public class ReservationController {
 
         reservationService.requestCancel(reservationId, memberId, reason);
         log.info("[취소 요청] reservationId={}, memberId={}, reason={}", reservationId, memberId, reason);
-        return Map.of("result", "OK");
-    }
-
-    /** 관리자: 취소 요청 승인 → 환불 실행 (관리자 페이지에서 호출) */
-    @PostMapping("/{reservationId}/cancel-approve")
-    @ResponseBody
-    public Map<String, String> cancelApprove(@PathVariable("reservationId") Long reservationId) {
-        paymentService.approveCancel(reservationId);
-        return Map.of("result", "OK");
-    }
-
-    /** 관리자: 취소 요청 거절 → 예약완료로 원복 (관리자 페이지에서 호출) */
-    @PostMapping("/{reservationId}/cancel-reject")
-    @ResponseBody
-    public Map<String, String> cancelReject(@PathVariable("reservationId") Long reservationId) {
-        reservationService.rejectCancel(reservationId);
         return Map.of("result", "OK");
     }
 }

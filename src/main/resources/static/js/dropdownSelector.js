@@ -18,9 +18,9 @@
       trigger.addEventListener("click", function (e) {
         e.preventDefault();
         e.stopPropagation();
-        
+
         if (typeof bootstrap !== "undefined" && bootstrap.Dropdown) {
-          var bsDropdown = bootstrap.Dropdown.getInstance(trigger) || new bootstrap.Dropdown(trigger);
+          var bsDropdown = bootstrap.Dropdown.getOrCreateInstance(trigger);
           bsDropdown.toggle();
         } else {
           var menu = container.querySelector(".drop-select-menu");

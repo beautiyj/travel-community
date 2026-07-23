@@ -10,10 +10,17 @@ public class RegionEntity {
     private String regionName;
     private Long parentRegionId;
 
+    // 1. 기존 마이바티스/전체 필드용 생성자
     // 마이바티스 인식용 생성자
     public RegionEntity(Long regionId, String regionName, Long parentRegionId) {
         this.regionId = regionId;
         this.regionName = regionName;
         this.parentRegionId = parentRegionId;
     }
+
+    // 2. 💡 배치 수집용 생성자 (parentRegionId는 기본 null 처리)
+    public RegionEntity(Long regionId, String regionName) {
+        this(regionId, regionName, null);
+    }
+
 }

@@ -44,6 +44,8 @@ public interface AuthMapper {
 			@Param("email") String email,
 			@Param("purpose") String purpose);
 
+	int countEmailVerificationRequestsByIpInLastDay(@Param("requestIp") String requestIp);
+
 	int countAllEmailVerificationRequestsInLastDay();
 
 	int insertEmailVerification(EmailVerification emailVerification);

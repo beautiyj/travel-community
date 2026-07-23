@@ -12,7 +12,7 @@ import lombok.ToString;
 @Setter
 @ToString
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class TourldongCodeDTO {
+public class TourLdongCodeDTO {
     private String rnum;            // 일련번호
     
     // (요청)법정동 목록조회 여부 - N(코드조회)일 때 표출되는 필드

@@ -12,25 +12,91 @@ import com.gnagnoohc.travel.batch.dto.TourApiResponseDTO;
 import com.gnagnoohc.travel.batch.dto.TourApiResponseDTO.Header;
 import com.gnagnoohc.travel.batch.dto.TourAreaBasedSyncListDTO;
 import com.gnagnoohc.travel.batch.dto.TourItemDTO;
+import com.gnagnoohc.travel.batch.dto.TourLdongCodeDTO;
 import com.gnagnoohc.travel.tour.mapper.TourMapper;
+import com.gnagnoohc.travel.tour.model.RegionEntity;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/* batch 패키지 역할
+    1. 요청 : 리퀘스트 파라미터 (통신, config의 웹클라이언트와 client의 api클라이언트파일) 공공데이터 API 호출
+    2. 응답 : 리스폰스 파라미너 (수신, dto폴더의 각각 요청에 일치하도록 객체 생성) 데이터 수집/가공
+    3. 적재 : 해당 응답 구조를 활용하여 service DB(PLACE) 적재
+*/
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class TourApiService {
-
     private final TourApiClient tourApiClient;
     private final TourMapper tourMapper;
     private final ObjectMapper objectMapper;
-
     /**
      * TODO: TourApiService 로직 미완성, batch->place 과정 확인 필요
      * 외부 공공데이터를 수집하여 우리 DB(PLACE 테이블)에 적재하는 메인 파이프라인 0723 11:25 미완성
      */
 
+    /*  TourItemDTO 공통필드로 처리되는 공공데이터
+        - 위치기반 관광정보조회 /locationBasedList2
+        - 지역기반 관광정보조회 /areaBasedList2
+        - 키워드 검색 조회 /searchKeyword2
+        - 숙박정보조회 /searchStay2
+        - 공통정보조회 /detailCommon2
+        - 반려동물 동반 여행 정보 /detailPetTour2
+        TourItemDTO 공통필드 + 추가필드 TourDetailIntroDTO
+        - 소개정보조회 /detailIntro2
+        TourItemDTO 공통필드 + 추가필드 TourDetailInfoDTO
+        - 반복정보조회 /detailInfo2
+        TourItemDTO 공통필드 + 추가필드 TourDetailImageDTO
+        - 이미지정보조회 /detailImage2
+        TourItemDTO 공통필드선언되어있는걸안쓰고 필드에 공통필드까지선언된 TourAreaBasedSyncListDTO
+        - 관광정보 동기화 목록 조회 /areaBasedSyncList2 - 배치 수집 전용 API (DB 최신상태 유지용 API)
+        필드 TourLdongCodeDTO
+        - 법정동코드조회 /ldongCode2       
+        필드 TourLclsSystmCodeDTO.java
+        - 분류체계 코드조회 /lclsSystmCode2
+    */
+
+    // TourLdongCodeDTO 법정동코드 -> RegionEntity 데이터 변환
+    // (lDongListYN 값 Y/N 차이에 대응)
+    private RegionEntity convertToRegionEntity(TourLdongCodeDTO ldongCodeDTO) {
+        // RegionEntity region = new RegionEntity();
+
+        // 법정동 코드, 법정동 명칭
+        String rawCode;
+        String rawName;
+
+        // 1. 법정동 목록조회 여부 - Y(전체목록조회) 일 때 엔티티 변환해서 넣기
+        // 법정동코드 Y일땐 필드가 lDongRegnCd, lDongSignguCd 로 넘어오니까 이게 널이 아닐 때
+        if (ldongCodeDTO.getLDongRegnCd() != null && !ldongCodeDTO.getLDongRegnCd().isBlank()) {
+            // 우리의 법정동 코드는 시도코드 + 시군구코드로 처리해서 넣는다
+            rawCode = ldongCodeDTO.getLDongRegnCd() + 
+                    (ldongCodeDTO.getLDongSignguCd() != null ? ldongCodeDTO.getLDongSignguCd() : "");
+            
+            // 우리의 법정동 명칭은 시도명 + " " + 시군구명으로 처리해서 넣는다
+            rawName = ldongCodeDTO.getLDongRegnNm();
+            if (ldongCodeDTO.getLDongSignguNm() != null && !ldongCodeDTO.getLDongSignguNm().isBlank()) {
+                rawName += " " + ldongCodeDTO.getLDongSignguNm();
+            }
+        } 
+        // 2. 법정동 목록조회 여부 - N(코드조회)일 때 엔티티 변환 넣는 처리는
+        else {
+            // 필드 1:1 매핑되니까 문제없음
+            rawCode = ldongCodeDTO.getCode();
+            rawName = ldongCodeDTO.getName();
+        }
+
+        // // 3. 위에서 완성된 rawCode, rawName을 Entity에 최종 세팅!
+        // if (rawCode != null && !rawCode.isBlank()) {
+        //     region.setRegionId(Long.parseLong(rawCode)); // ID 타입이 Long인 경우
+        // }
+        // region.setRegionName(rawName); // 👈 조합된 결과 전달
+        // 4. 추출한 String rawCode -> Long 타입의 regionId로 변환
+        Long regionId = (rawCode != null && !rawCode.isBlank()) ? Long.parseLong(rawCode) : null;
+
+        // 🎯 Setter 없이 생성자로 닫혀있는 순수한 RegionEntity 객체 한 번에 생성!
+        return new RegionEntity(regionId, rawName);
+    }
 
     /**
      * 외부 공공데이터를 수집하여 우리 DB(PLACE 테이블)에 적재하는 메인 파이프라인
@@ -116,35 +182,35 @@ public class TourApiService {
         log.info("=== [Batch] 공공데이터 수집 및 PLACE 적재 완료 ===");
     }
 
-    /**
-     * TourAreaBasedSyncListDTO -> TourItemDTO 변환 메서드
-     */
-    private TourItemDTO convertToTourItemDTO(TourAreaBasedSyncListDTO syncItem) {
-        TourItemDTO item = new TourItemDTO();
-        item.setContentid(syncItem.getContentid());
-        item.setContenttypeid(syncItem.getContenttypeid());
-        item.setCreatedtime(syncItem.getCreatedtime());
-        item.setModifiedtime(syncItem.getModifiedtime());
-        item.setTitle(syncItem.getTitle());
-        item.setAddr1(syncItem.getAddr1());
-        item.setAddr2(syncItem.getAddr2());
-        item.setFirstimage(syncItem.getFirstimage());
-        item.setFirstimage2(syncItem.getFirstimage2());
-        item.setCpyrhtDivCd(syncItem.getCpyrhtDivCd());
-        item.setMapx(syncItem.getMapx());
-        item.setMapy(syncItem.getMapy());
-        item.setMlevel(syncItem.getMlevel());
-        item.setTel(syncItem.getTel());
-        item.setZipcode(syncItem.getZipcode());
+    // /**
+    //  * TourAreaBasedSyncListDTO -> TourItemDTO 변환 메서드
+    //  */
+    // private TourItemDTO convertToTourItemDTO(TourAreaBasedSyncListDTO syncItem) {
+    //     TourItemDTO item = new TourItemDTO();
+    //     item.setContentid(syncItem.getContentid());
+    //     item.setContenttypeid(syncItem.getContenttypeid());
+    //     item.setCreatedtime(syncItem.getCreatedtime());
+    //     item.setModifiedtime(syncItem.getModifiedtime());
+    //     item.setTitle(syncItem.getTitle());
+    //     item.setAddr1(syncItem.getAddr1());
+    //     item.setAddr2(syncItem.getAddr2());
+    //     item.setFirstimage(syncItem.getFirstimage());
+    //     item.setFirstimage2(syncItem.getFirstimage2());
+    //     item.setCpyrhtDivCd(syncItem.getCpyrhtDivCd());
+    //     item.setMapx(syncItem.getMapx());
+    //     item.setMapy(syncItem.getMapy());
+    //     item.setMlevel(syncItem.getMlevel());
+    //     item.setTel(syncItem.getTel());
+    //     item.setZipcode(syncItem.getZipcode());
         
-        // 원본 DTO 소문자 lDong / lcls 필드 스펙에 맞춘 Getter 호출
-        item.setLDongRegnCd(syncItem.getLDongRegnCd());
-        item.setLDongSignguCd(syncItem.getLDongSignguCd());
-        item.setLclsSystm1(syncItem.getLclsSystm1());
-        item.setLclsSystm2(syncItem.getLclsSystm2());
-        item.setLclsSystm3(syncItem.getLclsSystm3());
-        return item;
-    }
+    //     // 원본 DTO 소문자 lDong / lcls 필드 스펙에 맞춘 Getter 호출
+    //     item.setLDongRegnCd(syncItem.getLDongRegnCd());
+    //     item.setLDongSignguCd(syncItem.getLDongSignguCd());
+    //     item.setLclsSystm1(syncItem.getLclsSystm1());
+    //     item.setLclsSystm2(syncItem.getLclsSystm2());
+    //     item.setLclsSystm3(syncItem.getLclsSystm3());
+    //     return item;
+    // }
 
     /**
      * 1:1 상세 API 연쇄 호출로 TourItemDTO의 상세 필드를 채우는 메서드

@@ -1,0 +1,499 @@
+/* ============================================================
+   community.css — 커뮤니티(게시판) 전용 스타일
+   ※ common.css 를 먼저 불러온 뒤 이 파일을 불러오세요.
+   (토큰·리셋·헤더·컨테이너는 common.css 에 있음)
+   ============================================================ */
+
+/* 헤더의 '로그인' 링크는 진한 글자색으로 override */
+.link-text { color: var(--foreground); }
+
+/* ---------- Page layout ---------- */
+.page { display: none; }
+.page.active { display: block; }
+
+.page-head { text-align: center; margin-bottom: 24px; }
+.page-head h1 { font-size: 24px; font-weight: bold; margin: 0 0 8px; }
+.page-head p { color: var(--muted-foreground); font-size: 14px; margin: 0; }
+
+.list-topbar { display: flex; justify-content: space-between; align-items: flex-start; }
+.write-btn {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--primary); color: #fff; border: none;
+  border-radius: 16px; padding: 10px 19px;
+  font-size: 14px; font-weight: bold; cursor: pointer;
+}
+
+/* ---------- Filter tabs ---------- */
+/* 카테고리 필터(.tabs)와 검색창(.search-wrap)을 한 줄에 배치하는 래퍼.
+   space-between 으로 카테고리는 왼쪽, 검색창은 오른쪽에 붙음.
+   padding-top 은 원래 .tabs 에 있던 걸 여기로 옮김 (topbar 와의 간격) */
+.list-filter-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 24px;
+  flex-wrap: wrap;
+}
+.tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+ 
+/* 카테고리 필터 버튼(selectableButton 재사용): 원본(selectableButton.css)은 건드리지 않고
+   .tabs 안에서만 더 작고 타원(pill)에 가깝게 override. .tab 클래스와 동일한 사이즈 톤으로 맞춤 */
+.tabs .btn-selectable {
+  padding: 7px 17px;
+  border-radius: 9999px;
+}
+.tabs .btn-selectable-text {
+  font-size: var(--text-sm);
+}
+.tab {
+  background: #fff; border: 1px solid var(--border);
+  border-radius: 9999px; padding: 7px 17px;
+  font-size: 14px; font-weight: bold; color: var(--muted-foreground); cursor: pointer;
+}
+.tab.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+/* ---------- Post table ---------- */
+.table { background: #fff; border: 1px solid var(--border); border-radius: 16px; margin-top: 24px; overflow: hidden; }
+.row {
+  display: grid;
+  /* 카테고리 칸: 기존 72px -> 108px
+     "방문자인증후기" / "모집(동행)" 처럼 길어진 라벨이 잘리지 않도록 확장 */
+  grid-template-columns: 108px 1fr 110px 110px 64px;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px;
+}
+.table-head { background: var(--secondary); padding: 12px 24px; }
+.table-head span { color: var(--muted-foreground); font-size: 12px; font-weight: bold; }
+.post-row { cursor: pointer; border-top: 1px solid var(--border); }
+.post-row:hover { background: var(--background); }
+
+.badge {
+  display: inline-block; border-radius: 9999px;
+  padding: 2px 8px; font-size: 12px; font-weight: bold; text-align: center;
+  justify-self: start;
+  white-space: nowrap; /* 라벨이 길어져도 줄바꿈되지 않게 */
+}
+.badge.review   { background: #D0FAE5; color: #007A55; }
+.badge.recruit  { background: #EDE9FE; color: #7008E7; }
+.badge.general  { background: #F1F5F9; color: #45556C; }
+.badge.verified { background: #DBEAFE; color: #1D4ED8; } /* 방문자인증후기 전용 색상 */
+
+.post-title { font-size: 16px; font-weight: bold; color: var(--foreground); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cell-muted { color: var(--muted-foreground); font-size: 14px; font-weight: bold; }
+.empty { padding: 48px; text-align: center; color: var(--muted-foreground); font-size: 14px; }
+
+/* ---------- Detail page ---------- */
+.back-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: var(--muted-foreground); font-size: 14px; font-weight: bold;
+  cursor: pointer; margin-bottom: 24px; border: none; background: none;
+}
+.detail-card {
+  background: #fff; border: 1px solid var(--border); border-radius: 16px;
+  padding: 33px; margin-bottom: 24px;
+}
+.detail-card h2 { font-size: 24px; font-weight: bold; margin: 12px 0 0; }
+.detail-meta { display: flex; gap: 16px; padding: 16px 0 24px; }
+.detail-meta span { display: inline-flex; align-items: center; gap: 6px; color: var(--muted-foreground); font-size: 14px; }
+.detail-body { font-size: 16px; line-height: 1.8; color: var(--foreground); white-space: pre-line; }
+
+/* 장소 태그: 사진 없이 이름만 링크처럼, 검은색이 아닌 강조색으로 눈에 띄게 */
+.place-tag { margin: 0 0 20px; }
+.place-tag-link {
+  color: var(--primary);
+  font-size: 14px;
+  font-weight: bold;
+  text-decoration: none;
+}
+.place-tag-link:hover { text-decoration: underline; }
+
+
+/* ---------- Comments ---------- */
+.comments { background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 24px 33px; }
+.comments-head { display: flex; align-items: center; gap: 8px; margin-bottom: 24px; }
+.comments-head .title { font-size: 18px; font-weight: bold; }
+.comments-head .count { color: var(--primary); font-size: 18px; font-weight: bold; }
+.comment { display: flex; gap: 11px; padding: 16px 0; border-top: 1px solid var(--border); }
+.comment:first-of-type { border-top: none; }
+.comment.reply { margin-left: 51px; }
+.avatar { width: 40px; height: 40px; border-radius: 9999px; background: #E2E8F0; flex-shrink: 0; }
+.avatar.sm { width: 28px; height: 28px; }
+.comment-head { display: flex; align-items: center; gap: 8px; }
+.comment-author { font-size: 14px; font-weight: bold; }
+.comment-date { color: var(--muted-foreground); font-size: 12px; }
+.comment-text { font-size: 14px; color: var(--foreground); margin: 4px 0 8px; }
+.reply-link { display: inline-flex; align-items: center; gap: 4px; color: var(--muted-foreground); font-size: 12px; font-weight: bold; cursor: pointer; }
+
+/* 댓글/답글 하단 액션 줄 (답글 달기 + 삭제를 한 줄에) */
+.comment-actions { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
+
+/* 댓글 삭제 버튼: 본인 댓글에만 노출, 클릭 시 확인창 없이 바로 삭제되는 폼 제출 버튼
+   (buttonComponent/smallButton 컴포넌트를 쓰지 않는 순수 button - reply-cancel-btn과 같은 톤) */
+.comment-delete-form { display: inline-flex; margin: 0; }
+.comment-delete-btn {
+  background: none;
+  border: none;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-weight: bold;
+  padding: 0;
+  cursor: pointer;
+}
+.comment-delete-btn:hover { color: #DC2626; }
+.comment-form { display: flex; gap: 11px; align-items: stretch; padding-top: 24px; border-top: 1px solid var(--border); margin-top: 8px; }
+.comment-form textarea {
+  flex: 1; border: 1px solid var(--border); border-radius: 16px;
+  padding: 13px 17px; font-size: 14px; font-family: inherit; resize: vertical;
+  min-height: 44px; outline: none;
+}
+
+/* 비로그인 안내 (문구 + smallButton 로그인하기 버튼), 가운데 정렬 */
+.comment-login { text-align: center; padding: 24px 0 8px; }
+.comment-login p {
+  color: var(--muted-foreground);
+  font-size: 14px;
+  margin: 0 0 12px;
+}
+
+/* 댓글 등록 버튼(smallButton.jsp 재사용, 실제 마크업은 button.btn-small-row > span.btn-small-text)을
+   .comment-form 안에서만 확대. 답글 등록 버튼(.reply-form-row 안의 동일 컴포넌트)은 원래 크기 그대로 둠.
+   위에서 .comment-form 을 align-items: stretch 로 바꿔서 textarea 높이만큼 버튼도 커지고,
+   여기서 좌우 padding/글자 크기만 살짝 키워 존재감을 더함 */
+.comment-form .btn-small-row {
+  padding: 0 28px;
+}
+.comment-form .btn-small-text {
+  font-size: 15px;
+}
+
+/* ---------- 게시글 첨부 이미지 갤러리 (post_image.sort_order 순으로 슬라이드) ---------- */
+.post-gallery {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--muted);
+  aspect-ratio: 16 / 9;
+  max-width: 480px;
+  max-height: 320px;
+  margin: 24px auto 0;
+}
+.post-gallery-track {
+  display: flex;
+  height: 100%;
+  transform: translateX(calc(var(--gallery-index, 0) * -100%));
+  transition: transform 300ms ease;
+}
+.post-gallery-slide { flex: 0 0 100%; height: 100%; }
+.post-gallery-slide img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.post-gallery-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px;
+  background: var(--card);
+  border: none;
+  border-radius: var(--radius-full);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.18);
+  cursor: pointer;
+}
+.post-gallery-arrow:hover { background: var(--muted); }
+.post-gallery-arrow-prev { left: 12px; }
+.post-gallery-arrow-next { right: 12px; }
+.post-gallery-arrow svg {
+  width: 18px; height: 18px;
+  fill: none; stroke: var(--foreground);
+  stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round;
+}
+
+.post-gallery-counter {
+  position: absolute;
+  right: 12px; bottom: 12px;
+  z-index: 1;
+  background: rgba(15, 23, 42, 0.6);
+  color: #fff;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-bold);
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .post-gallery-track { transition: none; }
+}
+
+/* ---------- 검색창 (list-filter-row 안에서 오른쪽 배치) ---------- */
+/* 카테고리 탭과 한 줄에 놓이므로 세로 margin은 없애고(간격은 .list-filter-row 의 gap이 담당),
+   고정폭(280px)을 줘서 flex 컨테이너 안에서 tabs 쪽으로 늘어나지 않게 함 */
+.search-wrap {
+  margin: 0;
+  width: 280px;
+  flex-shrink: 0;
+}
+
+.search-wrap .search-row-view {
+  width: 100%;
+  padding: 4px 8px 4px 20px;
+}
+.search-wrap .search-input {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+  padding: 8px 0;
+}
+.search-wrap .search-btn {
+  padding: 8px 20px;
+}
+
+/* ---------- 글쓰기/수정 폼 하단 버튼 (buttonComponent 재사용) ---------- */
+.form-actions { display: flex; gap: 8px; padding-top: 8px; }
+ 
+/* 취소/게시하기 버튼을 컨테이너 폭 기준 절반씩(50/50)으로 채움
+   ※ buttonComponent.jsp 의 inline style="width: auto"를 이겨야 하므로 !important 사용
+      (buttonComponent.jsp/css 는 수정 금지 규칙이라 CSS override로만 처리) */
+.btn-nav-wrap,
+.btn-submit-wrap { flex: 1 1 0; }
+ 
+.btn-nav-wrap .btn-main,
+.btn-submit-wrap .btn-main { width: 100% !important; }
+
+/* 취소 버튼: buttonComponent 를 흰 배경으로 쓸 때 글자색/테두리 보정
+   (color 파라미터로 배경만 var(--card) 로 바꿨을 뿐, 글자색은 컴포넌트 기본값이 흰색이라 되돌려야 함) */
+.btn-nav-wrap .btn-main { border: 1px solid var(--border); box-shadow: none; }
+.btn-nav-wrap .btn-main-text { color: var(--foreground); }
+.btn-nav-wrap .btn-main:hover { background: var(--muted) !important; }
+
+/* 답글 입력창 위치 (원댓글과 같은 들여쓰기)
+   max-width 로 전체 폭을 살짝 줄임 -> reply-input이 flex:1이라 자동으로 같이 좁아짐 */
+.reply-form { margin: 8px 0 8px 51px; max-width: 520px; }
+
+.reply-form-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.reply-input {
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  padding: 8px 16px;
+  font-size: var(--text-sm);
+  font-family: inherit;
+  outline: none;
+}
+
+.reply-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+
+/* 취소 버튼: 프로젝트 컴포넌트를 안 쓰는 순수 <button> 이라 여기서 직접 스타일링 */
+.reply-cancel-btn {
+  background: none;
+  border: none;
+  color: var(--muted-foreground);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+  padding: 8px 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.reply-cancel-btn:hover { color: var(--foreground); }
+
+/* ---------- 상세 페이지 수정/삭제 버튼 (smallButton 재사용) ---------- */
+.post-actions { display: flex; gap: 8px; }
+
+/* ---------- 폼 컨테이너 ---------- */
+.write-container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 48px 32px;
+}
+ 
+.page-title {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-weight-bold);
+  margin: 8px 0 32px;
+}
+ 
+/* ---------- 카테고리 카드 선택 (라디오 커스텀) ---------- */
+.category-group {
+  display: grid;
+  /* 카테고리가 3개 -> 4개(일반/모집/일반후기/방문자인증후기)로 늘어나면서 3열 -> 4열 */
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+/* write-container(max-width:720px) 안에서 4열이면 카드 폭이 좁아 설명 텍스트가
+   빡빡해질 수 있어, 좁은 화면에서는 2열로 줄여 가독성 확보 */
+@media (max-width: 640px) {
+  .category-group {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+ 
+/* 기본 라디오 동그라미는 숨기고 카드 전체를 클릭 영역으로 사용 */
+.category-group input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+ 
+.category-card {
+  display: block;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card);
+  padding: 16px;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+ 
+.category-card:hover {
+  border-color: var(--primary);
+}
+ 
+/* 선택된 카드 강조: 바로 앞 형제(sibling)인 input이 checked일 때 */
+.category-group input[type="radio"]:checked + .category-card {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+ 
+.cat-name {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--foreground);
+  margin-bottom: 4px;
+}
+ 
+.category-group input[type="radio"]:checked + .category-card .cat-name {
+  color: var(--primary);
+}
+ 
+.cat-desc {
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+}
+
+/* ---------- 글쓰기/수정 폼 필드 공통 (카테고리 제외 - 제목/내용/이미지 등) ---------- */
+.field {
+  margin-bottom: 24px;
+}
+
+.field-label {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--foreground);
+  margin-bottom: 8px;
+}
+
+.text-input,
+.text-area {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  font-size: var(--text-base);
+  font-family: inherit;
+  color: var(--foreground);
+  background: var(--card);
+  outline: none;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.text-input:focus,
+.text-area:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+
+.text-input::placeholder,
+.text-area::placeholder {
+  color: var(--muted-foreground);
+}
+
+.text-area {
+  resize: vertical;
+  min-height: 220px;
+  line-height: 1.6;
+}
+
+.image-upload-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  padding: 32px;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--muted-foreground);
+  cursor: pointer;
+  text-align: center;
+  transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.image-upload-box:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* 업로드된 이미지 미리보기 썸네일 목록 (imageUpload.js가 #preview 안에 동적으로 채움) */
+#preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+#preview img {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+}
+
+/* ---------- 장소 태그 필드 (write.jsp/edit.jsp, 방문자인증후기 전용) ---------- */
+.place-tag-open-btn {
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  background: none;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+.place-tag-open-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+.place-tag-selected {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--primary);
+  background: var(--primary-soft);
+  border-radius: 9999px;
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--primary);
+}
+.place-tag-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--primary);
+  font-size: 13px;
+  line-height: 1;
+  padding: 0;
+}

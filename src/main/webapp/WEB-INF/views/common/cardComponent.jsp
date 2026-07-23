@@ -10,6 +10,10 @@
 <c:set var="cardReviewCount" value="${empty param.reviewCount ? '0' : param.reviewCount}" />
 <c:set var="cardPrice" value="${empty param.price ? '정보 없음' : param.price}" />
 
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/tagButton.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/wishButton.css">
+
+
 <div class="card-col">
     <div class="card-full-width">
         <div class="card-header-bg" style="background-image: url('${cardImg}');">

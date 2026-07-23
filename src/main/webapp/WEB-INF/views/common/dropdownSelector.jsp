@@ -30,8 +30,6 @@ ex) "120px", "240px", "50%", "100%"
     <button type="button"
     id="dropTrigger_${dropdownId}"
     class="drop-select-trigger ${not empty selectedValue ? 'is-selected' : ''}"
-    data-bs-toggle="dropdown"
-    data-bs-display="static"
     aria-expanded="false">
 
     <div class="drop-select-left-box">

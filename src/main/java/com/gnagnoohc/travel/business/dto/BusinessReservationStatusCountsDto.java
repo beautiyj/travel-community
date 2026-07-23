@@ -6,7 +6,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class BusinessReservationStatusCountsDto {
-    private Integer pendingCount;
+    private Integer cancelRequestCount;
     private Integer confirmedCount;
     private Integer doneCount;
     private Integer cancelledCount;

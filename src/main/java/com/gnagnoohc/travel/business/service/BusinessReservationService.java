@@ -3,6 +3,8 @@ package com.gnagnoohc.travel.business.service;
 import com.gnagnoohc.travel.business.dto.BusinessReservationDto;
 import com.gnagnoohc.travel.business.dto.BusinessReservationStatusCountsDto;
 import com.gnagnoohc.travel.business.mapper.BusinessMapper;
+import com.gnagnoohc.travel.reservation.service.PaymentService;
+import com.gnagnoohc.travel.reservation.service.ReservationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +15,8 @@ import java.util.List;
 public class BusinessReservationService {
 
     private final BusinessMapper businessMapper;
+    private final ReservationService reservationService;
+    private final PaymentService paymentService;
 
     public List<BusinessReservationDto> getReservations(Long placeId, Long bizMemberId, String status) {
         return businessMapper.selectReservationsByPlace(placeId, bizMemberId, status);
@@ -22,17 +26,20 @@ public class BusinessReservationService {
         return businessMapper.selectReservationStatusCounts(placeId, bizMemberId);
     }
 
-    public void accept(Long reservationId, Long bizMemberId) {
-        changeStatus(reservationId, bizMemberId, "확정");
+    /** 취소 요청 승인 → 카카오 환불 실행 + CANCELED 전환 (예약 파트 소유 로직, 여기서는 소유자 확인만 담당) */
+    public void approveCancel(Long reservationId, Long bizMemberId) {
+        requireOwner(reservationId, bizMemberId);
+        paymentService.approveCancel(reservationId);
     }
 
-    public void reject(Long reservationId, Long bizMemberId) {
-        changeStatus(reservationId, bizMemberId, "취소");
+    /** 취소 요청 거절 → PAID 원복 (예약 파트 소유 로직, 여기서는 소유자 확인만 담당) */
+    public void rejectCancel(Long reservationId, Long bizMemberId) {
+        requireOwner(reservationId, bizMemberId);
+        reservationService.rejectCancel(reservationId);
     }
 
-    private void changeStatus(Long reservationId, Long bizMemberId, String status) {
-        int updated = businessMapper.updateReservationStatus(reservationId, bizMemberId, status);
-        if (updated == 0) {
+    private void requireOwner(Long reservationId, Long bizMemberId) {
+        if (!businessMapper.existsReservationForBizMember(reservationId, bizMemberId)) {
             throw new IllegalArgumentException("해당 예약이 없거나 처리 권한이 없습니다.");
         }
     }

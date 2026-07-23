@@ -134,79 +134,101 @@ a {
 } /* ── 상단 헤더 / 내비게이션 ── */
 
 .header-inner {
-  max-width: 1200px;
   margin: 0 auto;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 14px 32px;
+  height: 64px;
+  padding: 0 26px;
 }
 
-.brand { 
-  display: flex; 
-  align-items: center; 
-  gap: 8px; 
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .brand .logo {
-  width: 32px; 
-  height: 32px; 
+  width: 32px;
+  height: 32px;
   border-radius: 8px;
   background: var(--primary);
-  display: flex; 
-  align-items: center; 
+  display: flex;
+  align-items: center;
   justify-content: center;
-  color: var(--primary-foreground); 
-  font-weight: var(--font-weight-bold); 
+  color: var(--primary-foreground);
+  font-weight: var(--font-weight-bold);
   font-size: var(--text-base);
 }
 
-.brand .name { 
-  color: var(--primary); 
-  font-size: var(--text-xl); 
-  font-weight: var(--font-weight-bold); 
+.brand .name {
+  color: var(--primary);
+  font-size: var(--text-xl);
+  font-weight: var(--font-weight-bold);
 }
 
-.nav { 
-  display: flex; 
-  align-items: center; 
-  gap: 24px; 
+.nav {
+  padding:0 20px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
 }
 
-.nav a { 
-  color: var(--muted-foreground); 
-  font-size: var(--text-sm); 
-  font-weight: var(--font-weight-bold); 
-  cursor: pointer; 
+.nav a {
+  color: var(--muted-foreground);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
 }
 
-.nav a:hover { 
-  color: var(--primary); 
+.nav a:hover {
+  color: var(--primary);
 }
 
-.header-actions { 
-  display: flex; 
-  align-items: center; 
-  gap: 12px; 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .region-btn {
-  display: flex; 
-  align-items: center; 
+  display: flex;
+  align-items: center;
   gap: 6px;
-  background: none; 
-  border: 1px solid var(--border); 
+  background: none;
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  padding: 7px 13px; 
-  font-size: var(--text-sm); 
-  font-weight: var(--font-weight-bold); 
+  padding: 6px 12px;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
   color: var(--foreground);
   cursor: pointer;
 }
 
-.link-text { 
-  color: var(--muted-foreground); 
-  font-size: var(--text-sm); 
-  font-weight: var(--font-weight-bold); 
-  cursor: pointer; 
+.link-text {
+  color: var(--muted-foreground);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
 } /* 헤더 텍스트 링크 (기본: 흐린 글자). 페이지별로 색 override 가능 */
+
+/* 회원가입버튼 컴포넌트 수정*/
+.header .btn-main {
+  padding: 8px 16px;
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+/*헤더부분*/
+.header .drop-select-trigger {
+  padding: 6px 12px;
+}
+
+.header .drop-select-text {
+  font-size: 13px;
+}
+
+.header .drop-menu-item.dropdown-item {
+  padding: 6px 10px !important;
+  font-size: 13px;
+}

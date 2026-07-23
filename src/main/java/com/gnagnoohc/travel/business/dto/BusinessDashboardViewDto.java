@@ -21,4 +21,5 @@ public class BusinessDashboardViewDto {
     private Integer pendingCount;
     private Integer todayVisitors;
     private Integer cancelRequestCount;
+    private BusinessReviewSentimentCountsDto reviewSentiment;
 }

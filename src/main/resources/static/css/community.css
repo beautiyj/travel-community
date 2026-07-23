@@ -121,9 +121,13 @@
   padding: 13px 17px; font-size: 14px; font-family: inherit; resize: vertical;
   min-height: 44px; outline: none;
 }
-/* 등록 버튼은 이제 smallButton.jsp 가 그림 (smallButton.css 가 겉모습 담당)
-   ※ ".comment-form button" 처럼 태그 선택자를 남겨두면 .btn-small-row 보다
-     명시도(specificity)가 높아서 smallButton 의 스타일을 덮어써버리므로 삭제함 */
+/* 등록 버튼은 smallButton.jsp로 전환 예정 (smallButton.css가 겉모습 담당).
+   ※ community/detail.jsp가 아직 raw <button>을 그대로 쓰고 있어서, 전환 전까지는
+     기존 규칙을 유지 (지우면 등록 버튼이 스타일 없이 노출됨) */
+.comment-form button {
+  background: var(--primary); color: #fff; border: none; border-radius: 12px;
+  padding: 12px 20px; font-size: 14px; font-weight: bold; cursor: pointer;
+}
 
 /* ---------- 게시글 첨부 이미지 갤러리 (post_image.sort_order 순으로 슬라이드) ---------- */
 .post-gallery {

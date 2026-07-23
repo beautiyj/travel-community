@@ -27,6 +27,12 @@ public class TourApiService {
     private final ObjectMapper objectMapper;
 
     /**
+     * TODO: TourApiService 로직 미완성, batch->place 과정 확인 필요
+     * 외부 공공데이터를 수집하여 우리 DB(PLACE 테이블)에 적재하는 메인 파이프라인 0723 11:25 미완성
+     */
+
+
+    /**
      * 외부 공공데이터를 수집하여 우리 DB(PLACE 테이블)에 적재하는 메인 파이프라인
      */
     @Transactional

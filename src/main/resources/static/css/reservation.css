@@ -30,6 +30,20 @@
 .place-card .name { font-weight: var(--font-weight-bold); }
 .place-card .desc { font-size: var(--text-sm); color: var(--muted-foreground); }
 
+/* ---------- 연락처 형식 오류 메시지 (reservation-form.js가 표시 토글) ---------- */
+.field-error {
+    display: none;
+    margin: -14px 0 20px;
+    font-size: var(--text-sm);
+    color: var(--danger, #d92d20);
+}
+.input-field input.input-invalid {
+    border-color: var(--danger, #d92d20);
+}
+.input-field input.input-invalid:focus {
+    box-shadow: 0 0 0 3px rgba(217, 45, 32, 0.15);
+}
+
 /* ---------- 폼 필드 (날짜·인원 등 특수 필드용. 기본 입력창은 inputField 컴포넌트 사용) ---------- */
 .field { margin-bottom: 20px; }
 .field > label { display: block; font-size: var(--text-sm); font-weight: var(--font-weight-bold); margin-bottom: 8px; }

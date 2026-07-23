@@ -14,16 +14,14 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class GoogleMailService {
 
-	// SMTP 발신 계정
-	// Google SMTP 계정은 코드에 직접 넣지 않고 spring.mail.username으로 주입한다.
 	private final JavaMailSender mailSender;
 
+	// 발신 주소는 코드에 직접 넣지 않고 메일 설정에서 가져온다.
 	@Value("${spring.mail.username}")
 	private String fromAddress;
 
 	// 인증번호 이메일 발송
-	// 인증번호 메일의 제목과 본문을 만들고 SMTP 서버로 발송한다.
-	// 발신 주소는 클라이언트 입력을 받지 않아 다른 주소로 위조할 수 없게 한다.
+	// 설정된 발신 주소로 인증번호와 유효 시간을 안내한다.
 	public void sendVerificationCode(String recipient, String verificationCode) {
 		SimpleMailMessage message = new SimpleMailMessage();
 		message.setFrom(fromAddress);
@@ -36,7 +34,7 @@ public class GoogleMailService {
 		);
 
 		try {
-			// MailException을 서비스 예외로 변환해 호출자가 SMTP 내부 정보를 직접 보지 않게 한다.
+			// SMTP 오류의 상세 내용은 숨기고 사용자가 이해할 수 있는 예외로 바꾼다.
 			mailSender.send(message);
 		} catch (MailException e) {
 			throw new EmailVerificationException("인증 메일을 발송하지 못했습니다.", e);

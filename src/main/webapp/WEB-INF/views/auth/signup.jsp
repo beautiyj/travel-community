@@ -16,6 +16,14 @@
         <p>가입할 회원 유형을 먼저 선택해주세요.</p>
     </header>
 
+    <%-- 공통 소셜 로그인 컴포넌트 적용 전까지 카카오 가입 진입점만 임시로 제공한다. --%>
+    <section class="social-login-section" aria-label="소셜 회원가입">
+        <a class="social-login-button social-login-button--kakao"
+           href="${pageContext.request.contextPath}/auth/kakao">카카오로 가입</a>
+        <button class="social-login-button social-login-button--google" type="button" disabled>구글 가입 (준비 중)</button>
+        <button class="social-login-button social-login-button--naver" type="button" disabled>네이버 가입 (준비 중)</button>
+    </section>
+
     <div class="signup-type-list">
         <a class="signup-type-option" href="${pageContext.request.contextPath}/auth/signup/user">
             <span class="signup-type-icon" aria-hidden="true">✈</span>

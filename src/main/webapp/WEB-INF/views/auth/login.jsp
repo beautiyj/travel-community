@@ -18,15 +18,28 @@
         <p>여행 이야기를 계속 만나보세요.</p>
     </header>
 
-    <c:if test="${param.error != null}">
-        <div class="form-alert form-alert--error" role="alert">
-            아이디 또는 비밀번호가 일치하지 않습니다.
-        </div>
-    </c:if>
+    <c:choose>
+        <c:when test="${param.locked != null}">
+            <div class="form-alert form-alert--error" role="alert">
+                비밀번호 입력을 5회 연속 실패하여 로그인이 제한되었습니다. 잠금 시작 후 5분 뒤 다시 시도해주세요.
+            </div>
+        </c:when>
+        <c:when test="${param.error != null}">
+            <div class="form-alert form-alert--error" role="alert">
+                아이디 또는 비밀번호가 일치하지 않습니다. 같은 아이디에서 비밀번호를 5회 연속 잘못 입력하면 5분 동안 로그인이 제한됩니다.
+            </div>
+        </c:when>
+    </c:choose>
 
     <c:if test="${param.logout != null}">
         <div class="form-alert form-alert--success" role="status">
             로그아웃되었습니다.
+        </div>
+    </c:if>
+
+    <c:if test="${param.passwordReset != null}">
+        <div class="form-alert form-alert--success" role="status">
+            비밀번호가 변경되었습니다. 새 비밀번호로 로그인해주세요.
         </div>
     </c:if>
 
@@ -35,26 +48,41 @@
             <label for="username">아이디</label>
             <input id="username" name="username" type="text" autocomplete="username"
                    maxlength="20" placeholder="아이디를 입력하세요" required autofocus>
-            <p id="usernameError" class="field-error" aria-live="polite"></p>
+            <p id="usernameError" class="field-error" aria-live="polite">${usernameError}</p>
         </div>
 
         <div class="form-field">
             <label for="password">비밀번호</label>
             <div class="password-field">
                 <input id="password" name="password" type="password" autocomplete="current-password"
-                       maxlength="64" placeholder="비밀번호를 입력하세요" required>
+                       maxlength="20" placeholder="비밀번호를 입력하세요" required>
                 <button id="togglePassword" class="text-button" type="button" aria-label="비밀번호 표시">보기</button>
             </div>
-            <p id="passwordError" class="field-error" aria-live="polite"></p>
+            <p id="passwordError" class="field-error" aria-live="polite">${passwordError}</p>
         </div>
 
         <button class="primary-button" type="submit">로그인</button>
     </form>
 
+    <%-- 공통 소셜 로그인 컴포넌트 적용 전까지 우선순위만 맞춰 임시로 노출한다. --%>
+    <section class="social-login-section" aria-label="소셜 로그인">
+        <div class="social-login-divider"><span>또는</span></div>
+        <a class="social-login-button social-login-button--kakao"
+           href="${pageContext.request.contextPath}/auth/kakao">카카오로 로그인</a>
+        <button class="social-login-button social-login-button--google" type="button" disabled>구글 로그인 (준비 중)</button>
+        <button class="social-login-button social-login-button--naver" type="button" disabled>네이버 로그인 (준비 중)</button>
+    </section>
+
+    <c:if test="${not empty kakaoError}">
+        <div class="form-alert form-alert--error" role="alert">
+            <c:out value="${kakaoError}" />
+        </div>
+    </c:if>
+
     <div class="auth-links">
-        <a href="#">아이디 찾기</a>
+        <a href="${pageContext.request.contextPath}/auth/find-id">아이디 찾기</a>
         <span aria-hidden="true">|</span>
-        <a href="#">비밀번호 찾기</a>
+        <a href="${pageContext.request.contextPath}/auth/find-password">비밀번호 찾기</a>
     </div>
 
     <p class="auth-switch">

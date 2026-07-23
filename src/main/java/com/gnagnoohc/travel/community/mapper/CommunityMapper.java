@@ -30,4 +30,7 @@ public interface CommunityMapper {
 
 	// 장소 태그: 이름으로 장소 검색 (방문자인증후기 글쓰기/수정 시 검색 모달에서 사용)
 	List<Map<String, Object>> searchPlaces(String keyword);
+
+	// 댓글 권한 체크용: 게시글에 태그된 place의 소유주 member_id (place 미태그 글이면 null)
+	Integer selectPlaceOwnerId(int postId);
 }

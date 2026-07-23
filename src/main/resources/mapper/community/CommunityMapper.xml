@@ -21,10 +21,11 @@
     	order by p.post_id desc
 	</select>
 	
-	<!-- 단건 조회 (place 테이블 LEFT JOIN: place_id가 NULL인 글도 조회되어야 하므로 LEFT JOIN 사용) -->
+	<!-- 단건 조회 (place 테이블 LEFT JOIN: place_id가 NULL인 글도 조회되어야 하므로 LEFT JOIN 사용)
+	     ※ place 상호명 컬럼은 title (기존 pl.name 참조는 스키마와 안 맞아서 수정함) -->
 	<select id="selectOne" parameterType="int" resultType="community"> 
 		select p.post_id, p.member_id, p.place_id, p.title, p.content, p.created_at, p.updated_at, p.readcount, 
-		p.category, m.nickname as nickname, pl.name as placeName
+		p.category, m.nickname as nickname, pl.title as placeName
 		from post p 
 		join member m on p.member_id = m.member_id 
 		left join place pl on p.place_id = pl.place_id
@@ -68,16 +69,29 @@
 	</select>
 	
 	<!-- ── 댓글 (comment 테이블) ── -->
-	<!-- 게시글의 댓글 목록 (작성자 이름 join) -->
+	<!-- 게시글의 댓글 목록
+	     - 작성자 이름: 기본은 member.nickname, 단 댓글 작성자가 그 게시글에 태그된 place의 소유주(사장님)면
+	       "업체명(title)+사장"으로 오버라이드
+	     - owner_comment: 사장님 댓글 여부 (화면 뱃지 표시용)
+	     - 정렬: 원댓글 중 사장님 댓글을 맨 위로 고정, 그 다음 나머지 원댓글은 comment_id asc,
+	       각 원댓글에 딸린 대댓글은 그 뒤로 comment_id asc
+	       (대댓글 그룹핑은 detail.jsp에서 parentId로 다시 필터링하므로,
+	        여기서는 원댓글들의 상대 순서만 정확하면 됨) -->
 	<select id="selectComments" parameterType="int" resultType="comment">
 		select c.comment_id, c.content, c.depth, c.created_at, c.updated_at,
-		c.parent_id, c.post_id, c.member_id, m.nickname as member_name 
-		from comment c join member m on c.member_id = m.member_id 
-		where c.post_id = #{postId} 
-		order by coalesce(c.parent_id, c.comment_id) asc,
-		<!-- 원댓글 기준 묶기 -->
+		c.parent_id, c.post_id, c.member_id,
+		case when pl.member_id = c.member_id then concat(pl.title, '사장')
+		     else m.nickname end as member_name,
+		case when pl.member_id = c.member_id then 1 else 0 end as owner_comment
+		from comment c
+		join member m on c.member_id = m.member_id
+		join post p on c.post_id = p.post_id
+		left join place pl on p.place_id = pl.place_id
+		where c.post_id = #{postId}
+		order by
+		case when c.parent_id is null and pl.member_id = c.member_id then 0 else 1 end,
+		coalesce(c.parent_id, c.comment_id) asc,
 		c.parent_id is not null,
-		<!-- 원댓글 먼저, 대댓글 뒤 -->
 		c.comment_id asc
 	</select>
 	
@@ -107,12 +121,21 @@
 	<!-- ── 장소 태그 (place 테이블) ── -->
 	<!-- 이름으로 장소 검색 (방문자인증후기 글쓰기/수정 시 태그할 장소 찾기용)
 	     ※ place 테이블이 다른 팀원 담당 모듈에 이미 검색 쿼리가 있다면 그쪽으로 옮기는 게 맞음.
-	        지금은 커뮤니티 쪽에서 바로 쓸 수 있게 여기에 추가함 -->
+	        지금은 커뮤니티 쪽에서 바로 쓸 수 있게 여기에 추가함
+	     ※ place 상호명 컬럼은 title (기존 name 컬럼 참조는 스키마와 안 맞아서 수정함) -->
 	<select id="searchPlaces" parameterType="string" resultType="map">
-		select place_id as placeId, name as name, place_type as placeType
+		select place_id as placeId, title as name, place_type as placeType
 		from place
-		where name like concat('%', #{keyword}, '%')
-		order by name asc
+		where title like concat('%', #{keyword}, '%')
+		order by title asc
 		limit 10
+	</select>
+
+	<!-- 댓글 권한 체크용: 게시글에 태그된 place의 소유주 member_id (place 미태그 글이면 결과 없음 → null) -->
+	<select id="selectPlaceOwnerId" parameterType="int" resultType="int">
+		select pl.member_id
+		from post p
+		join place pl on p.place_id = pl.place_id
+		where p.post_id = #{postId}
 	</select>
 </mapper>

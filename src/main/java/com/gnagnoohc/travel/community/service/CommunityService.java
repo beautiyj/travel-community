@@ -73,5 +73,10 @@ public class CommunityService {
 	public List<Map<String, Object>> searchPlaces(String keyword) {
 		return dao.searchPlaces(keyword);
 	}
-	
+
+	// 댓글 권한 체크용: 게시글에 태그된 place의 소유주 member_id (place 미태그 글이면 null)
+	public Integer selectPlaceOwnerId(int postId) {
+		return dao.selectPlaceOwnerId(postId);
+	}
+
 }

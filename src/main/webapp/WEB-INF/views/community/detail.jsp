@@ -138,6 +138,10 @@
               <div>
                 <div class="comment-head">
                   <span class="comment-author">${comment.memberName}</span>
+                  <%-- 업소 사장님이 자신의 사업장 리뷰에 남긴 댓글이면 뱃지 표시 --%>
+                  <c:if test="${comment.ownerComment}">
+                    <span class="badge-owner">사장님</span>
+                  </c:if>
                   <span class="comment-date">
                     <fmt:formatDate value="${comment.createdAt}" pattern="yyyy-MM-dd HH:mm" />
                   </span>
@@ -190,6 +194,10 @@
                   <div>
                     <div class="comment-head">
                       <span class="comment-author">${reply.memberName}</span>
+                      <%-- 업소 사장님이 자신의 사업장 리뷰에 남긴 대댓글이면 뱃지 표시 --%>
+                      <c:if test="${reply.ownerComment}">
+                        <span class="badge-owner">사장님</span>
+                      </c:if>
                       <span class="comment-date">
                         <fmt:formatDate value="${reply.createdAt}" pattern="yyyy-MM-dd HH:mm" />
                       </span>
@@ -260,8 +268,27 @@
   </jsp:include>
 </c:if>
 
+<!-- ───────── 댓글 권한 없음 안내 모달 ─────────
+     사장님(business)이 본인 소유가 아닌 업소 리뷰에 댓글을 시도하면
+     CommentController가 ?commentDenied=true 를 붙여 이 페이지로 되돌려보냄 -->
+<c:if test="${param.commentDenied == 'true'}">
+  <jsp:include page="../common/confirmModal.jsp">
+    <jsp:param name="modalId"     value="commentDeniedModal" />
+    <jsp:param name="action"      value="/community/detail" />
+    <jsp:param name="method"      value="get" />
+    <jsp:param name="tone"        value="primary" />
+    <jsp:param name="title"       value="댓글 작성 불가" />
+    <jsp:param name="message"     value="본인 업소의 리뷰 게시글에만 댓글을 남길 수 있습니다." />
+    <jsp:param name="confirmText" value="확인" />
+    <jsp:param name="cancelText"  value="닫기" />
+    <jsp:param name="hiddenName"  value="postId" />
+    <jsp:param name="hiddenValue" value="${post.postId}" />
+  </jsp:include>
+</c:if>
+
 
 <script src="${cp}/js/common.js"></script>
 <script src="${cp}/js/community/postDetail.js"></script>
+<script src="${cp}/js/community/commentDeniedModal.js"></script>
 </body>
 </html>

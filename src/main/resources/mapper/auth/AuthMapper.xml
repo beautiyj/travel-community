@@ -95,9 +95,9 @@
 		<result column="expires_at" property="expiresAt"/>
 		<result column="verified_at" property="verifiedAt"/>
 		<result column="attempt_count" property="attemptCount"/>
-		<result column="resend_count" property="resendCount"/>
 		<result column="created_at" property="createdAt"/>
 		<result column="member_id" property="memberId"/>
+		<result column="request_ip" property="requestIp"/>
 		<result column="consumed_at" property="consumedAt"/>
 	</resultMap>
 
@@ -140,16 +140,25 @@
 		where created_at &gt;= date_sub(now(), interval 1 day)
 	</select>
 
+	<!-- 서버가 확인한 동일 IP의 최근 24시간 발송 횟수를 조회한다. -->
+	<select id="countEmailVerificationRequestsByIpInLastDay" resultType="int">
+		select count(*)
+		from email_verification
+		where request_ip = #{requestIp}
+			and created_at &gt;= date_sub(now(), interval 1 day)
+	</select>
+
 	<!-- 인증번호 해시와 만료 시각 저장 -->
 	<insert id="insertEmailVerification" parameterType="emailverification"
 		useGeneratedKeys="true" keyProperty="emailVerificationId"
 		keyColumn="email_verification_id">
 		insert into email_verification(
 			email, purpose, code_hash, expires_at, attempt_count,
-			resend_count, member_id
+			member_id, request_ip
 		)
 		values(
-			#{email}, #{purpose}, #{codeHash}, #{expiresAt}, 0, 0, #{memberId}
+			#{email}, #{purpose}, #{codeHash}, #{expiresAt}, 0,
+			#{memberId}, #{requestIp}
 		)
 	</insert>
 
@@ -180,17 +189,20 @@
 			and purpose = #{purpose}
 			and verified_at is not null
 			and member_id is null
+			and consumed_at is null
 		for update
 	</select>
 
-	<!-- 인증 행에 회원 ID를 기록해 다시 사용할 수 없게 한다. -->
+	<!-- 회원 ID와 소비 시각을 함께 기록해 같은 가입 인증을 다시 사용할 수 없게 한다. -->
 	<update id="consumeSignupEmailVerification">
 		update email_verification
-		set member_id = #{memberId}
+		set member_id = #{memberId},
+			consumed_at = now()
 		where email_verification_id = #{emailVerificationId}
 			and purpose = 'SIGNUP'
 			and verified_at is not null
 			and member_id is null
+			and consumed_at is null
 	</update>
 
 	<!-- 아이디·이메일이 일치하는 활성 로컬 로그인 회원만 비밀번호 재설정 대상으로 찾는다. -->

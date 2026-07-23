@@ -25,7 +25,7 @@
         </p>
     </header>
 
-    <%-- 회원가입 POST 경로에 컨텍스트 경로를 반영한다. --%>
+    <%-- 배포 경로가 달라져도 회원가입 요청이 현재 애플리케이션으로 전달되게 한다. --%>
     <form id="signupForm" method="post" enctype="multipart/form-data" novalidate
           action="${pageContext.request.contextPath}/auth/membersignup">
         <input type="hidden" name="memberType" value="${memberType}">
@@ -38,7 +38,8 @@
 
         <div class="form-field">
             <label for="name">이름</label>
-            <input id="name" name="name" type="text" maxlength="50"
+            <%-- DB member.name VARCHAR(20)과 동일하게 브라우저 입력 길이를 제한한다. --%>
+            <input id="name" name="name" type="text" maxlength="20"
                    autocomplete="name" placeholder="실명을 입력하세요" required>
             <p id="nameError" class="field-error" aria-live="polite"></p>
         </div>
@@ -56,7 +57,7 @@
 
         <div class="form-field">
             <label for="password">비밀번호</label>
-            <%-- 프론트 검증 및 SignUpRequest의 비밀번호 정책과 동일하게 최대 20자로 제한한다. --%>
+            <%-- 서버와 같은 비밀번호 길이 제한을 적용한다. --%>
             <input id="password" name="password" type="password" maxlength="20"
                    autocomplete="new-password" placeholder="영문과 숫자를 포함한 8자 이상 20자 이하" required>
             <p id="passwordError" class="field-error" aria-live="polite"></p>
@@ -91,22 +92,12 @@
             <p id="verificationCodeError" class="field-error" aria-live="polite"></p>
         </div>
 
-        <%-- TODO: 사업자 승인 기능 추가 시 사업자등록증 업로드 기능 구현 예정
-        <c:if test="${businessMember}">
-            <div id="businessField" class="form-field">
-                <label for="businessRegistrationFile">사업자등록증</label>
-                <input id="businessRegistrationFile" name="businessRegistrationFile" type="file"
-                       accept=".jpg,.jpeg,.png,.pdf" required>
-                <p class="field-help">JPG, PNG 또는 PDF 파일을 첨부해주세요.</p>
-                <p id="businessRegistrationFileError" class="field-error" aria-live="polite"></p>
-            </div>
-        </c:if>
-        --%>
+        <%-- TODO 사업자 승인 기능을 추가할 때 사업자등록증 업로드 항목을 구현한다. --%>
 
         <div class="form-field">
             <label for="nickname">닉네임</label>
             <div class="input-action-row">
-                <%-- 닉네임 정책(2~10자)에 맞춰 브라우저 입력 길이를 제한한다. --%>
+                <%-- 서버의 닉네임 정책과 같은 최대 길이를 브라우저에도 적용한다. --%>
                 <input id="nickname" name="nickname" type="text" maxlength="10"
                        placeholder="2~10자로 입력하세요" required>
                 <button id="checkNicknameButton" class="secondary-button" type="button">중복 확인</button>

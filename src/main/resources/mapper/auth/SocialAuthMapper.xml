@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gnagnoohc.travel.auth.mapper.SocialAuthMapper">
+
+    <!-- 상태가 정지·탈퇴여도 신규 회원으로 오인하지 않도록 먼저 회원 자체를 조회한다. -->
+    <select id="findMemberBySocialIdentity" resultType="member">
+        select member_info.member_id AS memberId,
+            member_info.name AS name,
+            member_info.login_id AS loginId,
+            member_info.email AS email,
+            member_info.nickname AS nickname,
+            member_info.member_type AS memberType,
+            member_info.profile_img_url AS profileImgUrl,
+            member_info.signup_type AS signupType,
+            member_info.member_status AS memberStatus,
+            member_info.member_role AS memberRole,
+            member_info.email_verified AS emailVerified,
+            member_info.last_login_at AS lastLoginAt,
+            member_info.deleted_at AS deletedAt
+        from member_social_auth social_auth
+        inner join member member_info
+            on member_info.member_id = social_auth.member_id
+        where social_auth.provider = #{provider}
+            and social_auth.provider_user_id = #{providerUserId}
+    </select>
+
+    <!-- 소셜 회원의 공통 정보를 저장하고 생성된 member_id를 같은 객체에 반환한다. -->
+    <insert id="insertSocialMember" parameterType="member"
+        useGeneratedKeys="true" keyProperty="memberId" keyColumn="member_id">
+        insert into member(
+            name, login_id, email, nickname, member_type, profile_img_url,
+            signup_type, member_status, member_role, email_verified,
+            email_verified_at, last_login_at
+        )
+        values(
+            #{name}, #{loginId}, #{email}, #{nickname}, #{memberType}, #{profileImgUrl},
+            #{signupType}, #{memberStatus}, #{memberRole}, #{emailVerified},
+            #{emailVerifiedAt}, now()
+        )
+    </insert>
+
+    <!-- 외부 제공 정보는 인증용 원본과 표시용 복사본을 분리해 저장한다. -->
+    <insert id="insertSocialAuth" parameterType="membersocialauth"
+        useGeneratedKeys="true" keyProperty="socialAuthId" keyColumn="social_auth_id">
+        insert into member_social_auth(
+            provider, provider_user_id, provider_email,
+            provider_email_verified_yn, provider_name, provider_nickname,
+            provider_profile_image_url, last_login_at, member_id
+        )
+        values(
+            #{provider}, #{providerUserId}, #{providerEmail},
+            #{providerEmailVerifiedYn}, #{providerName}, #{providerNickname},
+            #{providerProfileImageUrl}, now(), #{memberId}
+        )
+    </insert>
+
+    <update id="updateSocialLastLogin">
+        update member_social_auth
+        set last_login_at = now()
+        where provider = #{provider}
+            and provider_user_id = #{providerUserId}
+    </update>
+
+    <update id="updateMemberLastLogin">
+        update member
+        set last_login_at = now()
+        where member_id = #{memberId}
+            and member_status = 'ACTIVE'
+            and deleted_at is null
+    </update>
+
+</mapper>

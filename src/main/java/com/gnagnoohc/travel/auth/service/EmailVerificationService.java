@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.gnagnoohc.travel.auth.dto.VerifiedSignupEmail;
+import com.gnagnoohc.travel.auth.dto.VerifiedPasswordReset;
 import com.gnagnoohc.travel.auth.exception.EmailVerificationException;
 import com.gnagnoohc.travel.auth.mapper.AuthMapper;
 import com.gnagnoohc.travel.auth.model.EmailVerification;
@@ -26,15 +27,16 @@ public class EmailVerificationService {
 	// 이메일 인증 정책
 	// 인증 목적을 분리해 추후 비밀번호 찾기 등의 인증 용도와 섞이지 않게 한다.
 	private static final String SIGNUP_PURPOSE = "SIGNUP";
+	private static final String FIND_PASSWORD_PURPOSE = "FIND_PASSWORD";
 	// 인증번호 수명, 재발송 간격, 시도/발송 제한은 정책값으로 한 곳에서 관리한다.
 	private static final Duration CODE_VALIDITY = Duration.ofMinutes(5);
 	private static final Duration RESEND_COOLDOWN = Duration.ofSeconds(60);
 	private static final Duration VERIFIED_VALIDITY = Duration.ofMinutes(30);
 	private static final int MAX_SENDS_PER_EMAIL_PER_DAY = 5;
+	private static final int MAX_SENDS_PER_IP_PER_DAY = 20;
 	private static final int MAX_SENDS_PER_DAY = 300;
 	private static final int MAX_VERIFICATION_ATTEMPTS = 5;
 
-	// 의존성
 	// 매퍼는 인증 상태를 DB에 저장하고, 메일 서비스는 SMTP 발송만 담당한다.
 	private final AuthMapper mapper;
 	private final GoogleMailService googleMailService;
@@ -43,55 +45,60 @@ public class EmailVerificationService {
 
 	// 인증번호 발송
 	@Transactional
-	public void sendSignupVerificationCode(String rawEmail) {
-		// 이메일 형식을 확인하고 도메인 부분을 소문자로 통일한다.
+	public void sendSignupVerificationCode(String rawEmail, String rawRequestIp) {
 		String email = normalizeAndValidateEmail(rawEmail);
-		Instant now = Instant.now();
-
-		// 최신 발송 기록을 잠근 뒤 재발송 대기시간과 일일 발송 한도를 검사한다.
-		EmailVerification latest = mapper.findLatestEmailVerificationForUpdate(email, SIGNUP_PURPOSE);
-		validateSendLimits(email, latest, now);
-
-		// 인증번호 원문은 메일로만 전달하고 DB에는 BCrypt 해시만 저장한다.
-		String verificationCode = createVerificationCode();
-		EmailVerification verification = new EmailVerification();
-		verification.setEmail(email);
-		verification.setPurpose(SIGNUP_PURPOSE);
-		verification.setCodeHash(passwordEncoder.encode(verificationCode));
-		verification.setExpiresAt(Timestamp.from(now.plus(CODE_VALIDITY)));
-
-		// 발송 실패 시 DB INSERT도 롤백되도록 같은 트랜잭션에서 처리한다.
-		if (mapper.insertEmailVerification(verification) != 1) {
-			throw new EmailVerificationException("이메일 인증 정보를 저장하지 못했습니다.");
-		}
-
-		googleMailService.sendVerificationCode(email, verificationCode);
+		String requestIp = normalizeAndValidateRequestIp(rawRequestIp);
+		sendVerificationCode(email, SIGNUP_PURPOSE, null, requestIp);
 	}
 
 	// 인증번호 검증
 	@Transactional
 	public VerifiedSignupEmail verifySignupCode(String rawEmail, String rawCode) {
-		// 검증 요청도 서버에서 이메일과 6자리 코드 형식을 다시 검사한다.
 		String email = normalizeAndValidateEmail(rawEmail);
-		String code = validateCodeFormat(rawCode);
-		// 동시에 여러 번 검증하는 경우를 막기 위해 최신 인증 행을 잠근다.
-		EmailVerification verification = mapper.findLatestEmailVerificationForUpdate(email, SIGNUP_PURPOSE);
-		validateVerificationState(verification, Instant.now());
-
-		// 인증번호 일치 여부와 관계없이 먼저 시도 횟수를 증가시킨다.
-		// 오답에서는 예외를 던지지 않고 false를 반환해야 증가 UPDATE가 커밋된다.
-		increaseVerificationAttempt(verification);
-
-		if (!passwordEncoder.matches(code, verification.getCodeHash())) {
+		EmailVerification verification = verifyCode(email, rawCode, SIGNUP_PURPOSE, null);
+		if (verification == null) {
 			return null;
 		}
-		// 최초 성공일 때만 verified_at을 기록하고 재요청에서는 기존 인증 시각을 유지한다.
-		if (verification.getVerifiedAt() == null
-				&& mapper.markEmailVerificationVerified(verification.getEmailVerificationId()) != 1) {
-			throw new EmailVerificationException("이메일 인증 상태를 변경하지 못했습니다.");
+		return findVerifiedSignupEmail(verification.getEmailVerificationId(), email);
+	}
+
+	// 비밀번호 찾기 인증번호 발송
+	@Transactional
+	public void sendPasswordResetVerificationCode(
+			String rawUsername, String rawEmail, String rawRequestIp) {
+		String username = validateUsername(rawUsername);
+		String email = normalizeAndValidateEmail(rawEmail);
+		String requestIp = normalizeAndValidateRequestIp(rawRequestIp);
+		Integer memberId = mapper.findActiveLocalMemberId(username, email);
+		if (memberId == null) {
+			throw new EmailVerificationException("입력한 아이디와 이메일을 확인해주세요.");
 		}
 
-		return findVerifiedSignupEmail(verification.getEmailVerificationId(), email);
+		sendVerificationCode(email, FIND_PASSWORD_PURPOSE, memberId.longValue(), requestIp);
+	}
+
+	// 비밀번호 찾기 인증번호 검증
+	@Transactional
+	public VerifiedPasswordReset verifyPasswordResetCode(
+			String rawUsername, String rawEmail, String rawCode) {
+		String username = validateUsername(rawUsername);
+		String email = normalizeAndValidateEmail(rawEmail);
+		Integer memberId = mapper.findActiveLocalMemberId(username, email);
+		if (memberId == null) {
+			throw new EmailVerificationException("입력한 아이디와 이메일을 확인해주세요.");
+		}
+
+		EmailVerification verification = verifyCode(
+				email, rawCode, FIND_PASSWORD_PURPOSE, memberId.longValue());
+		if (verification == null) {
+			return null;
+		}
+
+		VerifiedPasswordReset passwordReset = new VerifiedPasswordReset();
+		passwordReset.setEmailVerificationId(verification.getEmailVerificationId());
+		passwordReset.setMemberId(memberId);
+		passwordReset.setEmail(email);
+		return passwordReset;
 	}
 
 	// 회원가입 직전 이메일 인증 상태 확인
@@ -99,12 +106,12 @@ public class EmailVerificationService {
 	public VerifiedSignupEmail requireVerifiedSignupEmail(
 			String rawEmail,
 			VerifiedSignupEmail sessionVerification) {
-		// 회원가입 직전에 세션 증표와 정확한 DB 인증 행을 함께 검증한다.
+		// 회원가입 직전에 세션에 저장된 인증 정보와 DB 인증 행을 함께 확인한다.
 		String email = normalizeAndValidateEmail(rawEmail);
 
 		validateSessionVerification(email, sessionVerification);
 
-		// 발송과 같은 최신 행 잠금을 먼저 잡아 재발송과 가입의 실행 순서를 고정한다.
+		// 가입 확인 중에 새 인증번호가 발송되지 않도록 최신 인증 행을 먼저 잠근다.
 		EmailVerification latestVerification = mapper
 				.findLatestEmailVerificationForUpdate(email, SIGNUP_PURPOSE);
 		validateSignupVerificationAvailability(sessionVerification, latestVerification);
@@ -115,17 +122,96 @@ public class EmailVerificationService {
 		return verifiedEmail;
 	}
 
+	// 비밀번호 변경 직전에 세션 증표와 최신 DB 인증 결과를 함께 확인한다.
+	@Transactional
+	public void requireVerifiedPasswordReset(VerifiedPasswordReset sessionVerification) {
+		if (sessionVerification == null
+				|| sessionVerification.getEmailVerificationId() == null
+				|| sessionVerification.getMemberId() == null
+				|| sessionVerification.getEmail() == null) {
+			throw passwordResetReverificationRequired();
+		}
+
+		String email = normalizeAndValidateEmail(sessionVerification.getEmail());
+		EmailVerification latestVerification = mapper.findLatestPasswordResetVerificationForUpdate(
+				email, sessionVerification.getMemberId());
+		if (latestVerification == null
+				|| !sessionVerification.getEmailVerificationId()
+						.equals(latestVerification.getEmailVerificationId())
+				|| latestVerification.getVerifiedAt() == null
+				|| latestVerification.getConsumedAt() != null) {
+			throw passwordResetReverificationRequired();
+		}
+
+		if (latestVerification.getVerifiedAt().toInstant()
+				.plus(VERIFIED_VALIDITY).isBefore(Instant.now())) {
+			throw passwordResetReverificationRequired();
+		}
+	}
+
+	// 회원가입과 비밀번호 찾기가 같은 발송 제한과 해시 저장 정책을 사용한다.
+	private void sendVerificationCode(
+			String email, String purpose, Long memberId, String requestIp) {
+		Instant now = Instant.now();
+		EmailVerification latest = findLatestVerificationForUpdate(email, purpose, memberId);
+		validateSendLimits(email, purpose, requestIp, latest, now);
+
+		String verificationCode = createVerificationCode();
+		EmailVerification verification = new EmailVerification();
+		verification.setEmail(email);
+		verification.setPurpose(purpose);
+		verification.setCodeHash(passwordEncoder.encode(verificationCode));
+		verification.setExpiresAt(Timestamp.from(now.plus(CODE_VALIDITY)));
+		verification.setMemberId(memberId);
+		verification.setRequestIp(requestIp);
+
+		if (mapper.insertEmailVerification(verification) != 1) {
+			throw new EmailVerificationException("이메일 인증 정보를 저장하지 못했습니다.");
+		}
+
+		googleMailService.sendVerificationCode(email, verificationCode);
+	}
+
+	// 인증 목적과 회원 귀속 여부에 맞는 최신 행을 잠가 동시 발송·검증을 막는다.
+	private EmailVerification findLatestVerificationForUpdate(
+			String email, String purpose, Long memberId) {
+		if (FIND_PASSWORD_PURPOSE.equals(purpose) && memberId != null) {
+			return mapper.findLatestPasswordResetVerificationForUpdate(email, memberId.intValue());
+		}
+		return mapper.findLatestEmailVerificationForUpdate(email, purpose);
+	}
+
+	// 인증번호 확인의 공통 처리다. 오답은 null로 반환해 시도 횟수 증가를 커밋한다.
+	private EmailVerification verifyCode(String email, String rawCode, String purpose, Long memberId) {
+		String code = validateCodeFormat(rawCode);
+		EmailVerification verification = findLatestVerificationForUpdate(email, purpose, memberId);
+		validateVerificationState(verification, Instant.now());
+		increaseVerificationAttempt(verification);
+
+		if (!passwordEncoder.matches(code, verification.getCodeHash())) {
+			return null;
+		}
+		if (verification.getVerifiedAt() == null
+				&& mapper.markEmailVerificationVerified(verification.getEmailVerificationId()) != 1) {
+			throw new EmailVerificationException("이메일 인증 상태를 변경하지 못했습니다.");
+		}
+		return verification;
+	}
+
 	// 인증번호 검증 상태 확인
 	private void validateVerificationState(EmailVerification verification, Instant now) {
 		if (verification == null) {
 			throw new EmailVerificationException("먼저 인증번호를 발송해주세요.");
 		}
-		// 이미 인증된 행도 새 세션에 저장할 때는 실제 인증번호를 다시 확인한다.
 		if (!verification.getExpiresAt().toInstant().isAfter(now)) {
 			throw new EmailVerificationException("인증번호가 만료되었습니다. 다시 발송해주세요.");
 		}
 		if (verification.getAttemptCount() >= MAX_VERIFICATION_ATTEMPTS) {
 			throw new EmailVerificationException("인증 시도 횟수를 초과했습니다. 다시 발송해주세요.");
+		}
+		// 비밀번호 변경 등에 이미 사용한 인증 결과는 검증 API에서도 다시 성공시키지 않는다.
+		if (verification.getConsumedAt() != null) {
+			throw new EmailVerificationException("이미 사용된 인증번호입니다. 다시 발송해주세요.");
 		}
 	}
 
@@ -138,7 +224,7 @@ public class EmailVerificationService {
 
 	// DB 인증 완료 이메일 조회
 	private VerifiedSignupEmail findVerifiedSignupEmail(long emailVerificationId, String email) {
-		// DB의 인증 시각과 행 ID를 세션에 저장할 안전한 결과로 반환한다.
+		// 인증 행에서 세션에 필요한 ID, 이메일, 인증 시각만 반환한다.
 		VerifiedSignupEmail verifiedEmail = mapper.findVerifiedSignupEmailForUpdate(
 				emailVerificationId, email, SIGNUP_PURPOSE);
 		if (verifiedEmail == null) {
@@ -150,7 +236,7 @@ public class EmailVerificationService {
 		return verifiedEmail;
 	}
 
-	// 회원가입 직전 세션 및 DB 인증 상태 확인
+	// 세션에 저장된 이메일 인증 정보 확인
 	private void validateSessionVerification(String email, VerifiedSignupEmail sessionVerification) {
 		if (sessionVerification == null
 				|| sessionVerification.getEmailVerificationId() == null
@@ -170,7 +256,8 @@ public class EmailVerificationService {
 				|| !sessionVerification.getEmailVerificationId()
 						.equals(latestVerification.getEmailVerificationId())
 				|| latestVerification.getVerifiedAt() == null
-				|| latestVerification.getMemberId() != null) {
+				|| latestVerification.getMemberId() != null
+				|| latestVerification.getConsumedAt() != null) {
 			throw new EmailVerificationException(
 					EmailVerificationException.EMAIL_REVERIFICATION_REQUIRED,
 					"사용할 수 없는 이메일 인증입니다. 다시 인증해주세요."
@@ -199,15 +286,23 @@ public class EmailVerificationService {
 	}
 
 	// 발송 제한 검증
-	private void validateSendLimits(String email, EmailVerification latest, Instant now) {
+	private void validateSendLimits(
+			String email, String purpose, String requestIp,
+			EmailVerification latest, Instant now) {
 		// 화면의 버튼 비활성화는 우회할 수 있으므로 서버에서 같은 제한을 다시 적용한다.
 		if (latest != null
 				&& latest.getCreatedAt().toInstant().plus(RESEND_COOLDOWN).isAfter(now)) {
 			throw new EmailVerificationException("인증번호는 60초 후 다시 발송할 수 있습니다.");
 		}
-		if (mapper.countEmailVerificationRequestsInLastDay(email, SIGNUP_PURPOSE)
+		if (mapper.countEmailVerificationRequestsInLastDay(email, purpose)
 				>= MAX_SENDS_PER_EMAIL_PER_DAY) {
 			throw new EmailVerificationException("해당 이메일의 일일 인증번호 발송 횟수를 초과했습니다.");
+		}
+		// 원격 주소를 확인할 수 있을 때만 동일 IP의 최근 24시간 발송 횟수를 제한한다.
+		if (requestIp != null
+				&& mapper.countEmailVerificationRequestsByIpInLastDay(requestIp)
+						>= MAX_SENDS_PER_IP_PER_DAY) {
+			throw new EmailVerificationException("동일 IP의 일일 인증번호 발송 횟수를 초과했습니다.");
 		}
 		if (mapper.countAllEmailVerificationRequestsInLastDay() >= MAX_SENDS_PER_DAY) {
 			throw new EmailVerificationException("오늘의 인증번호 발송 한도를 초과했습니다.");
@@ -216,7 +311,7 @@ public class EmailVerificationService {
 
 	// 인증번호 생성 및 입력값 검증
 	private String createVerificationCode() {
-		// 예측 가능한 Random이 아닌 SecureRandom으로 000000~999999 범위의 코드를 만든다.
+		// SecureRandom을 사용해 예측하기 어려운 6자리 인증번호를 만든다.
 		return String.format(Locale.ROOT, "%06d", secureRandom.nextInt(1000000));
 	}
 
@@ -226,6 +321,31 @@ public class EmailVerificationService {
 			throw new EmailVerificationException("인증번호 6자리를 입력해주세요.");
 		}
 		return rawCode;
+	}
+
+	private String validateUsername(String rawUsername) {
+		if (rawUsername == null || !rawUsername.matches("^[A-Za-z0-9]{5,20}$")) {
+			throw new EmailVerificationException("아이디는 영문 또는 숫자 5~20자로 입력해주세요.");
+		}
+		return rawUsername;
+	}
+
+	private EmailVerificationException passwordResetReverificationRequired() {
+		return new EmailVerificationException(
+				EmailVerificationException.EMAIL_REVERIFICATION_REQUIRED,
+				"이메일 인증이 만료되었거나 이미 사용되었습니다. 다시 인증해주세요.");
+	}
+
+	private String normalizeAndValidateRequestIp(String rawRequestIp) {
+		if (rawRequestIp == null || rawRequestIp.isBlank()) {
+			return null;
+		}
+
+		String requestIp = rawRequestIp.trim();
+		if (requestIp.length() > 45) {
+			throw new EmailVerificationException("요청 IP 형식이 올바르지 않습니다.");
+		}
+		return requestIp;
 	}
 
 	private String normalizeAndValidateEmail(String rawEmail) {

@@ -229,6 +229,88 @@ input {
     text-decoration: none;
 }
 
+/* [추가] 공통 컴포넌트 적용 전 로그인·회원가입 화면에서 사용하는 소셜 버튼 스타일이다. */
+.social-login-section {
+    display: grid;
+    gap: 10px;
+    margin-top: 22px;
+}
+
+.social-login-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #9ca3af;
+    font-size: 13px;
+}
+
+.social-login-divider::before,
+.social-login-divider::after {
+    flex: 1;
+    height: 1px;
+    content: "";
+    background: #e5e7eb;
+}
+
+.social-login-button {
+    display: flex;
+    width: 100%;
+    min-height: 46px;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 8px;
+    color: #1f2937;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.social-login-button--kakao {
+    background: #fee500;
+}
+
+.social-login-button--google,
+.social-login-button--naver {
+    border: 1px solid #d1d5db;
+    color: #9ca3af;
+    background: #f9fafb;
+}
+
+.social-login-button:disabled {
+    cursor: not-allowed;
+}
+
+/* [추가] 카카오 콜백에서 서버 세션으로 전달한 이메일·프로필을 읽기 전용으로 보여준다. */
+.social-account-summary {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 22px;
+    padding: 14px;
+    border-radius: 8px;
+    background: #f3f7f6;
+}
+
+.social-account-summary strong,
+.social-account-summary p {
+    display: block;
+}
+
+.social-account-summary p {
+    margin: 4px 0 0;
+    color: #6b7280;
+    font-size: 14px;
+    word-break: break-all;
+}
+
+.social-profile-image {
+    width: 46px;
+    height: 46px;
+    flex: 0 0 46px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
 .signup-type-card {
     width: min(100%, 560px);
 }

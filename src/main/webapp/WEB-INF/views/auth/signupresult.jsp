@@ -8,7 +8,7 @@
 </head>
 
 <body>
-	<!-- 회원가입 완료 후 로그인 경로에 컨텍스트 경로를 반영한다. -->
+	<!-- 배포 경로가 달라져도 현재 애플리케이션의 로그인 화면으로 이동한다. -->
 	<script>
 		alert("회원 가입 성공");
 		location.href = "${pageContext.request.contextPath}/auth/login";

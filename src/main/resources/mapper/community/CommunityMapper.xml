@@ -8,7 +8,6 @@
         p.created_at, p.updated_at, p.readcount, p.category, m.nickname as nickname
 		from post p 
 		join member m on p.member_id = m.member_id
-		left join image i on i.post_id = p.post_id and i.sort_order = 0
     	<where>
         <if test="category != null and category != '' and category != '전체'">
             and p.category = #{category}

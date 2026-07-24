@@ -209,11 +209,11 @@
     <insert id="insertOwnerPlace" parameterType="com.gnagnoohc.travel.business.dto.BusinessPlaceRegisterDto"
             useGeneratedKeys="true" keyProperty="placeId" keyColumn="place_id">
         INSERT INTO PLACE (
-            content_id, content_type_id, place_type, <!-- region_id, --> member_id,
-            name, description, address, <!-- mapx, mapy, --> admin_type, first_image
+            place_type, <!-- region_id, --> member_id,
+            name, description, address, <!-- mapx, mapy, --> first_image
         ) VALUES (
-            #{contentId}, #{contentTypeId}, #{placeType}, <!-- #{regionId}, --> #{memberId},
-            #{name}, #{description}, #{address}, <!-- #{mapx}, #{mapy}, --> #{adminType}, #{firstImage}
+            #{placeType}, <!-- #{regionId}, --> #{memberId},
+            #{name}, #{description}, #{address}, <!-- #{mapx}, #{mapy}, --> #{firstImage}
         )
     </insert>
 

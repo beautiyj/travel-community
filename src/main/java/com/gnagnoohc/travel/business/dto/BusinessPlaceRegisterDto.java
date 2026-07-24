@@ -10,11 +10,6 @@ import java.math.BigDecimal;
 @Builder
 public class BusinessPlaceRegisterDto {
 
-    // DB CK_PLACE_ADMIN_TYPE과 동일한 의미: 0=공공데이터 시드, 1=사업자 등록
-    public static final int ADMIN_TYPE_OWNER_REGISTERED = 1;
-
-    private String contentId;
-    private String contentTypeId;
     private Integer placeType;
 //    private Long regionId;
     private Long memberId;
@@ -24,7 +19,6 @@ public class BusinessPlaceRegisterDto {
 //    private BigDecimal mapx;
 //    private BigDecimal mapy;
     private String firstImage;
-    private int adminType;
 
     // INSERT 시 MyBatis useGeneratedKeys로 채워 받는 값. 빌더 대상 아님.
     private Long placeId;

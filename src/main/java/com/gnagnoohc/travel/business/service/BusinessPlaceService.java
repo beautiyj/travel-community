@@ -25,7 +25,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class BusinessPlaceService {
 
-    private static final String CONTENT_ID_PREFIX = "OWN-";
     private static final Set<String> ALLOWED_IMAGE_EXTENSIONS = Set.of("jpg", "jpeg", "png", "gif", "webp");
     // member_role='BUSINESS'만 업소를 등록할 수 있는 사업자 회원.
     private static final String MEMBER_ROLE_BUSINESS = "BUSINESS";
@@ -71,7 +70,6 @@ public class BusinessPlaceService {
         List<String> savedUrls = nonEmpty.stream().map(this::saveImageFile).toList();
 
         BusinessPlaceRegisterDto place = BusinessPlaceRegisterDto.builder()
-                .contentId(generateOwnerContentId())
                 .placeType(placeType)
 //                .regionId(regionId)
                 .memberId(bizMemberId)
@@ -81,7 +79,6 @@ public class BusinessPlaceService {
 //                .mapx(null)
 //                .mapy(null)
                 .firstImage(savedUrls.get(0))
-                .adminType(BusinessPlaceRegisterDto.ADMIN_TYPE_OWNER_REGISTERED)
                 .build();
 
         businessMapper.insertOwnerPlace(place);
@@ -168,12 +165,6 @@ public class BusinessPlaceService {
         if (businessMapper.updatePlace(update) == 0) {
             throw new IllegalStateException("업소 정보를 수정할 권한이 없습니다.");
         }
-    }
-
-    // content_id VARCHAR(20) UNIQUE NOT NULL. "OWN-"(4) + 16 hex chars = 20자, 정확히 꽉 채움
-    private String generateOwnerContentId() {
-        String randomPart = UUID.randomUUID().toString().replace("-", "").substring(0, 16);
-        return CONTENT_ID_PREFIX + randomPart;
     }
 
     // 원본 파일명은 신뢰하지 않고 확장자만 화이트리스트로 뽑아 서버측 생성 파일명(UUID)으로 저장

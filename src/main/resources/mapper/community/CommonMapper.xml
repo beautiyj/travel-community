@@ -9,12 +9,12 @@
 	<!-- 이름으로 장소 검색 (방문자인증후기 글쓰기/수정 시 태그할 장소 찾기용)
 	     ※ place 테이블이 다른 팀원 담당 모듈에 이미 검색 쿼리가 있다면 그쪽으로 옮기는 게 맞음.
 	        지금은 커뮤니티 쪽에서 바로 쓸 수 있게 여기에 추가함
-	     ※ place 상호명 컬럼은 title (기존 name 컬럼 참조는 스키마와 안 맞아서 수정함) -->
+	     ※ place 상호명 컬럼은 name -->
 	<select id="searchPlaces" parameterType="string" resultType="map">
-		select place_id as placeId, title as name, place_type as placeType
+		select place_id as placeId, name as name, place_type as placeType
 		from place
-		where title like concat('%', #{keyword}, '%')
-		order by title asc
+		where name like concat('%', #{keyword}, '%')
+		order by name asc
 		limit 10
 	</select>
 

@@ -14,6 +14,20 @@ java {
 	}
 }
 
+//tour 관련 도메인 빌드제외 코드
+//todo: 개발완료되면 해당 코드 전체 삭제
+sourceSets {
+	main {
+		java {
+			exclude 'com/gnagnoohc/travel/batch/**'
+			exclude 'com/gnagnoohc/travel/tour/**'
+		}
+		resources {
+			exclude 'mapper/tour/**'
+		}
+	}
+}
+
 repositories {
 	mavenCentral()
 	maven { url 'https://jitpack.io' } // Komoran (형태소분석기, 후기 감성분석용)

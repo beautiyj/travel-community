@@ -79,6 +79,12 @@
         </div>
     </c:if>
 
+    <c:if test="${param.socialError != null}">
+        <div class="form-alert form-alert--error" role="alert">
+            소셜 로그인 인증에 실패했습니다. 다시 시도해 주세요.
+        </div>
+    </c:if>
+
     <div class="auth-links">
         <a href="${pageContext.request.contextPath}/auth/find-id">아이디 찾기</a>
         <span aria-hidden="true">|</span>

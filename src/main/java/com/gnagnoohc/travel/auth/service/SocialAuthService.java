@@ -20,7 +20,7 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * 우리 서비스의 소셜 회원 조회와 가입 규칙을 담당한다.
- * 카카오 HTTP 호출은 KakaoApiClient가 담당하고 이 서비스에는 검증된 값만 전달한다.
+ * 외부 OAuth 통신은 Spring Security가 담당하고 이 서비스에는 검증된 값만 전달한다.
  */
 @Service
 @RequiredArgsConstructor
@@ -32,14 +32,14 @@ public class SocialAuthService {
     private final SocialAuthMapper socialAuthMapper;
 
     /**
-     * (KAKAO, providerUserId)로 회원을 찾고 활성 회원의 마지막 로그인 시간을 갱신한다.
-     * 미가입 회원이면 null을 반환해 Controller가 신규가입 흐름을 시작하게 한다.
+     * (provider, providerUserId)로 회원을 찾고 활성 회원의 마지막 로그인 시간을 갱신한다.
+     * 미가입 회원이면 null을 반환해 OAuth 성공 핸들러가 신규가입 흐름을 시작하게 한다.
      */
     @Transactional
-    public LoginMemberDto findKakaoLoginMember(String providerUserId) {
-        validateProviderUserId(KAKAO, providerUserId);
+    public LoginMemberDto findSocialLoginMember(String provider, String providerUserId) {
+        validateProviderUserId(provider, providerUserId);
 
-        Member member = socialAuthMapper.findMemberBySocialIdentity(KAKAO, providerUserId);
+        Member member = socialAuthMapper.findMemberBySocialIdentity(provider, providerUserId);
         if (member == null) {
             return null;
         }
@@ -52,8 +52,8 @@ public class SocialAuthService {
 
         // 두 마지막 로그인 시각은 같은 DB 트랜잭션에서 함께 반영하거나 함께 롤백한다.
         if (socialAuthMapper.updateMemberLastLogin(member.getMemberId()) != 1
-                || socialAuthMapper.updateSocialLastLogin(KAKAO, providerUserId) != 1) {
-            throw new SocialAuthException("카카오 로그인 시각 갱신에 실패했습니다.", false);
+                || socialAuthMapper.updateSocialLastLogin(provider, providerUserId) != 1) {
+            throw new SocialAuthException("소셜 로그인 시각 갱신에 실패했습니다.", false);
         }
 
         return new LoginMemberDto(

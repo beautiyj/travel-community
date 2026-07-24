@@ -6,7 +6,7 @@
 	     community(글쓰기/수정 시 장소 검색)와 comment(댓글 권한 체크) 양쪽에서
 	     같이 쓰는 쿼리라서 common으로 분리함 -->
 
-	<!-- 이름으로 장소 검색 (방문자인증후기 글쓰기/수정 시 태그할 장소 찾기용)
+	<!-- 이름으로 장소 검색 (일반후기 글쓰기/수정 시 태그할 장소 찾기용 - 전체 장소 대상)
 	     ※ place 테이블이 다른 팀원 담당 모듈에 이미 검색 쿼리가 있다면 그쪽으로 옮기는 게 맞음.
 	        지금은 커뮤니티 쪽에서 바로 쓸 수 있게 여기에 추가함
 	     ※ place 상호명 컬럼은 name -->
@@ -15,6 +15,21 @@
 		from place
 		where name like concat('%', #{keyword}, '%')
 		order by name asc
+		limit 10
+	</select>
+
+	<!-- 장소 태그: 방문자인증후기용 - 로그인 회원의 확정(결제완료) 예약 장소만 이름으로 검색
+	     TODO: '결제완료' 판정 로직은 마이페이지 담당자가 구현 중이라 아직 없음.
+	           완성 전까지는 reservation.status = 'PAID' 를 확정 기준으로 임시 사용한 것이므로,
+	           마이페이지 결제완료 로직이 확정되면 그 기준(상태값)으로 반드시 교체할 것. -->
+	<select id="searchConfirmedPlaces" resultType="map">
+		select distinct p.place_id as placeId, p.name as name, p.place_type as placeType
+		from reservation r
+		join place p on p.place_id = r.place_id
+		where r.member_id = #{memberId}
+		  and r.status = 'PAID'
+		  and p.name like concat('%', #{keyword}, '%')
+		order by p.name asc
 		limit 10
 	</select>
 

@@ -6,9 +6,13 @@
        <jsp:include page="../common/placeSearchModal.jsp">
          <jsp:param name="modalId" value="placeSearchModal" />
        </jsp:include>
-     - 검색 결과를 클릭하면 상위 페이지에 정의된 window.selectPlaceTag(placeId, placeName)를 호출함
+     - 검색 결과를 클릭하면 상위 페이지에 정의된 window.selectPlaceTag(placeId, placeName, placeType)를 호출함
        (write.jsp / edit.jsp 에서 placeTag.js를 통해 이 함수를 정의함)
-     - 열고 닫는 것도 이 파일 자체 스크립트로 처리 (common.js의 openModal/closeModal에 의존하지 않음) --%>
+     - 열고 닫는 것도 이 파일 자체 스크립트로 처리 (common.js의 openModal/closeModal에 의존하지 않음)
+     - tagButton.css: 검색 결과/선택된 태그에 표시하는 place_type 배지(숙박/맛집/여행지)용
+       (common/postCategoryTag.jsp 가 쓰는 것과 동일하게 여기서 직접 <link> - placeTag.js가 같은 tag-view/tag-text 클래스로 배지를 그림) --%>
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/tagButton.css">
+
 <div id="${param.modalId}" class="place-search-modal-overlay">
   <div class="place-search-modal">
     <div class="place-search-modal-head">

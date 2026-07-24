@@ -21,10 +21,10 @@
 	</select>
 	
 	<!-- 단건 조회 (place 테이블 LEFT JOIN: place_id가 NULL인 글도 조회되어야 하므로 LEFT JOIN 사용)
-	     ※ place 상호명 컬럼은 title (기존 pl.name 참조는 스키마와 안 맞아서 수정함) -->
-	<select id="selectOne" parameterType="int" resultType="community"> 
-		select p.post_id, p.member_id, p.place_id, p.title, p.content, p.created_at, p.updated_at, p.readcount, 
-		p.category, m.nickname as nickname, pl.title as placeName
+	     ※ place 상호명 컬럼은 name (title -> name 으로 컬럼명 변경됨) -->
+	<select id="selectOne" parameterType="int" resultType="community">
+		select p.post_id, p.member_id, p.place_id, p.title, p.content, p.created_at, p.updated_at, p.readcount,
+		p.category, m.nickname as nickname, pl.name as placeName
 		from post p 
 		join member m on p.member_id = m.member_id 
 		left join place pl on p.place_id = pl.place_id

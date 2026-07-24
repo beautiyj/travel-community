@@ -43,6 +43,9 @@
 <script>
     var paymentId = "${payment.paymentId}";
     var reservationId = "${payment.reservationId}";
+
+    // 결제가 완료됐으므로 예약폼 임시 입력값(sessionStorage) 제거 — 다음 예약은 빈 폼으로
+    sessionStorage.removeItem('reservationDraft');
 </script>
 <script src="/js/reservation/payment-success.js"></script>
 </body>

@@ -25,10 +25,13 @@ public interface ReservationMapper {
     /** 관리자 목록용: 특정 상태의 예약 조회 (예: CANCEL_REQUESTED 건 모아보기) */
     List<Reservation> findByStatus(@Param("status") ReservationStatus status);
 
-    /** 슬롯 선점 체크: 같은 회원이 같은 장소·날짜에 이미 활성(PENDING/PAID) 예약이 있는지 */
-    int countActive(@Param("memberId") Long memberId,
-                    @Param("placeId") Long placeId,
-                    @Param("visitDate") LocalDate visitDate);
+    /**
+     * 슬롯 선점 체크: 같은 회원이 같은 장소·날짜에 가진 활성(PENDING/PAID) 예약 1건. 없으면 null.
+     * PENDING이면 재사용(결제 이어가기), PAID면 중복 거부 판단에 쓴다.
+     */
+    Reservation findActiveBySlot(@Param("memberId") Long memberId,
+                                 @Param("placeId") Long placeId,
+                                 @Param("visitDate") LocalDate visitDate);
 
     /** 스케줄러: cutoff 이전에 생성됐는데 아직 PENDING인 건을 EXPIRED로 일괄 전환. 처리 건수 반환 */
     int expirePending(@Param("cutoff") LocalDateTime cutoff);

@@ -70,14 +70,16 @@
         ORDER BY cancel_requested_at DESC, created_at DESC
     </select>
 
-    <!-- 슬롯 선점 체크: 활성 상태(PENDING/PAID)인 동일 장소·날짜 예약 수 -->
-    <select id="countActive" resultType="int">
-        SELECT COUNT(*)
+    <!-- 슬롯 선점 체크: 같은 회원·장소·날짜의 활성(PENDING/PAID) 예약 1건 (없으면 null) -->
+    <select id="findActiveBySlot" resultType="com.gnagnoohc.travel.reservation.entity.Reservation">
+        SELECT <include refid="reservationColumns"/>
         FROM RESERVATION
         WHERE member_id = #{memberId}
           AND place_id = #{placeId}
           AND visit_date = #{visitDate}
           AND status IN ('PENDING', 'PAID')
+        ORDER BY reservation_id DESC
+        LIMIT 1
     </select>
 
     <!-- 스케줄러: 30분 지난 미결제 건 일괄 만료 -->

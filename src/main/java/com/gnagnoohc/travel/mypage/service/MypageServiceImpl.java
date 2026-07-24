@@ -44,4 +44,15 @@ public class MypageServiceImpl implements MypageService {
     	mypageRepository.withdrawMember(memberId);
     }
     
+    @Override
+    public void deleteWishlist(Long wishlistId) {
+        mypageRepository.deleteWishlist(wishlistId);
+    }
+
+    @Override
+    public void cancelReservation(Long reservationId) {
+        mypageRepository.cancelReservation(reservationId);
+    }
+    
+    
 }

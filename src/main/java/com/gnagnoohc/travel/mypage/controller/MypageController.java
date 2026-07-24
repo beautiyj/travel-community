@@ -8,6 +8,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.gnagnoohc.travel.mypage.dto.MypageDto;
 import com.gnagnoohc.travel.mypage.service.MypageService;
@@ -138,4 +139,26 @@ public class MypageController {
     	
     	return "redirect:/";
     }
+    
+    @PostMapping("/wishlist/delete")
+    public String deleteWishlist(@RequestParam("wishlistId") Long wishlistId) {
+
+        System.out.println("삭제할 wishlist: " + wishlistId);
+
+        mypageService.deleteWishlist(wishlistId);
+
+        return "redirect:/mypage/wishlist";
+    }
+    
+    @PostMapping("/reservation/cancel")
+    public String cancelReservation(@RequestParam("reservationId") Long reservationId) {
+    	
+    	System.out.println("취소할 reservationId:" + reservationId);
+    	
+    	mypageService.cancelReservation(reservationId);
+    	
+    	return "redirect:/mypage/reservation";
+    }
+    
+    
 }

@@ -11,7 +11,7 @@
             parameterType="long"
             resultType="com.gnagnoohc.travel.mypage.dto.MypageDto">
 
-        select member_id, login_id, name, nickname, phone, gender, 
+        select member_id, login_id, name, nickname, phone, gender,
         birth, profile_img_url, signup_type, created_at, updated_at
         from member
         where member_id = #{memberId}
@@ -41,6 +41,19 @@
 
     </update>
 
+    <!-- 예약 목록 조회 -->
+    <select id="getReservationList"
+            parameterType="long"
+            resultType="com.gnagnoohc.travel.mypage.dto.MypageDto">
+
+        select reservation_id, member_id, place_id, visitor_name, phone,
+        visit_date, headcount, status, created_at
+        from reservation
+        where member_id = #{memberId}
+        order by created_at desc
+
+    </select>
+
     <!-- 찜 목록 조회 -->
     <select id="getWishlist"
             parameterType="long"
@@ -57,13 +70,32 @@
 
     </select>
 
-<update id="withdrawMember" parameterType="long">
-    update member
-    set member_status = 'WITHDRAWN',
-        deleted_at = now(),
-        updated_at = now()
-    where member_id = #{memberId}
-</update>
+    <!-- 회원 탈퇴 -->
+    <update id="withdrawMember" parameterType="long">
 
+        update member
+        set member_status = 'WITHDRAWN',
+            deleted_at = now(),
+            updated_at = now()
+        where member_id = #{memberId}
+
+    </update>
+
+    <!-- 찜 목록 삭제 -->
+    <delete id="deleteWishlist" parameterType="long">
+
+        delete from wishlist
+        where wishlist_id = #{wishlistId}
+
+    </delete>
+
+    <!-- 예약 취소 -->
+    <update id="cancelReservation" parameterType="long">
+
+        update reservation
+        set status = '예약취소'
+        where reservation_id = #{reservationId}
+
+    </update>
 
 </mapper>

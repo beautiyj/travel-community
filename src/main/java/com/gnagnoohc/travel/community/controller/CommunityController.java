@@ -170,14 +170,27 @@ public class CommunityController {
     }
 
 
-    // 장소 검색 (방문자인증후기 글쓰기/수정 시 장소 태그 검색 모달에서 AJAX로 호출)
+    // 장소 검색 (글쓰기/수정 시 장소 태그 검색 모달에서 AJAX로 호출)
     // ※ community/comment 공통 로직이라 CommonService로 위임
+    // - 방문자인증후기: 로그인 회원이 확정(결제완료)한 예약 장소만 검색
+    // - 그 외(일반후기 등): 기존처럼 전체 장소 검색
     @GetMapping("/community/place/search")
     @ResponseBody
-    public List<Map<String, Object>> searchPlaces(@RequestParam("keyword") String keyword) {
+    public List<Map<String, Object>> searchPlaces(@RequestParam("keyword") String keyword,
+                                                   @RequestParam(value = "category", required = false) String category,
+                                                   HttpSession session) {
         if (keyword == null || keyword.trim().isEmpty()) {
             return List.of();
         }
+
+        if ("방문자인증후기".equals(category)) {
+            Object login = session.getAttribute("loginMember");
+            if (login == null) {
+                return List.of();
+            }
+            return commonService.searchConfirmedPlaces(SessionUtil.getMemberId(login), keyword.trim());
+        }
+
         return commonService.searchPlaces(keyword.trim());
     }
 
@@ -192,10 +205,12 @@ public class CommunityController {
         return post.getMemberId() == SessionUtil.getMemberId(login);
     }
 
-    // 장소 태그는 "방문자인증후기" 카테고리에서만 허용 (1게시글 1장소)
+    // 장소 태그는 "방문자인증후기"/"일반후기" 카테고리에서만 허용 (1게시글 1장소)
     // 다른 카테고리인데 placeId가 넘어왔다면(폼 조작 등) 무시하고 null 처리
     private void enforcePlaceTagRule(CommunityDto dto) {
-        if (!"방문자인증후기".equals(dto.getCategory())) {
+        String category = dto.getCategory();
+        boolean placeTagAllowed = "방문자인증후기".equals(category) || "일반후기".equals(category);
+        if (!placeTagAllowed) {
             dto.setPlaceId(null);
         }
     }

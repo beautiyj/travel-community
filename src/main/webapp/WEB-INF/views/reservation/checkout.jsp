@@ -11,6 +11,8 @@
 </head>
 <body>
 
+<jsp:include page="/WEB-INF/views/common/header.jsp" />
+
 <div class="page-wrap">
 
     <a href="javascript:history.back()" class="back-link">&lsaquo; 예약 정보로</a>

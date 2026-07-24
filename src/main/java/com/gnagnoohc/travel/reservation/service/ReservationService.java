@@ -22,10 +22,15 @@ public class ReservationService {
     /** 예약 생성 (결제 전이므로 PENDING 상태). 같은 장소·날짜 중복 예약은 거부 */
     @Transactional
     public Long create(Long memberId, ReservationCreateRequest req) {
-        // 슬롯 선점: 이미 활성 예약이 있으면 선점 실패
-        int active = reservationMapper.countActive(memberId, req.getPlaceId(), req.getVisitDate());
-        if (active > 0) {
-            throw new IllegalStateException("해당 날짜에 이미 예약이 있습니다.");
+        // 같은 슬롯(회원·장소·날짜)에 활성 예약이 있으면:
+        //   - PENDING(미결제): 결제하러 갔다가 돌아온 경우이므로 그 예약을 재사용해 결제를 이어가게 한다
+        //   - PAID(결제완료): 이미 확정된 예약이므로 새 예약을 거부한다
+        Reservation existing = reservationMapper.findActiveBySlot(memberId, req.getPlaceId(), req.getVisitDate());
+        if (existing != null) {
+            if (existing.getStatus() == ReservationStatus.PENDING) {
+                return existing.getReservationId();
+            }
+            throw new IllegalStateException("이미 예약이 완료된 날짜입니다.");
         }
 
         Reservation r = new Reservation();

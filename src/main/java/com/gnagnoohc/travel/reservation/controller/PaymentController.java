@@ -35,7 +35,7 @@ public class PaymentController {
     private final PaymentService paymentService;
     private final KakaoPayService kakaoPayService;
     private final TossPayService tossPayService;
-    
+
     @Value("${toss.client-key}")
     private String tossClientKey;
     
@@ -123,6 +123,12 @@ public class PaymentController {
     public Map<String, Object> tossReady(@PathVariable("reservationId") Long reservationId,
                                          HttpSession session) {
         Reservation r = reservationService.getById(reservationId);
+
+        // 이중결제 방지: kakaoReady()와 동일하게 PENDING 예약만 결제창을 열 수 있다
+        if (r.getStatus() != ReservationStatus.PENDING) {
+            throw new IllegalStateException("결제 대기 중인 예약만 결제할 수 있습니다. 현재 상태: " + r.getStatus().getLabel());
+        }
+
         int amount = reservationService.calculateAmount(r);
         String orderId = paymentService.generateOrderId(reservationId);
 

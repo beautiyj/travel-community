@@ -17,4 +17,8 @@ public interface MypageService {
 	List<MypageDto> getWishlist(Long memberId);
 	
 	void withdrawMember(Long memberId);
+	
+	void deleteWishlist(Long memberId);
+
+	void cancelReservation(Long reservationId);
 }

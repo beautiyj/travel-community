@@ -13,8 +13,6 @@ import lombok.ToString;
 @ToString
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TourLclsSystmCodeDTO {
-    private String rnum;            // 일련번호
-
     // (요청)분류체계 목록조회 여부 - N(코드조회)일 때 표출되는 필드
     private String code;            // 대/중/소분류 코드  (1Depth,2Depth,3Depth)
     private String name;            // 대/중/소분류 코드명(1Depth,2Depth,3Depth 코드명)

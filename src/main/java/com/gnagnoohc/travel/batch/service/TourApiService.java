@@ -88,8 +88,14 @@ public class TourApiService {
             rawName = ldongCodeDTO.getName();
         }
 
-        // 3. 추출한 String rawCode -> Long 타입의 regionId로 변환
-        Long regionId = (rawCode != null && !rawCode.isBlank()) ? Long.parseLong(rawCode) : null;
+        // 1-2. 지역테이블 PK로 처리될 rawCode가 null이거나 비어있으면 우리의 DB에 넣을 수 없으므로 null 반환
+        if (rawCode == null || rawCode.isBlank()) {
+            log.warn("유효하지 않은 법정동 코드 데이터: 엔티티 변환을 건너뜁니다. DTO: {}", ldongCodeDTO);
+            return null; // Spring Batch에서 null을 리턴하면 해당 아이템을 Skip 처리함
+        }
+
+        // 3. 추출한 String rawCode -> Long 타입의 regionId로 변환 (NULL처리 된 정제데이터이므로 바로 주입)
+        Long regionId = Long.parseLong(rawCode);
 
         // rawCode의 앞 2자리를 상위 parentRegionId(시/도)로 파싱 (예: "11110" -> 11L)
         Long parentRegionId = null;

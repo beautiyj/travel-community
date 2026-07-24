@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
+<!--<resultMap id="regionResultMap" type="com.gnagnoohc.travel.batch.dto.RegionEntity">-->
+<!--    &lt;!&ndash; column: DB컬럼명 / property: Java필드명 매핑용 코드 &ndash;&gt;-->
+<!--    <id column="region_id" property="regionId" />-->
+<!--    <result column="region_name" property="regionName" />-->
+<!--    <result column="parent_region_id" property="parentRegionId" />-->
+<!--</resultMap>-->
+
 <mapper namespace="com.gnagnoohc.travel.tour.mapper.TourMapper">
 
     <!-- 배치용 - 외부 공공데이터 수집 후 PLACE 테이블 알박기(UPSERT) -->

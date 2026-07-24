@@ -28,8 +28,9 @@
 
         <div class="form-field">
             <label for="findIdEmail">이메일</label>
+            <%-- 서버의 이메일 최대 길이 정책과 동일하게 100자로 제한한다. --%>
             <input id="findIdEmail" name="email" type="email" autocomplete="email"
-                   maxlength="50" placeholder="example@email.com" required>
+                   maxlength="100" placeholder="example@email.com" required>
             <p id="findIdEmailError" class="field-error" aria-live="polite">${emailError}</p>
         </div>
 

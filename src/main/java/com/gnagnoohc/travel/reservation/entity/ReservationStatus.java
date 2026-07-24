@@ -7,7 +7,8 @@ package com.gnagnoohc.travel.reservation.entity;
 public enum ReservationStatus {
 
     PENDING("예약중"),               // 예약 생성 직후, 결제 대기
-    PAID("예약완료"),                // 결제 승인 완료
+    PAID("예약완료"),                // 결제 승인 완료 = 예약 확정
+    COMPLETED("방문완료"),           // 방문일이 지나 스케줄러가 전환 (당일은 PAID 유지)
     CANCEL_REQUESTED("취소요청"),    // 사용자가 취소 요청, 관리자 검토 대기
     CANCELED("예약취소"),            // 관리자 승인 + 환불 완료
     EXPIRED("예약만료");             // 30분 내 미결제로 스케줄러가 전환

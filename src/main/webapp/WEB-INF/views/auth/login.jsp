@@ -64,6 +64,21 @@
         <button class="primary-button" type="submit">로그인</button>
     </form>
 
+    <%-- 공통 소셜 로그인 컴포넌트 적용 전까지 우선순위만 맞춰 임시로 노출한다. --%>
+    <section class="social-login-section" aria-label="소셜 로그인">
+        <div class="social-login-divider"><span>또는</span></div>
+        <a class="social-login-button social-login-button--kakao"
+           href="${pageContext.request.contextPath}/auth/kakao">카카오로 로그인</a>
+        <button class="social-login-button social-login-button--google" type="button" disabled>구글 로그인 (준비 중)</button>
+        <button class="social-login-button social-login-button--naver" type="button" disabled>네이버 로그인 (준비 중)</button>
+    </section>
+
+    <c:if test="${not empty kakaoError}">
+        <div class="form-alert form-alert--error" role="alert">
+            <c:out value="${kakaoError}" />
+        </div>
+    </c:if>
+
     <div class="auth-links">
         <a href="${pageContext.request.contextPath}/auth/find-id">아이디 찾기</a>
         <span aria-hidden="true">|</span>

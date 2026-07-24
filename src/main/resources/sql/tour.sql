@@ -14,33 +14,43 @@ CREATE TABLE REGION (
 -- PLACE (여행지 / 맛집 / 숙박 통합 관리) 테이블
 CREATE TABLE PLACE (
     place_id        BIGINT NOT NULL AUTO_INCREMENT,
-    content_id      VARCHAR(20) NOT NULL,
-    content_type_id VARCHAR(10),
-    place_type      TINYINT NOT NULL,
-    region_id       BIGINT,
+    -- content_id      VARCHAR(20) NOT NULL,
+    member_id      BIGINT NOT NULL,  -- 외래키
+
+    region_id       BIGINT NOT NULL, -- 외래키
+
+    -- content_type_id VARCHAR(10),
+    place_type      TINYINT NOT NULL,  -- 콘텐츠타입과동일
     member_id       BIGINT,                           -- MEMBER 테이블이 생성되어 있다고 가정
+    
     name            VARCHAR(200) NOT NULL,
     description     TEXT,
     address         VARCHAR(500),
     mapx            DECIMAL(12, 9),
     mapy            DECIMAL(12, 9),
     is_closed       BOOLEAN DEFAULT FALSE NOT NULL,   -- 0: 영업중 1: 휴,폐업
-    admin_type      INT NOT NULL DEFAULT 0,           -- 0: 공공데이터 시드(기본값), 1: 사업자 등록/클레임
+
+    -- admin_type      INT NOT NULL DEFAULT 0,           -- 0: 공공데이터 시드(기본값), 1: 사업자 등록/클레임
+    
     first_image     VARCHAR(500),                     -- 이미지 테이블의 조인 방지용 필드
+    
     created_at      DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at      DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
 
+
+    -- 제약조건 - place_id pk, member_id  & region_id 외래키
     CONSTRAINT PK_PLACE PRIMARY KEY (place_id),
     
     -- 공공데이터 고유 ID 중복 방지 유니크 제약조건
-    CONSTRAINT UQ_PLACE_CONTENT_ID UNIQUE (content_id),
+    -- CONSTRAINT UQ_PLACE_CONTENT_ID UNIQUE (content_id),
     
     -- 외래키 설정 (지역 테이블 연계)
     CONSTRAINT FK_PLACE_REGION FOREIGN KEY (region_id) 
         REFERENCES REGION (region_id) ON DELETE SET NULL
 
     -- admin_type 값 무결성 제약조건 (공공데이터/사업자회원 직접등록 - 0 또는 1만 허용)
-    CONSTRAINT CK_PLACE_ADMIN_TYPE CHECK (admin_type IN (0, 1))
+    -- CONSTRAINT CK_PLACE_ADMIN_TYPE CHECK (admin_type IN (0, 1))
+
 
     -- 멤버테이블 생성 시 추가해두기        
     -- , CONSTRAINT FK_PLACE_MEMBER FOREIGN KEY (member_id) REFERENCES MEMBER (member_id) ON DELETE SET NULL

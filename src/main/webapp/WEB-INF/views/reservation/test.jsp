@@ -93,6 +93,6 @@
     </div>
 </div>
 
-<script src="/js/reservation-test.js"></script>
+<script src="/js/reservation/reservation-test.js"></script>
 </body>
 </html>

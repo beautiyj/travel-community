@@ -1,9 +1,10 @@
 package com.gnagnoohc.travel.reservation.controller;
 
 import com.gnagnoohc.travel.reservation.dto.ReservationCreateRequest;
-import com.gnagnoohc.travel.reservation.service.PaymentService;
 import com.gnagnoohc.travel.reservation.service.ReservationService;
 import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
+import org.springframework.validation.BindingResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -19,7 +20,6 @@ import java.util.Map;
 public class ReservationController {
 
     private final ReservationService reservationService;
-    private final PaymentService paymentService;
 
     /** 개발용 테스트 허브. 예약~결제~취소 흐름을 수동으로 확인하는 페이지 */
     @GetMapping("/test")
@@ -40,7 +40,16 @@ public class ReservationController {
 
     /** 예약 생성 -> 결제 수단 선택 페이지로 이동 */
     @PostMapping
-    public String create(@ModelAttribute ReservationCreateRequest req, HttpSession session) {
+    public String create(@Valid @ModelAttribute ReservationCreateRequest req,
+                         BindingResult bindingResult,
+                         HttpSession session, Model model) {
+        // 서버측 검증 실패(폼 조작/직접 요청 등) 시 폼으로 되돌림 — 프론트 검증의 최종 방어선
+        if (bindingResult.hasErrors()) {
+            log.warn("[예약 생성 검증 실패] {}", bindingResult.getAllErrors());
+            model.addAttribute("placeId", req.getPlaceId());
+            model.addAttribute("price", ReservationService.TEMP_UNIT_PRICE);
+            return "reservation/reservationForm";
+        }
         // TODO: 로그인 파트와 연동 - 세션에 저장되는 회원 키 이름을 팀 컨벤션에 맞추기
         Long memberId = (Long) session.getAttribute("loginMemberId");
         if (memberId == null) {
@@ -65,22 +74,6 @@ public class ReservationController {
 
         reservationService.requestCancel(reservationId, memberId, reason);
         log.info("[취소 요청] reservationId={}, memberId={}, reason={}", reservationId, memberId, reason);
-        return Map.of("result", "OK");
-    }
-
-    /** 관리자: 취소 요청 승인 → 환불 실행 (관리자 페이지에서 호출) */
-    @PostMapping("/{reservationId}/cancel-approve")
-    @ResponseBody
-    public Map<String, String> cancelApprove(@PathVariable("reservationId") Long reservationId) {
-        paymentService.approveCancel(reservationId);
-        return Map.of("result", "OK");
-    }
-
-    /** 관리자: 취소 요청 거절 → 예약완료로 원복 (관리자 페이지에서 호출) */
-    @PostMapping("/{reservationId}/cancel-reject")
-    @ResponseBody
-    public Map<String, String> cancelReject(@PathVariable("reservationId") Long reservationId) {
-        reservationService.rejectCancel(reservationId);
         return Map.of("result", "OK");
     }
 }

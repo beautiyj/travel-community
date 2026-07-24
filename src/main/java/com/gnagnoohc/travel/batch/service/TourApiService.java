@@ -70,11 +70,12 @@ public class TourApiService {
         // 1. 법정동 목록조회 여부 - Y(전체목록조회) 일 때 엔티티 변환해서 넣기
         // 법정동코드 Y일땐 필드가 lDongRegnCd, lDongSignguCd 로 넘어오니까 이게 널이 아닐 때
         if (ldongCodeDTO.getLDongRegnCd() != null && !ldongCodeDTO.getLDongRegnCd().isBlank()) {
-            // 우리의 법정동 코드는 시도코드 + 시군구코드로 처리해서 넣는다
+            
+            // 우리의 법정동 코드는 시도코드 + 시군구코드로 처리해서 넣는다 (11+110)
             rawCode = ldongCodeDTO.getLDongRegnCd() + 
                     (ldongCodeDTO.getLDongSignguCd() != null ? ldongCodeDTO.getLDongSignguCd() : "");
             
-            // 우리의 법정동 명칭은 시도명 + " " + 시군구명으로 처리해서 넣는다
+            // 우리의 법정동 명칭은 시도명 + " " + 시군구명으로 처리해서 넣는다 (서울+종로구)
             rawName = ldongCodeDTO.getLDongRegnNm();
             if (ldongCodeDTO.getLDongSignguNm() != null && !ldongCodeDTO.getLDongSignguNm().isBlank()) {
                 rawName += " " + ldongCodeDTO.getLDongSignguNm();
@@ -90,7 +91,7 @@ public class TourApiService {
         // 3. 추출한 String rawCode -> Long 타입의 regionId로 변환
         Long regionId = (rawCode != null && !rawCode.isBlank()) ? Long.parseLong(rawCode) : null;
 
-        // 💡 [2단 드롭다운 지원] rawCode의 앞 2자리를 상위 parentRegionId(시/도)로 파싱 (예: "11110" -> 11L)
+        // rawCode의 앞 2자리를 상위 parentRegionId(시/도)로 파싱 (예: "11110" -> 11L)
         Long parentRegionId = null;
         if (rawCode != null && rawCode.length() >= 5) {
             parentRegionId = Long.parseLong(rawCode.substring(0, 2));

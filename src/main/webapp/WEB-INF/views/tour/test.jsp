@@ -7,7 +7,7 @@
     </head>
     <body style="margin: 0; padding: 0;">
 
-        <%@ include file="../common/navbar.jsp" %>
+        <%@ include file="../common/header.jsp" %>
 
         컴포넌트 매칭 테스트
         + 브랜치생성 yun

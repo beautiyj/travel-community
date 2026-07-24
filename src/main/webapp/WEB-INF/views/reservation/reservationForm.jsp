@@ -12,6 +12,8 @@
 </head>
 <body>
 
+<jsp:include page="/WEB-INF/views/common/header.jsp" />
+
 <div class="page-wrap">
 
     <a href="javascript:history.back()" class="back-link">&lsaquo; 상세페이지로</a>

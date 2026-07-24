@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="/css/components/smallButton.css">
 </head>
 <body>
+<jsp:include page="/WEB-INF/views/common/header.jsp" />
 <div class="result-card">
     <div class="result-icon ok">&#10003;</div>
     <h2>결제가 완료되었습니다</h2>

@@ -8,7 +8,8 @@ import org.apache.ibatis.type.Alias;
 import lombok.Data;
 
 @Data
-@Alias("member")
+//todo: auth쪽과 별칭명 동일하여 임시주석처리. 변경필요
+//@Alias("member")
 public class MypageDto {
 
 	private Long memberId;

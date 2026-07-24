@@ -19,6 +19,11 @@ public class CommonService {
 		return dao.searchPlaces(keyword);
 	}
 
+	// 장소 태그: 방문자인증후기용 - 로그인 회원의 확정(결제완료) 예약 장소만 검색 - CommunityController에서 사용
+	public List<Map<String, Object>> searchConfirmedPlaces(int memberId, String keyword) {
+		return dao.searchConfirmedPlaces(memberId, keyword);
+	}
+
 	// 댓글 권한 체크용: 게시글에 태그된 place의 소유주 member_id (place 미태그 글이면 null) - CommentController에서 사용
 	public Integer selectPlaceOwnerId(int postId) {
 		return dao.selectPlaceOwnerId(postId);

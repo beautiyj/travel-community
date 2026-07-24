@@ -60,10 +60,10 @@
       </div>
     </div>
 
-    <!-- 장소 태그: "방문자인증후기" 카테고리일 때만 노출 (placeTag.js가 카테고리 변경에 맞춰 토글)
+    <!-- 장소 태그: "방문자인증후기"/"일반후기" 카테고리일 때만 노출 (placeTag.js가 카테고리 변경에 맞춰 토글)
          이미 태그된 장소가 있으면 미리 채워서 보여줌. 한 게시글에 장소 1개만 태그 가능 -->
     <div class="field" id="place-tag-field"
-         style="${post.category == '방문자인증후기' ? '' : 'display:none;'}">
+         style="${(post.category == '방문자인증후기' || post.category == '일반후기') ? '' : 'display:none;'}">
       <label class="field-label">장소 태그</label>
       <input type="hidden" id="placeId" name="placeId" value="${post.placeId}">
 

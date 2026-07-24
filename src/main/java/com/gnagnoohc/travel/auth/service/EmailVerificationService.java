@@ -33,6 +33,7 @@ public class EmailVerificationService {
 	private static final Duration RESEND_COOLDOWN = Duration.ofSeconds(60);
 	private static final Duration VERIFIED_VALIDITY = Duration.ofMinutes(30);
 	private static final int MAX_SENDS_PER_EMAIL_PER_DAY = 5;
+	private static final int MAX_SENDS_PER_IP_PER_DAY = 20;
 	private static final int MAX_SENDS_PER_DAY = 300;
 	private static final int MAX_VERIFICATION_ATTEMPTS = 5;
 
@@ -44,9 +45,10 @@ public class EmailVerificationService {
 
 	// 인증번호 발송
 	@Transactional
-	public void sendSignupVerificationCode(String rawEmail) {
+	public void sendSignupVerificationCode(String rawEmail, String rawRequestIp) {
 		String email = normalizeAndValidateEmail(rawEmail);
-		sendVerificationCode(email, SIGNUP_PURPOSE, null);
+		String requestIp = normalizeAndValidateRequestIp(rawRequestIp);
+		sendVerificationCode(email, SIGNUP_PURPOSE, null, requestIp);
 	}
 
 	// 인증번호 검증
@@ -62,15 +64,17 @@ public class EmailVerificationService {
 
 	// 비밀번호 찾기 인증번호 발송
 	@Transactional
-	public void sendPasswordResetVerificationCode(String rawUsername, String rawEmail) {
+	public void sendPasswordResetVerificationCode(
+			String rawUsername, String rawEmail, String rawRequestIp) {
 		String username = validateUsername(rawUsername);
 		String email = normalizeAndValidateEmail(rawEmail);
+		String requestIp = normalizeAndValidateRequestIp(rawRequestIp);
 		Integer memberId = mapper.findActiveLocalMemberId(username, email);
 		if (memberId == null) {
 			throw new EmailVerificationException("입력한 아이디와 이메일을 확인해주세요.");
 		}
 
-		sendVerificationCode(email, FIND_PASSWORD_PURPOSE, memberId.longValue());
+		sendVerificationCode(email, FIND_PASSWORD_PURPOSE, memberId.longValue(), requestIp);
 	}
 
 	// 비밀번호 찾기 인증번호 검증
@@ -146,10 +150,11 @@ public class EmailVerificationService {
 	}
 
 	// 회원가입과 비밀번호 찾기가 같은 발송 제한과 해시 저장 정책을 사용한다.
-	private void sendVerificationCode(String email, String purpose, Long memberId) {
+	private void sendVerificationCode(
+			String email, String purpose, Long memberId, String requestIp) {
 		Instant now = Instant.now();
 		EmailVerification latest = findLatestVerificationForUpdate(email, purpose, memberId);
-		validateSendLimits(email, purpose, latest, now);
+		validateSendLimits(email, purpose, requestIp, latest, now);
 
 		String verificationCode = createVerificationCode();
 		EmailVerification verification = new EmailVerification();
@@ -158,6 +163,7 @@ public class EmailVerificationService {
 		verification.setCodeHash(passwordEncoder.encode(verificationCode));
 		verification.setExpiresAt(Timestamp.from(now.plus(CODE_VALIDITY)));
 		verification.setMemberId(memberId);
+		verification.setRequestIp(requestIp);
 
 		if (mapper.insertEmailVerification(verification) != 1) {
 			throw new EmailVerificationException("이메일 인증 정보를 저장하지 못했습니다.");
@@ -203,6 +209,10 @@ public class EmailVerificationService {
 		if (verification.getAttemptCount() >= MAX_VERIFICATION_ATTEMPTS) {
 			throw new EmailVerificationException("인증 시도 횟수를 초과했습니다. 다시 발송해주세요.");
 		}
+		// 비밀번호 변경 등에 이미 사용한 인증 결과는 검증 API에서도 다시 성공시키지 않는다.
+		if (verification.getConsumedAt() != null) {
+			throw new EmailVerificationException("이미 사용된 인증번호입니다. 다시 발송해주세요.");
+		}
 	}
 
 	// 인증 시도 횟수 증가
@@ -246,7 +256,8 @@ public class EmailVerificationService {
 				|| !sessionVerification.getEmailVerificationId()
 						.equals(latestVerification.getEmailVerificationId())
 				|| latestVerification.getVerifiedAt() == null
-				|| latestVerification.getMemberId() != null) {
+				|| latestVerification.getMemberId() != null
+				|| latestVerification.getConsumedAt() != null) {
 			throw new EmailVerificationException(
 					EmailVerificationException.EMAIL_REVERIFICATION_REQUIRED,
 					"사용할 수 없는 이메일 인증입니다. 다시 인증해주세요."
@@ -275,7 +286,9 @@ public class EmailVerificationService {
 	}
 
 	// 발송 제한 검증
-	private void validateSendLimits(String email, String purpose, EmailVerification latest, Instant now) {
+	private void validateSendLimits(
+			String email, String purpose, String requestIp,
+			EmailVerification latest, Instant now) {
 		// 화면의 버튼 비활성화는 우회할 수 있으므로 서버에서 같은 제한을 다시 적용한다.
 		if (latest != null
 				&& latest.getCreatedAt().toInstant().plus(RESEND_COOLDOWN).isAfter(now)) {
@@ -284,6 +297,12 @@ public class EmailVerificationService {
 		if (mapper.countEmailVerificationRequestsInLastDay(email, purpose)
 				>= MAX_SENDS_PER_EMAIL_PER_DAY) {
 			throw new EmailVerificationException("해당 이메일의 일일 인증번호 발송 횟수를 초과했습니다.");
+		}
+		// 원격 주소를 확인할 수 있을 때만 동일 IP의 최근 24시간 발송 횟수를 제한한다.
+		if (requestIp != null
+				&& mapper.countEmailVerificationRequestsByIpInLastDay(requestIp)
+						>= MAX_SENDS_PER_IP_PER_DAY) {
+			throw new EmailVerificationException("동일 IP의 일일 인증번호 발송 횟수를 초과했습니다.");
 		}
 		if (mapper.countAllEmailVerificationRequestsInLastDay() >= MAX_SENDS_PER_DAY) {
 			throw new EmailVerificationException("오늘의 인증번호 발송 한도를 초과했습니다.");
@@ -315,6 +334,18 @@ public class EmailVerificationService {
 		return new EmailVerificationException(
 				EmailVerificationException.EMAIL_REVERIFICATION_REQUIRED,
 				"이메일 인증이 만료되었거나 이미 사용되었습니다. 다시 인증해주세요.");
+	}
+
+	private String normalizeAndValidateRequestIp(String rawRequestIp) {
+		if (rawRequestIp == null || rawRequestIp.isBlank()) {
+			return null;
+		}
+
+		String requestIp = rawRequestIp.trim();
+		if (requestIp.length() > 45) {
+			throw new EmailVerificationException("요청 IP 형식이 올바르지 않습니다.");
+		}
+		return requestIp;
 	}
 
 	private String normalizeAndValidateEmail(String rawEmail) {

@@ -19,9 +19,10 @@ public class EmailVerification {
 	private Timestamp expiresAt;
 	private Timestamp verifiedAt;
 	private int attemptCount;
-	private int resendCount;
 	private Timestamp createdAt;
 	private Long memberId;
+	// 이메일 발송을 요청한 클라이언트 IP를 저장해 IP별 발송 제한에 사용한다.
+	private String requestIp;
 	// 비밀번호 재설정 등에서 같은 인증 결과를 한 번만 사용하도록 기록한다.
 	private Timestamp consumedAt;
 }

@@ -88,4 +88,17 @@
           AND created_at &lt; #{cutoff}
     </update>
 
+    <!--
+      스케줄러: 방문일이 지난 예약을 방문완료로 전환.
+      visit_date < CURDATE() 이므로 방문 당일에는 PAID가 유지된다.
+      (관리자 대시보드의 '오늘 방문 인원'이 visit_date = CURDATE() AND status = 'PAID'로 집계하기 때문)
+      CANCEL_REQUESTED 건은 관리자가 처리해야 하므로 전환 대상에서 제외한다.
+    -->
+    <update id="completeVisited">
+        UPDATE RESERVATION
+        SET status = 'COMPLETED'
+        WHERE status = 'PAID'
+          AND visit_date &lt; CURDATE()
+    </update>
+
 </mapper>

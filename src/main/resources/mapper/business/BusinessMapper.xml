@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gnagnoohc.travel.business.mapper.BusinessMapper">
+
+    <resultMap id="businessReservationResultMap" type="com.gnagnoohc.travel.business.dto.BusinessReservationDto">
+        <id     property="reservationId" column="reservation_id"/>
+        <result property="visitorName"   column="visitor_name"/>
+        <result property="phone"         column="phone"/>
+        <result property="visitDate"     column="visit_date"/>
+        <result property="headcount"     column="headcount"/>
+        <result property="status"        column="status"/>
+        <result property="createdAt"     column="created_at"/>
+        <result property="placeName"     column="place_name"/>
+        <result property="amount"        column="amount"/>
+        <result property="paymentStatus" column="payment_status"/>
+    </resultMap>
+
+    <resultMap id="placeOverviewResultMap" type="com.gnagnoohc.travel.business.dto.BusinessPlaceOverviewDto">
+        <id     property="placeId"    column="place_id"/>
+        <result property="placeName"  column="place_name"/>
+        <result property="ownerName"  column="owner_name"/>
+        <result property="closed"     column="is_closed"/>
+        <result property="firstImage" column="first_image"/>
+    </resultMap>
+
+    <resultMap id="dashboardCountsResultMap" type="com.gnagnoohc.travel.business.dto.BusinessDashboardCountsDto">
+        <result property="monthlyCount"       column="monthly_count"/>
+        <result property="pendingCount"       column="pending_count"/>
+        <result property="todayVisitors"      column="today_visitors"/>
+        <result property="cancelRequestCount" column="cancel_request_count"/>
+    </resultMap>
+
+    <resultMap id="monthlyTrendResultMap" type="com.gnagnoohc.travel.business.dto.BusinessMonthlyTrendDto">
+        <result property="monthLabel"   column="month_label"/>
+        <result property="bookingCount" column="booking_count"/>
+        <result property="revenue"      column="revenue"/>
+    </resultMap>
+
+    <resultMap id="reservationStatusCountsResultMap" type="com.gnagnoohc.travel.business.dto.BusinessReservationStatusCountsDto">
+        <result property="cancelRequestCount" column="cancel_request_count"/>
+        <result property="confirmedCount"     column="confirmed_count"/>
+        <result property="doneCount"          column="done_count"/>
+        <result property="cancelledCount"     column="cancelled_count"/>
+    </resultMap>
+
+    <!-- 지역코드는 당분간 사업자 직접등록 업소엔 null로 두기로 해서 관련 옵션 조회 잠시 주석처리
+    <resultMap id="regionOptionResultMap" type="com.gnagnoohc.travel.business.dto.BusinessRegionOptionDto">
+        <id     property="regionId"   column="region_id"/>
+        <result property="regionName" column="region_name"/>
+    </resultMap>
+    -->
+
+    <resultMap id="reviewResultMap" type="com.gnagnoohc.travel.business.dto.BusinessReviewDto">
+        <id     property="postId"        column="post_id"/>
+        <result property="title"         column="title"/>
+        <result property="content"       column="content"/>
+        <result property="createdAt"     column="created_at"/>
+        <result property="nickname"      column="nickname"/>
+        <result property="readcount"     column="readcount"/>
+    </resultMap>
+
+    <resultMap id="placeDetailResultMap" type="com.gnagnoohc.travel.business.dto.BusinessPlaceDetailDto">
+        <id     property="placeId"    column="place_id"/>
+        <result property="name"       column="name"/>
+        <result property="placeType"  column="place_type"/>
+        <result property="regionId"   column="region_id"/>
+        <result property="regionName" column="region_name"/>
+        <result property="address"    column="address"/>
+        <result property="description" column="description"/>
+        <result property="closed"     column="is_closed"/>
+    </resultMap>
+
+    <!-- 사업자 회원의 업소 개요(대시보드 사이드바/헤더용). 업소 1인당 1개라고 가정하고 1건만 조회 -->
+    <select id="selectPlaceOverviewByMember" resultMap="placeOverviewResultMap">
+        SELECT p.place_id, p.name AS place_name, p.is_closed, p.first_image, m.name AS owner_name
+        FROM PLACE p
+        JOIN member m ON m.member_id = p.member_id
+        WHERE p.member_id = #{bizMemberId}
+        LIMIT 1
+    </select>
+
+    <!-- 오늘 방문 예정 예약 목록 -->
+    <select id="selectTodayReservations" resultMap="businessReservationResultMap">
+        SELECT
+            r.reservation_id,
+            r.visitor_name,
+            r.phone,
+            r.visit_date,
+            r.headcount,
+            r.status,
+            r.created_at,
+            p.name AS place_name,
+            pay.amount,
+            pay.payment_status
+        FROM RESERVATION r
+        JOIN PLACE p ON p.place_id = r.place_id
+        LEFT JOIN PAYMENT pay ON pay.reservation_id = r.reservation_id
+        WHERE r.place_id = #{placeId}
+          AND r.visit_date = CURDATE()
+        ORDER BY r.reservation_id
+    </select>
+
+    <!-- 대시보드 KPI 집계 (이번 달 예약 / 대기중 / 오늘 방문 인원 / 취소요청) -->
+    <select id="selectDashboardCounts" resultMap="dashboardCountsResultMap">
+        SELECT
+            COALESCE(SUM(CASE WHEN YEAR(r.visit_date) = YEAR(CURDATE()) AND MONTH(r.visit_date) = MONTH(CURDATE()) THEN 1 ELSE 0 END), 0) AS monthly_count,
+            COALESCE(SUM(CASE WHEN r.status = 'PENDING' THEN 1 ELSE 0 END), 0) AS pending_count,
+            COALESCE(SUM(CASE WHEN r.visit_date = CURDATE() AND r.status = 'PAID' THEN r.headcount ELSE 0 END), 0) AS today_visitors,
+            COALESCE(SUM(CASE WHEN r.status = 'CANCEL_REQUESTED' THEN 1 ELSE 0 END), 0) AS cancel_request_count
+        FROM RESERVATION r
+        WHERE r.place_id = #{placeId}
+    </select>
+
+    <!-- 최근 6개월(이번 달 포함) 예약건수/매출 추이. 데이터 없는 달도 0으로 채워서 6개 행을 항상 반환 -->
+    <select id="selectMonthlyTrend" resultMap="monthlyTrendResultMap">
+        SELECT
+            DATE_FORMAT(month_series.month_start, '%c월') AS month_label,
+            COALESCE(agg.booking_count, 0) AS booking_count,
+            COALESCE(agg.revenue, 0) AS revenue
+        FROM (
+            SELECT DATE_SUB(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL n MONTH) AS month_start
+            FROM (SELECT 0 n UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5) n_list
+        ) month_series
+        LEFT JOIN (
+            SELECT
+                DATE_FORMAT(r.visit_date, '%Y-%m-01') AS month_start,
+                COUNT(*) AS booking_count,
+                SUM(COALESCE(pay.amount, 0)) AS revenue
+            FROM RESERVATION r
+            LEFT JOIN PAYMENT pay ON pay.reservation_id = r.reservation_id
+            WHERE r.place_id = #{placeId}
+            GROUP BY DATE_FORMAT(r.visit_date, '%Y-%m-01')
+        ) agg ON agg.month_start = month_series.month_start
+        ORDER BY month_series.month_start
+    </select>
+
+    <!-- 특정 업소(placeId)의 예약 목록. member_id로 소유자 검증까지 같이 함 -->
+    <select id="selectReservationsByPlace" resultMap="businessReservationResultMap">
+        SELECT
+            r.reservation_id,
+            r.visitor_name,
+            r.phone,
+            r.visit_date,
+            r.headcount,
+            r.status,
+            r.created_at,
+            p.name AS place_name,
+            pay.amount,
+            pay.payment_status
+        FROM RESERVATION r
+        JOIN PLACE p ON p.place_id = r.place_id
+        LEFT JOIN PAYMENT pay ON pay.reservation_id = r.reservation_id
+        WHERE r.place_id = #{placeId}
+          AND p.member_id = #{bizMemberId}
+        <if test="status != null and status != ''">
+            AND r.status = #{status}
+        </if>
+        ORDER BY r.visit_date DESC, r.reservation_id DESC
+    </select>
+
+    <!-- 예약 관리 화면 상태별 필터 탭에 표시할 개수 (취소요청/확정/완료/취소) -->
+    <select id="selectReservationStatusCounts" resultMap="reservationStatusCountsResultMap">
+        SELECT
+            COALESCE(SUM(CASE WHEN r.status = 'CANCEL_REQUESTED' THEN 1 ELSE 0 END), 0) AS cancel_request_count,
+            COALESCE(SUM(CASE WHEN r.status = 'PAID' THEN 1 ELSE 0 END), 0) AS confirmed_count,
+            COALESCE(SUM(CASE WHEN r.status = 'COMPLETED' THEN 1 ELSE 0 END), 0) AS done_count,
+            COALESCE(SUM(CASE WHEN r.status = 'CANCELED' THEN 1 ELSE 0 END), 0) AS cancelled_count
+        FROM RESERVATION r
+        JOIN PLACE p ON p.place_id = r.place_id
+        WHERE r.place_id = #{placeId}
+          AND p.member_id = #{bizMemberId}
+    </select>
+
+    <!-- 취소 승인/거절 전 소유자 확인용. 예약 상태 변경 자체는 reservation 파트 서비스(PaymentService/ReservationService)가 처리한다 -->
+    <select id="existsReservationForBizMember" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM RESERVATION r
+        JOIN PLACE p ON p.place_id = r.place_id
+        WHERE r.reservation_id = #{reservationId}
+          AND p.member_id = #{bizMemberId}
+    </select>
+
+    <!-- 즉시 예약마감 토글 -->
+    <update id="updatePlaceClosed">
+        UPDATE PLACE
+        SET is_closed = #{isClosed}
+        WHERE place_id = #{placeId}
+          AND member_id = #{bizMemberId}
+    </update>
+
+    <!-- 업소 등록 폼 지역 드롭다운. 지역코드를 당분간 null로 두기로 해서 주석처리
+    <select id="selectRegionOptions" resultMap="regionOptionResultMap">
+        SELECT region_id, region_name
+        FROM REGION
+        ORDER BY region_name
+    </select>
+    -->
+
+    <!-- member_role='BUSINESS'(관리자가 승인한 사업자)만 업소 등록 가능. 회원 없으면 null 반환 -->
+    <select id="selectMemberRole" resultType="java.lang.String">
+        SELECT member_role
+        FROM member
+        WHERE member_id = #{memberId}
+    </select>
+
+    <!-- 사업자 직접등록. is_closed/created_at/updated_at은 DB DEFAULT에 맡기고 컬럼 목록에서 제외 -->
+    <!-- region_id/mapx/mapy는 사업자 직접등록 업소엔 당분간 null로 두기로 해서 컬럼 목록에서 제외 (BusinessPlaceRegisterDto도 동일하게 주석처리됨) -->
+    <insert id="insertOwnerPlace" parameterType="com.gnagnoohc.travel.business.dto.BusinessPlaceRegisterDto"
+            useGeneratedKeys="true" keyProperty="placeId" keyColumn="place_id">
+        INSERT INTO PLACE (
+            content_id, content_type_id, place_type, <!-- region_id, --> member_id,
+            name, description, address, <!-- mapx, mapy, --> admin_type, first_image
+        ) VALUES (
+            #{contentId}, #{contentTypeId}, #{placeType}, <!-- #{regionId}, --> #{memberId},
+            #{name}, #{description}, #{address}, <!-- #{mapx}, #{mapy}, --> #{adminType}, #{firstImage}
+        )
+    </insert>
+
+    <insert id="insertPlaceImage">
+        INSERT INTO PLACE_IMAGE (place_id, image_url, sort_order)
+        VALUES (#{placeId}, #{imageUrl}, #{sortOrder})
+    </insert>
+
+    <!-- 업소정보 수정 폼 진입 시 기존 값 채우기용. 지역명까지 같이 조회 -->
+    <select id="selectPlaceDetailByMember" resultMap="placeDetailResultMap">
+        SELECT p.place_id, p.name, p.place_type, p.region_id, r.region_name, p.address, p.description, p.is_closed
+        FROM PLACE p
+        LEFT JOIN REGION r ON r.region_id = p.region_id
+        WHERE p.member_id = #{bizMemberId}
+        LIMIT 1
+    </select>
+
+    <!-- 수정 폼에 보여줄 기존 사진 목록. sort_order 순서 = 첫 번째가 대표사진 -->
+    <select id="selectPlaceImages" resultType="java.lang.String">
+        SELECT image_url
+        FROM PLACE_IMAGE
+        WHERE place_id = #{placeId}
+        ORDER BY sort_order
+    </select>
+
+    <!-- 업소정보 수정. 소유자가 아니면 0건 UPDATE. region_id는 당분간 null로 두기로 해서 주석처리 (BusinessPlaceUpdateDto도 동일) -->
+    <update id="updatePlace" parameterType="com.gnagnoohc.travel.business.dto.BusinessPlaceUpdateDto">
+        UPDATE PLACE
+        SET name = #{name},
+            place_type = #{placeType},
+            <!-- region_id = #{regionId}, -->
+            address = #{address},
+            description = #{description},
+            first_image = #{firstImage}
+        WHERE place_id = #{placeId}
+          AND member_id = #{memberId}
+    </update>
+
+    <!-- 수정 화면에서 체크 해제한 기존 사진 삭제 -->
+    <delete id="deletePlaceImage">
+        DELETE FROM PLACE_IMAGE
+        WHERE place_id = #{placeId}
+          AND image_url = #{imageUrl}
+    </delete>
+
+    <!-- 후기 확인 목록. 후기는 별도 테이블 없이 post(category='후기') + place_id로 식별.
+         답글은 커뮤니티 상세(댓글)에서 처리하므로 여기서는 목록 표시에 필요한 값만 조회한다 -->
+    <!-- p.nickname은 커뮤니티 글쓰기(insert)에서 채워지지 않는 경우가 있어(NULL) member 조인으로 폴백 -->
+    <!-- sentiment 필터 : REVIEW_ANALYSIS가 아직 없는(미분석) 후기는 필터 적용 시 제외된다.
+         화면 진입 시 ReviewSentimentService가 먼저 미분석 후기를 분석해두므로 실제로는 거의 발생하지 않는다 -->
+    <select id="selectReviewsByPlace" resultMap="reviewResultMap">
+        SELECT p.post_id, p.title, p.content, p.created_at,
+               COALESCE(p.nickname, m.nickname) AS nickname,
+               p.readcount
+        FROM post p
+        JOIN member m ON m.member_id = p.member_id
+        LEFT JOIN REVIEW_ANALYSIS ra ON ra.post_id = p.post_id
+        WHERE p.place_id = #{placeId}
+--           todo: category value값은 추후 전달받기로 하였음 (아직 미정)
+          AND p.category = '후기'
+        <if test="sentiment != null">
+            AND ra.sentiment = #{sentiment}
+        </if>
+        ORDER BY p.post_id DESC
+    </select>
+
+    <!-- 후기 감성분석 : REVIEW_ANALYSIS에 아직 없는(=미분석) 후기만 조회. 분석에 필요한 postId/content만 채운다 -->
+    <select id="selectUnanalyzedReviews" resultMap="reviewResultMap">
+        SELECT p.post_id, p.content
+        FROM post p
+        LEFT JOIN REVIEW_ANALYSIS ra ON ra.post_id = p.post_id
+        WHERE p.place_id = #{placeId}
+          AND p.category = '후기'
+          AND ra.post_id IS NULL
+    </select>
+
+    <insert id="insertReviewAnalysis">
+        INSERT INTO REVIEW_ANALYSIS (post_id, place_id, sentiment, keywords)
+        VALUES (#{postId}, #{placeId}, #{sentiment}, CAST(#{keywordsJson} AS JSON))
+    </insert>
+
+    <!-- 대시보드 후기 감성분석 요약 : 긍정/부정/중립 건수 -->
+    <select id="selectSentimentCounts" resultType="com.gnagnoohc.travel.business.dto.BusinessReviewSentimentCountsDto">
+        SELECT
+            COALESCE(SUM(CASE WHEN sentiment = 1 THEN 1 ELSE 0 END), 0) AS positiveCount,
+            COALESCE(SUM(CASE WHEN sentiment = -1 THEN 1 ELSE 0 END), 0) AS negativeCount,
+            COALESCE(SUM(CASE WHEN sentiment = 0 THEN 1 ELSE 0 END), 0) AS neutralCount
+        FROM REVIEW_ANALYSIS
+        WHERE place_id = #{placeId}
+    </select>
+
+    <!-- 워드클라우드용 : 후기별 keywords(JSON) 원본. 여러 후기의 키워드를 합산하는 건 Java 쪽에서 처리 -->
+    <select id="selectAnalyzedKeywordsJsonByPlace" resultType="java.lang.String">
+        SELECT keywords
+        FROM REVIEW_ANALYSIS
+        WHERE place_id = #{placeId}
+          AND keywords IS NOT NULL
+    </select>
+
+</mapper>

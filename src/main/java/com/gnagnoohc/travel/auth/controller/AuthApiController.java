@@ -61,7 +61,8 @@ public class AuthApiController {
 			@RequestParam("email") String email,
 			HttpServletRequest request) {
 		try {
-			emailVerificationService.sendSignupVerificationCode(email);
+			// 전달 헤더가 아닌 서버가 확인한 원격 주소만 발송 제한에 사용한다.
+			emailVerificationService.sendSignupVerificationCode(email, request.getRemoteAddr());
 			// 새 인증번호 발송이 성공하면 이전 인증 결과는 더 이상 사용하지 않는다.
 			HttpSession session = request.getSession(false);
 			if (session != null) {
@@ -125,7 +126,9 @@ public class AuthApiController {
 			@RequestParam(value = "email", required = false) String email,
 			HttpServletRequest request) {
 		try {
-			emailVerificationService.sendPasswordResetVerificationCode(username, email);
+			// X-Forwarded-For는 위조될 수 있으므로 현재 단계에서는 직접 원격 주소만 사용한다.
+			emailVerificationService.sendPasswordResetVerificationCode(
+					username, email, request.getRemoteAddr());
 			// 새 인증번호를 발송하면 이전 비밀번호 재설정 증표는 즉시 무효화한다.
 			HttpSession session = request.getSession(false);
 			if (session != null) {

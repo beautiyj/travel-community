@@ -70,6 +70,6 @@
     var tossClientKey = "${tossClientKey}";
 </script>
 <script src="https://js.tosspayments.com/v1/payment"></script>
-<script src="/js/checkout.js"></script>
+<script src="/js/reservation/checkout.js"></script>
 </body>
 </html>

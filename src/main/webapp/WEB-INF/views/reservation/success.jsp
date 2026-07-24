@@ -43,6 +43,6 @@
     var paymentId = "${payment.paymentId}";
     var reservationId = "${payment.reservationId}";
 </script>
-<script src="/js/payment-success.js"></script>
+<script src="/js/reservation/payment-success.js"></script>
 </body>
 </html>

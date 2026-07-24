@@ -25,6 +25,8 @@ public class Member {
 	private String profileImgUrl;
 	private String signupType;
 	private String memberStatus;
+	// 로그인 성공 후 세션 권한을 만들 때 DB의 공통 회원 권한을 사용한다.
+	private String memberRole;
 	private String emailVerified;
 	private Timestamp emailVerifiedAt;
 	private Timestamp lastLoginAt;

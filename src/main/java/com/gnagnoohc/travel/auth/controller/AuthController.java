@@ -84,7 +84,7 @@ public class AuthController {
 	}
 
 	// 로그아웃
-	@GetMapping("/logout")
+	@PostMapping("/logout")
 	public String logout(HttpServletRequest request) {
 		HttpSession session = request.getSession(false);
 		if (session != null) {
@@ -198,8 +198,9 @@ public class AuthController {
 			model.addAttribute("nameError", "이름을 확인하세요.");
 			return "auth/find-id";
 		}
+		// 회원가입·이메일 인증과 동일하게 이메일 최대 길이를 100자로 검사한다.
 		if (email == null || email.chars().anyMatch(ch -> Character.isWhitespace(ch)) || email.isBlank()
-				|| !email.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$") || email.length() > 50) {
+				|| !email.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$") || email.length() > 100) {
 			model.addAttribute("emailError", "이메일을 확인하세요.");
 			return "auth/find-id";
 		}

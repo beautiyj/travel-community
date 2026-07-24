@@ -54,6 +54,7 @@
                     <jsp:param name="maxlength" value="20" />
                     <jsp:param name="required" value="true" />
                 </jsp:include>
+                <p class="field-error" id="phoneError" role="alert">올바른 휴대폰 번호를 입력하세요. (예: 010-1234-5678)</p>
 
                 <div class="field">
                     <label for="visitDate">방문 날짜</label>
@@ -102,6 +103,6 @@
 <script>
     window.RESERVATION_UNIT_PRICE = ${price};   // 서버에서 내려준 1인 단가
 </script>
-<script src="/js/reservation-form.js"></script>
+<script src="/js/reservation/reservation-form.js"></script>
 </body>
 </html>

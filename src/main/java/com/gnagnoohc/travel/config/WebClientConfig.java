@@ -5,6 +5,7 @@ import java.util.Map;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,8 +18,11 @@ import org.springframework.beans.factory.annotation.Value;
 public class WebClientConfig {
 
     // 공공데이터 서비스 인증키 & URL 매핑
-    @Value("${tour.api.service-key}") private String serviceKey; 
+    @Value("${tour.api.service-key}") private String serviceKey;
     @Value("${tour.api.base-url}") private String baseUrl;
+
+    // 카카오페이 인증키 (결제 + 정합성 보정 조회가 공유하는 통신 빈에서 사용)
+    @Value("${kakaopay.secret-key}") private String kakaoSecretKey;
 
     @Bean
     @Qualifier("tourWebClient")
@@ -40,6 +44,18 @@ public class WebClientConfig {
                 "MobileApp", "Travel",
                 "_type", "json"
             ))
+            .build();
+    }
+
+    /**
+     * 카카오페이 통신 빈. 일반 결제(ready/approve/cancel)와 정합성 보정 조회(getOrderStatus)가 공유한다.
+     * host·인증(SECRET_KEY)을 여기 한 곳에서 세팅 → 서비스/배치가 중복 없이 재사용.
+     */
+    @Bean
+    public RestClient kakaoPayRestClient() {
+        return RestClient.builder()
+            .baseUrl("https://open-api.kakaopay.com")
+            .defaultHeader("Authorization", "SECRET_KEY " + kakaoSecretKey)
             .build();
     }
 }

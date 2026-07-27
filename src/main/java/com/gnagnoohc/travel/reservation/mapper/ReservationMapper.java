@@ -33,6 +33,15 @@ public interface ReservationMapper {
                                  @Param("placeId") Long placeId,
                                  @Param("visitDate") LocalDate visitDate);
 
+    /** 결제 준비 시: 발급한 orderId·시도 PG·(카카오)tid를 예약 행에 기록 (정합성 보정 배치의 조회 키 확보) */
+    void markPaymentReady(@Param("reservationId") Long reservationId,
+                          @Param("orderId") String orderId,
+                          @Param("paymentType") int paymentType,
+                          @Param("pgTid") String pgTid);
+
+    /** 정합성 보정 배치: 결제 준비까지 갔으나(order_id 있음) cutoff 이전 생성돼 아직 PENDING인 건 조회 */
+    List<Reservation> findReadyForInquiry(@Param("cutoff") LocalDateTime cutoff);
+
     /** 스케줄러: cutoff 이전에 생성됐는데 아직 PENDING인 건을 EXPIRED로 일괄 전환. 처리 건수 반환 */
     int expirePending(@Param("cutoff") LocalDateTime cutoff);
 

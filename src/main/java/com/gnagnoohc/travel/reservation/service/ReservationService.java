@@ -65,6 +65,16 @@ public class ReservationService {
     }
 
     /**
+     * 결제 준비 시 발급한 orderId와 시도 PG를 예약 행에 기록.
+     * 이후 정합성 보정 배치가 이 orderId로 PG에 "실제 결제됐는지" 조회할 수 있게 된다.
+     * (지금은 orderId가 세션에만 있어 콜백을 놓치면 유령 결제를 추적할 수 없다)
+     */
+    @Transactional
+    public void markPaymentReady(Long reservationId, String orderId, int paymentType, String pgTid) {
+        reservationMapper.markPaymentReady(reservationId, orderId, paymentType, pgTid);
+    }
+
+    /**
      * 취소 요청 (결제완료 건). 상태를 CANCEL_REQUESTED로 바꾸고 사유 기록. 환불은 관리자 승인 시 실행.
      * 본인 예약 + PAID 상태에서만 가능.
      */

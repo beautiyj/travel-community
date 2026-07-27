@@ -1,5 +1,6 @@
 package com.gnagnoohc.travel.reservation.scheduler;
 
+import com.gnagnoohc.travel.batch.payment.PaymentReconcileService;
 import com.gnagnoohc.travel.reservation.mapper.ReservationMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +24,7 @@ public class ReservationExpireScheduler {
     private static final int EXPIRE_MINUTES = 30;
 
     private final ReservationMapper reservationMapper;
+    private final PaymentReconcileService paymentReconcileService;
 
     /** 1분마다 실행 */
     @Scheduled(fixedDelay = 60_000)
@@ -33,6 +35,16 @@ public class ReservationExpireScheduler {
         if (expired > 0) {
             log.info("미결제 예약 {}건을 만료 처리했습니다.", expired);
         }
+    }
+
+    /**
+     * 2분마다 실행. 결제 준비까지 갔으나 콜백 유실로 PENDING에 남은 예약을 PG에 대조해 보정한다.
+     * 만료(30분)보다 촘촘히 돌려, 유령 결제가 만료로 잘못 정리되기 전에 PAID로 복구한다.
+     * (트랜잭션은 보정 서비스가 건별로 관리하므로 여기선 걸지 않는다)
+     */
+    @Scheduled(fixedDelay = 120_000)
+    public void reconcilePayments() {
+        paymentReconcileService.reconcile();
     }
 
     /**

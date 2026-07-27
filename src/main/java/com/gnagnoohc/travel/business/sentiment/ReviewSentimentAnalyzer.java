@@ -1,9 +1,5 @@
 package com.gnagnoohc.travel.business.sentiment;
 
-import kr.co.shineware.nlp.komoran.constant.DEFAULT_MODEL;
-import kr.co.shineware.nlp.komoran.core.Komoran;
-import kr.co.shineware.nlp.komoran.model.KomoranResult;
-import kr.co.shineware.nlp.komoran.model.Token;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

@@ -3,6 +3,7 @@ package com.gnagnoohc.travel.reservation.service;
 import com.gnagnoohc.travel.reservation.dto.KakaoApproveResponse;
 import com.gnagnoohc.travel.reservation.dto.KakaoReadyResponse;
 import com.gnagnoohc.travel.reservation.entity.Reservation;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -20,14 +21,11 @@ import java.util.Map;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class KakaoPayService {
 
-    private final RestClient restClient = RestClient.builder()
-            .baseUrl("https://open-api.kakaopay.com")
-            .build();
-
-    @Value("${kakaopay.secret-key}")
-    private String secretKey;       // DEV 시크릿 키
+    // WebClientConfig.kakaoPayRestClient 주입. host·인증(SECRET_KEY)이 config에 세팅돼 있음
+    private final RestClient restClient;
 
     @Value("${kakaopay.cid}")
     private String cid;             // 테스트용 단건결제 CID: TC0ONETIME
@@ -84,10 +82,24 @@ public class KakaoPayService {
         return res;
     }
 
+    /**
+     * 정합성 보정 배치용: tid로 결제 상태 조회 (주문조회 /online/v1/payment/order).
+     * 결제완료면 응답 status == "SUCCESS_PAYMENT".
+     */
+    @SuppressWarnings("unchecked")
+    public String getOrderStatus(String tid) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("cid", cid);
+        body.put("tid", tid);
+        Map<String, Object> res = post("/online/v1/payment/order", body, Map.class);
+        String status = res != null ? (String) res.get("status") : null;
+        log.info("[카카오 주문조회] tid={}, status={}", tid, status);
+        return status;
+    }
+
     private <T> T post(String uri, Map<String, Object> body, Class<T> type) {
         return restClient.post()
                 .uri(uri)
-                .header("Authorization", "SECRET_KEY " + secretKey)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(body)
                 .retrieve()

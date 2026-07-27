@@ -71,6 +71,10 @@ public class PaymentController {
         session.setAttribute("KAKAO_AMOUNT", amount);
         session.setAttribute("KAKAO_MEMBER_ID", r.getMemberId());
 
+        // 정합성 보정 배치가 나중에 조회할 수 있도록 orderId·tid를 예약 행에 기록 (세션은 콜백 놓치면 유실)
+        // 카카오 주문조회는 tid가 키라서 ready 응답의 tid를 함께 저장한다
+        reservationService.markPaymentReady(reservationId, orderId, Payment.TYPE_KAKAO, ready.getTid());
+
         return Map.of("redirectUrl", ready.getNextRedirectPcUrl());
     }
 

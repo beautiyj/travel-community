@@ -12,6 +12,9 @@
         visit_date     AS visitDate,
         headcount,
         status,
+        order_id             AS orderId,
+        payment_type         AS paymentType,
+        pg_tid               AS pgTid,
         created_at           AS createdAt,
         cancel_reason        AS cancelReason,
         cancel_requested_at  AS cancelRequestedAt
@@ -80,6 +83,24 @@
           AND status IN ('PENDING', 'PAID')
         ORDER BY reservation_id DESC
         LIMIT 1
+    </select>
+
+    <!-- 결제 준비 시: 발급한 orderId·시도 PG·(카카오)tid를 예약 행에 기록 (배치 조회 키 확보) -->
+    <update id="markPaymentReady">
+        UPDATE RESERVATION
+        SET order_id = #{orderId},
+            payment_type = #{paymentType},
+            pg_tid = #{pgTid}
+        WHERE reservation_id = #{reservationId}
+    </update>
+
+    <!-- 정합성 보정 배치: 결제 준비까지 갔으나 아직 PENDING인 건 조회 (cutoff로 진행 중 건 유예) -->
+    <select id="findReadyForInquiry" resultType="com.gnagnoohc.travel.reservation.entity.Reservation">
+        SELECT <include refid="reservationColumns"/>
+        FROM RESERVATION
+        WHERE status = 'PENDING'
+          AND order_id IS NOT NULL
+          AND created_at &lt; #{cutoff}
     </select>
 
     <!-- 스케줄러: 30분 지난 미결제 건 일괄 만료 -->

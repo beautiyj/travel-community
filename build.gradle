@@ -19,7 +19,10 @@ java {
 sourceSets {
 	main {
 		java {
-			exclude 'com/gnagnoohc/travel/batch/**'
+			// tour 배치(관광공사 API)만 제외. batch/payment(결제 정합성 보정)는 컴파일 포함
+			exclude 'com/gnagnoohc/travel/batch/client/**'
+			exclude 'com/gnagnoohc/travel/batch/dto/**'
+			exclude 'com/gnagnoohc/travel/batch/service/**'
 			exclude 'com/gnagnoohc/travel/tour/**'
 		}
 		resources {

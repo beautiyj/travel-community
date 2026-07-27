@@ -1,26 +1,21 @@
 package com.gnagnoohc.travel.tour.model;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
-
-// REGION 테이블과 1:1 매핑 + 마이바티스 인식용 생성자 엔티티 
+import lombok.NoArgsConstructor;
 
 @Getter
+@NoArgsConstructor
+@AllArgsConstructor
 public class RegionEntity {
     private Long regionId;
     private String regionName;
     private Long parentRegionId;
 
-    // 1. 기존 마이바티스/전체 필드용 생성자
-    // 마이바티스 인식용 생성자
-    public RegionEntity(Long regionId, String regionName, Long parentRegionId) {
-        this.regionId = regionId;
-        this.regionName = regionName;
-        this.parentRegionId = parentRegionId;
-    }
-
-    // 2. 💡 배치 수집용 생성자 (parentRegionId는 기본 null 처리)
-    public RegionEntity(Long regionId, String regionName) {
-        this(regionId, regionName, null);
-    }
+    /*
+    MyBatis가 DB 조회 결과를 엔티티/DTO에 매핑(resultType 또는 resultMap)할 때
+    생성자를 거치지 않고 기본 생성자(@NoArgsConstructor)로 객체를 만든 뒤
+    Reflection(리플렉션)을 이용해 필드에 직접 값을 채워넣기 때문에 커스텀 생성자 모두 삭제, @NoArgsConstructor 처리
+    */
 
 }

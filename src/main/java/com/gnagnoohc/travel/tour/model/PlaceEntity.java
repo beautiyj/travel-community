@@ -1,11 +1,11 @@
 package com.gnagnoohc.travel.tour.model;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Getter
 @NoArgsConstructor
@@ -27,6 +27,9 @@ public class PlaceEntity {
 
     private String firstImage;     // first_image (VARCHAR 500, 대표 이미지 URL)
     private String hashtags;       // hashtags (VARCHAR 300, 가공 해시태그)
+
+    private Integer minPrice;      // 검색/필터링/정렬용 최저가 (숫자 연산용)
+    private String useFeeInfo;     // 화면 표시용 요금 안내 원문 (음식점은 null 또는 대표메뉴 텍스트)
 
     // 사업자 정보 수동 수정용 메서드
     public void updateBusinessInfo(String name, String description, String address) {

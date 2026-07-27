@@ -28,4 +28,7 @@ public class PlaceDTO {
     
     private String firstImage;
     private String hashtags;
+
+    private Integer minPrice;       // 최저/대표 가격 (원)
+    private String useFeeInfo;      // 요금 안내 원문 텍스트
 }

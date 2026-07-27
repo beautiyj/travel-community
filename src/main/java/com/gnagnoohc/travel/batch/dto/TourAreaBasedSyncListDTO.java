@@ -39,4 +39,6 @@ public class TourAreaBasedSyncListDTO {
     private String lclsSystm1;
     private String lclsSystm2;
     private String lclsSystm3;
+
+    private String dist; // 중심좌표로부터의 거리 (m) - 추후 위치/지도 기반 API 연동용
 }

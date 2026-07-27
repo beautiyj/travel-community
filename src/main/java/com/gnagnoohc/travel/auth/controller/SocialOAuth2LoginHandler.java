@@ -11,8 +11,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepository;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.context.SecurityContextRepository;
@@ -30,8 +30,8 @@ import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 
 /**
- * Spring OAuth2 Client가 검증한 사용자 정보를 우리 서비스의 세션 로그인 또는 추가 가입으로 연결한다.
- * 현재 실행 가능한 제공자는 카카오뿐이며 Google/Naver는 설정 전까지 이 경계에서 허용하지 않는다.
+ * Spring OAuth2 Client가 검증한 사용자를 서비스의 세션 로그인 또는 추가 가입으로 연결한다.
+ * 외부 제공자별 응답 차이는 이 클래스에서 공통 프로필로 변환하고 회원 처리는 서비스에 맡긴다.
  */
 @Component
 @RequiredArgsConstructor
@@ -41,6 +41,8 @@ public class SocialOAuth2LoginHandler
     private static final Logger log = LoggerFactory.getLogger(SocialOAuth2LoginHandler.class);
     private static final String KAKAO_REGISTRATION_ID = "kakao";
     private static final String KAKAO_PROVIDER = "KAKAO";
+    private static final String GOOGLE_REGISTRATION_ID = "google";
+    private static final String GOOGLE_PROVIDER = "GOOGLE";
     private static final String PENDING_SOCIAL_SIGNUP = "pendingSocialSignup";
     private static final int SIGNUP_VALID_MINUTES = 10;
 
@@ -61,34 +63,32 @@ public class SocialOAuth2LoginHandler
                 throw new SocialAuthException("유효하지 않은 소셜 인증 결과입니다.", false);
             }
             oauthToken = token;
-            if (!KAKAO_REGISTRATION_ID.equals(token.getAuthorizedClientRegistrationId())) {
-                throw new SocialAuthException("현재 지원하지 않는 소셜 로그인 제공자입니다.");
-            }
 
             HttpSession session = request.getSession(true);
             // 새 인증 결과가 확정되기 전에 남아 있던 미완료 가입 정보는 재사용하지 않는다.
             session.removeAttribute(PENDING_SOCIAL_SIGNUP);
 
-            KakaoProfile kakaoProfile = extractKakaoProfile(token.getPrincipal());
+            SocialProfile socialProfile = extractSocialProfile(token);
             LoginMemberDto loginMember = socialAuthService.findSocialLoginMember(
-                    KAKAO_PROVIDER,
-                    kakaoProfile.providerUserId());
+                    socialProfile.provider(),
+                    socialProfile.providerUserId());
 
             if (loginMember != null) {
                 session.setAttribute("loginMember", loginMember);
                 redirectPath = "/";
             } else {
-                if (!kakaoProfile.hasVerifiedEmail()) {
-                    throw new SocialAuthException("카카오 계정의 검증된 이메일 제공 동의가 필요합니다.");
+                // 기존 연결 회원은 provider 식별자로 찾고, 신규 가입에만 검증된 이메일을 필수로 요구한다.
+                if (!socialProfile.hasVerifiedEmail()) {
+                    throw new SocialAuthException("소셜 계정에서 검증된 이메일 제공 동의가 필요합니다.");
                 }
 
                 PendingSocialSignup pendingSignup = new PendingSocialSignup(
-                        KAKAO_PROVIDER,
-                        kakaoProfile.providerUserId(),
-                        kakaoProfile.email(),
-                        kakaoProfile.nickname(),
-                        kakaoProfile.profileImageUrl(),
-                        // 전역 CSRF가 비활성화된 현재 구조에서 소셜 가입 POST만 별도 nonce로 검증한다.
+                        socialProfile.provider(),
+                        socialProfile.providerUserId(),
+                        socialProfile.email(),
+                        socialProfile.nickname(),
+                        socialProfile.profileImageUrl(),
+                        // 전역 CSRF가 비활성화된 현재 구조에서 소셜 가입 POST는 별도 nonce로 검증한다.
                         UUID.randomUUID().toString(),
                         true,
                         LocalDateTime.now().plusMinutes(SIGNUP_VALID_MINUTES));
@@ -102,7 +102,7 @@ public class SocialOAuth2LoginHandler
             }
         } catch (Exception e) {
             removePendingSignup(request);
-            // OAuth 응답 원문이나 토큰은 로그에 남기지 않고 예외 종류만 서버 로그에서 확인한다.
+            // OAuth 응답 원문이나 토큰은 기록하지 않고 예외 종류만 서버 로그에서 확인한다.
             log.error("소셜 로그인 처리 중 예기치 않은 오류가 발생했습니다.", e);
         } finally {
             cleanupOAuthAuthentication(oauthToken, request, response);
@@ -122,7 +122,15 @@ public class SocialOAuth2LoginHandler
         response.sendRedirect(request.getContextPath() + "/auth/login?socialError=true");
     }
 
-    private KakaoProfile extractKakaoProfile(OAuth2User oauth2User) {
+    private SocialProfile extractSocialProfile(OAuth2AuthenticationToken token) {
+        return switch (token.getAuthorizedClientRegistrationId()) {
+            case KAKAO_REGISTRATION_ID -> extractKakaoProfile(token.getPrincipal());
+            case GOOGLE_REGISTRATION_ID -> extractGoogleProfile(token.getPrincipal());
+            default -> throw new SocialAuthException("현재 지원하지 않는 소셜 로그인 제공자입니다.");
+        };
+    }
+
+    private SocialProfile extractKakaoProfile(OAuth2User oauth2User) {
         Map<String, Object> attributes = oauth2User.getAttributes();
         String providerUserId = stringValue(attributes.get("id"));
         if (providerUserId == null || !providerUserId.matches("^[0-9]+$")) {
@@ -131,13 +139,32 @@ public class SocialOAuth2LoginHandler
 
         Map<?, ?> account = mapValue(attributes.get("kakao_account"));
         Map<?, ?> profile = account == null ? null : mapValue(account.get("profile"));
-        return new KakaoProfile(
+        boolean verifiedEmail = account != null
+                && Boolean.TRUE.equals(account.get("is_email_valid"))
+                && Boolean.TRUE.equals(account.get("is_email_verified"));
+        return new SocialProfile(
+                KAKAO_PROVIDER,
                 providerUserId,
                 account == null ? null : stringValue(account.get("email")),
-                account != null && Boolean.TRUE.equals(account.get("is_email_valid")),
-                account != null && Boolean.TRUE.equals(account.get("is_email_verified")),
+                verifiedEmail,
                 profile == null ? null : stringValue(profile.get("nickname")),
                 profile == null ? null : stringValue(profile.get("profile_image_url")));
+    }
+
+    private SocialProfile extractGoogleProfile(OAuth2User oauth2User) {
+        Map<String, Object> attributes = oauth2User.getAttributes();
+        String providerUserId = stringValue(attributes.get("sub"));
+        if (providerUserId == null) {
+            throw new SocialAuthException("유효하지 않은 Google 회원 식별 정보입니다.");
+        }
+
+        return new SocialProfile(
+                GOOGLE_PROVIDER,
+                providerUserId,
+                stringValue(attributes.get("email")),
+                Boolean.TRUE.equals(attributes.get("email_verified")),
+                stringValue(attributes.get("name")),
+                stringValue(attributes.get("picture")));
     }
 
     private void cleanupOAuthAuthentication(
@@ -191,16 +218,16 @@ public class SocialOAuth2LoginHandler
         return text.isBlank() ? null : text;
     }
 
-    private record KakaoProfile(
+    private record SocialProfile(
+            String provider,
             String providerUserId,
             String email,
-            boolean emailValid,
             boolean emailVerified,
             String nickname,
             String profileImageUrl) {
 
         private boolean hasVerifiedEmail() {
-            return email != null && !email.isBlank() && emailValid && emailVerified;
+            return email != null && !email.isBlank() && emailVerified;
         }
     }
 }

@@ -26,16 +26,17 @@
             and social_auth.provider_user_id = #{providerUserId}
     </select>
 
-    <!-- 소셜 회원의 공통 정보를 저장하고 생성된 member_id를 같은 객체에 반환한다. -->
+    <!-- 소셜 가입 화면에서 받은 공통 정보를 저장하고 생성된 member_id를 반환한다. -->
     <insert id="insertSocialMember" parameterType="member"
         useGeneratedKeys="true" keyProperty="memberId" keyColumn="member_id">
         insert into member(
-            name, login_id, email, nickname, member_type, profile_img_url,
+            name, login_id, email, nickname, member_type, phone, gender, birth, profile_img_url,
             signup_type, member_status, member_role, email_verified,
             email_verified_at, last_login_at
         )
         values(
-            #{name}, #{loginId}, #{email}, #{nickname}, #{memberType}, #{profileImgUrl},
+            #{name}, #{loginId}, #{email}, #{nickname}, #{memberType}, #{phone}, #{gender}, #{birth},
+            #{profileImgUrl},
             #{signupType}, #{memberStatus}, #{memberRole}, #{emailVerified},
             #{emailVerifiedAt}, now()
         )

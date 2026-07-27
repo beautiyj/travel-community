@@ -14,11 +14,14 @@ import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResp
 import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
 import org.springframework.security.oauth2.client.endpoint.RestClientAuthorizationCodeTokenResponseClient;
 import org.springframework.security.oauth2.client.http.OAuth2ErrorResponseErrorHandler;
+import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
+import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepository;
 import org.springframework.security.oauth2.core.http.converter.OAuth2AccessTokenResponseHttpMessageConverter;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.context.DelegatingSecurityContextRepository;
@@ -79,13 +82,23 @@ public class SecurityConfig {
     }
 
     @Bean
+    public OAuth2UserService<OidcUserRequest, OidcUser> oidcUserService(
+            OAuth2UserService<OAuth2UserRequest, OAuth2User> oauth2UserService) {
+        OidcUserService oidcUserService = new OidcUserService();
+        // Google OIDC의 UserInfo 조회에도 Kakao와 같은 5초 HTTP 제한을 적용한다.
+        oidcUserService.setOauth2UserService(oauth2UserService);
+        return oidcUserService;
+    }
+
+    @Bean
     public SecurityFilterChain filterChain(
             HttpSecurity http,
             SocialOAuth2LoginHandler socialOAuth2LoginHandler,
             OAuth2AuthorizedClientRepository authorizedClientRepository,
             SecurityContextRepository securityContextRepository,
             OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> tokenClient,
-            OAuth2UserService<OAuth2UserRequest, OAuth2User> userService) throws Exception {
+            OAuth2UserService<OAuth2UserRequest, OAuth2User> userService,
+            OAuth2UserService<OidcUserRequest, OidcUser> oidcUserService) throws Exception {
         return http
                 .cors(cors -> cors.disable())
                 .csrf(csrf -> csrf.disable())
@@ -100,7 +113,9 @@ public class SecurityConfig {
                         .tokenEndpoint(token ->
                                 token.accessTokenResponseClient(tokenClient))
                         .userInfoEndpoint(userInfo ->
-                                userInfo.userService(userService))
+                                userInfo
+                                        .userService(userService)
+                                        .oidcUserService(oidcUserService))
                         .successHandler(socialOAuth2LoginHandler)
                         .failureHandler(socialOAuth2LoginHandler))
                 .authorizeHttpRequests(auth -> auth

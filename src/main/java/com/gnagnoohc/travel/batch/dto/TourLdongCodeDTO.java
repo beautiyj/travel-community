@@ -13,8 +13,6 @@ import lombok.ToString;
 @ToString
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TourLdongCodeDTO {
-    private String rnum;            // 일련번호
-    
     // (요청)법정동 목록조회 여부 - N(코드조회)일 때 표출되는 필드
     private String code;            // 법정동 코드 (시도코드, 시군구코드)
     private String name;            // 법정동 명칭 (시도명, 시군구명)

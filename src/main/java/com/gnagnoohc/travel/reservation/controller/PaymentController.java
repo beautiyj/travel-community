@@ -10,6 +10,7 @@ import com.gnagnoohc.travel.reservation.service.KakaoPayService;
 import com.gnagnoohc.travel.reservation.service.PaymentService;
 import com.gnagnoohc.travel.reservation.service.ReservationService;
 import com.gnagnoohc.travel.reservation.service.TossPayService;
+import com.gnagnoohc.travel.reservation.service.VirtualPaymentService;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -35,7 +36,8 @@ public class PaymentController {
     private final PaymentService paymentService;
     private final KakaoPayService kakaoPayService;
     private final TossPayService tossPayService;
-    
+    private final VirtualPaymentService virtualPaymentService;
+
     @Value("${toss.client-key}")
     private String tossClientKey;
     
@@ -173,6 +175,50 @@ public class PaymentController {
         return bridgeToFail(model, message != null ? message : "토스페이먼츠 결제에 실패했습니다.");
     }
 
+    /* ------------------- 가상카드 (실제 API 없음, 규칙 판정) ------------------- */
+
+    /** 가상카드 결제: 카드번호가 성공 테스트값이면 즉시 결제완료. 실패 시 400 + 메시지(JSON) */
+    @PostMapping("/vcard/pay/{reservationId}")
+    @ResponseBody
+    public Map<String, String> vcardPay(@PathVariable("reservationId") Long reservationId,
+                                        @RequestParam("cardNumber") String cardNumber) {
+        Payment p = virtualPaymentService.payByVirtualCard(reservationId, cardNumber);
+        return Map.of("target", "/payments/complete/" + p.getPaymentId());
+    }
+
+    /* ------------------- 무통장입금 (실제 API 없음, 셀프 입금확인) ------------------- */
+
+    /** 무통장 결제 준비: orderId 발급·기록 후 가상계좌 안내 페이지로 이동할 URL 반환 */
+    @PostMapping("/bank/ready/{reservationId}")
+    @ResponseBody
+    public Map<String, String> bankReady(@PathVariable("reservationId") Long reservationId) {
+        Reservation r = reservationService.getById(reservationId);
+        if (r.getStatus() != ReservationStatus.PENDING) {
+            throw new IllegalStateException("결제 대기 중인 예약만 결제할 수 있습니다. 현재 상태: " + r.getStatus().getLabel());
+        }
+        String orderId = paymentService.generateOrderId(reservationId);
+        reservationService.markPaymentReady(reservationId, orderId, Payment.TYPE_BANK, null);
+        return Map.of("target", "/payments/bank/guide/" + reservationId);
+    }
+
+    /** 가상계좌 안내 + 입금자명 확인 폼 페이지 */
+    @GetMapping("/bank/guide/{reservationId}")
+    public String bankGuide(@PathVariable("reservationId") Long reservationId, Model model) {
+        Reservation r = reservationService.getById(reservationId);
+        model.addAttribute("reservation", r);
+        model.addAttribute("amount", reservationService.calculateAmount(r));
+        return "reservation/bankGuide";
+    }
+
+    /** 무통장 입금확인(셀프): 입금자명이 예약자명과 일치하면 결제완료 */
+    @PostMapping("/bank/confirm/{reservationId}")
+    @ResponseBody
+    public Map<String, String> bankConfirm(@PathVariable("reservationId") Long reservationId,
+                                           @RequestParam("depositorName") String depositorName) {
+        Payment p = virtualPaymentService.confirmBankTransfer(reservationId, depositorName);
+        return Map.of("target", "/payments/complete/" + p.getPaymentId());
+    }
+
     /* ------------------- 결제 취소(환불) ------------------- */
 
     /** 결제 취소: 마이페이지/완료 페이지의 취소 버튼에서 호출 */
@@ -189,7 +235,13 @@ public class PaymentController {
     public String complete(@PathVariable("paymentId") Long paymentId, Model model) {
         Payment payment = paymentService.getById(paymentId);
         model.addAttribute("payment", payment);
-        model.addAttribute("method", payment.getPaymentType() == Payment.TYPE_TOSS ? "토스페이먼츠" : "카카오페이");
+        model.addAttribute("method", switch (payment.getPaymentType()) {
+            case Payment.TYPE_TOSS -> "토스페이먼츠";
+            case Payment.TYPE_KAKAO -> "카카오페이";
+            case Payment.TYPE_BANK -> "무통장입금";
+            case Payment.TYPE_VIRTUAL_CARD -> "가상카드";
+            default -> "결제";
+        });
         return "reservation/success";
     }
 

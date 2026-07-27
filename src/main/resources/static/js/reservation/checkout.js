@@ -10,8 +10,10 @@ var popupOptions = "width=500,height=750,left=" + ((screen.width - 500) / 2)
 
 /* ── 결제 수단 선택 ── */
 var payInfo = {
-    kakao: { cls: "kakao", initial: "K", name: "카카오페이로 결제합니다" },
-    toss:  { cls: "toss",  initial: "T", name: "토스페이로 결제합니다" }
+    kakao: { cls: "kakao", initial: "K", name: "카카오페이로 결제합니다",  desc: "결제 버튼 클릭 시 결제창으로 이동합니다" },
+    toss:  { cls: "toss",  initial: "T", name: "토스페이로 결제합니다",    desc: "결제 버튼 클릭 시 결제창으로 이동합니다" },
+    bank:  { cls: "bank",  initial: "무", name: "무통장입금으로 결제합니다", desc: "결제 버튼 클릭 시 가상계좌 안내 화면으로 이동합니다" },
+    vcard: { cls: "vcard", initial: "V", name: "가상카드로 결제합니다",    desc: "테스트 카드번호로 즉시 결제됩니다" }
 };
 
 document.querySelectorAll(".method-btn").forEach(function (btn) {
@@ -25,6 +27,9 @@ document.querySelectorAll(".method-btn").forEach(function (btn) {
         logo.className = "pay-logo " + info.cls;
         logo.textContent = info.initial;
         document.getElementById("payName").textContent = info.name;
+        document.getElementById("payDesc").textContent = info.desc;
+        // 가상카드일 때만 카드번호 입력칸 노출
+        document.getElementById("vcardBox").style.display = (currentMethod === "vcard") ? "block" : "none";
     });
 });
 
@@ -108,10 +113,51 @@ function payToss() {
         });
 }
 
+// 무통장: 준비 요청 → 가상계좌 안내 페이지로 이동
+function payBank() {
+    lockButtons(true);
+    fetch("/payments/bank/ready/" + reservationId, { method: "POST" })
+        .then(function (res) {
+            if (!res.ok) throw new Error("ready 실패");
+            return res.json();
+        })
+        .then(function (data) {
+            window.location.href = data.target;   // 가상계좌 안내 페이지
+        })
+        .catch(function () {
+            lockButtons(false);
+            alert("무통장 결제 준비에 실패했습니다.");
+        });
+}
+
+// 가상카드: 카드번호를 서버로 보내 즉시 판정 (성공이면 완료 페이지, 실패면 메시지)
+function payVcard() {
+    var cardNumber = (document.getElementById("cardNumber").value || "").trim();
+    if (!cardNumber) { alert("카드번호를 입력해 주세요."); return; }
+    lockButtons(true);
+    fetch("/payments/vcard/pay/" + reservationId, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: "cardNumber=" + encodeURIComponent(cardNumber)
+    })
+        .then(function (res) {
+            return res.json().then(function (data) {
+                if (!res.ok) throw new Error(data.message || "결제에 실패했습니다.");
+                return data;
+            });
+        })
+        .then(function (data) {
+            window.location.href = data.target;
+        })
+        .catch(function (err) {
+            lockButtons(false);
+            alert(err.message || "가상카드 결제에 실패했습니다.");
+        });
+}
+
 document.getElementById("payBtn").addEventListener("click", function () {
-    if (currentMethod === "kakao") {
-        payKakao();
-    } else {
-        payToss();
-    }
+    if (currentMethod === "kakao")      payKakao();
+    else if (currentMethod === "toss")  payToss();
+    else if (currentMethod === "bank")  payBank();
+    else if (currentMethod === "vcard") payVcard();
 });

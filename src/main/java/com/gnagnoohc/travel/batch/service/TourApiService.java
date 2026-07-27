@@ -149,6 +149,73 @@ public class TourApiService {
         log.info("[Batch] contentTypeId: {} 수집 완료", contentTypeId);
     }
 
+    // TODO: 테스트 완료 후 반드시 삭제 대상 (운영 배포 전 제거) - syncTourData 원본은 절대 건드리지 않고, 소량 검증용 오버로드로 별도 추가
+    // 테스트 전용 - 지정한 limit 개수만큼만 수집하고 강제 종료 (원본 syncTourData의 무제한 페이징 대신 소량 검증용)
+    @Transactional
+    public void syncTourDataForTest(String contentTypeId, int limit) {
+        log.info("[Batch Test] 공공데이터 소량 테스트 수집 시작 - contentTypeId: {}, limit: {}", contentTypeId, limit);
+        int pageNo = 1;
+        boolean hasNext = true;
+        int processedCount = 0; // 테스트용 처리 개수 카운터
+
+        while (hasNext) {
+            try {
+                String jsonResponse = tourApiClient.fetchAreaBasedSyncList(pageNo, contentTypeId, null, null);
+                if (!StringUtils.hasText(jsonResponse)) {
+                    log.info("[Batch Test] 더 이상 수집할 데이터가 없습니다. 루프를 종료합니다.");
+                    break;
+                }
+                TourApiResponseDTO<TourAreaBasedSyncListDTO> response = objectMapper.readValue(
+                        jsonResponse, new TypeReference<TourApiResponseDTO<TourAreaBasedSyncListDTO>>() {}
+                );
+
+                if (response != null && response.getResponse() != null && response.getResponse().getHeader() != null) {
+                    Header header = response.getResponse().getHeader();
+                    String resultCode = header.getResultCode();
+                    if (!"0000".equals(resultCode) && !"00".equals(resultCode)) {
+                        log.error("[Batch Test API 오류] 코드: {}, 메시지: {}", resultCode, header.getResultMsg());
+                        break;
+                    }
+                }
+
+                if (response == null || response.getResponse() == null
+                        || response.getResponse().getBody() == null
+                        || response.getResponse().getBody().getItems() == null
+                        || response.getResponse().getBody().getItems().getItem() == null) {
+                    break;
+                }
+
+                List<TourAreaBasedSyncListDTO> syncList = response.getResponse().getBody().getItems().getItem();
+                if (syncList.isEmpty()) break;
+
+                for (TourAreaBasedSyncListDTO syncItem : syncList) {
+                    if (!tourApiHelper.isValidItem(syncItem)) { continue; }
+
+                    processSinglePlace(syncItem);
+                    processedCount++;
+                    log.info("[Batch Test] {}/{} 건 처리 완료 - contentId: {}", processedCount, limit, syncItem.getContentid());
+
+                    // limit 도달 시 즉시 종료 (테스트용 소량 제한)
+                    if (processedCount >= limit) {
+                        hasNext = false;
+                        break;
+                    }
+                }
+
+                if (hasNext && syncList.size() < 500) {
+                    hasNext = false;
+                } else if (hasNext) {
+                    pageNo++;
+                }
+
+            } catch (Exception e) {
+                log.error("[Batch Test] {} 페이지 수집 중 에러 발생 - 일시 중단", pageNo, e);
+                hasNext = false;
+            }
+        }
+        log.info("[Batch Test] contentTypeId: {} 소량 테스트 수집 완료 - 총 {}건 처리", contentTypeId, processedCount);
+    }
+
     /* 헬퍼 메소드 - 개별 장소의 상세정보 연쇄 수집 및 DB 적재(PLACE + PLACE_IMAGE)
        소개정보(/detailIntro2) & 반복정보(/detailInfo2) 조회용 헬퍼 각각 호출함 */
     private void processSinglePlace(TourAreaBasedSyncListDTO syncItem) {
@@ -166,13 +233,15 @@ public class TourApiService {
                 infoDetail = tourApiHelper.fetchDetailInfo(syncItem.getContentid(), syncItem.getContenttypeid());
             }
         }
+        // PlaceImage 판단 로직에서 썸네일(카드용) 이미지 먼저 계산 -> convertToPlaceDTO로 전달
+        String thumbnailImage = tourDataConverter.resolveThumbnailImage(syncItem);
+
         // convertToPlaceDTO -> 서비스 PlaceDTO 변환 및 해시태그 생성
-        PlaceDTO placeDto = tourDataConverter.convertToPlaceDTO(syncItem, tourItem, introDetail, infoDetail);
+        PlaceDTO placeDto = tourDataConverter.convertToPlaceDTO(syncItem, tourItem, introDetail, infoDetail, thumbnailImage);
         tourMapper.upsertPlace(placeDto);
 
-        // 대표 이미지가 있는 경우 PLACE_IMAGE 테이블 INSERT 적재
+        // 대표 이미지가 있는 경우 PLACE_IMAGE 테이블 INSERT 적재 (원본 이미지 저장)
         if (StringUtils.hasText(syncItem.getFirstimage()) && placeDto.getPlaceId() != null) {
-            // 대표 이미지 등록 - sortOrder=0 지정, TourDataConverter.convertToPlaceImageDTO 컨버터 경유
             PlaceImageDTO imageDto = tourDataConverter.convertToPlaceImageDTO(
                     placeDto.getPlaceId(), syncItem.getFirstimage(), 0
             );

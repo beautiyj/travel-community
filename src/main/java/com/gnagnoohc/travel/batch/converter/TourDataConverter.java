@@ -55,10 +55,10 @@ public class TourDataConverter {
     }
 
     // TODO: 이후 useFeeInfo, minPrice 처리에서 0원 혹은 가격없음 -> TOUR 서비스단에서 무료 & 가격변동으로 텍스트 매핑처리
-    // TODO: PlaceImage 컨버터 처리에서, 기본 썸네일 값은 convertToPlaceDTO쪽으로 전달 필요
     // TourLclsSystmCodeDTO -> PlaceDTO 변환
     // 메타데이터인 법정동코드가 아닌, 실제정보가 필요한 동기화 API TourAreaBasedSyncListDTO를 플레이스에 넣어야 함
-    public PlaceDTO convertToPlaceDTO(TourAreaBasedSyncListDTO syncItem, TourItemDTO tourItem, TourDetailIntroDTO introDetail, TourDetailInfoDTO infoDetail) {
+    // thumbnailImage를 5번째 파라미터로 받도록 변경 - PlaceImage 판단 로직(resolveThumbnailImage)에서 계산된 값을 전달받는 구조로 전환
+    public PlaceDTO convertToPlaceDTO(TourAreaBasedSyncListDTO syncItem, TourItemDTO tourItem, TourDetailIntroDTO introDetail, TourDetailInfoDTO infoDetail, String thumbnailImage) {
         // 공공데이터의 contentId -> Place테이블엔 pk로 기입, 더미데이터의 경우 난수처리하여 넣을 것.
         Long placeId = Long.parseLong(syncItem.getContentid());
         // 공통헬퍼 메소드 parseRegionId 사용하여 동기화 로직의 법정동 시도코드/시군구코드 처리
@@ -74,10 +74,6 @@ public class TourDataConverter {
         String useFeeInfo = tourApiHelper.extractFeeInfo(introDetail, infoDetail, placeType);
         // 헬퍼 메소드 parseMinPrice - extractFeeInfo에서 추출한 원문 텍스트를 전달하여 검색/정렬용 최저가 숫자(minPrice) 파싱
         Integer minPrice = tourApiHelper.parseMinPrice(useFeeInfo);
-        // 카드형 썸네일 대표 이미지 결정: 목록 API의 썸네일(firstimage2) 우선, 없을 경우 원본(firstimage) Fallback 사용
-        String thumbnailImage = StringUtils.hasText(syncItem.getFirstimage2())
-                ? syncItem.getFirstimage2()
-                : syncItem.getFirstimage();
         // 해시태그는 generateHashtags에서 처리 (TourItemDTO + TourDetailIntroDTO 조합으로 해시태그 생성)
         String hashtags = generateHashtags(tourItem, introDetail, placeType);
 
@@ -111,6 +107,14 @@ public class TourDataConverter {
                 .imageUrl(imageUrl)
                 .sortOrder(sortOrder)
                 .build();
+    }
+
+    // 카드형 썸네일 대표 이미지 결정: 목록 API의 썸네일(firstimage2) 우선, 없을 경우 원본(firstimage) Fallback 사용
+    // PlaceImage 판단 로직을 여기서 계산해서 convertToPlaceDTO 호출 시 파라미터로 전달하는 구조 (TODO 반영)
+    public String resolveThumbnailImage(TourAreaBasedSyncListDTO syncItem) {
+        return StringUtils.hasText(syncItem.getFirstimage2())
+                ? syncItem.getFirstimage2()
+                : syncItem.getFirstimage();
     }
 
     // TourAreaBasedSyncListDTO 동기화 목록에서 가져온 장소 하나의 기본 정보를

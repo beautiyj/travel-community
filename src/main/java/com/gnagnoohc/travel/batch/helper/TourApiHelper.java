@@ -22,8 +22,6 @@ public class TourApiHelper {
     private final ObjectMapper objectMapper;
 
     // TODO: 이후 useFeeInfo, minPrice 처리에서 0원 혹은 가격없음 -> TOUR 서비스단에서 무료 & 가격변동으로 텍스트 매핑처리
-    // TODO: PlaceImage 컨버터 처리에서, 기본 썸네일 값은 convertToPlaceDTO쪽으로 전달 필요
-
     public void enrichTourItemDetails(TourItemDTO masterItem) {
         String contentId = masterItem.getContentid();
         try {

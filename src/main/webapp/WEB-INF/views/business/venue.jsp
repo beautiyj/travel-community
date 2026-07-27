@@ -35,7 +35,6 @@
                         <p class="business-empty">아직 등록된 업소가 없습니다. 아래 정보를 입력해 업소를 등록해주세요.</p>
 
                         <form class="business-form" action="/business/venue/register" method="post" enctype="multipart/form-data">
-                            <input type="hidden" name="memberId" value="${memberId}" />
 
                             <jsp:include page="common/venueFormFields.jsp" />
 
@@ -69,7 +68,6 @@
                                 <h2 class="business-card__title">업소 정보 수정</h2>
 
                                 <form class="business-form" action="/business/venue/update" method="post" enctype="multipart/form-data">
-                                    <input type="hidden" name="memberId" value="${memberId}" />
 
                                     <jsp:include page="common/venueFormFields.jsp">
                                         <jsp:param name="idPrefix" value="edit-" />
@@ -106,7 +104,7 @@
                                     </div>
 
                                     <div class="venue-form-actions">
-                                        <a href="/business/venue?memberId=${memberId}" class="venue-btn venue-btn--outline">취소</a>
+                                        <a href="/business/venue" class="venue-btn venue-btn--outline">취소</a>
                                         <button class="venue-btn venue-btn--solid" type="submit">저장</button>
                                     </div>
                                 </form>
@@ -117,7 +115,6 @@
                                 <div class="venue-header">
                                     <h2 class="business-card__title" style="margin:0;">업소 정보</h2>
                                     <c:url value="/business/venue" var="editUrl">
-                                        <c:param name="memberId" value="${memberId}" />
                                         <c:param name="edit" value="true" />
                                     </c:url>
                                     <a href="${editUrl}" class="business-btn business-btn--primary business-btn--sm">정보 수정</a>

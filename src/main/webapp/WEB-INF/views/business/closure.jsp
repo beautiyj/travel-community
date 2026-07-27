@@ -23,7 +23,6 @@
             <div class="business-closure-page">
                 <jsp:include page="common/closureCard.jsp">
                     <jsp:param name="placeId" value="${placeId}" />
-                    <jsp:param name="memberId" value="${memberId}" />
                     <jsp:param name="isClosed" value="${isClosed}" />
                 </jsp:include>
                 <jsp:include page="common/closureDateCard.jsp" />

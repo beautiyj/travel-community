@@ -13,7 +13,7 @@
 - visitDate  : 방문일자 (예약 관리 목록에서 사용, 대시보드는 미전달)
 - mode       : 'actionable'이면 CANCEL_REQUESTED 상태일 때 실제 취소승인/거절 폼 렌더 (예약 관리 탭).
                그 외(미전달)에는 대시보드용 미리보기 버튼만 표시 (아직 실제 동작 연결 안 됨)
-- reservationId, memberId : mode가 'actionable'일 때 필수
+- reservationId : mode가 'actionable'일 때 필수 (memberId는 서버가 세션에서 파생)
 - layout     : 'table'이면 예약 관리 목록의 표 형태(예약자/연락처/방문일/인원/금액/상태 칼럼)로 렌더링.
                그 외(미전달)에는 대시보드 미리보기용 한 줄 요약 형태로 렌더링
 --%>
@@ -41,14 +41,12 @@
                     <c:choose>
                         <c:when test="${param.mode == 'actionable'}">
                             <form method="post" action="/business/reservations/${param.reservationId}/cancel-approve" class="business-inline-form">
-                                <input type="hidden" name="memberId" value="${param.memberId}" />
                                 <jsp:include page="/WEB-INF/views/common/smallButton.jsp">
                                     <jsp:param name="text" value="취소 승인" />
                                     <jsp:param name="theme" value="primary" />
                                 </jsp:include>
                             </form>
                             <form method="post" action="/business/reservations/${param.reservationId}/cancel-reject" class="business-inline-form">
-                                <input type="hidden" name="memberId" value="${param.memberId}" />
                                 <jsp:include page="/WEB-INF/views/common/smallButton.jsp">
                                     <jsp:param name="text" value="취소 거절" />
                                     <jsp:param name="theme" value="danger" />
@@ -82,14 +80,12 @@
                     <c:choose>
                         <c:when test="${param.mode == 'actionable'}">
                             <form method="post" action="/business/reservations/${param.reservationId}/cancel-approve" class="business-inline-form">
-                                <input type="hidden" name="memberId" value="${param.memberId}" />
                                 <jsp:include page="/WEB-INF/views/common/smallButton.jsp">
                                     <jsp:param name="text" value="취소 승인" />
                                     <jsp:param name="theme" value="primary" />
                                 </jsp:include>
                             </form>
                             <form method="post" action="/business/reservations/${param.reservationId}/cancel-reject" class="business-inline-form">
-                                <input type="hidden" name="memberId" value="${param.memberId}" />
                                 <jsp:include page="/WEB-INF/views/common/smallButton.jsp">
                                     <jsp:param name="text" value="취소 거절" />
                                     <jsp:param name="theme" value="danger" />

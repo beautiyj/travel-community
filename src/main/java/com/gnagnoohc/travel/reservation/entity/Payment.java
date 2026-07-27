@@ -11,6 +11,8 @@ public class Payment {
 	
 	public static final int TYPE_TOSS = 1;
     public static final int TYPE_KAKAO = 2;
+    public static final int TYPE_BANK = 3;          // 무통장입금 (가상)
+    public static final int TYPE_VIRTUAL_CARD = 4;  // 가상카드 (가상)
 
     private Long paymentId;
     private Long reservationId;

@@ -26,13 +26,24 @@
             <div class="method-grid">
                 <button type="button" class="method-btn active" data-method="kakao">카카오페이</button>
                 <button type="button" class="method-btn" data-method="toss">토스페이</button>
+                <button type="button" class="method-btn" data-method="bank">무통장입금</button>
+                <button type="button" class="method-btn" data-method="vcard">가상카드</button>
             </div>
 
             <!-- 선택한 결제 수단 안내 패널 -->
             <div class="simple-pay-panel">
                 <div class="pay-logo kakao" id="payLogo">K</div>
                 <p class="pay-name" id="payName">카카오페이로 결제합니다</p>
-                <p class="pay-desc">결제 버튼 클릭 시 결제창으로 이동합니다</p>
+                <p class="pay-desc" id="payDesc">결제 버튼 클릭 시 결제창으로 이동합니다</p>
+            </div>
+
+            <!-- 가상카드 번호 입력 (가상카드 선택 시 노출) -->
+            <div class="vcard-box" id="vcardBox" style="display:none; margin-top:12px;">
+                <label for="cardNumber" style="display:block; margin-bottom:6px; font-weight:600;">카드번호</label>
+                <input type="text" id="cardNumber" placeholder="숫자 16자리" maxlength="19"
+                       autocomplete="off" inputmode="numeric"
+                       style="width:100%; padding:10px; box-sizing:border-box;">
+                <p style="margin-top:6px; font-size:12px; color:#888;">테스트: <b>42</b> 뒤에 <b>1</b>로 채우기 (예: 4211111111111111) 입력 시 결제 성공</p>
             </div>
 
             <label class="agree-box">

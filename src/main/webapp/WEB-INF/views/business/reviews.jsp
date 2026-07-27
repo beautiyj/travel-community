@@ -24,7 +24,6 @@
             <div class="business-filter-row">
                 <c:forEach var="s" items="${sentimentOptions}">
                     <c:url value="/business/reviews" var="filterUrl">
-                        <c:param name="memberId" value="${memberId}" />
                         <c:if test="${s != '전체'}">
                             <c:param name="sentiment" value="${s}" />
                         </c:if>

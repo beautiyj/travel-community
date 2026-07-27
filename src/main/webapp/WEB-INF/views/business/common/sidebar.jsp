@@ -41,8 +41,8 @@
     </div>
 
     <nav class="business-sidebar__nav">
-        <a href="/business/dashboard?memberId=${memberId}" class="business-nav-item${activeTab == 'overview' ? ' is-active' : ''}">대시보드</a>
-        <a href="/business/reservations?memberId=${memberId}" class="business-nav-item${activeTab == 'reservations' ? ' is-active' : ''}">
+        <a href="/business/dashboard" class="business-nav-item${activeTab == 'overview' ? ' is-active' : ''}">대시보드</a>
+        <a href="/business/reservations" class="business-nav-item${activeTab == 'reservations' ? ' is-active' : ''}">
             예약 관리
             <c:if test="${(pendingCount + cancelRequestCount) > 0}">
                 <span class="business-badge">${pendingCount + cancelRequestCount}</span>
@@ -50,7 +50,7 @@
         </a>
         <a href="/business/closure" class="business-nav-item${activeTab == 'closure' ? ' is-active' : ''}">마감 관리</a>
         <a href="/business/venue" class="business-nav-item${activeTab == 'venue' ? ' is-active' : ''}">업소 관리</a>
-        <a href="/business/reviews?memberId=${memberId}" class="business-nav-item${activeTab == 'reviews' ? ' is-active' : ''}">후기 확인</a>
+        <a href="/business/reviews" class="business-nav-item${activeTab == 'reviews' ? ' is-active' : ''}">후기 확인</a>
     </nav>
 
     <div class="business-sidebar__footer">

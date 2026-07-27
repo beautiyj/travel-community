@@ -6,14 +6,16 @@ import com.gnagnoohc.travel.business.dto.BusinessPlaceOverviewDto;
 import com.gnagnoohc.travel.business.dto.BusinessReservationDto;
 import com.gnagnoohc.travel.business.dto.BusinessReviewDto;
 import com.gnagnoohc.travel.business.dto.BusinessSidebarContextDto;
+import com.gnagnoohc.travel.business.exception.BusinessAuthException;
 import com.gnagnoohc.travel.business.exception.NoPlaceRegisteredException;
 import com.gnagnoohc.travel.business.sentiment.KeywordCount;
 import com.gnagnoohc.travel.business.service.BusinessDashboardService;
 import com.gnagnoohc.travel.business.service.BusinessPlaceService;
 import com.gnagnoohc.travel.business.service.BusinessReservationService;
 import com.gnagnoohc.travel.business.service.BusinessReviewService;
+import com.gnagnoohc.travel.auth.dto.LoginMemberDto;
 import com.gnagnoohc.travel.reservation.entity.ReservationStatus;
-import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -42,12 +44,24 @@ public class BusinessController {
     private final BusinessReviewService businessReviewService;
     private final ObjectMapper objectMapper;
 
-    // TODO: 로그인/세션 붙으면 memberId 파라미터 제거하고 인증 정보에서 가져오기
+    // 로그인 세션에서 사업자 회원 ID를 얻는다. 미로그인/권한부족이면 BusinessAuthException으로 리다이렉트 처리.
+    // 세션의 memberId는 int라 서비스 시그니처(Long)에 맞춰 변환한다.
+    private Long currentBusinessMemberId(HttpSession session) {
+        LoginMemberDto login = BusinessSessionSupport.getLogin(session);
+        if (login == null) {
+            throw new BusinessAuthException("/auth/login");
+        }
+        if (!BusinessSessionSupport.isBusiness(login)) {
+            throw new BusinessAuthException("/");
+        }
+        return (long) login.getMemberId();
+    }
+
     @GetMapping("/business/dashboard")
-    public String dashboard(@RequestParam(defaultValue = "1") Long memberId, Model model) {
+    public String dashboard(HttpSession session, Model model) {
+        Long memberId = currentBusinessMemberId(session);
         BusinessDashboardViewDto view = businessDashboardService.getDashboard(memberId);
 
-        model.addAttribute("memberId", memberId);
         model.addAttribute("bizName", view.getPlaceName());
         model.addAttribute("ownerName", view.getOwnerName());
         model.addAttribute("isClosed", view.isClosed());
@@ -82,15 +96,15 @@ public class BusinessController {
     //예약 관리
     @GetMapping("/business/reservations")
     public String reservations(
-            @RequestParam(defaultValue = "1") Long memberId,
             @RequestParam(required = false) String status,
+            HttpSession session,
             Model model
     ) {
+        Long memberId = currentBusinessMemberId(session);
         BusinessSidebarContextDto ctx = businessDashboardService.getSidebarContext(memberId);
         String statusParam = toReservationStatusName(status);
         List<BusinessReservationDto> reservations = businessReservationService.getReservations(ctx.getPlaceId(), memberId, statusParam);
 
-        model.addAttribute("memberId", memberId);
         model.addAttribute("bizName", ctx.getPlaceName());
         model.addAttribute("ownerName", ctx.getOwnerName());
         model.addAttribute("isClosed", ctx.isClosed());
@@ -108,16 +122,18 @@ public class BusinessController {
 
     //예약관리 : 취소 요청 승인 (환불 실행은 reservation 파트 PaymentService 호출)
     @PostMapping("/business/reservations/{reservationId}/cancel-approve")
-    public String approveCancelReservation(@PathVariable Long reservationId, @RequestParam Long memberId) {
+    public String approveCancelReservation(@PathVariable Long reservationId, HttpSession session) {
+        Long memberId = currentBusinessMemberId(session);
         businessReservationService.approveCancel(reservationId, memberId);
-        return "redirect:/business/reservations?memberId=" + memberId;
+        return "redirect:/business/reservations";
     }
 
     //예약관리 : 취소 요청 거절 (PAID 원복은 reservation 파트 ReservationService 호출)
     @PostMapping("/business/reservations/{reservationId}/cancel-reject")
-    public String rejectCancelReservation(@PathVariable Long reservationId, @RequestParam Long memberId) {
+    public String rejectCancelReservation(@PathVariable Long reservationId, HttpSession session) {
+        Long memberId = currentBusinessMemberId(session);
         businessReservationService.rejectCancel(reservationId, memberId);
-        return "redirect:/business/reservations?memberId=" + memberId;
+        return "redirect:/business/reservations";
     }
 
     //필터
@@ -134,10 +150,10 @@ public class BusinessController {
 
     //마감 관리 : 즉시 예약 마감 토글 화면
     @GetMapping("/business/closure")
-    public String closure(@RequestParam(defaultValue = "1") Long memberId, Model model) {
+    public String closure(HttpSession session, Model model) {
+        Long memberId = currentBusinessMemberId(session);
         BusinessSidebarContextDto ctx = businessDashboardService.getSidebarContext(memberId);
 
-        model.addAttribute("memberId", memberId);
         model.addAttribute("bizName", ctx.getPlaceName());
         model.addAttribute("ownerName", ctx.getOwnerName());
         model.addAttribute("isClosed", ctx.isClosed());
@@ -152,12 +168,12 @@ public class BusinessController {
     //업소관리
     @GetMapping("/business/venue")
     public String venue(
-            @RequestParam(defaultValue = "1") Long memberId,
             @RequestParam(defaultValue = "false") boolean edit,
+            HttpSession session,
             Model model
     ) {
+        Long memberId = currentBusinessMemberId(session);
         BusinessPlaceOverviewDto overview = businessPlaceService.findOverview(memberId);
-        model.addAttribute("memberId", memberId);
         model.addAttribute("place", overview);
 
         if (overview != null) {
@@ -190,22 +206,22 @@ public class BusinessController {
     //업소 등록
     @PostMapping("/business/venue/register")
     public String registerVenue(
-            @RequestParam Long memberId,
             @RequestParam String name,
             @RequestParam Integer placeType,
             @RequestParam(required = false) Long regionId,
             @RequestParam String address,
             @RequestParam(required = false) String description,
-            @RequestParam(required = false) List<MultipartFile> images
+            @RequestParam(required = false) List<MultipartFile> images,
+            HttpSession session
     ) {
+        Long memberId = currentBusinessMemberId(session);
         businessPlaceService.registerPlace(memberId, name, placeType, regionId, address, description, images);
-        return "redirect:/business/venue?memberId=" + memberId;
+        return "redirect:/business/venue";
     }
 
     //업소 정보 수정
     @PostMapping("/business/venue/update")
     public String updateVenue(
-            @RequestParam Long memberId,
             @RequestParam String name,
             @RequestParam Integer placeType,
             @RequestParam(required = false) Long regionId,
@@ -215,24 +231,26 @@ public class BusinessController {
             // "new" 토큰은 등장하는 순서대로 newImages의 파일과 하나씩 매칭된다.
             @RequestParam(required = false) List<String> photoOrder,
             @RequestParam(required = false) List<String> removeImageUrls,
-            @RequestParam(required = false) List<MultipartFile> newImages
+            @RequestParam(required = false) List<MultipartFile> newImages,
+            HttpSession session
     ) {
+        Long memberId = currentBusinessMemberId(session);
         businessPlaceService.updatePlace(memberId, name, placeType, regionId, address, description, photoOrder, removeImageUrls, newImages);
-        return "redirect:/business/venue?memberId=" + memberId;
+        return "redirect:/business/venue";
     }
 
     //후기 확인 : 답글은 커뮤니티 상세(댓글)에서 처리하므로 여기서는 목록만 보여준다. 감성분석 결과(긍정/중립/부정)로 필터링 가능
     @GetMapping("/business/reviews")
     public String reviews(
-            @RequestParam(defaultValue = "1") Long memberId,
             @RequestParam(required = false) String sentiment,
+            HttpSession session,
             Model model
     ) {
+        Long memberId = currentBusinessMemberId(session);
         BusinessSidebarContextDto ctx = businessDashboardService.getSidebarContext(memberId);
         Integer sentimentParam = toSentimentValue(sentiment);
         List<BusinessReviewDto> reviews = businessReviewService.getReviews(ctx.getPlaceId(), sentimentParam);
 
-        model.addAttribute("memberId", memberId);
         model.addAttribute("bizName", ctx.getPlaceName());
         model.addAttribute("ownerName", ctx.getOwnerName());
         model.addAttribute("isClosed", ctx.isClosed());
@@ -262,8 +280,13 @@ public class BusinessController {
 
     // 아직 업소를 등록하지 않은 사업자가 dashboard/reservations에 접근하면 등록 화면으로 안내
     @ExceptionHandler(NoPlaceRegisteredException.class)
-    public String handleNoPlaceRegistered(HttpServletRequest request) {
-        String memberId = request.getParameter("memberId");
-        return "redirect:/business/venue?memberId=" + (memberId != null ? memberId : "1");
+    public String handleNoPlaceRegistered() {
+        return "redirect:/business/venue";
+    }
+
+    // 미로그인/권한부족 시 지정된 목적지로 리다이렉트 (미로그인 -> /auth/login, 권한부족 -> /)
+    @ExceptionHandler(BusinessAuthException.class)
+    public String handleBusinessAuth(BusinessAuthException e) {
+        return "redirect:" + e.getRedirectTarget();
     }
 }

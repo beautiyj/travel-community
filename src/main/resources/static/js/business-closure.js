@@ -10,15 +10,14 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!card) return;
 
         var placeId = card.dataset.placeId;
-        var memberId = card.dataset.memberId;
         var nextClosed = !toggle.classList.contains("is-on");
 
         toggle.disabled = true;
         applyState(card, toggle, nextClosed);
 
+        // memberId는 서버가 로그인 세션에서 파생하므로 더 이상 보내지 않는다
         var url = "/api/business/place/closed"
             + "?placeId=" + encodeURIComponent(placeId)
-            + "&memberId=" + encodeURIComponent(memberId)
             + "&isClosed=" + nextClosed;
 
         fetch(url, { method: "PATCH" })

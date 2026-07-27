@@ -144,7 +144,8 @@ public class AuthService {
 		member.setEmail(verifiedEmail.getEmail());
 		member.setNickname(signUpRequest.getNickname());
 		member.setMemberType(signUpRequest.getMemberType());
-		member.setPhone(signUpRequest.getPhone());
+		// 입력 형식과 관계없이 같은 전화번호를 하나의 숫자 형식으로 저장한다.
+		member.setPhone(signUpRequest.getPhone().replace("-", ""));
 		member.setGender(signUpRequest.getGender());
 		member.setBirth(signUpRequest.getBirth());
 		member.setEmailVerified("Y");

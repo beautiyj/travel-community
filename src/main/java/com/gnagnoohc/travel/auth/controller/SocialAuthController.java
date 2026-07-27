@@ -49,8 +49,13 @@ public class SocialAuthController {
     @GetMapping("/kakao")
     public String startKakaoLogin(HttpSession session) {
         // 새 로그인을 시작할 때 이전 제공자의 미완료 가입 정보를 재사용하지 않는다.
-        session.removeAttribute(PENDING_SOCIAL_SIGNUP);
-        return "redirect:/oauth2/authorization/kakao";
+        return startSocialLogin(session, "kakao");
+    }
+
+    @GetMapping("/google")
+    public String startGoogleLogin(HttpSession session) {
+        // Google 로그인도 Kakao와 동일하게 이전의 미완료 소셜 가입 정보를 제거하고 시작한다.
+        return startSocialLogin(session, "google");
     }
 
     @GetMapping("/social/signup")
@@ -170,14 +175,23 @@ public class SocialAuthController {
 
     private String redirectToSocialLogin(RedirectAttributes redirectAttributes) {
         redirectAttributes.addFlashAttribute(
-                "kakaoError",
+                "socialError",
                 "소셜 인증 정보가 없거나 만료됐습니다. 다시 로그인해 주세요.");
         return "redirect:/auth/login";
     }
 
     private String getSocialProviderName(String provider) {
-        // 현재 실제 연동 제공자는 카카오뿐이며, 화면에는 내부 코드 대신 사용자용 이름을 전달한다.
-        return "KAKAO".equals(provider) ? "카카오" : "소셜";
+        // 화면에는 DB provider 코드 대신 사용자용 이름을 전달한다.
+        return switch (provider) {
+            case "KAKAO" -> "카카오";
+            case "GOOGLE" -> "구글";
+            default -> "소셜";
+        };
+    }
+
+    private String startSocialLogin(HttpSession session, String registrationId) {
+        session.removeAttribute(PENDING_SOCIAL_SIGNUP);
+        return "redirect:/oauth2/authorization/" + registrationId;
     }
 
     private boolean matchesSignupNonce(String savedNonce, String requestNonce) {

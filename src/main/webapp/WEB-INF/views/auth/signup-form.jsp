@@ -5,21 +5,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${businessMember ? '사업자 회원가입' : '일반 회원가입'} | Travel Community</title>
+    <title>${businessMember ? '사업자 회원가입' : '일반 회원가입'} | 갈래말래</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/auth/auth.css">
     <%-- 회원가입 검증 모듈을 먼저 로드한 뒤 화면·API 로직을 실행한다. --%>
     <script defer src="${pageContext.request.contextPath}/js/auth/signup-validation.js"></script>
     <script defer src="${pageContext.request.contextPath}/js/auth/signup.js"></script>
 </head>
-<body class="auth-page">
-<main class="auth-card">
-    <a class="auth-brand" href="${pageContext.request.contextPath}/">Travel Community</a>
+<body class="auth-page auth-page--signup-form">
+<main class="auth-card auth-card--signup-form">
+    <a class="auth-brand" href="${pageContext.request.contextPath}/">갈래말래</a>
+
+    <%-- 계정정보와 상세정보를 같은 화면에서 입력하므로 실제 가입 흐름을 2단계로 표시한다. --%>
+    <ol class="signup-progress signup-progress--form" aria-label="회원가입 진행 단계">
+        <li class="signup-progress__step signup-progress__step--complete"
+            aria-label="1단계 유형 선택 완료">
+            <span class="signup-progress__number">1</span>
+            <span class="signup-progress__label">유형 선택</span>
+        </li>
+        <li class="signup-progress__step signup-progress__step--current" aria-current="step">
+            <span class="signup-progress__number">2</span>
+            <span class="signup-progress__label">회원정보 입력</span>
+        </li>
+    </ol>
 
     <header class="auth-header">
         <h1>${businessMember ? '사업자 회원가입' : '일반 회원가입'}</h1>
         <p>
             <c:choose>
-                <c:when test="${businessMember}">사업자 정보를 확인할 수 있도록 등록증을 함께 첨부해주세요.</c:when>
+                <c:when test="${businessMember}">사업자 회원으로 가입하면 업소와 예약을 관리할 수 있습니다.</c:when>
                 <c:otherwise>나만의 여행 기록을 시작해보세요.</c:otherwise>
             </c:choose>
         </p>

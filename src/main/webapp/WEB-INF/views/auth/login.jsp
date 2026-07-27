@@ -5,13 +5,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>로그인 | Travel Community</title>
+    <title>로그인 | 갈래말래</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/auth/auth.css">
     <script defer src="${pageContext.request.contextPath}/js/auth/login.js"></script>
 </head>
-<body class="auth-page">
-<main class="auth-card auth-card--small">
-    <a class="auth-brand" href="${pageContext.request.contextPath}/">Travel Community</a>
+<body class="auth-page auth-page--login">
+<main class="auth-card auth-card--small auth-card--login">
+    <a class="auth-brand" href="${pageContext.request.contextPath}/">갈래말래</a>
 
     <header class="auth-header">
         <h1>로그인</h1>
@@ -43,7 +43,8 @@
         </div>
     </c:if>
 
-    <form id="loginForm" action="${pageContext.request.contextPath}/auth/login" method="post" novalidate>
+    <%-- 로그인 폼을 소셜 로그인 영역보다 먼저 배치해 일반 로그인 흐름을 우선한다. --%>
+    <form id="loginForm" class="login-form" action="${pageContext.request.contextPath}/auth/login" method="post" novalidate>
         <div class="form-field">
             <label for="username">아이디</label>
             <input id="username" name="username" type="text" autocomplete="username"
@@ -67,15 +68,32 @@
     <%-- 공통 소셜 로그인 컴포넌트 적용 전까지 우선순위만 맞춰 임시로 노출한다. --%>
     <section class="social-login-section" aria-label="소셜 로그인">
         <div class="social-login-divider"><span>또는</span></div>
+        <%-- 일반 카카오 로그인 공식 버튼 리소스를 사용해 심볼과 레이블 비율을 유지한다. --%>
         <a class="social-login-button social-login-button--kakao"
-           href="${pageContext.request.contextPath}/auth/kakao">카카오로 로그인</a>
-        <button class="social-login-button social-login-button--google" type="button" disabled>구글 로그인 (준비 중)</button>
+           href="${pageContext.request.contextPath}/auth/kakao" aria-label="카카오 로그인">
+            <img class="kakao-login-standard-image"
+                 src="https://k.kakaocdn.net/14/dn/btroDszwNrM/I6efHub1SN5KCJqLm1Ovx1/o.jpg"
+                 alt="">
+        </a>
+        <%-- 기존 소셜 버튼 구조는 유지하고 Google 로고만 작은 아이콘으로 추가한다. --%>
+        <a class="social-login-button social-login-button--google"
+           href="${pageContext.request.contextPath}/auth/google" aria-label="Google 계정으로 로그인">
+            <svg class="social-login-button__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" aria-hidden="true">
+                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
+                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
+                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
+                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
+            </svg>
+            <span>Google 계정으로 로그인</span>
+        </a>
         <button class="social-login-button social-login-button--naver" type="button" disabled>네이버 로그인 (준비 중)</button>
     </section>
 
-    <c:if test="${not empty kakaoError}">
+    <%-- 이전 화면에서 전달하던 kakaoError도 한동안 함께 읽어 기존 흐름을 깨지 않는다. --%>
+    <c:set var="socialLoginError" value="${not empty socialError ? socialError : kakaoError}" />
+    <c:if test="${not empty socialLoginError}">
         <div class="form-alert form-alert--error" role="alert">
-            <c:out value="${kakaoError}" />
+            <c:out value="${socialLoginError}" />
         </div>
     </c:if>
 

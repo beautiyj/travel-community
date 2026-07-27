@@ -5,22 +5,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>소셜 회원가입 | Travel Community</title>
+    <title>소셜 회원가입 | 갈래말래</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/auth/auth.css">
-    <%-- [수정] 로컬 가입과 같은 닉네임 형식 규칙만 재사용하고, 로컬 폼 전용 signup.js는 불러오지 않는다. --%>
+    <%-- 로컬 가입과 같은 입력 검증 규칙을 재사용하고, 로컬 폼 전용 signup.js는 불러오지 않는다. --%>
     <script defer src="${pageContext.request.contextPath}/js/auth/signup-validation.js"></script>
     <script defer src="${pageContext.request.contextPath}/js/auth/social-signup.js"></script>
 </head>
 <body class="auth-page">
 <main class="auth-card auth-card--small">
-    <a class="auth-brand" href="${pageContext.request.contextPath}/">Travel Community</a>
+    <a class="auth-brand" href="${pageContext.request.contextPath}/">갈래말래</a>
 
     <header class="auth-header">
         <h1>소셜 회원가입</h1>
-        <p>사이트에서 사용할 이름과 닉네임을 입력해 주세요.</p>
+        <p>사이트에서 사용할 회원 정보를 입력해 주세요.</p>
     </header>
 
-    <%-- [수정] 제공자별 가입 화면을 나누지 않고, 서버 세션에서 확인한 소셜 계정 정보만 표시한다. --%>
+    <%-- 제공자별 가입 화면을 나누지 않고, 서버 세션에서 확인한 소셜 계정 정보만 표시한다. --%>
     <section class="social-account-summary"
              aria-label="<c:out value='${socialProviderName}' /> 계정 정보">
         <c:if test="${not empty socialProfileImageUrl}">
@@ -71,6 +71,45 @@
             <p id="nicknameError" class="field-error" aria-live="polite"><c:out value="${errors.nickname}" /></p>
             <p id="nicknameSuccess" class="field-success" aria-live="polite"></p>
         </div>
+
+        <%-- 생년월일은 로컬 가입과 같은 필수 항목이며 서버 오류가 나면 입력값을 유지한다. --%>
+        <div class="form-field">
+            <label for="birth">생년월일</label>
+            <input id="birth" name="birth" type="date"
+                   value="<c:out value='${socialSignupRequest.birth}' />"
+                   aria-describedby="birthError"
+                   autocomplete="bday"
+                   required>
+            <p id="birthError" class="field-error" aria-live="polite"><c:out value="${errors.birth}" /></p>
+        </div>
+
+        <%-- 소셜 회원도 서비스 연락에 사용할 전화번호를 직접 입력하고 서버 검증 오류를 표시한다. --%>
+        <div class="form-field">
+            <label for="phone">전화번호</label>
+            <input id="phone" name="phone" type="tel" maxlength="13"
+                   value="<c:out value='${socialSignupRequest.phone}' />"
+                   aria-describedby="phoneError"
+                   autocomplete="tel"
+                   placeholder="010-1234-5678"
+                   required>
+            <p id="phoneError" class="field-error" aria-live="polite"><c:out value="${errors.phone}" /></p>
+        </div>
+
+        <%-- 성별은 선택 항목이며 서버 검증 실패 시 사용자가 고른 값을 다시 표시한다. --%>
+        <fieldset class="form-field" aria-describedby="genderError">
+            <legend>성별 <span class="optional-label">선택</span></legend>
+            <div class="choice-row">
+                <label>
+                    <input type="radio" name="gender" value="MALE"
+                           ${socialSignupRequest.gender == 'MALE' ? 'checked' : ''}> 남성
+                </label>
+                <label>
+                    <input type="radio" name="gender" value="FEMALE"
+                           ${socialSignupRequest.gender == 'FEMALE' ? 'checked' : ''}> 여성
+                </label>
+            </div>
+            <p id="genderError" class="field-error" aria-live="polite"><c:out value="${errors.gender}" /></p>
+        </fieldset>
 
         <div class="agreement-box">
             <label>

@@ -1,6 +1,7 @@
 package com.gnagnoohc.travel.auth.service;
 
 import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import org.springframework.dao.DuplicateKeyException;
@@ -27,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 public class SocialAuthService {
 
     private static final String KAKAO = "KAKAO";
+    private static final String GOOGLE = "GOOGLE";
 
     private final AuthMapper authMapper;
     private final SocialAuthMapper socialAuthMapper;
@@ -116,6 +118,10 @@ public class SocialAuthService {
         member.setEmail(pendingSignup.email());
         member.setNickname(signupRequest.getNickname());
         member.setMemberType(1);
+        // 입력 형식과 관계없이 같은 전화번호를 하나의 숫자 형식으로 저장한다.
+        member.setPhone(signupRequest.getPhone().replace("-", ""));
+        member.setGender(signupRequest.getGender());
+        member.setBirth(signupRequest.getBirth());
         member.setProfileImgUrl(limitOptional(pendingSignup.profileImageUrl(), 500));
         member.setSignupType(provider);
         member.setMemberStatus("ACTIVE");
@@ -137,11 +143,13 @@ public class SocialAuthService {
     }
 
     private void validateProviderUserId(String provider, String providerUserId) {
-        if (!KAKAO.equals(provider)
+        if ((!KAKAO.equals(provider) && !GOOGLE.equals(provider))
                 || providerUserId == null
-                || !providerUserId.matches("^[0-9]+$")
+                || providerUserId.isBlank()
+                || providerUserId.length() > 255
+                || (KAKAO.equals(provider) && !providerUserId.matches("^[0-9]+$"))
                 || (provider + "_" + providerUserId).length() > 100) {
-            throw new SocialAuthException("유효하지 않은 카카오 회원 식별 정보입니다.");
+            throw new SocialAuthException("유효하지 않은 소셜 회원 식별 정보입니다.");
         }
     }
 
@@ -149,8 +157,9 @@ public class SocialAuthService {
         if (pendingSignup == null || pendingSignup.isExpired()) {
             throw new SocialAuthException("소셜 인증 정보가 없거나 만료됐습니다. 다시 로그인해 주세요.");
         }
-        // 현재 실제 연동이 끝난 제공자는 카카오뿐이므로 임의 제공자 가입은 허용하지 않는다.
-        if (!KAKAO.equals(pendingSignup.provider())) {
+        // 실제 연동이 끝난 Kakao와 Google만 가입을 허용한다.
+        if (!KAKAO.equals(pendingSignup.provider())
+                && !GOOGLE.equals(pendingSignup.provider())) {
             throw new SocialAuthException("현재 지원하지 않는 소셜 로그인 제공자입니다.");
         }
         validateProviderUserId(pendingSignup.provider(), pendingSignup.providerUserId());
@@ -170,6 +179,14 @@ public class SocialAuthService {
                 || signupRequest.getName().matches(".*\\s.*")
                 || signupRequest.getNickname() == null
                 || !signupRequest.getNickname().matches("^[^\\s]{2,10}$")
+                // Controller 검증을 우회한 호출도 로컬 가입과 같은 전화번호 규칙으로 차단한다.
+                || signupRequest.getPhone() == null
+                || !signupRequest.getPhone().matches("^01[016789]-?\\d{3,4}-?\\d{4}$")
+                // Service를 직접 호출해도 생년월일과 선택 성별의 저장 규칙을 우회할 수 없다.
+                || signupRequest.getBirth() == null
+                || signupRequest.getBirth().toLocalDate().isAfter(LocalDate.now())
+                || (signupRequest.getGender() != null
+                    && !signupRequest.getGender().matches("^(MALE|FEMALE)$"))
                 || !signupRequest.isPrivacyAgreed()) {
             throw new SocialAuthException("소셜 회원가입 입력값을 다시 확인해 주세요.");
         }

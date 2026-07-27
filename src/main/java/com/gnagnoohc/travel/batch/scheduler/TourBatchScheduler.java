@@ -21,8 +21,8 @@ public class TourBatchScheduler {
         try {
             // 법정동 코드 동기화 (REGION)
             tourApiService.syncRegionData();
-            // 장소 및 이미지 데이터 동기화 (PLACE, PLACE_IMAGE)
-            tourApiService.syncTourData();
+            // 장소 및 이미지 데이터 동기화 (PLACE, PLACE_IMAGE) - contentTypeId 5가지만 선별 작업 처리한 동기화 메소드
+            tourApiService.fetchAllTargetSyncList();
 
             log.info("TourBatchScheduler: 공공데이터 배치 수집 완료");
         } catch (Exception e) {

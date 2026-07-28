@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8"%>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
 <!DOCTYPE html>
 <html>
@@ -10,6 +11,7 @@
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/common.css">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/buttonComponent.css">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/confirmModal.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/dropdownSelector.css">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/community/placeSearchModal.css">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/community/community.css">
 </head>
@@ -20,53 +22,94 @@
 
   <!-- 수정 취소 시 원래 게시글로 돌아감 -->
   <a href="${cp}/community/detail?postId=${post.postId}" class="back-link">&lt; 게시글로</a>
-  <h1 class="page-title">게시글 수정</h1>
+
+  <!-- 작성자 아바타 + 닉네임 -->
+  <div class="blog-author-bar">
+    <div class="blog-avatar">${fn:substring(post.nickname, 0, 1)}</div>
+    <span class="blog-author-name">${post.nickname}</span>
+  </div>
 
   <form action="${cp}/community/update" method="post" enctype="multipart/form-data">
 
     <!-- 어떤 글을 수정하는지 서버에 전달 -->
     <input type="hidden" name="postId" value="${post.postId}">
 
-    <!-- 카테고리: 기존 값과 일치하는 항목에 checked (value 는 PostCategory enum 의 value 와 동일) -->
+    <!-- 카테고리: dropdownSelector 와 동일한 마크업, 기존 값(post.category)으로 초기 선택 표시 -->
     <div class="field">
       <label class="field-label">카테고리</label>
-      <div class="category-group">
-        <input type="radio" name="category" id="cat-general" value="일반"
-               ${post.category == '일반' ? 'checked' : ''}>
-        <label for="cat-general" class="category-card">
-          <div class="cat-name">일반</div>
-          <div class="cat-desc">자유로운 여행 이야기</div>
-        </label>
 
-        <input type="radio" name="category" id="cat-companion" value="모집"
-               ${post.category == '모집' ? 'checked' : ''}>
-        <label for="cat-companion" class="category-card">
-          <div class="cat-name">모집(동행)</div>
-          <div class="cat-desc">동행자를 구하는 글</div>
-        </label>
+      <div class="drop-select-container dropdown category-dropdown" id="categoryDropdown">
+        <button type="button" id="categoryDropdownTrigger" class="drop-select-trigger is-selected" aria-expanded="false">
+          <div class="drop-select-left-box">
+            <span class="drop-select-text" id="categoryDropdownLabel">${post.categoryLabel}</span>
+          </div>
+          <svg class="drop-select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
 
-        <input type="radio" name="category" id="cat-general-review" value="일반후기"
-               ${post.category == '일반후기' ? 'checked' : ''}>
-        <label for="cat-general-review" class="category-card">
-          <div class="cat-name">일반후기</div>
-          <div class="cat-desc">다녀온 여행 후기</div>
-        </label>
+        <ul class="dropdown-menu drop-select-menu" aria-labelledby="categoryDropdownTrigger">
+          <c:forEach var="cat" items="${categoryList}">
+            <li>
+              <button type="button" class="dropdown-item drop-menu-item ${cat.value == post.category ? 'is-active' : ''}"
+                      data-value="${cat.value}" data-label="${cat.displayLabel}">
+                ${cat.displayLabel}
+              </button>
+            </li>
+          </c:forEach>
+        </ul>
+      </div>
 
-        <input type="radio" name="category" id="cat-verified-review" value="방문자인증후기"
-               ${post.category == '방문자인증후기' ? 'checked' : ''}>
-        <label for="cat-verified-review" class="category-card">
-          <div class="cat-name">방문자인증후기</div>
-          <div class="cat-desc">방문 인증 후 남기는 후기</div>
-        </label>
+      <div class="category-radio-group" aria-hidden="true">
+        <c:forEach var="cat" items="${categoryList}">
+          <input type="radio" name="category" value="${cat.value}" ${cat.value == post.category ? 'checked' : ''}>
+        </c:forEach>
       </div>
     </div>
 
-    <!-- 장소 태그: "방문자인증후기"/"일반후기" 카테고리일 때만 노출 (placeTag.js가 카테고리 변경에 맞춰 토글)
-         이미 태그된 장소가 있으면 미리 채워서 보여줌. 한 게시글에 장소 1개만 태그 가능 -->
+    <!-- 제목: 기존 값 채움. DB 컬럼(post.title)이 VARCHAR(50)이라 51자 이상이면 수정 시
+         SQL 에러가 나서 제출 시 titleValidation.js가 길이를 먼저 검사함 (아래 titleLengthModal 참고) -->
+    <div class="field">
+      <input type="text" id="title" name="title" class="title-input-plain"
+             value="${post.title}" placeholder="제목을 입력하세요" required>
+    </div>
+
+    <!-- 장소 태그 -->
+    <input type="hidden" id="placeId" name="placeId" value="${post.placeId}">
+
+    <!-- 본문: contentEditor.js 가 아래 postContentData/postImageData 를 읽어 초기 DOM을 복원함
+         (기존 이미지는 잠금 상태로 원래 위치에 표시, 새로 추가한 이미지만 삭제/리사이즈/정렬 가능) -->
+    <div class="field">
+      <div class="editor-toolbar">
+        <button type="button" id="toolPhotoBtn" class="editor-tool-btn">🖼 사진</button>
+        <button type="button" id="toolCollageBtn" class="editor-tool-btn">▦ 콜라주</button>
+        <button type="button" id="toolSliderBtn" class="editor-tool-btn">⇄ 슬라이더</button>
+        <span class="editor-tool-hint">이미지는 커서 아래에 삽입됩니다</span>
+      </div>
+
+      <div id="contentEditor" class="content-editor" contenteditable="true"
+           data-placeholder="여행 경험을 자세히 공유해주세요..."></div>
+
+      <!-- required 안 씀: display:none 이라 검증 실패 시 브라우저가 포커스를 못 줘서 그냥 조용히 제출이 막혀버림 -->
+      <textarea id="content" name="content" style="display:none"></textarea>
+      <input type="file" id="photoInput" accept="image/*" multiple hidden>
+      <input type="file" id="images" name="images" accept="image/*" multiple hidden>
+
+      <!-- 기존 콘텐츠/이미지 원본 데이터 (contentEditor.js 가 읽어서 초기 DOM 복원 후 이 두 요소는 그대로 화면에 안 보임)
+           fn:escapeXml 로 안전하게 인코딩 → 일반 엘리먼트라 브라우저가 다시 복원해주므로 JS에서는 textContent/속성값으로 원문 그대로 읽힘 -->
+      <div id="postContentData" style="display:none">${fn:escapeXml(post.content)}</div>
+      <ul id="postImageData" style="display:none">
+        <c:forEach var="img" items="${post.imageList}">
+          <li data-url="${fn:escapeXml(img.imageUrl)}"></li>
+        </c:forEach>
+      </ul>
+    </div>
+
+    <!-- 장소 태그: "방문자인증후기"/"일반후기" 카테고리일 때만 노출, 취소/수정완료 버튼 바로 위
+         이미 태그된 장소가 있으면 미리 채워서 보여줌 -->
     <div class="field" id="place-tag-field"
          style="${(post.category == '방문자인증후기' || post.category == '일반후기') ? '' : 'display:none;'}">
       <label class="field-label">장소 태그</label>
-      <input type="hidden" id="placeId" name="placeId" value="${post.placeId}">
 
       <div id="place-tag-selected" class="place-tag-selected"
            style="${empty post.placeId ? 'display:none;' : ''}">
@@ -76,37 +119,6 @@
 
       <button type="button" id="place-tag-open-btn" class="place-tag-open-btn"
               style="${empty post.placeId ? '' : 'display:none;'}">장소 검색해서 태그하기</button>
-    </div>
-
-    <!-- 작성자: 읽기 전용 -->
-    <div class="field">
-      <label class="field-label">작성자</label>
-      <input type="text" value="${post.nickname}" readonly class="text-input readonly">
-    </div>
-
-    <!-- 제목: 기존 값 채움. DB 컬럼(post.title)이 VARCHAR(50)이라 51자 이상이면 수정 시
-         SQL 에러가 나서 제출 시 titleValidation.js가 길이를 먼저 검사함 (아래 titleLengthModal 참고) -->
-    <div class="field">
-      <label class="field-label" for="title">제목</label>
-      <input type="text" id="title" name="title" class="text-input"
-             value="${post.title}" placeholder="제목을 입력하세요" required>
-    </div>
-
-    <!-- 내용: 기존 값 채움 -->
-    <div class="field">
-      <label class="field-label" for="content">내용</label>
-      <textarea id="content" name="content" class="text-area" rows="12"
-                placeholder="여행 경험을 자세히 공유해주세요..." required>${post.content}</textarea>
-    </div>
-
-    <!-- 이미지 추가 (새로 올릴 이미지) -->
-    <div class="field">
-      <label class="field-label">이미지</label>
-      <label for="images" class="image-upload-box">
-        클릭해서 이미지를 추가하세요 (여러 장 선택 가능)
-      </label>
-      <input type="file" id="images" name="images" accept="image/*" multiple hidden>
-      <div id="preview"></div>
     </div>
 
     <!-- 버튼: 취소는 buttonComponent 를 내비게이션 용도로, 수정 완료는 순수 제출 버튼으로 -->
@@ -132,6 +144,29 @@
   <jsp:param name="modalId" value="placeSearchModal" />
 </jsp:include>
 
+<!-- 콜라주/슬라이더 빌더 모달 (write.jsp/edit.jsp 공용, contentEditor.js 가 제어) -->
+<div id="imgBlockModal" class="modal-overlay" data-modal role="dialog" aria-modal="true" aria-labelledby="imgBlockModalTitle">
+  <div class="modal img-block-modal">
+    <h2 class="modal-title" id="imgBlockModalTitle">콜라주 만들기</h2>
+    <p class="modal-message">사진을 2장 이상 선택하세요.</p>
+
+    <label for="imgBlockFileInput" class="image-upload-box">클릭해서 사진을 선택하세요 (여러 장 가능)</label>
+    <input type="file" id="imgBlockFileInput" accept="image/*" multiple hidden>
+
+    <div id="imgBlockPreview" class="img-block-preview"></div>
+    <div id="imgBlockCanvas" class="collage-builder-canvas" style="display:none;"></div>
+
+    <div class="modal-buttons">
+      <button type="button" class="btn-main" style="background: var(--card); border:1px solid var(--border); box-shadow:none;" data-modal-close>
+        <span class="btn-main-text" style="color: var(--foreground);">취소</span>
+      </button>
+      <button type="button" id="imgBlockConfirmBtn" class="btn-main" disabled>
+        <span class="btn-main-text">완료</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- 제목 글자수 초과(50자 초과) 안내 모달 - titleValidation.js가 제출 시 검사해서 띄움
      확인 버튼은 data-modal-close로 닫히기만 함 (폼 제출/새로고침 없음 → 수정 중이던 내용 유지) -->
 <div id="titleLengthModal" class="modal-overlay" data-modal
@@ -153,7 +188,9 @@
 
 <script>window.CP = "${cp}";</script>
 <script src="${cp}/js/common.js"></script>
-<script src="${cp}/js/community/imageUpload.js"></script>
+<script src="${cp}/js/dropdownSelector.js"></script>
+<script src="${cp}/js/community/categorySelect.js"></script>
+<script src="${cp}/js/community/contentEditor.js"></script>
 <script src="${cp}/js/common/highlightKeyword.js"></script>
 <script src="${cp}/js/community/placeTag.js"></script>
 <script src="${cp}/js/community/titleValidation.js"></script>

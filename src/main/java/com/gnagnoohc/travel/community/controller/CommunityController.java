@@ -74,12 +74,15 @@ public class CommunityController {
 
     // 글쓰기 폼 열기 (빈 화면)
     @GetMapping("/community/write")
-    public String writeForm(HttpSession session) {
+    public String writeForm(HttpSession session, Model model) {
 
         // 로그인 안 한 사용자는 막기
         if (session.getAttribute("loginMember") == null) {
             return "redirect:/auth/login";
         }
+
+        // 카테고리 드롭다운 목록: JSP에 하드코딩하지 않고 enum(PostCategory)을 그대로 넘김
+        model.addAttribute("categoryList", CommunityDto.PostCategory.values());
 
         return "community/write";
     }
@@ -126,7 +129,13 @@ public class CommunityController {
             return "redirect:/community/detail?postId=" + postId;
         }
 
+        // 본문 에디터가 기존 이미지를 토큰 위치 그대로 복원해야 해서(contentEditor.js),
+        // detail()과 마찬가지로 이미지 목록을 채워줘야 함 (안 그러면 전부 /upload/undefined로 깨짐)
+        post.setImageList(imageService.selectImages(postId));
+
         model.addAttribute("post", post);
+        // 카테고리 드롭다운 목록: JSP에 하드코딩하지 않고 enum(PostCategory)을 그대로 넘김
+        model.addAttribute("categoryList", CommunityDto.PostCategory.values());
 
         return "community/edit";
     }

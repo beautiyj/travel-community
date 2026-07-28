@@ -64,7 +64,7 @@
     <!-- 작성자 / 작성일 / 조회수 (community.css 의 .detail-meta) -->
     <div class="detail-meta">
       <span>작성자 ${post.nickname}</span>
-      <span><fmt:formatDate value="${post.createdAt}" pattern="yyyy-MM-dd HH:mm" /></span>
+      <span><fmt:formatDate value="${post.createdAt}" pattern="yyyy-MM-dd" /></span>
       <span>조회 <fmt:formatNumber value="${post.readcount}" pattern="#,##0" /></span>
     </div>
 

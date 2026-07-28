@@ -1,5 +1,5 @@
 -- =========================================================
--- 더미 데이터 : member, post
+-- 더미 데이터 : member, post, post_image
 -- 실행: mysql -h127.0.0.1 -P3306 -utvid -p... travel < dummy-data.sql
 -- =========================================================
 
@@ -60,3 +60,24 @@ VALUES
 -- post_id AUTO_INCREMENT 다음 값을 11부터 시작하도록 정렬 (수동 PK 삽입 후 필요)
 ALTER TABLE post AUTO_INCREMENT = 11;
 ALTER TABLE member AUTO_INCREMENT = 9;
+
+-- =========================================================
+-- post_image (갤러리 화면 테스트용 - 이미지 0장/1장/여러장 케이스를 모두 포함)
+-- ※ image_url은 파일명만 저장하며, 실제 파일은 file.upload-community 경로
+--   (로컬 기준 ${user.home}/travel-community-uploads/community/) 에서 서빙됨.
+--   여기 넣은 파일명은 실제 업로드 파일이 아니라서, 그 경로에 동일한 파일명으로
+--   이미지 파일을 직접 넣어주지 않으면 화면에는 깨진 이미지 아이콘으로 보임(서버 에러 아님).
+-- =========================================================
+INSERT INTO post_image
+  (post_id, image_url, sort_order)
+VALUES
+  (1, 'jeju-1.jpg', 0),
+  (6, 'yeosu-night-1.jpg', 0),
+  (6, 'yeosu-night-2.jpg', 1),
+  (7, 'sokcho-1.jpg', 0),
+  (7, 'sokcho-2.jpg', 1),
+  (7, 'sokcho-3.jpg', 2),
+  (8, 'jeonju-hanbok-1.jpg', 0),
+  (9, 'sangwoo-guesthouse-1.jpg', 0),
+  (9, 'sangwoo-guesthouse-2.jpg', 1),
+  (10, 'jia-cafe-1.jpg', 0);

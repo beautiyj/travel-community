@@ -8,9 +8,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RegionEntity {
-    private Long regionId;
+    private Integer regionId;
     private String regionName;
-    private Long parentRegionId;
+    private Integer parentRegionId;
 
     /*
     MyBatis가 DB 조회 결과를 엔티티/DTO에 매핑(resultType 또는 resultMap)할 때

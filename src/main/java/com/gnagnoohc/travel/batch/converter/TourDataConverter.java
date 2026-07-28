@@ -22,7 +22,7 @@ public class TourDataConverter {
 
     // TODO: 2개의 시스템 유령 계정(각각 1개싹 지정) & 그 외 NNNN개 소유 유령계정 1개. 총 2~3개의 유령계정 설정
     // 공공데이터 전용 가상 비즈니스 회원 PK (시스템 유령계정)
-    private static final Long PUBLIC_DATA_MEMBER_ID = 1L;
+    private static final Integer PUBLIC_DATA_MEMBER_ID = 1;
 
     // TourLdongCodeDTO -> RegionDTO 변환
     public RegionDTO convertToRegionDTO(TourLdongCodeDTO ldongCodeDTO) {
@@ -31,7 +31,7 @@ public class TourDataConverter {
         String regnCd = StringUtils.hasText(ldongCodeDTO.getLDongRegnCd()) ? ldongCodeDTO.getLDongRegnCd() : ldongCodeDTO.getCode();
         String signguCd = ldongCodeDTO.getLDongSignguCd();
 
-        Long regionId = tourApiHelper.parseRegionId(regnCd, signguCd);
+        Integer regionId = tourApiHelper.parseRegionId(regnCd, signguCd);
         if (regionId == null) return null;
 
         // 법정동 명칭 시도명/시군구명 - 법정동 명칭은 "서울시종로구"가 아닌 "서울시 종로구"와 같이 공백(띄어쓰기)을 포함하도록 가공 처리
@@ -45,7 +45,7 @@ public class TourDataConverter {
         - 2자리(시/도 단독, 예: "11" 서울): 최상위 지역이므로 부모가 없음 -> parentRegionId = null
         - 5자리 이상(시/군/구 결합, 예: "11110" 종로구): 앞 2자리("11")를 추출하여 부모 시/도 PK 세팅 -> parentRegionId = 11L */
         String rawCodeStr = regionId.toString();
-        Long parentRegionId = (rawCodeStr.length() >= 5) ? Long.parseLong(rawCodeStr.substring(0, 2)) : null;
+        Integer parentRegionId = (rawCodeStr.length() >= 5) ? Integer.parseInt(rawCodeStr.substring(0, 2)) : null;
 
         // 최종 RegionDTO 빌드 및 적재
         return RegionDTO.builder()
@@ -61,9 +61,9 @@ public class TourDataConverter {
     // thumbnailImage를 5번째 파라미터로 받도록 변경 - PlaceImage 판단 로직(resolveThumbnailImage)에서 계산된 값을 전달받는 구조로 전환
     public PlaceDTO convertToPlaceDTO(TourAreaBasedSyncListDTO syncItem, TourItemDTO tourItem, TourDetailIntroDTO introDetail, TourDetailInfoDTO infoDetail, String thumbnailImage) {
         // 공공데이터의 contentId -> Place테이블엔 pk로 기입, 더미데이터의 경우 난수처리하여 넣을 것.
-        Long placeId = Long.parseLong(syncItem.getContentid());
+        Integer placeId = Integer.parseInt(syncItem.getContentid());
         // 공통헬퍼 메소드 parseRegionId 사용하여 동기화 로직의 법정동 시도코드/시군구코드 처리
-        Long regionId = tourApiHelper.parseRegionId(syncItem.getLDongRegnCd(), syncItem.getLDongSignguCd());
+        Integer regionId = tourApiHelper.parseRegionId(syncItem.getLDongRegnCd(), syncItem.getLDongSignguCd());
         // 플레이스 타입은 숫자로 들어오는 걸 convertContentType에서 tour/food/stay로 변환 처리
         String placeType = tourApiHelper.convertContentType(syncItem.getContenttypeid());
         // 주소는 addr1 + addr2 합친 전체주소 하나로 처리
@@ -99,7 +99,7 @@ public class TourDataConverter {
     // TODO: footer에 TourDetailImageDTO - cpyrhtDivCd (저작권표기) 추가 필요 & 프론트에서 Type3의 경우 비율유지하며 적용 필요
     // TourDetailImageDTO -> PlaceImageDTO 변환
     // 대표 이미지 등록 시 sortOrder=0 지정, 상세/서브 이미지 등록 시 순번(sortOrder) 지정
-    public PlaceImageDTO convertToPlaceImageDTO(Long placeId, String imageUrl, int sortOrder) {
+    public PlaceImageDTO convertToPlaceImageDTO(Integer placeId, String imageUrl, int sortOrder) {
         if (!StringUtils.hasText(imageUrl) || placeId == null) {
             return null;
         }

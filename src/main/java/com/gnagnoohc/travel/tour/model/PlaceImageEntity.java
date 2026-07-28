@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class PlaceImageEntity {
     private Long imageId;
-    private Long placeId;
+    private Integer placeId;
     private String imageUrl;
     private Integer sortOrder;
 }

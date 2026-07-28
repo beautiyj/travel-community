@@ -78,7 +78,7 @@ public class CommunityController {
 
         // 로그인 안 한 사용자는 막기
         if (session.getAttribute("loginMember") == null) {
-            return "redirect:/member/login";
+            return "redirect:/auth/login";
         }
 
         return "community/write";

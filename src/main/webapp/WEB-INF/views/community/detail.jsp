@@ -77,39 +77,18 @@
       </div>
     </c:if>
 
-    <!-- 본문 (community.css 의 .detail-body, 줄바꿈 유지) -->
-    <p class="detail-body">${post.content}</p>
+    <!-- 본문: postContentRenderer.js 가 아래 postContentData(토큰 포함 텍스트)와 postImageData(이미지 목록)를
+         읽어서 텍스트/단일 이미지(가운데·좌·우)/콜라주/슬라이더를 원래 작성 순서·위치대로 렌더링함.
+         텍스트는 createTextNode로만 삽입되므로 별도 escape 없이도 안전함 (community.css 의 .detail-body) -->
+    <div class="detail-body" id="post-content-root"></div>
 
-    <!-- 이미지: sort_order 순으로 저장되어 있다고 가정 (0번이 대표/썸네일 이미지)
-         1장뿐이면 화살표 없이 사진만, 여러 장이면 배너처럼 좌우 화살표로 넘김
-         ※ 본문 아래로 위치 이동 (원래는 본문 위였음) -->
-    <c:if test="${not empty post.imageList}">
-      <div class="post-gallery" data-gallery>
-        <div class="post-gallery-track" data-gallery-track>
-          <c:forEach var="img" items="${post.imageList}">
-            <div class="post-gallery-slide">
-              <img src="${cp}/upload/${img.imageUrl}" alt="첨부 이미지">
-            </div>
-          </c:forEach>
-        </div>
-
-        <c:if test="${fn:length(post.imageList) gt 1}">
-          <button type="button" class="post-gallery-arrow post-gallery-arrow-prev"
-                  data-gallery-prev aria-label="이전 사진">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <polyline points="15 5 8 12 15 19"></polyline>
-            </svg>
-          </button>
-          <button type="button" class="post-gallery-arrow post-gallery-arrow-next"
-                  data-gallery-next aria-label="다음 사진">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <polyline points="9 5 16 12 9 19"></polyline>
-            </svg>
-          </button>
-          <div class="post-gallery-counter" data-gallery-counter>1 / ${fn:length(post.imageList)}</div>
-        </c:if>
-      </div>
-    </c:if>
+    <!-- 렌더러에 넘길 원본 데이터 (fn:escapeXml 로 안전 인코딩 → 일반 엘리먼트라 브라우저가 다시 복원해줌) -->
+    <div id="postContentData" style="display:none">${fn:escapeXml(post.content)}</div>
+    <ul id="postImageData" style="display:none">
+      <c:forEach var="img" items="${post.imageList}">
+        <li data-url="${fn:escapeXml(img.imageUrl)}"></li>
+      </c:forEach>
+    </ul>
   </div>
 
 
@@ -309,7 +288,9 @@
 </c:if>
 
 
+<script>window.CP = "${cp}";</script>
 <script src="${cp}/js/common.js"></script>
+<script src="${cp}/js/community/postContentRenderer.js"></script>
 <script src="${cp}/js/community/postDetail.js"></script>
 <script src="${cp}/js/community/commentDeniedModal.js"></script>
 </body>

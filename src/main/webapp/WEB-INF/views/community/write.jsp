@@ -9,6 +9,7 @@
 <title>새 글쓰기</title>
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/common.css">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/buttonComponent.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/confirmModal.css">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/community/placeSearchModal.css">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/community/community.css">
 </head>
@@ -52,7 +53,8 @@
       </div>
     </div>
 
-    <!-- 제목 -->
+    <!-- 제목: DB 컬럼(post.title)이 VARCHAR(50)이라 51자 이상이면 등록 시 SQL 에러가 나서
+         제출 시 titleValidation.js가 길이를 먼저 검사함 (아래 titleLengthModal 참고) -->
     <div class="field">
       <label class="field-label" for="title">제목</label>
       <input type="text" id="title" name="title" class="text-input"
@@ -113,10 +115,30 @@
   <jsp:param name="modalId" value="placeSearchModal" />
 </jsp:include>
 
+<!-- 제목 글자수 초과(50자 초과) 안내 모달 - titleValidation.js가 제출 시 검사해서 띄움
+     확인 버튼은 data-modal-close로 닫히기만 함 (폼 제출/새로고침 없음 → 작성 중이던 내용 유지) -->
+<div id="titleLengthModal" class="modal-overlay" data-modal
+     role="dialog" aria-modal="true" aria-labelledby="titleLengthModal-title">
+  <div class="modal">
+    <h2 class="modal-title" id="titleLengthModal-title">알림</h2>
+    <p class="modal-message">제목은 50자 이내로 입력해주세요.</p>
+    <div class="modal-buttons">
+      <div class="modal-btn modal-btn-cancel" data-modal-close>
+        <jsp:include page="../common/buttonComponent.jsp">
+          <jsp:param name="text"  value="확인" />
+          <jsp:param name="color" value="var(--card)" />
+          <jsp:param name="size"  value="var(--text-sm)" />
+        </jsp:include>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>window.CP = "${cp}";</script>
 <script src="${cp}/js/common.js"></script>
 <script src="${cp}/js/community/imageUpload.js"></script>
 <script src="${cp}/js/common/highlightKeyword.js"></script>
 <script src="${cp}/js/community/placeTag.js"></script>
+<script src="${cp}/js/community/titleValidation.js"></script>
 </body>
 </html>

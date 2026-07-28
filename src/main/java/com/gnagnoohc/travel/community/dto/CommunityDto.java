@@ -1,6 +1,6 @@
 package com.gnagnoohc.travel.community.dto;
 
-import java.sql.Date;
+import java.sql.Timestamp;
 import java.util.List;
 
 import org.apache.ibatis.type.Alias;
@@ -15,8 +15,8 @@ public class CommunityDto {
     private Integer placeId;          // place_id     INT           NULL (NULL 가능이라 int 대신 Integer 유지)
     private String title;             // title        VARCHAR(200) NOT NULL
     private String content;           // content      TEXT         NOT NULL
-    private Date createdAt;  		// created_at   DATETIME     DEFAULT CURRENT_TIMESTAMP
-    private Date updatedAt;  		// updated_at   DATETIME     ON UPDATE CURRENT_TIMESTAMP
+    private Timestamp createdAt;  	// created_at   DATETIME     DEFAULT CURRENT_TIMESTAMP
+    private Timestamp updatedAt;  	// updated_at   DATETIME     ON UPDATE CURRENT_TIMESTAMP
     private Integer readcount;        // readcount    INT          DEFAULT 0
     private String category;          // category     VARCHAR(200) NULL
     

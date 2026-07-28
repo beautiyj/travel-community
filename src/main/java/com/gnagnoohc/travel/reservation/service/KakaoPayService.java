@@ -53,7 +53,7 @@ public class KakaoPayService {
         return res;
     }
 
-    public KakaoApproveResponse approve(String tid, String orderId, Long memberId, String pgToken) {
+    public KakaoApproveResponse approve(String tid, String orderId, Integer memberId, String pgToken) {
         Map<String, Object> body = new HashMap<>();
         body.put("cid", cid);
         body.put("tid", tid);

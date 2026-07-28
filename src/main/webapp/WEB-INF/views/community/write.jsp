@@ -116,6 +116,7 @@
 <script>window.CP = "${cp}";</script>
 <script src="${cp}/js/common.js"></script>
 <script src="${cp}/js/community/imageUpload.js"></script>
+<script src="${cp}/js/common/highlightKeyword.js"></script>
 <script src="${cp}/js/community/placeTag.js"></script>
 </body>
 </html>

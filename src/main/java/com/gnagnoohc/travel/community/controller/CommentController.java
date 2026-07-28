@@ -62,12 +62,6 @@ public class CommentController {
 			return "redirect:/community/detail?postId=" + postId;
 		}
 
-		// 원댓글(parentId 없음)을 지우는 경우, 딸린 대댓글부터 먼저 삭제
-		// (대댓글 작성자가 다를 수 있어도 원댓글이 사라지면 함께 지우는 게 일반적인 정책)
-		if (comment.getParentId() == null) {
-			service.deleteReplies(commentId);
-		}
-
 		service.deleteComment(commentId);
 
 		return "redirect:/community/detail?postId=" + postId;

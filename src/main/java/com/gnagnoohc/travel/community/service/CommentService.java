@@ -29,8 +29,4 @@ public class CommentService {
 	public void deleteComment(int commentId) {
 		dao.deleteComment(commentId);
 	}
-
-	public void deleteReplies(int parentId) {
-		dao.deleteReplies(parentId);
-	}
 }

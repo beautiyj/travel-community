@@ -37,12 +37,14 @@ sourceSets {
             include 'com/gnagnoohc/travel/TravelApplication.java'
             include 'com/gnagnoohc/travel/batch/**'
             include 'com/gnagnoohc/travel/tour/**'
+            include 'com/gnagnoohc/travel/config/**'
         }
         resources {
             // tour 관련 매퍼 XML 및 기본 설정 파일 포함
             include 'mapper/tour/**'
             include 'application.yml'
             include 'application.properties'
+			include 'application-secret.properties'
             include 'static/**'
             include 'templates/**'
         }

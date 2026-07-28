@@ -4,7 +4,7 @@
 <mapper namespace="com.gnagnoohc.travel.tour.mapper.TourMapper">
 
     <!-- 1. REGION 테이블 UPSERT -->
-    <insert id="upsertRegion" parameterType="com.gnagnoohc.travel.tour.dto.RegionDTO">
+    <insert id="upsertRegion" parameterType="com.gnagnoohc.travel.tour.model.RegionDTO">
         INSERT INTO region (
             region_id,
             region_name,
@@ -20,7 +20,7 @@
     </insert>
 
     <!-- 2. PLACE 테이블 UPSERT -->
-    <insert id="upsertPlace" parameterType="com.gnagnoohc.travel.tour.dto.PlaceDTO" useGeneratedKeys="true" keyProperty="placeId">
+    <insert id="upsertPlace" parameterType="com.gnagnoohc.travel.tour.model.PlaceDTO" useGeneratedKeys="true" keyProperty="placeId">
         INSERT INTO place (
             member_id,
             region_id,
@@ -65,7 +65,7 @@
     </insert>
 
     <!-- 3. PLACE_IMAGE 테이블 INSERT -->
-    <insert id="insertPlaceImage" parameterType="com.gnagnoohc.travel.tour.dto.PlaceImageDTO">
+    <insert id="insertPlaceImage" parameterType="com.gnagnoohc.travel.tour.model.PlaceImageDTO">
         INSERT INTO place_image (
             place_id,
             image_url,
@@ -78,7 +78,7 @@
     </insert>
 
     <!-- 4. PLACE 단건 조회 -->
-    <select id="selectPlaceById" resultType="com.gnagnoohc.travel.tour.dto.PlaceDTO">
+    <select id="selectPlaceById" resultType="com.gnagnoohc.travel.tour.model.PlaceDTO">
         SELECT 
             place_id AS placeId,
             member_id AS memberId,

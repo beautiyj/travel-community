@@ -22,6 +22,7 @@ public class TourApiHelper {
     private final ObjectMapper objectMapper;
 
     // TODO: 이후 useFeeInfo, minPrice 처리에서 0원 혹은 가격없음 -> TOUR 서비스단에서 무료 & 가격변동으로 텍스트 매핑처리
+    // TODO: STAY/TOUR 일부는 금액 넘어옴 - 금액처리/무료/가격변동 처리, FOOD는 금액 없음 - 가격변동으로 처리 필요
     public void enrichTourItemDetails(TourItemDTO masterItem) {
         String contentId = masterItem.getContentid();
         try {
@@ -66,6 +67,8 @@ public class TourApiHelper {
             log.warn("[Batch] 상세 정보 연쇄 호출 실패 - contentId: {}, 사유: {}", contentId, e.getMessage());
         }
     }
+
+    // TODO: 0728 18:00 테스트로직 이후 헬퍼 메소드 수정 - 법정동 조회 로직 Y/N 선택 방향 및 배치 서비스단에서 변환 처리 일괄로
 
     /* 공통 헬퍼 메소드 - 법정동 시도/시군구 코드를 조합하여 DB의 region_id(Long PK)를 생성
      - 법정동코드조회 TourLdongCodeDTO 메타데이터와 실제 동기화 로직의 areaBasedSyncList2 필드 공통 헬퍼용 메소드

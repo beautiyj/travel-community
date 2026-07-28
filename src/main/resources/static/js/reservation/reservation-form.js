@@ -8,6 +8,10 @@
     var UNIT_PRICE = window.RESERVATION_UNIT_PRICE || 0;   // 서버에서 내려준 1인 단가
     var DRAFT_KEY  = 'reservationDraft';                   // 임시 입력값 저장 키
 
+    // tour(관광지)·food(맛집) = 만나서결제(예약금 정액, 인원 무관). 그 외 = 정가(인원×단가)
+    var PAY_ON_SITE = (window.RESERVATION_PLACE_TYPE === 'tour' || window.RESERVATION_PLACE_TYPE === 'food');
+    var DEPOSIT     = window.RESERVATION_DEPOSIT || 0;
+
     var headcountInput = document.getElementById('headcount');
     var amountInput    = document.getElementById('amount');
     var nameInput      = document.getElementById('visitorName');
@@ -56,12 +60,15 @@
     }
 
     // 인원 변경 시: 서버로 보낼 amount + 요약 카드 갱신
+    // 만나서결제면 예약금 정액(인원 무관), 아니면 인원 × 단가
     function updateAmount() {
         var count = parseInt(headcountInput.value, 10);
-        amountInput.value = UNIT_PRICE * count;
+        var total = PAY_ON_SITE ? DEPOSIT : UNIT_PRICE * count;
+        amountInput.value = total;
         document.getElementById('sumPeople').textContent = count + '명';
-        document.getElementById('sumUnitCount').textContent = count;
-        document.getElementById('sumTotal').textContent = (UNIT_PRICE * count).toLocaleString() + '원';
+        var unitCount = document.getElementById('sumUnitCount');   // 정가일 때만 존재하는 요소
+        if (unitCount) unitCount.textContent = count;
+        document.getElementById('sumTotal').textContent = total.toLocaleString() + '원';
     }
 
     // 필수값(이름/날짜) + 연락처 형식까지 통과해야 결제하기 활성화

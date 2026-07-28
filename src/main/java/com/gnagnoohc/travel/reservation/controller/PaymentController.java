@@ -87,7 +87,7 @@ public class PaymentController {
         String tid = (String) session.getAttribute("KAKAO_TID");
         String orderId = (String) session.getAttribute("KAKAO_ORDER_ID");
         Integer amount = (Integer) session.getAttribute("KAKAO_AMOUNT");
-        Long memberId = (Long) session.getAttribute("KAKAO_MEMBER_ID");
+        Integer memberId = (Integer) session.getAttribute("KAKAO_MEMBER_ID");
 
         log.info("[카카오 success 콜백] reservationId={}, 세션값 tid={}, orderId={}, amount={}",
                 reservationId, tid, orderId, amount);

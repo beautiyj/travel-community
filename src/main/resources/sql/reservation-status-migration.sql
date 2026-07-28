@@ -38,3 +38,13 @@ SET SQL_SAFE_UPDATES = 1;   -- 안전장치 원복 (반드시 다시 켤 것)
 -- =========================================================
 -- ALTER TABLE RESERVATION ADD COLUMN cancel_reason VARCHAR(100) NULL;
 -- ALTER TABLE RESERVATION ADD COLUMN cancel_requested_at DATETIME NULL;
+
+
+-- =========================================================
+-- 예약금(만나서 결제) 타입 컬럼  (2026-07-28 추가, 4번 기능)
+-- tour(관광지)·food(맛집) = 예약금 정액 / 그 외(숙박) = 정가 구분에 사용.
+-- ⚠️ 이 컬럼이 없으면 예약 조회·생성이 전부 실패한다(매퍼가 place_type을 참조).
+--    코드 pull 후 각자 DB에서 1회 실행할 것.
+-- 나중에 PLACE.place_type(영어)이 확정되면 생성 시 그 값을 채우도록 교체 예정.
+-- =========================================================
+ALTER TABLE RESERVATION ADD COLUMN place_type VARCHAR(20) NULL;

@@ -11,12 +11,13 @@ import java.time.LocalDateTime;
 public class Reservation {
 
     private Long reservationId;
-    private Long memberId;
+    private Integer memberId;
     private Long placeId;
     private String visitorName;
     private String phone;
     private LocalDate visitDate;
     private int headcount;
+    private String placeType;           // 가격 정책 구분: tour/food=예약금(만나서결제), 그 외(숙박)=정가
     private ReservationStatus status;   // DB 저장은 영어(PENDING/PAID/...), 표시는 status.label
 
     // 결제 준비(tossReady/kakaoReady) 시 채워지는 값. 정합성 보정 배치가 이 orderId로 PG에 조회한다.

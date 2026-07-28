@@ -30,4 +30,7 @@ public class ReservationCreateRequest {
     private LocalDate visitDate;
 
     private int headcount;
+
+    // 가격 정책 구분(폼 hidden). tour/food=예약금, 그 외(숙박)=정가. 없으면 정가로 취급
+    private String placeType;
 }

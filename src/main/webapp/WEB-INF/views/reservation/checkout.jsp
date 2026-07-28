@@ -1,5 +1,8 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%-- tour(관광지)·food(맛집) = 예약금(만나서결제) --%>
+<c:set var="payOnSite" value="${reservation.placeType eq 'tour' or reservation.placeType eq 'food'}" />
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -68,8 +71,11 @@
             <div class="summary-row"><span class="label">장소</span><span class="value">장소 #${reservation.placeId}</span></div>
             <div class="summary-row"><span class="label">날짜</span><span class="value">${reservation.visitDate}</span></div>
             <div class="summary-row"><span class="label">인원</span><span class="value">${reservation.headcount}명</span></div>
+            <c:if test="${payOnSite}">
+                <div class="summary-row"><span class="label">결제 방식</span><span class="value">예약금 선결제 · 나머지 현장 결제</span></div>
+            </c:if>
             <div class="summary-row summary-divider summary-total" style="padding-top:14px;">
-                <span>최종 금액</span>
+                <span>${payOnSite ? '예약금' : '최종 금액'}</span>
                 <span><fmt:formatNumber value="${amount}" pattern="#,###"/>원</span>
             </div>
         </div>

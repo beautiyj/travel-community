@@ -97,7 +97,7 @@
 .detail-card h2 { font-size: 24px; font-weight: bold; margin: 12px 0 0; }
 .detail-meta { display: flex; gap: 16px; padding: 16px 0 24px; }
 .detail-meta span { display: inline-flex; align-items: center; gap: 6px; color: var(--muted-foreground); font-size: 14px; }
-.detail-body { font-size: 16px; line-height: 1.8; color: var(--foreground); white-space: pre-line; }
+.detail-body { font-size: 16px; line-height: 1.8; color: var(--foreground); white-space: pre-line; overflow-wrap: anywhere; word-break: break-word; }
 
 /* 장소 태그: 사진 없이 이름만 링크처럼, 검은색이 아닌 강조색으로 눈에 띄게 */
 .place-tag { margin: 0 0 20px; }
@@ -123,7 +123,8 @@
 .comment-head { display: flex; align-items: center; gap: 8px; }
 .comment-author { font-size: 14px; font-weight: bold; }
 .comment-date { color: var(--muted-foreground); font-size: 12px; }
-.comment-text { font-size: 14px; color: var(--foreground); margin: 4px 0 8px; }
+.comment-text { font-size: 14px; color: var(--foreground); margin: 4px 0 8px; white-space: pre-line; overflow-wrap: anywhere; word-break: break-word; }
+.comment-text.deleted { color: var(--muted-foreground); font-style: italic; margin: 0; }
 .reply-link { display: inline-flex; align-items: center; gap: 4px; color: var(--muted-foreground); font-size: 12px; font-weight: bold; cursor: pointer; }
 
 /* 댓글/답글 하단 액션 줄 (답글 달기 + 삭제를 한 줄에) */
@@ -146,7 +147,7 @@
 .comment-form textarea {
   flex: 1; border: 1px solid var(--border); border-radius: 16px;
   padding: 13px 17px; font-size: 14px; font-family: inherit; resize: vertical;
-  min-height: 44px; outline: none;
+  min-height: 44px; outline: none; overflow-wrap: anywhere; word-break: break-word;
 }
 
 /* 비로그인 안내 (문구 + smallButton 로그인하기 버튼), 가운데 정렬 */
@@ -431,6 +432,8 @@
   color: var(--foreground);
   background: var(--card);
   outline: none;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 

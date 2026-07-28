@@ -10,12 +10,12 @@
 	     ※ place 테이블이 다른 팀원 담당 모듈에 이미 검색 쿼리가 있다면 그쪽으로 옮기는 게 맞음.
 	        지금은 커뮤니티 쪽에서 바로 쓸 수 있게 여기에 추가함
 	     ※ place 상호명 컬럼은 name -->
-	<select id="searchPlaces" parameterType="string" resultType="map">
+	<select id="searchPlaces" resultType="map">
 		select place_id as placeId, name as name, place_type as placeType
 		from place
 		where name like concat('%', #{keyword}, '%')
 		order by name asc
-		limit 10
+		limit #{fetchSize} offset #{offset}
 	</select>
 
 	<!-- 장소 태그: 방문자인증후기용 - 로그인 회원의 확정(결제완료) 예약 장소만 이름으로 검색
@@ -30,7 +30,7 @@
 		  and r.status = 'PAID'
 		  and p.name like concat('%', #{keyword}, '%')
 		order by p.name asc
-		limit 10
+		limit #{fetchSize} offset #{offset}
 	</select>
 
 	<!-- 댓글 권한 체크용: 게시글에 태그된 place의 소유주 member_id (place 미태그 글이면 결과 없음 → null) -->

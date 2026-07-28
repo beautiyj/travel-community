@@ -72,7 +72,32 @@ function selectPlaceTag(placeId, placeName, placeType) {
   if (modal) modal.classList.remove('open');
 }
 
-// 검색창 입력할 때마다 (250ms 디바운스) 서버에 장소 이름 검색 요청
+// 검색 결과 아이템 목록의 HTML 생성 (최초 검색/더보기 공용). 이름에 매칭된 keyword는 굵게 강조.
+function buildPlaceItemsHtml(list, keyword) {
+  return list.map(function (p) {
+    const safeName = String(p.name).replace(/'/g, "\\'");
+    return '<div class="place-search-item" onclick="selectPlaceTag(' + p.placeId + ", '" + safeName + "', " + Number(p.placeType) + ')">'
+      + '<span class="place-search-item-name">' + highlightKeyword(p.name, keyword) + '</span>'
+      + placeTypeBadgeHtml(p.placeType)
+      + '</div>';
+  }).join('');
+}
+
+// resultsEl에 "더보기" 버튼을 붙이거나(hasMore) 제거함
+function renderMoreButton(resultsEl, hasMore) {
+  const existing = resultsEl.querySelector('.place-search-more-btn');
+  if (existing) existing.remove();
+  if (!hasMore) return;
+
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'place-search-more-btn';
+  btn.textContent = '더보기';
+  btn.addEventListener('click', function () { loadMorePlaces(resultsEl); });
+  resultsEl.appendChild(btn);
+}
+
+// 검색창 입력할 때마다 (250ms 디바운스) 서버에 장소 이름 검색 요청 (새 검색 = 항상 0페이지부터)
 // 현재 선택된 카테고리를 함께 보내서, 서버가 방문자인증후기/그 외를 구분해 검색 대상을 다르게 처리함
 function searchPlaceTag(inputEl) {
   clearTimeout(placeSearchTimer);
@@ -83,29 +108,56 @@ function searchPlaceTag(inputEl) {
 
   if (keyword.length === 0) {
     resultsEl.innerHTML = '';
+    resultsEl._placeSearchState = null;
     return;
   }
 
   placeSearchTimer = setTimeout(function () {
-    fetch(window.CP + '/community/place/search?keyword=' + encodeURIComponent(keyword) + '&category=' + encodeURIComponent(category))
+    resultsEl._placeSearchState = { keyword: keyword, category: category, page: 0, loading: false };
+
+    fetch(window.CP + '/community/place/search?keyword=' + encodeURIComponent(keyword) + '&category=' + encodeURIComponent(category) + '&page=0')
       .then(function (res) { return res.json(); })
-      .then(function (list) {
-        if (!list || list.length === 0) {
+      .then(function (data) {
+        const items = (data && data.items) || [];
+        if (items.length === 0) {
           resultsEl.innerHTML = '<div class="place-search-empty">검색 결과가 없습니다</div>';
           return;
         }
-        resultsEl.innerHTML = list.map(function (p) {
-          const safeName = String(p.name).replace(/'/g, "\\'");
-          return '<div class="place-search-item" onclick="selectPlaceTag(' + p.placeId + ", '" + safeName + "', " + Number(p.placeType) + ')">'
-            + '<span class="place-search-item-name">' + escapeHtml(p.name) + '</span>'
-            + placeTypeBadgeHtml(p.placeType)
-            + '</div>';
-        }).join('');
+        resultsEl.innerHTML = buildPlaceItemsHtml(items, keyword);
+        renderMoreButton(resultsEl, data && data.hasMore);
       })
       .catch(function () {
         resultsEl.innerHTML = '<div class="place-search-empty">검색 중 오류가 발생했습니다</div>';
       });
   }, 250);
+}
+
+// "더보기" 버튼 클릭 시 다음 페이지를 요청해 기존 목록 뒤에 이어붙임
+function loadMorePlaces(resultsEl) {
+  const state = resultsEl._placeSearchState;
+  if (!state || state.loading) return;
+
+  const btn = resultsEl.querySelector('.place-search-more-btn');
+  state.loading = true;
+  if (btn) { btn.disabled = true; btn.textContent = '불러오는 중...'; }
+
+  const nextPage = state.page + 1;
+
+  fetch(window.CP + '/community/place/search?keyword=' + encodeURIComponent(state.keyword) + '&category=' + encodeURIComponent(state.category) + '&page=' + nextPage)
+    .then(function (res) { return res.json(); })
+    .then(function (data) {
+      const items = (data && data.items) || [];
+      state.page = nextPage;
+      state.loading = false;
+
+      if (btn) btn.remove();
+      resultsEl.insertAdjacentHTML('beforeend', buildPlaceItemsHtml(items, state.keyword));
+      renderMoreButton(resultsEl, data && data.hasMore);
+    })
+    .catch(function () {
+      state.loading = false;
+      if (btn) { btn.disabled = false; btn.textContent = '더보기'; }
+    });
 }
 
 document.addEventListener('DOMContentLoaded', function () {

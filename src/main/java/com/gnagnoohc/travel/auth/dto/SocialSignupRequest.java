@@ -38,8 +38,9 @@ public class SocialSignupRequest {
     @Pattern(regexp = "^01[016789]-?\\d{3,4}-?\\d{4}$", message = "휴대전화 번호를 확인해주세요.")
     private String phone;
 
-    // 성별은 선택 항목이지만 값이 전달되면 허용된 값만 받는다.
-    @Pattern(regexp = "^(MALE|FEMALE)$", message = "성별 값이 올바르지 않습니다.")
+    // 브라우저에서는 남성, 여성, 선택 안 함 중 하나를 반드시 전송한다.
+    @NotBlank(message = "성별을 선택해주세요.")
+    @Pattern(regexp = "^(MALE|FEMALE|NONE)$", message = "성별 값이 올바르지 않습니다.")
     private String gender;
 
     @AssertTrue(message = "개인정보 수집 및 이용에 동의해 주세요.")

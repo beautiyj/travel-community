@@ -86,6 +86,16 @@
 		return result(valid, "휴대전화 번호를 확인해주세요.");
 	}
 
+	function validateGender(value) {
+		if (value === undefined || value === null || value === "") {
+			return result(false, "성별을 선택해주세요.");
+		}
+		return result(
+			value === "MALE" || value === "FEMALE" || value === "NONE",
+			"성별 값이 올바르지 않습니다."
+		);
+	}
+
 	function validatePrivacyAgreement(agreed) {
 		return result(agreed === true, "개인정보 수집 및 이용에 동의해주세요.");
 	}
@@ -128,6 +138,7 @@
 			nickname: validateNicknameForSignup(input.nickname, state.checkedNickname),
 			birth: validateBirth(input.birth, today),
 			phone: validatePhone(input.phone),
+			gender: validateGender(input.gender),
 			privacyAgreed: validatePrivacyAgreement(input.privacyAgreed)
 		};
 		// TODO: 사업자 승인 기능 추가 시 사업자등록증 상태를 values에 추가하고 여기서 함께 검증한다.
@@ -157,6 +168,7 @@
 		toLocalDateString,
 		validateBirth,
 		validatePhone,
+		validateGender,
 		validatePrivacyAgreement,
 		validateSignup
 	});

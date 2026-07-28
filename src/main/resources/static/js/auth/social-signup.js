@@ -120,16 +120,14 @@
 			);
 			const phoneValidation = window.SignupValidation.validatePhone(phoneInput.value);
 			const selectedGender = genderInputs.find((input) => input.checked)?.value;
-			const genderValid = selectedGender === undefined
-				|| selectedGender === "MALE"
-				|| selectedGender === "FEMALE";
+			const genderValidation = window.SignupValidation.validateGender(selectedGender);
 			const privacyValidation = window.SignupValidation.validatePrivacyAgreement(
 				privacyAgreedInput.checked
 			);
 			nameError.textContent = nameValidation.message;
 			birthError.textContent = birthValidation.message;
 			phoneError.textContent = phoneValidation.message;
-			genderError.textContent = genderValid ? "" : "성별 값이 올바르지 않습니다.";
+			genderError.textContent = genderValidation.message;
 			privacyAgreedError.textContent = privacyValidation.message;
 
 			if (!nameValidation.valid) {
@@ -165,7 +163,7 @@
 				return;
 			}
 
-			if (!genderValid) {
+			if (!genderValidation.valid) {
 				event.preventDefault();
 				genderInputs[0]?.focus();
 				return;

@@ -120,7 +120,7 @@ public class SocialAuthService {
         member.setMemberType(1);
         // 입력 형식과 관계없이 같은 전화번호를 하나의 숫자 형식으로 저장한다.
         member.setPhone(signupRequest.getPhone().replace("-", ""));
-        member.setGender(signupRequest.getGender());
+        member.setGender(toStoredGender(signupRequest.getGender()));
         member.setBirth(signupRequest.getBirth());
         member.setProfileImgUrl(limitOptional(pendingSignup.profileImageUrl(), 500));
         member.setSignupType(provider);
@@ -185,11 +185,20 @@ public class SocialAuthService {
                 // Service를 직접 호출해도 생년월일과 선택 성별의 저장 규칙을 우회할 수 없다.
                 || signupRequest.getBirth() == null
                 || signupRequest.getBirth().toLocalDate().isAfter(LocalDate.now())
-                || (signupRequest.getGender() != null
-                    && !signupRequest.getGender().matches("^(MALE|FEMALE)$"))
+                || !isSelectableGender(signupRequest.getGender())
                 || !signupRequest.isPrivacyAgreed()) {
             throw new SocialAuthException("소셜 회원가입 입력값을 다시 확인해 주세요.");
         }
+    }
+
+    private boolean isSelectableGender(String gender) {
+        return "MALE".equals(gender)
+                || "FEMALE".equals(gender)
+                || "NONE".equals(gender);
+    }
+
+    private String toStoredGender(String gender) {
+        return "NONE".equals(gender) ? null : gender;
     }
 
     private String limitOptional(String value, int maxLength) {

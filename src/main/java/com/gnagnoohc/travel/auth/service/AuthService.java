@@ -133,6 +133,10 @@ public class AuthService {
 				&& signUpRequest.getMemberType() != 2) {
 			throw new SignupException("잘못된 회원 유형");
 		}
+
+		if (!isSelectableGender(signUpRequest.getGender())) {
+			throw new SignupException("성별을 선택해주세요.");
+		}
 	}
 
 	// 회원 공통 정보 생성
@@ -146,11 +150,21 @@ public class AuthService {
 		member.setMemberType(signUpRequest.getMemberType());
 		// 입력 형식과 관계없이 같은 전화번호를 하나의 숫자 형식으로 저장한다.
 		member.setPhone(signUpRequest.getPhone().replace("-", ""));
-		member.setGender(signUpRequest.getGender());
+		member.setGender(toStoredGender(signUpRequest.getGender()));
 		member.setBirth(signUpRequest.getBirth());
 		member.setEmailVerified("Y");
 		member.setEmailVerifiedAt(verifiedEmail.getVerifiedAt());
 		return member;
+	}
+
+	private boolean isSelectableGender(String gender) {
+		return "MALE".equals(gender)
+				|| "FEMALE".equals(gender)
+				|| "NONE".equals(gender);
+	}
+
+	private String toStoredGender(String gender) {
+		return "NONE".equals(gender) ? null : gender;
 	}
 
 	// 회원 공통 정보 저장

@@ -11,8 +11,8 @@
     <script defer src="${pageContext.request.contextPath}/js/auth/signup-validation.js"></script>
     <script defer src="${pageContext.request.contextPath}/js/auth/social-signup.js"></script>
 </head>
-<body class="auth-page">
-<main class="auth-card auth-card--small">
+<body class="auth-page auth-page--social-signup">
+<main class="auth-card auth-card--small auth-card--social-signup">
     <a class="auth-brand" href="${pageContext.request.contextPath}/">갈래말래</a>
 
     <header class="auth-header">
@@ -95,17 +95,21 @@
             <p id="phoneError" class="field-error" aria-live="polite"><c:out value="${errors.phone}" /></p>
         </div>
 
-        <%-- 성별은 선택 항목이며 서버 검증 실패 시 사용자가 고른 값을 다시 표시한다. --%>
+        <%-- 성별은 세 항목 중 하나를 반드시 고르며 서버 검증 실패 시 선택값을 다시 표시한다. --%>
         <fieldset class="form-field" aria-describedby="genderError">
-            <legend>성별 <span class="optional-label">선택</span></legend>
+            <legend>성별 <span class="optional-label">필수</span></legend>
             <div class="choice-row">
                 <label>
                     <input type="radio" name="gender" value="MALE"
-                           ${socialSignupRequest.gender == 'MALE' ? 'checked' : ''}> 남성
+                           ${socialSignupRequest.gender == 'MALE' ? 'checked' : ''} required> 남성
                 </label>
                 <label>
                     <input type="radio" name="gender" value="FEMALE"
-                           ${socialSignupRequest.gender == 'FEMALE' ? 'checked' : ''}> 여성
+                           ${socialSignupRequest.gender == 'FEMALE' ? 'checked' : ''} required> 여성
+                </label>
+                <label>
+                    <input type="radio" name="gender" value="NONE"
+                           ${socialSignupRequest.gender == 'NONE' ? 'checked' : ''} required> 선택 안함
                 </label>
             </div>
             <p id="genderError" class="field-error" aria-live="polite"><c:out value="${errors.gender}" /></p>

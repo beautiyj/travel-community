@@ -132,12 +132,14 @@
             <p id="phoneError" class="field-error" aria-live="polite"></p>
         </div>
 
-        <fieldset class="form-field">
-            <legend>성별 <span class="optional-label">선택</span></legend>
+        <fieldset class="form-field" aria-describedby="genderError">
+            <legend>성별 <span class="optional-label">필수</span></legend>
             <div class="choice-row">
-                <label><input type="radio" name="gender" value="MALE" checked> 남성</label>
-                <label><input type="radio" name="gender" value="FEMALE"> 여성</label>
+                <label><input type="radio" name="gender" value="MALE" required> 남성</label>
+                <label><input type="radio" name="gender" value="FEMALE" required> 여성</label>
+                <label><input type="radio" name="gender" value="NONE" required> 선택 안함</label>
             </div>
+            <p id="genderError" class="field-error" aria-live="polite"></p>
         </fieldset>
 
         <div class="agreement-box">

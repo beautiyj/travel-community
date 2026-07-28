@@ -133,39 +133,50 @@
           <c:if test="${empty comment.parentId}">
 
             <!-- 원댓글 -->
-            <div class="comment">
-              <div class="avatar"></div>
-              <div>
-                <div class="comment-head">
-                  <span class="comment-author">${comment.memberName}</span>
-                  <%-- 업소 사장님이 자신의 사업장 리뷰에 남긴 댓글이면 뱃지 표시 --%>
-                  <c:if test="${comment.ownerComment}">
-                    <span class="badge-owner">사장님</span>
-                  </c:if>
-                  <span class="comment-date">
-                    <fmt:formatDate value="${comment.createdAt}" pattern="yyyy-MM-dd HH:mm" />
-                  </span>
+            <c:choose>
+              <c:when test="${not empty comment.deletedAt}">
+                <div class="comment">
+                  <div>
+                    <p class="comment-text deleted">삭제된 댓글입니다</p>
+                  </div>
                 </div>
-                <p class="comment-text">${comment.content}</p>
+              </c:when>
+              <c:otherwise>
+                <div class="comment">
+                  <div class="avatar"></div>
+                  <div>
+                    <div class="comment-head">
+                      <span class="comment-author">${comment.memberName}</span>
+                      <%-- 업소 사장님이 자신의 사업장 리뷰에 남긴 댓글이면 뱃지 표시 --%>
+                      <c:if test="${comment.ownerComment}">
+                        <span class="badge-owner">사장님</span>
+                      </c:if>
+                      <span class="comment-date">
+                        <fmt:formatDate value="${comment.createdAt}" pattern="yyyy-MM-dd HH:mm" />
+                      </span>
+                    </div>
+                    <p class="comment-text">${comment.content}</p>
 
-                <div class="comment-actions">
-                  <!-- 답글 달기 (로그인 시) -->
-                  <c:if test="${isLoggedIn}">
-                    <span class="reply-link" role="button" tabindex="0"
-                          onclick="toggleReply(${comment.commentId})">답글 달기</span>
-                  </c:if>
+                    <div class="comment-actions">
+                      <!-- 답글 달기 (로그인 시) -->
+                      <c:if test="${isLoggedIn}">
+                        <span class="reply-link" role="button" tabindex="0"
+                              onclick="toggleReply(${comment.commentId})">답글 달기</span>
+                      </c:if>
 
-                  <!-- 삭제: 본인 댓글일 때만, 확인창 없이 바로 삭제 (comment/delete 는 서버에서 본인 확인 후 처리) -->
-                  <c:if test="${isLoggedIn and loginMember.memberId == comment.memberId}">
-                    <form action="${cp}/community/comment/delete" method="post" class="comment-delete-form">
-                      <input type="hidden" name="commentId" value="${comment.commentId}">
-                      <input type="hidden" name="postId" value="${post.postId}">
-                      <button type="submit" class="comment-delete-btn">삭제</button>
-                    </form>
-                  </c:if>
+                      <!-- 삭제: 본인 댓글일 때만, 확인창 없이 바로 삭제 (comment/delete 는 서버에서 본인 확인 후 처리) -->
+                      <c:if test="${isLoggedIn and loginMember.memberId == comment.memberId}">
+                        <form action="${cp}/community/comment/delete" method="post" class="comment-delete-form">
+                          <input type="hidden" name="commentId" value="${comment.commentId}">
+                          <input type="hidden" name="postId" value="${post.postId}">
+                          <button type="submit" class="comment-delete-btn">삭제</button>
+                        </form>
+                      </c:if>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
+              </c:otherwise>
+            </c:choose>
 
             <!-- 답글 입력창 (기본 숨김, community.css 대상 아님) -->
             <c:if test="${isLoggedIn}">
@@ -189,33 +200,44 @@
             <!-- 이 원댓글에 달린 대댓글들: .comment.reply 로 평평하게 이어짐 -->
             <c:forEach var="reply" items="${post.commentList}">
               <c:if test="${reply.parentId == comment.commentId}">
-                <div class="comment reply">
-                  <div class="avatar sm"></div>
-                  <div>
-                    <div class="comment-head">
-                      <span class="comment-author">${reply.memberName}</span>
-                      <%-- 업소 사장님이 자신의 사업장 리뷰에 남긴 대댓글이면 뱃지 표시 --%>
-                      <c:if test="${reply.ownerComment}">
-                        <span class="badge-owner">사장님</span>
-                      </c:if>
-                      <span class="comment-date">
-                        <fmt:formatDate value="${reply.createdAt}" pattern="yyyy-MM-dd HH:mm" />
-                      </span>
-                    </div>
-                    <p class="comment-text">${reply.content}</p>
-
-                    <!-- 삭제: 본인 답글일 때만, 확인창 없이 바로 삭제 -->
-                    <c:if test="${isLoggedIn and loginMember.memberId == reply.memberId}">
-                      <div class="comment-actions">
-                        <form action="${cp}/community/comment/delete" method="post" class="comment-delete-form">
-                          <input type="hidden" name="commentId" value="${reply.commentId}">
-                          <input type="hidden" name="postId" value="${post.postId}">
-                          <button type="submit" class="comment-delete-btn">삭제</button>
-                        </form>
+                <c:choose>
+                  <c:when test="${not empty reply.deletedAt}">
+                    <div class="comment reply">
+                      <div>
+                        <p class="comment-text deleted">삭제된 댓글입니다</p>
                       </div>
-                    </c:if>
-                  </div>
-                </div>
+                    </div>
+                  </c:when>
+                  <c:otherwise>
+                    <div class="comment reply">
+                      <div class="avatar sm"></div>
+                      <div>
+                        <div class="comment-head">
+                          <span class="comment-author">${reply.memberName}</span>
+                          <%-- 업소 사장님이 자신의 사업장 리뷰에 남긴 대댓글이면 뱃지 표시 --%>
+                          <c:if test="${reply.ownerComment}">
+                            <span class="badge-owner">사장님</span>
+                          </c:if>
+                          <span class="comment-date">
+                            <fmt:formatDate value="${reply.createdAt}" pattern="yyyy-MM-dd HH:mm" />
+                          </span>
+                        </div>
+                        <p class="comment-text">${reply.content}</p>
+
+                        <!-- 삭제: 본인 답글일 때만, 확인창 없이 바로 삭제 -->
+                        <c:if test="${isLoggedIn and loginMember.memberId == reply.memberId}">
+                          <div class="comment-actions">
+                            <form action="${cp}/community/comment/delete" method="post" class="comment-delete-form">
+                              <input type="hidden" name="commentId" value="${reply.commentId}">
+                              <input type="hidden" name="postId" value="${post.postId}">
+                              <button type="submit" class="comment-delete-btn">삭제</button>
+                            </form>
+                          </div>
+                        </c:if>
+                      </div>
+                    </div>
+                  </c:otherwise>
+                </c:choose>
               </c:if>
             </c:forEach>
 

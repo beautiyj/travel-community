@@ -58,12 +58,46 @@ public class TourApiService {
         log.info("[Batch Total] 전체 타깃 수집 프로세스 완료");
     }
 
+    // // 법정동 코드 수집 및 REGION 적재 파이프라인
+    // @Transactional
+    // public void syncRegionData() {
+    //     log.info("[Batch] 법정동 코드 수집 시작");
+    //     try {
+    //         // 0728
+    //         String jsonResponse = tourApiClient.fetchLdongCode("1", "Y");
+            
+    //         // 🔥 [디버깅 추가] 공공데이터 서버가 반환한 실제 응답 원문(JSON 또는 XML 에러페이지)을 콘솔에 출력
+    //         log.info("[Batch Debug] 공공데이터 Raw Response: {}", jsonResponse);
+
+    //         if (!StringUtils.hasText(jsonResponse)) return;
+    //         TourApiResponseDTO<TourLdongCodeDTO> response = objectMapper.readValue(
+    //                 jsonResponse, new TypeReference<TourApiResponseDTO<TourLdongCodeDTO>>() {}
+    //         );
+
+    //         if (response != null && response.getResponse() != null
+    //                 && response.getResponse().getBody() != null
+    //                 && response.getResponse().getBody().getItems() != null) {
+
+    //             List<TourLdongCodeDTO> items = response.getResponse().getBody().getItems().getItem();
+    //             for (TourLdongCodeDTO dto : items) {
+    //                 RegionDTO regionDto = tourDataConverter.convertToRegionDTO(dto);
+    //                 if (regionDto != null) {
+    //                     tourMapper.upsertRegion(regionDto);
+    //                 }
+    //             }
+    //         }
+    //     } catch (Exception e) {
+    //         log.error("[Batch] 법정동 코드 수집 중 오류 발생", e);
+    //     }
+    //     log.info("[Batch] 법정동 코드 수집 완료");
+    // }
     // 법정동 코드 수집 및 REGION 적재 파이프라인
     @Transactional
     public void syncRegionData() {
         log.info("[Batch] 법정동 코드 수집 시작");
         try {
-            String jsonResponse = tourApiClient.fetchLdongCode("1", "1000");
+            // 0728
+            String jsonResponse = tourApiClient.fetchLdongCode("1", "Y");
             if (!StringUtils.hasText(jsonResponse)) return;
             TourApiResponseDTO<TourLdongCodeDTO> response = objectMapper.readValue(
                     jsonResponse, new TypeReference<TourApiResponseDTO<TourLdongCodeDTO>>() {}
@@ -238,6 +272,12 @@ public class TourApiService {
 
         // convertToPlaceDTO -> 서비스 PlaceDTO 변환 및 해시태그 생성
         PlaceDTO placeDto = tourDataConverter.convertToPlaceDTO(syncItem, tourItem, introDetail, infoDetail, thumbnailImage);
+        
+        // TODO: 0728 데이터베이스 연결 후 테스트 로직 연동 - 로그 확인, 이후 삭제 필요
+        // // 0728🔥 [추천 위치] DB 적재 직전에 로그 찍기 (가공된 모든 데이터가 담겨 있으므로 확인하기 가장 좋습니다)
+        // log.info("[Batch Test Log] 파싱된 장소 데이터 -> ID: {}, 타이틀: {}, 타입: {}, 가격: {}, 썸네일: {}",
+        //         placeDto.getPlaceId(), placeDto.getName(), placeDto.getPlaceType(), placeDto.getMinPrice(), placeDto.getFirstImage());
+
         tourMapper.upsertPlace(placeDto);
 
         // 대표 이미지가 있는 경우 PLACE_IMAGE 테이블 INSERT 적재 (원본 이미지 저장)
@@ -249,6 +289,7 @@ public class TourApiService {
                 tourMapper.insertPlaceImage(imageDto);
             }
         }
+
     }
 
 }

@@ -2,17 +2,20 @@ package com.gnagnoohc.travel.config;
 
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.DefaultUriBuilderFactory;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
+
+import lombok.extern.slf4j.Slf4j;
 
 // config: 필요한 로직 세팅(프로그램 시작 전 세팅 개념)
 // @Configuration: 스프링이 설정 파일로 인식, 내부의 @Bean들을 자동으로 등록
 // @Qualifier: 나중에 다른 외부 API를 쓰기 위해 WebClient를 하나 더 만들 경우 @Bean에 이름 붙여서 구분하기 (ex) @Qualifier("tourWebClient")
 
+@Slf4j
 @Configuration
 public class WebClientConfig {
 
@@ -24,6 +27,12 @@ public class WebClientConfig {
     @Qualifier("tourWebClient")
     public WebClient tourWebClient(WebClient.Builder builder) {
 
+        // TODO: 0728 기존 CONFIG -> 명시적선언으로 변경, 데이터베이스 연동 후 테스트로직 이후 로그 확인-테스트 완료 시 삭제
+        // 0728 서버 기동 시 키가 잘 들어오는지 확인하기 위한 로그
+        log.info("Loaded Tour API ServiceKey: [{}]", serviceKey);
+        log.info("Loaded Tour API BaseUrl: [{}]", baseUrl);
+
+        
         // 공통 파라미터 맵 구성 - 중복되는 공공데이터 api 공통 요소 기입
         DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory(baseUrl);
         
@@ -34,12 +43,12 @@ public class WebClientConfig {
         return builder
             .uriBuilderFactory(factory)
             // Map.of(...) 강제로 캐스팅, 타입 불일치 해소(타입 불일치/널세이프티 경고 방지용으로 명시해둠)
-            .defaultUriVariables((Map<String, ?>) (Map<String, String>) Map.of(
-                "serviceKey", serviceKey,
-                "MobileOS", "ETC",
-                "MobileApp", "Travel",
-                "_type", "json"
-            ))
+            // .defaultUriVariables((Map<String, ?>) (Map<String, String>) Map.of(
+                // "serviceKey", serviceKey,
+                // "MobileOS", "ETC",
+                // "MobileApp", "Travel",
+                // "_type", "json"
+            // ))
             .build();
     }
 }

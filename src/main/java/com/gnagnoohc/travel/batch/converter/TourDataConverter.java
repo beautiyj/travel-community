@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 public class TourDataConverter {
     private final TourApiHelper tourApiHelper;
 
+    // TODO: 2개의 시스템 유령 계정(각각 1개싹 지정) & 그 외 NNNN개 소유 유령계정 1개. 총 2~3개의 유령계정 설정
     // 공공데이터 전용 가상 비즈니스 회원 PK (시스템 유령계정)
     private static final Long PUBLIC_DATA_MEMBER_ID = 1L;
 

@@ -10,9 +10,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor // 서비스코드용 전체 생성자
 public class RegionDTO {
-    private Long regionId;
+    private Integer regionId;
     private String regionName;
-    private Long parentRegionId;
+    private Integer parentRegionId;
 }
 
 

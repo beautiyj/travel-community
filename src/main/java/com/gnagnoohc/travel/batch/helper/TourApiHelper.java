@@ -1,15 +1,19 @@
 package com.gnagnoohc.travel.batch.helper;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gnagnoohc.travel.batch.client.TourApiClient;
-import com.gnagnoohc.travel.batch.dto.*;
-
-import java.util.ArrayList;
-import java.util.List;
+import com.gnagnoohc.travel.batch.dto.TourApiResponseDTO;
+import com.gnagnoohc.travel.batch.dto.TourAreaBasedSyncListDTO;
+import com.gnagnoohc.travel.batch.dto.TourDetailInfoDTO;
+import com.gnagnoohc.travel.batch.dto.TourDetailIntroDTO;
+import com.gnagnoohc.travel.batch.dto.TourItemDTO;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -77,7 +81,7 @@ public class TourApiHelper {
      - Y(전체목록조회) 및 N(단일조회) 응답 스펙을 모두 안전하게 분기 처리하기 위한 전처리 작업
      - 예: 시도코드("11") + 시군구코드("110") -> "11110" -> Long 11110L 변환
      */
-    public Long parseRegionId(String regnCd, String signguCd) {
+    public Integer parseRegionId(String regnCd, String signguCd) {
         // 시도 코드가 없는 경우 유효하지 않은 데이터로 판단하여 null 반환
         if (!StringUtils.hasText(regnCd)) { return null; }
         // 시도 코드 + (존재할 경우) 시군구 코드를 결합하여 rawCode 생성 : regionId 전체 pk 만들기 로직 (시도코드+시군구코드 혹은 시도코드 only)
@@ -85,9 +89,9 @@ public class TourApiHelper {
         // 결합된 코드의 유효성 검사 (null, 빈 값, 공백 문자열인지 2차 검증 작업 필요)
         if (!StringUtils.hasText(rawCode)) { return null; }
 
-        // 문자열 코드를 DB PK 용 Long 타입으로 파싱 (숫자 변환 실패 시 안전하게 null)
+        // 문자열 코드를 DB PK 용 Integer 타입으로 파싱 (숫자 변환 실패 시 안전하게 null)
         try {
-            return Long.parseLong(rawCode);
+            return Integer.parseInt(rawCode);
         } catch (NumberFormatException e) {
             log.warn("[Batch] 법정동 코드 숫자 변환 실패 - rawCode: {}", rawCode);
             return null;

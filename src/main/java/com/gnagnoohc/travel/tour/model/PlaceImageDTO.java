@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class PlaceImageDTO {
     private Long imageId;
-    private Long placeId;
+    private Integer placeId;
     private String imageUrl;
     private Integer sortOrder;
 }

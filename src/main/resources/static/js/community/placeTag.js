@@ -97,8 +97,30 @@ function renderMoreButton(resultsEl, hasMore) {
   resultsEl.appendChild(btn);
 }
 
+// keyword로 장소를 검색해 resultsEl에 렌더링 (0페이지, 새 검색 취급). keyword가 빈 문자열이면
+// 서버가 전체 장소를 이름 가나다순으로 돌려줌 - 모달을 막 열어서 아직 아무것도 안 친 상태에 사용됨
+function fetchAndRenderPlaces(resultsEl, category, keyword) {
+  resultsEl._placeSearchState = { keyword: keyword, category: category, page: 0, loading: false };
+
+  fetch(window.CP + '/community/place/search?keyword=' + encodeURIComponent(keyword) + '&category=' + encodeURIComponent(category) + '&page=0')
+    .then(function (res) { return res.json(); })
+    .then(function (data) {
+      const items = (data && data.items) || [];
+      if (items.length === 0) {
+        resultsEl.innerHTML = '<div class="place-search-empty">검색 결과가 없습니다</div>';
+        return;
+      }
+      resultsEl.innerHTML = buildPlaceItemsHtml(items, keyword);
+      renderMoreButton(resultsEl, data && data.hasMore);
+    })
+    .catch(function () {
+      resultsEl.innerHTML = '<div class="place-search-empty">검색 중 오류가 발생했습니다</div>';
+    });
+}
+
 // 검색창 입력할 때마다 (250ms 디바운스) 서버에 장소 이름 검색 요청 (새 검색 = 항상 0페이지부터)
 // 현재 선택된 카테고리를 함께 보내서, 서버가 방문자인증후기/그 외를 구분해 검색 대상을 다르게 처리함
+// keyword가 빈 문자열이어도(입력을 다 지운 경우) 그대로 검색해 전체 목록으로 되돌아감
 function searchPlaceTag(inputEl) {
   clearTimeout(placeSearchTimer);
   const keyword = inputEl.value.trim();
@@ -106,29 +128,8 @@ function searchPlaceTag(inputEl) {
   const checkedCategory = document.querySelector('input[name="category"]:checked');
   const category = checkedCategory ? checkedCategory.value : '';
 
-  if (keyword.length === 0) {
-    resultsEl.innerHTML = '';
-    resultsEl._placeSearchState = null;
-    return;
-  }
-
   placeSearchTimer = setTimeout(function () {
-    resultsEl._placeSearchState = { keyword: keyword, category: category, page: 0, loading: false };
-
-    fetch(window.CP + '/community/place/search?keyword=' + encodeURIComponent(keyword) + '&category=' + encodeURIComponent(category) + '&page=0')
-      .then(function (res) { return res.json(); })
-      .then(function (data) {
-        const items = (data && data.items) || [];
-        if (items.length === 0) {
-          resultsEl.innerHTML = '<div class="place-search-empty">검색 결과가 없습니다</div>';
-          return;
-        }
-        resultsEl.innerHTML = buildPlaceItemsHtml(items, keyword);
-        renderMoreButton(resultsEl, data && data.hasMore);
-      })
-      .catch(function () {
-        resultsEl.innerHTML = '<div class="place-search-empty">검색 중 오류가 발생했습니다</div>';
-      });
+    fetchAndRenderPlaces(resultsEl, category, keyword);
   }, 250);
 }
 
@@ -167,12 +168,22 @@ document.addEventListener('DOMContentLoaded', function () {
   });
   syncPlaceFieldVisibility(); // 최초 로드 시(수정 폼에서 이미 방문자인증후기가 선택돼 있는 경우) 반영
 
-  // "장소 검색" 버튼 → 모달 열기
+  // "장소 검색" 버튼 → 모달 열기 + 아직 검색어를 입력하지 않은 상태이므로 전체 장소를 가나다순으로 미리 보여줌
   const openBtn = document.getElementById('place-tag-open-btn');
   if (openBtn) {
     openBtn.addEventListener('click', function () {
       const modal = document.getElementById('placeSearchModal');
-      if (modal) modal.classList.add('open');
+      if (!modal) return;
+      modal.classList.add('open');
+
+      const inputEl = modal.querySelector('.place-search-input');
+      const resultsEl = modal.querySelector('.place-search-results');
+      if (inputEl) inputEl.value = '';
+      if (resultsEl) {
+        const checkedCategory = document.querySelector('input[name="category"]:checked');
+        const category = checkedCategory ? checkedCategory.value : '';
+        fetchAndRenderPlaces(resultsEl, category, '');
+      }
     });
   }
 

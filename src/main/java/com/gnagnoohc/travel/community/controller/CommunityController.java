@@ -183,6 +183,8 @@ public class CommunityController {
     // ※ community/comment 공통 로직이라 CommonService로 위임
     // - 방문자인증후기: 로그인 회원이 확정(결제완료)한 예약 장소만 검색
     // - 그 외(일반후기 등): 기존처럼 전체 장소 검색
+    // 키워드가 빈 문자열이면 매퍼의 LIKE '%%'가 전체 행에 매칭되므로, 모달을 열어 아직
+    // 검색어를 입력하지 않은 상태에서도 전체 장소 목록을 이름 가나다순으로 보여줄 수 있음
     // 응답 형태: {"items": [...], "hasMore": boolean} (page는 0부터 시작)
     @GetMapping("/community/place/search")
     @ResponseBody
@@ -190,19 +192,17 @@ public class CommunityController {
                                              @RequestParam(value = "category", required = false) String category,
                                              @RequestParam(value = "page", defaultValue = "0") int page,
                                              HttpSession session) {
-        if (keyword == null || keyword.trim().isEmpty()) {
-            return Map.of("items", List.of(), "hasMore", false);
-        }
+        String trimmedKeyword = keyword == null ? "" : keyword.trim();
 
         if ("방문자인증후기".equals(category)) {
             Object login = session.getAttribute("loginMember");
             if (login == null) {
                 return Map.of("items", List.of(), "hasMore", false);
             }
-            return commonService.searchConfirmedPlaces(SessionUtil.getMemberId(login), keyword.trim(), page);
+            return commonService.searchConfirmedPlaces(SessionUtil.getMemberId(login), trimmedKeyword, page);
         }
 
-        return commonService.searchPlaces(keyword.trim(), page);
+        return commonService.searchPlaces(trimmedKeyword, page);
     }
 
 

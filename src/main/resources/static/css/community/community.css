@@ -489,7 +489,7 @@
 
 /* ---------- 장소 태그 필드 (write.jsp/edit.jsp, 방문자인증후기 전용) ---------- */
 .place-tag-open-btn {
-  border: 1px dashed var(--border);
+  border: 1px dashed var(--primary);
   border-radius: var(--radius-md);
   background: none;
   padding: 10px 16px;

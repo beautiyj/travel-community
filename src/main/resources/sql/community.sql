@@ -352,6 +352,7 @@ CREATE TABLE comment (
     depth       INT       NOT NULL DEFAULT 0,            -- 0 원댓글 / 1 대댓글
     created_at  DATETIME  NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at  DATETIME  NULL ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at  DATETIME  NULL,                          -- 소프트 삭제 시각 (NULL이면 살아있는 댓글)
     parent_id   INT       NULL,                          -- 부모 댓글(자기참조)
     post_id     INT       NOT NULL,
     member_id   INT       NOT NULL

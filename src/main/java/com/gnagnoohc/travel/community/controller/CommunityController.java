@@ -37,14 +37,14 @@ public class CommunityController {
         return "community/test";
     }
 
-    // 목록
+    // 목록 (페이지네이션 포함 - page는 1부터 시작)
     @GetMapping("/community/list")
     public String list(@RequestParam(value = "category", required = false) String category,
                        @RequestParam(value = "q", required = false) String q,
+                       @RequestParam(value = "page", defaultValue = "1") int page,
                        Model model) {
 
-    	List<CommunityDto> postList = service.selectAll(category, q);
-    	model.addAttribute("postList", postList);
+    	model.addAllAttributes(service.selectPage(category, q, page));
 
         return "community/list";
     }
@@ -170,28 +170,30 @@ public class CommunityController {
     }
 
 
-    // 장소 검색 (글쓰기/수정 시 장소 태그 검색 모달에서 AJAX로 호출)
+    // 장소 검색 (글쓰기/수정 시 장소 태그 검색 모달에서 AJAX로 호출, "더보기"로 page단위 조회)
     // ※ community/comment 공통 로직이라 CommonService로 위임
     // - 방문자인증후기: 로그인 회원이 확정(결제완료)한 예약 장소만 검색
     // - 그 외(일반후기 등): 기존처럼 전체 장소 검색
+    // 응답 형태: {"items": [...], "hasMore": boolean} (page는 0부터 시작)
     @GetMapping("/community/place/search")
     @ResponseBody
-    public List<Map<String, Object>> searchPlaces(@RequestParam("keyword") String keyword,
-                                                   @RequestParam(value = "category", required = false) String category,
-                                                   HttpSession session) {
+    public Map<String, Object> searchPlaces(@RequestParam("keyword") String keyword,
+                                             @RequestParam(value = "category", required = false) String category,
+                                             @RequestParam(value = "page", defaultValue = "0") int page,
+                                             HttpSession session) {
         if (keyword == null || keyword.trim().isEmpty()) {
-            return List.of();
+            return Map.of("items", List.of(), "hasMore", false);
         }
 
         if ("방문자인증후기".equals(category)) {
             Object login = session.getAttribute("loginMember");
             if (login == null) {
-                return List.of();
+                return Map.of("items", List.of(), "hasMore", false);
             }
-            return commonService.searchConfirmedPlaces(SessionUtil.getMemberId(login), keyword.trim());
+            return commonService.searchConfirmedPlaces(SessionUtil.getMemberId(login), keyword.trim(), page);
         }
 
-        return commonService.searchPlaces(keyword.trim());
+        return commonService.searchPlaces(keyword.trim(), page);
     }
 
 

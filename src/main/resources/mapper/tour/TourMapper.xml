@@ -20,8 +20,9 @@
     </insert>
 
     <!-- 2. PLACE 테이블 UPSERT -->
-    <insert id="upsertPlace" parameterType="com.gnagnoohc.travel.tour.model.PlaceDTO" useGeneratedKeys="true" keyProperty="placeId">
+    <insert id="upsertPlace" parameterType="com.gnagnoohc.travel.tour.model.PlaceDTO">
         INSERT INTO place (
+            place_id,
             member_id,
             region_id,
             place_type,
@@ -34,8 +35,12 @@
             created_at,
             updated_at,
             first_image,
-            hashtags
+            hashtags,
+            min_price,
+            use_fee_info,
+            people_count
         ) VALUES (
+            #{placeId},
             #{memberId},
             #{regionId},
             #{placeType},
@@ -48,7 +53,10 @@
             NOW(),
             NOW(),
             #{firstImage},
-            #{hashtags}
+            #{hashtags},
+            #{minPrice},
+            #{useFeeInfo},
+            #{peopleCount}
         )
         ON DUPLICATE KEY UPDATE
             region_id = VALUES(region_id),
@@ -61,7 +69,10 @@
             is_closed = VALUES(is_closed),
             updated_at = NOW(),
             first_image = VALUES(first_image),
-            hashtags = VALUES(hashtags);
+            hashtags = VALUES(hashtags),
+            min_price = VALUES(min_price),
+            use_fee_info = VALUES(use_fee_info),
+            people_count = VALUES(people_count);
     </insert>
 
     <!-- 3. PLACE_IMAGE 테이블 INSERT -->
@@ -93,7 +104,10 @@
             created_at AS createdAt,
             updated_at AS updatedAt,
             first_image AS firstImage,
-            hashtags
+            hashtags,
+            min_price AS minPrice,
+            use_fee_info AS useFeeInfo,
+            people_count AS peopleCount
         FROM place
         WHERE place_id = #{placeId}
     </select>

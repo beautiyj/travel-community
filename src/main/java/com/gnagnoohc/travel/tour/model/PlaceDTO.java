@@ -13,9 +13,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PlaceDTO {
-    private Long placeId;
-    private Long memberId;
-    private Long regionId;
+    private Integer placeId;
+    private Integer memberId;
+    private Integer regionId;
     private String placeType;
     private String name;
     private String description;
@@ -28,7 +28,7 @@ public class PlaceDTO {
     
     private String firstImage;
     private String hashtags;
-
     private Integer minPrice;       // 최저/대표 가격 (원)
     private String useFeeInfo;      // 요금 안내 원문 텍스트
+    private Integer peopleCount;   // 정원 / 기준 인원 수 컬럼
 }

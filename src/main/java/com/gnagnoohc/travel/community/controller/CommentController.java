@@ -24,7 +24,7 @@ public class CommentController {
 		// 로그인 확인
 		Object login = session.getAttribute("loginMember");
 		if (login == null) {
-			return "redirect:/member/login";
+			return "redirect:/auth/login";
 		}
 
 		// 작성자(memberId) 세팅
@@ -53,7 +53,7 @@ public class CommentController {
 
 		Object login = session.getAttribute("loginMember");
 		if (login == null) {
-			return "redirect:/member/login";
+			return "redirect:/auth/login";
 		}
 
 		// 본인 댓글인지 확인

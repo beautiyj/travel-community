@@ -16,4 +16,15 @@ public interface MypageRepository {
     void changePassword(MypageDto member);
 
     List<MypageDto> getReservationList(Long memberId);
+    
+    List<MypageDto> getWishlist(Long memberId);
+    
+    void withdrawMember(Long memberId);
+    
+    void deleteWishlist(Long wishlistId);
+
+	void cancelReservation(Long reservationId);
+    
+    
+    
 }

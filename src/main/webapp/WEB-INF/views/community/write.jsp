@@ -140,24 +140,7 @@
 <jsp:include page="collageModal.jsp" />
 <jsp:include page="sliderModal.jsp" />
 
-<!-- 제목 글자수 초과(50자 초과) 안내 모달 - titleValidation.js가 제출 시 검사해서 띄움
-     확인 버튼은 data-modal-close로 닫히기만 함 (폼 제출/새로고침 없음 → 작성 중이던 내용 유지) -->
-<div id="titleLengthModal" class="modal-overlay" data-modal
-     role="dialog" aria-modal="true" aria-labelledby="titleLengthModal-title">
-  <div class="modal">
-    <h2 class="modal-title" id="titleLengthModal-title">알림</h2>
-    <p class="modal-message">제목은 50자 이내로 입력해주세요.</p>
-    <div class="modal-buttons">
-      <div class="modal-btn modal-btn-cancel" data-modal-close>
-        <jsp:include page="../common/buttonComponent.jsp">
-          <jsp:param name="text"  value="확인" />
-          <jsp:param name="color" value="var(--card)" />
-          <jsp:param name="size"  value="var(--text-sm)" />
-        </jsp:include>
-      </div>
-    </div>
-  </div>
-</div>
+<jsp:include page="titleLengthModal.jsp" />
 
 <script>window.CP = "${cp}";</script>
 <script src="${cp}/js/common.js"></script>

@@ -34,5 +34,25 @@ public class MypageServiceImpl implements MypageService {
     	return mypageRepository.getReservationList(memberId);
     }
 
+    @Override
+    public List<MypageDto> getWishlist(Long memberId){
+    	return mypageRepository.getWishlist(memberId);
+    }
+    
+    @Override
+    public void withdrawMember(Long memberId) {
+    	mypageRepository.withdrawMember(memberId);
+    }
+    
+    @Override
+    public void deleteWishlist(Long wishlistId) {
+        mypageRepository.deleteWishlist(wishlistId);
+    }
+
+    @Override
+    public void cancelReservation(Long reservationId) {
+        mypageRepository.cancelReservation(reservationId);
+    }
+    
     
 }

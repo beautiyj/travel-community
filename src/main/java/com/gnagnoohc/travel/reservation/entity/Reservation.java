@@ -18,7 +18,7 @@ public class Reservation {
     private LocalDate visitDate;        // 숙박이면 체크인 날짜, 맛집/관광지는 방문일
     private LocalDate checkOutDate;     // 숙박만 사용. 맛집/관광지는 null (당일 방문)
     private int headcount;
-    private String placeType;           // 가격 정책 구분: tour/food=예약금(만나서결제), 그 외(숙박)=정가
+    private String placeType;           // PLACE.place_type 조회 결과(tour/food/stay). 무료(free) 테스트는 이 값이 아니라 결제 흐름에서 별도 처리됨
     private ReservationStatus status;   // DB 저장은 영어(PENDING/PAID/...), 표시는 status.label
 
     // 결제 준비(tossReady/kakaoReady) 시 채워지는 값. 정합성 보정 배치가 이 orderId로 PG에 조회한다.

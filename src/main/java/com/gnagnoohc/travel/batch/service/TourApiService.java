@@ -58,39 +58,41 @@ public class TourApiService {
         log.info("[Batch Total] 전체 타깃 수집 프로세스 완료");
     }
 
-    // // 법정동 코드 수집 및 REGION 적재 파이프라인
-    // @Transactional
-    // public void syncRegionData() {
-    //     log.info("[Batch] 법정동 코드 수집 시작");
-    //     try {
-    //         // 0728
-    //         String jsonResponse = tourApiClient.fetchLdongCode("1", "Y");
-            
-    //         // 🔥 [디버깅 추가] 공공데이터 서버가 반환한 실제 응답 원문(JSON 또는 XML 에러페이지)을 콘솔에 출력
-    //         log.info("[Batch Debug] 공공데이터 Raw Response: {}", jsonResponse);
+    // TODO: syncRegionData() 테스트로직 이후 최종 수정 예정, 주석코드 또한 테스트 이후 조정하여 삭제 예정
+//     // 법정동 코드 수집 및 REGION 적재 파이프라인
+//     @Transactional
+//     public void syncRegionData() {
+//         log.info("[Batch] 법정동 코드 수집 시작");
+//         try {
+//             // 0728
+//             String jsonResponse = tourApiClient.fetchLdongCode("1", "Y");
+//
+//             // 🔥 [디버깅 추가] 공공데이터 서버가 반환한 실제 응답 원문(JSON 또는 XML 에러페이지)을 콘솔에 출력
+//             log.info("[Batch Debug] 공공데이터 Raw Response: {}", jsonResponse);
+//
+//             if (!StringUtils.hasText(jsonResponse)) return;
+//             TourApiResponseDTO<TourLdongCodeDTO> response = objectMapper.readValue(
+//                     jsonResponse, new TypeReference<TourApiResponseDTO<TourLdongCodeDTO>>() {}
+//             );
+//
+//             if (response != null && response.getResponse() != null
+//                     && response.getResponse().getBody() != null
+//                     && response.getResponse().getBody().getItems() != null) {
+//
+//                 List<TourLdongCodeDTO> items = response.getResponse().getBody().getItems().getItem();
+//                 for (TourLdongCodeDTO dto : items) {
+//                     RegionDTO regionDto = tourDataConverter.convertToRegionDTO(dto);
+//                     if (regionDto != null) {
+//                         tourMapper.upsertRegion(regionDto);
+//                     }
+//                 }
+//             }
+//         } catch (Exception e) {
+//             log.error("[Batch] 법정동 코드 수집 중 오류 발생", e);
+//         }
+//         log.info("[Batch] 법정동 코드 수집 완료");
+//     }
 
-    //         if (!StringUtils.hasText(jsonResponse)) return;
-    //         TourApiResponseDTO<TourLdongCodeDTO> response = objectMapper.readValue(
-    //                 jsonResponse, new TypeReference<TourApiResponseDTO<TourLdongCodeDTO>>() {}
-    //         );
-
-    //         if (response != null && response.getResponse() != null
-    //                 && response.getResponse().getBody() != null
-    //                 && response.getResponse().getBody().getItems() != null) {
-
-    //             List<TourLdongCodeDTO> items = response.getResponse().getBody().getItems().getItem();
-    //             for (TourLdongCodeDTO dto : items) {
-    //                 RegionDTO regionDto = tourDataConverter.convertToRegionDTO(dto);
-    //                 if (regionDto != null) {
-    //                     tourMapper.upsertRegion(regionDto);
-    //                 }
-    //             }
-    //         }
-    //     } catch (Exception e) {
-    //         log.error("[Batch] 법정동 코드 수집 중 오류 발생", e);
-    //     }
-    //     log.info("[Batch] 법정동 코드 수집 완료");
-    // }
     // 법정동 코드 수집 및 REGION 적재 파이프라인
     @Transactional
     public void syncRegionData() {

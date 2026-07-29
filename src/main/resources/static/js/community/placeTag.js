@@ -32,18 +32,13 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
-// place_type(1=숙박/2=맛집/그 외=여행지) → 배지 클래스/텍스트
+// place_type("stay"/"food"/"tour")에 대응하는 배지 라벨
 // common/tagButton.jsp · tagButton.css 의 type-food/type-stay/type-tour 클래스를 그대로 재사용
-function placeTypeMeta(placeType) {
-  const type = Number(placeType);
-  if (type === 1) return { cls: 'stay', label: '숙박' };
-  if (type === 2) return { cls: 'food', label: '맛집' };
-  return { cls: 'tour', label: '여행지' };
-}
+const PLACE_TYPE_LABELS = { stay: '숙박', food: '맛집', tour: '관광지' };
 
 function placeTypeBadgeHtml(placeType) {
-  const meta = placeTypeMeta(placeType);
-  return '<div class="tag-view type-' + meta.cls + '"><span class="tag-text">' + meta.label + '</span></div>';
+  const label = PLACE_TYPE_LABELS[placeType] || '관광지';
+  return '<div class="tag-view type-' + placeType + '"><span class="tag-text">' + label + '</span></div>';
 }
 
 // 태그 해제 (hidden input 비우고, 선택 표시 숨기고, 검색 버튼 다시 노출)
@@ -63,20 +58,19 @@ function selectPlaceTag(placeId, placeName, placeType) {
   const selected = document.getElementById('place-tag-selected');
   const nameEl = document.getElementById('place-tag-selected-name');
   const openBtn = document.getElementById('place-tag-open-btn');
-  const modal = document.getElementById('placeSearchModal');
 
   if (placeIdInput) placeIdInput.value = placeId;
   if (nameEl) nameEl.innerHTML = escapeHtml(placeName) + ' ' + placeTypeBadgeHtml(placeType);
   if (selected) selected.style.display = '';
   if (openBtn) openBtn.style.display = 'none';
-  if (modal) modal.classList.remove('open');
+  if (window.closeModal) window.closeModal('placeSearchModal');
 }
 
 // 검색 결과 아이템 목록의 HTML 생성 (최초 검색/더보기 공용). 이름에 매칭된 keyword는 굵게 강조.
 function buildPlaceItemsHtml(list, keyword) {
   return list.map(function (p) {
     const safeName = String(p.name).replace(/'/g, "\\'");
-    return '<div class="place-search-item" onclick="selectPlaceTag(' + p.placeId + ", '" + safeName + "', " + Number(p.placeType) + ')">'
+    return '<div class="place-search-item" onclick="selectPlaceTag(' + p.placeId + ", '" + safeName + "', '" + p.placeType + "')\">"
       + '<span class="place-search-item-name">' + highlightKeyword(p.name, keyword) + '</span>'
       + placeTypeBadgeHtml(p.placeType)
       + '</div>';
@@ -174,7 +168,7 @@ document.addEventListener('DOMContentLoaded', function () {
     openBtn.addEventListener('click', function () {
       const modal = document.getElementById('placeSearchModal');
       if (!modal) return;
-      modal.classList.add('open');
+      if (window.openModal) window.openModal('placeSearchModal');
 
       const inputEl = modal.querySelector('.place-search-input');
       const resultsEl = modal.querySelector('.place-search-results');

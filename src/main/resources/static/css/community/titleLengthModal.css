@@ -1,0 +1,9 @@
+/* ============================================================
+   titleLengthModal.css — 제목 글자수 초과 안내 모달 (community write/edit 전용)
+   - 모달 골격(.modal/.modal-title/.modal-buttons)은 components/confirmModal.css 그대로 사용.
+   - 안내 문구가 기본 크기(--text-sm)로는 잘 안 보인다는 피드백으로 이 모달만 살짝 키움.
+   ============================================================ */
+
+#titleLengthModal .modal-message {
+  font-size: var(--text-base);
+}

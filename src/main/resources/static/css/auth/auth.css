@@ -848,6 +848,149 @@ input {
     background: #e0f2fe;
 }
 
+/* 기존 계정 안내와 자격증명 확인을 한 카드에서 처리하는 소셜 연동 화면이다. */
+.auth-page--social-link {
+    align-items: flex-start;
+    color: #0f172a;
+    background: linear-gradient(135deg, #eef8ff 0%, #f8fafc 58%, #eef8ff 100%);
+}
+
+.auth-card--social-link {
+    border-color: rgba(148, 163, 184, 0.4);
+    border-radius: 20px;
+    box-shadow: 0 18px 44px rgba(15, 23, 42, 0.08);
+}
+
+.auth-card--social-link .auth-brand {
+    color: #0369a1;
+}
+
+.auth-card--social-link .auth-header h1 {
+    color: #0f172a;
+}
+
+.auth-card--social-link .auth-header p,
+.auth-card--social-link .field-help {
+    color: #64748b;
+    line-height: 1.6;
+}
+
+.social-link-account-summary {
+    display: grid;
+    gap: 10px;
+    border: 1px solid rgba(2, 132, 199, 0.18);
+    background: #f0f9ff;
+}
+
+.social-link-account-details {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+}
+
+.social-link-account-details > div {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.social-link-account-details dt {
+    color: #64748b;
+    font-size: 13px;
+}
+
+.social-link-account-details dd {
+    margin: 0;
+    color: #075985;
+    font-size: 16px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+    text-align: right;
+}
+
+.social-link-account-summary > p {
+    margin: 0;
+    color: #475569;
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+.auth-card--social-link .form-field input[type="text"],
+.auth-card--social-link .form-field input[type="password"] {
+    border-color: rgba(148, 163, 184, 0.4);
+}
+
+.auth-card--social-link .form-field input:focus {
+    border-color: #0284c7;
+    outline-color: rgba(2, 132, 199, 0.16);
+}
+
+.auth-card--social-link .agreement-box {
+    border: 1px solid rgba(2, 132, 199, 0.16);
+    background: #f0f9ff;
+}
+
+.auth-card--social-link .agreement-box label {
+    line-height: 1.55;
+}
+
+.auth-card--social-link .agreement-box strong {
+    color: #0369a1;
+}
+
+.auth-card--social-link input[type="checkbox"] {
+    accent-color: #0284c7;
+}
+
+.auth-card--social-link .primary-button {
+    min-height: 52px;
+    border-radius: 14px;
+    background: #0369a1;
+    box-shadow: 0 10px 15px -3px rgba(2, 132, 199, 0.2);
+}
+
+.auth-card--social-link .primary-button:hover {
+    background: #075985;
+}
+
+.social-link-alternative {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid #e2e8f0;
+    text-align: center;
+}
+
+.social-link-alternative p {
+    margin: 0 0 10px;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+.social-link-secondary-action {
+    min-width: 100px;
+    min-height: 44px;
+    padding: 8px 14px;
+    border: 0;
+    border-radius: 8px;
+    color: #0369a1;
+    background: transparent;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.social-link-secondary-action:hover {
+    background: #e0f2fe;
+}
+
+.auth-card--social-link .auth-brand:focus-visible,
+.auth-card--social-link .primary-button:focus-visible,
+.social-link-secondary-action:focus-visible {
+    outline: 3px solid rgba(2, 132, 199, 0.28);
+    outline-offset: 2px;
+}
+
 /* 계정 찾기·재설정 화면만 로그인과 같은 파란 시각 체계를 사용한다. */
 .auth-page--account-recovery {
     align-items: flex-start;
@@ -1140,6 +1283,16 @@ input {
 
     .secondary-button {
         min-height: 42px;
+    }
+
+    .social-link-account-details > div {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .social-link-account-details dd {
+        text-align: left;
     }
 }
 

@@ -43,6 +43,24 @@
         </div>
     </c:if>
 
+    <c:choose>
+        <c:when test="${param.socialNotLinked != null}">
+            <div class="form-alert form-alert--error" role="alert">
+                아직 연동되지 않은 소셜 계정입니다. 회원가입 화면에서 소셜 가입 또는 기존 계정 연동을 진행해 주세요.
+            </div>
+        </c:when>
+        <c:when test="${param.socialError != null}">
+            <div class="form-alert form-alert--error" role="alert">
+                소셜 로그인 인증에 실패했습니다. 다시 시도해 주세요.
+            </div>
+        </c:when>
+        <c:when test="${not empty socialError or not empty kakaoError}">
+            <div class="form-alert form-alert--error" role="alert">
+                소셜 인증 정보가 없거나 만료되었습니다. 다시 시도해 주세요.
+            </div>
+        </c:when>
+    </c:choose>
+
     <%-- 로그인 폼을 소셜 로그인 영역보다 먼저 배치해 일반 로그인 흐름을 우선한다. --%>
     <form id="loginForm" class="login-form" action="${pageContext.request.contextPath}/auth/login" method="post" novalidate>
         <div class="form-field">
@@ -88,20 +106,6 @@
         </a>
         <button class="social-login-button social-login-button--naver" type="button" disabled>네이버 로그인 (준비 중)</button>
     </section>
-
-    <%-- 이전 화면에서 전달하던 kakaoError도 한동안 함께 읽어 기존 흐름을 깨지 않는다. --%>
-    <c:set var="socialLoginError" value="${not empty socialError ? socialError : kakaoError}" />
-    <c:if test="${not empty socialLoginError}">
-        <div class="form-alert form-alert--error" role="alert">
-            <c:out value="${socialLoginError}" />
-        </div>
-    </c:if>
-
-    <c:if test="${param.socialError != null}">
-        <div class="form-alert form-alert--error" role="alert">
-            소셜 로그인 인증에 실패했습니다. 다시 시도해 주세요.
-        </div>
-    </c:if>
 
     <div class="auth-links">
         <a href="${pageContext.request.contextPath}/auth/find-id">아이디 찾기</a>

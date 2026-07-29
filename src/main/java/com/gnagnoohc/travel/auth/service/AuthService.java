@@ -40,6 +40,39 @@ public class AuthService {
 			return LocalLoginResult.invalidCredentials();
 		}
 
+		return authenticateLockedLocalAuth(localAuth, rawPassword);
+	}
+
+	/**
+	 * 소셜 연동 후보 회원에게 속한 아이디만 인증한다.
+	 * 다른 아이디를 제출하면 그 계정의 인증 행을 조회하지 않아 실패 횟수도 변경하지 않는다.
+	 */
+	@Transactional
+	public LocalLoginResult authenticateSocialLinkCandidate(
+			int candidateMemberId,
+			String username,
+			String rawPassword) {
+		if (candidateMemberId <= 0
+				|| username == null
+				|| !username.trim().matches("^[A-Za-z0-9]{5,20}$")
+				|| rawPassword == null
+				|| rawPassword.isBlank()) {
+			return LocalLoginResult.invalidCredentials();
+		}
+
+		MemberLocalAuth localAuth = mapper.findSocialLinkCandidateAuthForUpdate(
+				candidateMemberId, username.trim());
+		if (localAuth == null) {
+			return LocalLoginResult.invalidCredentials();
+		}
+
+		return authenticateLockedLocalAuth(localAuth, rawPassword);
+	}
+
+	// 일반 로그인과 소셜 연동 인증이 같은 실패 횟수·잠금 정책을 사용한다.
+	private LocalLoginResult authenticateLockedLocalAuth(
+			MemberLocalAuth localAuth,
+			String rawPassword) {
 		// 잠금 중에는 비밀번호를 검사하지 않고 실패 횟수와 잠금 시간도 변경하지 않는다.
 		if (localAuth.isCurrentlyLocked()) {
 			return LocalLoginResult.locked();

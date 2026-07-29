@@ -26,6 +26,96 @@
             and social_auth.provider_user_id = #{providerUserId}
     </select>
 
+    <!-- 이메일 UNIQUE 제약을 기준으로 기존 회원 후보를 한 건 조회한다. -->
+    <select id="findMemberByEmail" resultType="member">
+        select member_id AS memberId,
+            name,
+            login_id AS loginId,
+            email,
+            nickname,
+            member_type AS memberType,
+            profile_img_url AS profileImgUrl,
+            signup_type AS signupType,
+            member_status AS memberStatus,
+            member_role AS memberRole,
+            email_verified AS emailVerified,
+            last_login_at AS lastLoginAt,
+            deleted_at AS deletedAt
+        from member
+        where email = #{email}
+        limit 1
+    </select>
+
+    <!-- 연동 트랜잭션 동안 회원 상태와 탈퇴 시각이 바뀌지 않게 잠근다. -->
+    <select id="findMemberByIdForUpdate" resultType="member">
+        select member_id AS memberId,
+            name,
+            login_id AS loginId,
+            email,
+            nickname,
+            member_type AS memberType,
+            profile_img_url AS profileImgUrl,
+            signup_type AS signupType,
+            member_status AS memberStatus,
+            member_role AS memberRole,
+            email_verified AS emailVerified,
+            last_login_at AS lastLoginAt,
+            deleted_at AS deletedAt
+        from member
+        where member_id = #{memberId}
+        for update
+    </select>
+
+    <select id="findLocalUsernameByMemberId" resultType="string">
+        select username
+        from member_local_auth
+        where member_id = #{memberId}
+        limit 1
+    </select>
+
+    <select id="findSocialAuthByMemberId" resultType="membersocialauth">
+        select social_auth_id AS socialAuthId,
+            provider,
+            provider_user_id AS providerUserId,
+            provider_email AS providerEmail,
+            provider_email_verified_yn AS providerEmailVerifiedYn,
+            provider_name AS providerName,
+            provider_nickname AS providerNickname,
+            provider_profile_image_url AS providerProfileImageUrl,
+            last_login_at AS lastLoginAt,
+            member_id AS memberId
+        from member_social_auth
+        where member_id = #{memberId}
+        limit 1
+    </select>
+
+    <!-- 최종 연동 검사 중 로컬 인증 행이 삭제되지 않도록 잠근다. -->
+    <select id="findLocalUsernameByMemberIdForUpdate" resultType="string">
+        select username
+        from member_local_auth
+        where member_id = #{memberId}
+        limit 1
+        for update
+    </select>
+
+    <!-- 회원당 소셜 연동 상태를 확인한 뒤 INSERT/복구가 끝날 때까지 해당 행을 잠근다. -->
+    <select id="findSocialAuthByMemberIdForUpdate" resultType="membersocialauth">
+        select social_auth_id AS socialAuthId,
+            provider,
+            provider_user_id AS providerUserId,
+            provider_email AS providerEmail,
+            provider_email_verified_yn AS providerEmailVerifiedYn,
+            provider_name AS providerName,
+            provider_nickname AS providerNickname,
+            provider_profile_image_url AS providerProfileImageUrl,
+            last_login_at AS lastLoginAt,
+            member_id AS memberId
+        from member_social_auth
+        where member_id = #{memberId}
+        limit 1
+        for update
+    </select>
+
     <!-- 소셜 가입 화면에서 받은 공통 정보를 저장하고 생성된 member_id를 반환한다. -->
     <insert id="insertSocialMember" parameterType="member"
         useGeneratedKeys="true" keyProperty="memberId" keyColumn="member_id">
@@ -70,6 +160,17 @@
         where member_id = #{memberId}
             and member_status = 'ACTIVE'
             and deleted_at is null
+    </update>
+
+    <!-- 탈퇴 회원 복구와 로그인 시각 갱신은 소셜 연동과 같은 트랜잭션에서 처리한다. -->
+    <update id="reactivateWithdrawnMember">
+        update member
+        set member_status = 'ACTIVE',
+            deleted_at = null,
+            last_login_at = now()
+        where member_id = #{memberId}
+            and member_status = 'WITHDRAWN'
+            and deleted_at is not null
     </update>
 
 </mapper>

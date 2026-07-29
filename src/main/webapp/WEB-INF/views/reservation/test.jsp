@@ -85,7 +85,7 @@
                     <td>${r.reservationId}</td>
                     <td>${r.placeId}</td>
                     <td>${r.visitorName}</td>
-                    <td>${r.visitDate}</td>
+                    <td>${r.visitDate}<c:if test="${not empty r.checkOutDate}"> ~ ${r.checkOutDate}</c:if></td>
                     <td>${r.headcount}</td>
                     <td>
                         <span class="status

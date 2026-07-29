@@ -27,7 +27,11 @@ public class ReservationCreateRequest {
     private String phone;
 
     @DateTimeFormat(pattern = "yyyy-MM-dd")
-    private LocalDate visitDate;
+    private LocalDate visitDate;        // 숙박이면 체크인 날짜
+
+    // 숙박 전용 체크아웃 날짜. 맛집/관광지는 미전송(null)
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    private LocalDate checkOutDate;
 
     private int headcount;
 

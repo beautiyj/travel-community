@@ -50,16 +50,20 @@ public interface ReservationMapper {
     int completeVisited();
 
     /**
-     * 예약 캘린더용: 장소의 '오늘 이후' 활성 예약이 있는 날짜 목록(+인원 합).
-     * 이 목록에 있는 날 = 이미 예약된 날 → 마감(빨강)으로 판정한다. (1일 1팀)
+     * 예약 캘린더용: 장소의 '오늘 이후' 활성 예약 목록(체크인·체크아웃·인원).
+     * 숙박은 기간 예약이라 날짜별 GROUP BY로는 중간 날짜를 알 수 없다.
+     * 서비스에서 이 목록을 받아 구간을 날짜 단위로 펼쳐 마감일을 계산한다.
      */
-    List<Map<String, Object>> findBookedHeadcountByDate(@Param("placeId") Long placeId);
+    List<Map<String, Object>> findActiveRanges(@Param("placeId") Long placeId);
 
     /**
-     * 마감 백업 체크: 특정 슬롯(장소·날짜)의 활성 예약 인원 합 (전체 회원 대상, 없으면 0).
-     * 0보다 크면 이미 예약된 날 → 예약 생성 직전 서버에서 재예약을 막는 최종 방어선.
+     * 숙박 기간 겹침 판정: 요청 구간과 겹치는 활성 예약 수 (0이면 예약 가능).
+     * 반개구간이라 체크아웃 당일에 다음 손님이 체크인하는 것은 겹침이 아니다.
+     * 기존 단일날짜 예약(check_out_date IS NULL)은 1박짜리로 취급한다.
      */
-    int sumActiveHeadcount(@Param("placeId") Long placeId, @Param("visitDate") LocalDate visitDate);
+    int countOverlapping(@Param("placeId") Long placeId,
+                         @Param("checkInDate") LocalDate checkInDate,
+                         @Param("checkOutDate") LocalDate checkOutDate);
 
     /**
      * 마감(휴무) 여부 조회. PLACE는 사업자(business) 파트 테이블 — 여기서는 읽기만 한다.

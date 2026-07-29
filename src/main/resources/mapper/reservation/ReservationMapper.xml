@@ -10,6 +10,7 @@
         visitor_name   AS visitorName,
         phone,
         visit_date     AS visitDate,
+        check_out_date AS checkOutDate,
         headcount,
         place_type     AS placeType,
         status,
@@ -24,9 +25,9 @@
     <insert id="insert" parameterType="com.gnagnoohc.travel.reservation.entity.Reservation"
             useGeneratedKeys="true" keyProperty="reservationId">
         INSERT INTO RESERVATION
-            (member_id, place_id, visitor_name, phone, visit_date, headcount, place_type, status)
+            (member_id, place_id, visitor_name, phone, visit_date, check_out_date, headcount, place_type, status)
         VALUES
-            (#{memberId}, #{placeId}, #{visitorName}, #{phone}, #{visitDate}, #{headcount}, #{placeType}, #{status})
+            (#{memberId}, #{placeId}, #{visitorName}, #{phone}, #{visitDate}, #{checkOutDate}, #{headcount}, #{placeType}, #{status})
     </insert>
 
     <select id="findById" resultType="com.gnagnoohc.travel.reservation.entity.Reservation">
@@ -122,27 +123,37 @@
         UPDATE RESERVATION
         SET status = 'COMPLETED'
         WHERE status = 'CONFIRMED'
-          AND visit_date &lt; CURDATE()
+          AND COALESCE(check_out_date, visit_date) &lt; CURDATE()
     </update>
 
-    <!-- 캘린더 마감 표시용: 장소의 '오늘 이후' 날짜별 활성 예약 인원 합 -->
-    <select id="findBookedHeadcountByDate" resultType="map">
-        SELECT visit_date AS visitDate,
-               SUM(headcount) AS booked
+    <!--
+      캘린더 마감 표시용: 장소의 활성 예약 구간 목록.
+      숙박은 기간 예약이라 GROUP BY로는 중간 날짜를 못 잡는다 → 구간 그대로 반환하고 서비스에서 펼친다.
+      진행 중인 숙박(체크인은 과거지만 체크아웃이 오늘 이후)도 포함해야 하므로 종료일 기준으로 거른다.
+    -->
+    <select id="findActiveRanges" resultType="map">
+        SELECT visit_date     AS visitDate,
+               check_out_date AS checkOutDate,
+               headcount      AS headcount
         FROM RESERVATION
         WHERE place_id = #{placeId}
           AND status IN ('PENDING', 'PAID', 'CONFIRMED')
-          AND visit_date &gt;= CURDATE()
-        GROUP BY visit_date
+          AND COALESCE(check_out_date, visit_date) &gt;= CURDATE()
     </select>
 
-    <!-- 마감 백업 체크: 특정 슬롯(장소·날짜) 활성 예약 인원 합 (전체 회원, 없으면 0). 0보다 크면 이미 예약된 날 -->
-    <select id="sumActiveHeadcount" resultType="int">
-        SELECT COALESCE(SUM(headcount), 0)
+    <!--
+      숙박 기간 겹침 판정. 표준 구간 겹침 조건:
+        기존.checkIn < 신규.checkOut  AND  신규.checkIn < 기존.checkOut
+      반개구간이라 "기존 체크아웃일 == 신규 체크인일"은 겹치지 않는다(퇴실 후 입실).
+      기존 단일날짜 예약(check_out_date IS NULL)은 1박(다음날 체크아웃)으로 간주.
+    -->
+    <select id="countOverlapping" resultType="int">
+        SELECT COUNT(*)
         FROM RESERVATION
         WHERE place_id = #{placeId}
-          AND visit_date = #{visitDate}
           AND status IN ('PENDING', 'PAID', 'CONFIRMED')
+          AND visit_date &lt; #{checkOutDate}
+          AND #{checkInDate} &lt; COALESCE(check_out_date, DATE_ADD(visit_date, INTERVAL 1 DAY))
     </select>
 
     <!-- 휴무 여부 조회: 사업자가 /business/closure에서 설정한 PLACE.is_closed 그대로 참조 (읽기 전용) -->

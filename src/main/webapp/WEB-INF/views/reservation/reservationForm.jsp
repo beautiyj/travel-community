@@ -3,6 +3,8 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%-- tour(관광지)·food(맛집) = 만나서결제(예약금), 그 외(숙박 등) = 정가 --%>
 <c:set var="payOnSite" value="${placeType eq 'tour' or placeType eq 'food'}" />
+<%-- 숙박만 기간(체크인~체크아웃) 예약. 맛집/관광지·무료는 당일 방문 --%>
+<c:set var="isStay" value="${not payOnSite and placeType ne 'free'}" />
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -64,7 +66,10 @@
                 <p class="field-error" id="phoneError" role="alert">올바른 휴대폰 번호를 입력하세요. (예: 010-1234-5678)</p>
 
                 <div class="field">
-                    <label>방문 날짜</label>
+                    <label>${isStay ? '숙박 기간' : '방문 날짜'}</label>
+                    <c:if test="${isStay}">
+                        <p class="cal-hint">체크인 날짜와 체크아웃 날짜를 차례로 선택하세요.</p>
+                    </c:if>
                     <%-- 예약 가능/마감을 색으로 보여주는 캘린더. 이미 예약된 날(숙박만)은 빨강·선택 불가 --%>
                     <div class="rsv-cal" id="rsvCalendar">
                         <div class="rsv-cal-head">
@@ -79,10 +84,16 @@
                         <div class="rsv-cal-legend">
                             <span><i class="dot ok"></i> 예약 가능</span>
                             <span><i class="dot full"></i> 마감</span>
+                            <%-- 맛집·관광지: 선택한 날짜의 남은 자리를 캘린더가 여기 채운다 --%>
+                            <c:if test="${payOnSite}">
+                                <span class="seat-info" id="calSeatInfo">날짜를 선택하세요</span>
+                            </c:if>
                         </div>
                     </div>
                     <%-- 선택된 날짜는 캘린더가 이 hidden에 채운다. 서버 전송·검증은 이 값 사용 --%>
                     <input type="hidden" id="visitDate" name="visitDate" required>
+                    <%-- 숙박만 사용(체크아웃). 맛집/관광지는 빈 값으로 전송돼 서버에서 null 처리 --%>
+                    <input type="hidden" id="checkOutDate" name="checkOutDate">
                 </div>
 
                 <div class="field">
@@ -107,7 +118,10 @@
             <div class="summary-card">
                 <h3>예약 요약</h3>
                 <div class="summary-row"><span class="label">숙소/장소</span><span class="value">장소 #${placeId}</span></div>
-                <div class="summary-row"><span class="label">날짜</span><span class="value" id="sumDate">&mdash;</span></div>
+                <div class="summary-row"><span class="label">${isStay ? '기간' : '날짜'}</span><span class="value" id="sumDate">&mdash;</span></div>
+                <c:if test="${isStay}">
+                    <div class="summary-row"><span class="label">숙박</span><span class="value" id="sumNights">&mdash;</span></div>
+                </c:if>
                 <div class="summary-row"><span class="label">인원</span><span class="value" id="sumPeople">2명</span></div>
                 <c:choose>
                     <c:when test="${payOnSite}">
@@ -121,7 +135,9 @@
                     <c:otherwise>
                         <div class="summary-row summary-divider">
                             <span class="label">금액</span>
-                            <span class="value"><fmt:formatNumber value="${price}" pattern="#,###"/>원 &times; <span id="sumUnitCount">2</span>명</span>
+                            <span class="value"><fmt:formatNumber value="${price}" pattern="#,###"/>원
+                                <c:if test="${isStay}">&times; <span id="sumUnitNights">1</span>박</c:if>
+                                &times; <span id="sumUnitCount">2</span>명</span>
                         </div>
                     </c:otherwise>
                 </c:choose>
@@ -136,7 +152,7 @@
 <script>
     window.RESERVATION_UNIT_PRICE = ${price};        // 서버에서 내려준 1인 단가
     window.RESERVATION_PLACE_ID   = ${placeId};      // 캘린더가 이 장소의 마감(이미 예약된 날짜) 현황을 조회
-    window.RESERVATION_PLACE_TYPE = '${placeType}';  // tour/food면 예약금(만나서결제)
+    window.RESERVATION_PLACE_TYPE = '${placeType}';  // tour/food면 예약금(만나서결제), 그 외(숙박)는 기간 예약
     window.RESERVATION_DEPOSIT    = ${deposit};      // 예약금 정액
 </script>
 <%-- reservation-form.js가 visitDate의 change를 듣고, 캘린더가 날짜 선택 시 그 change를 쏜다 (로드 순서 유지) --%>

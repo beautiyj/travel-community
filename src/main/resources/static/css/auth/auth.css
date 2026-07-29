@@ -386,12 +386,12 @@ input {
 }
 
 .auth-card--login {
-    width: min(100%, 384px);
-    padding: 0;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
+    width: min(100%, 560px);
+    padding: 32px 60px;
+    border: 1px solid #dfe7e5;
+    border-radius: 20px;
+    background: #ffffff;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
 }
 
 .auth-card--login .auth-brand,

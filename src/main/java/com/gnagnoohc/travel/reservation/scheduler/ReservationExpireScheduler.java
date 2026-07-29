@@ -1,5 +1,6 @@
 package com.gnagnoohc.travel.reservation.scheduler;
 
+import com.gnagnoohc.travel.batch.payment.PaymentReconcileService;
 import com.gnagnoohc.travel.reservation.mapper.ReservationMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,8 +12,8 @@ import java.time.LocalDateTime;
 
 /**
  * 예약 상태를 시간에 따라 자동 전환하는 스케줄러.
- * 1) 결제 대기(PENDING)로 30분이 지난 예약 -> EXPIRED
- * 2) 방문일이 지난 예약(PAID)             -> COMPLETED
+ * 1) 결제 대기(PENDING)로 30분이 지난 예약   -> EXPIRED
+ * 2) 방문일이 지난 예약확정(CONFIRMED) 건     -> COMPLETED(이용완료)
  * 주의: TravelApplication(또는 config 클래스)에 @EnableScheduling 필요!
  */
 @Slf4j
@@ -23,6 +24,7 @@ public class ReservationExpireScheduler {
     private static final int EXPIRE_MINUTES = 30;
 
     private final ReservationMapper reservationMapper;
+    private final PaymentReconcileService paymentReconcileService;
 
     /** 1분마다 실행 */
     @Scheduled(fixedDelay = 60_000)
@@ -36,7 +38,17 @@ public class ReservationExpireScheduler {
     }
 
     /**
-     * 매시 5분에 실행. 방문일이 지난 예약을 방문완료로 전환한다.
+     * 2분마다 실행. 결제 준비까지 갔으나 콜백 유실로 PENDING에 남은 예약을 PG에 대조해 보정한다.
+     * 만료(30분)보다 촘촘히 돌려, 유령 결제가 만료로 잘못 정리되기 전에 PAID로 복구한다.
+     * (트랜잭션은 보정 서비스가 건별로 관리하므로 여기선 걸지 않는다)
+     */
+    @Scheduled(fixedDelay = 120_000)
+    public void reconcilePayments() {
+        paymentReconcileService.reconcile();
+    }
+
+    /**
+     * 매시 5분에 실행. 방문일이 지난 예약확정(CONFIRMED) 건을 이용완료로 전환한다.
      * 하루 1회가 아니라 매시로 돌리는 이유: 서버가 꺼져 있어 특정 시각을 놓쳐도
      * 다음 실행 때 자동으로 따라잡히기 때문. 조건에 맞는 건이 없으면 0건 처리라 부담이 없다.
      */
@@ -45,7 +57,7 @@ public class ReservationExpireScheduler {
     public void completeVisitedReservations() {
         int completed = reservationMapper.completeVisited();
         if (completed > 0) {
-            log.info("방문일이 지난 예약 {}건을 방문완료 처리했습니다.", completed);
+            log.info("방문일이 지난 예약확정 {}건을 이용완료 처리했습니다.", completed);
         }
     }
 }

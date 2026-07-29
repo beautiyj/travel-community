@@ -67,7 +67,10 @@ public class PaymentService {
             throw new IllegalStateException("이미 취소된 결제입니다.");
         }
 
-        if (p.getPaymentType() == Payment.TYPE_TOSS) {
+        // 무료(0원) 건은 실제로 받은 돈이 없어 PG 취소를 호출할 게 없다 — 상태만 취소로 전환
+        if (p.getPaymentType() == Payment.TYPE_FREE) {
+            // no-op
+        } else if (p.getPaymentType() == Payment.TYPE_TOSS) {
             tossPayService.cancel(p.getPaymentKey(), reason != null ? reason : "고객 요청");
         } else {
             kakaoPayService.cancel(p.getPaymentKey(), p.getAmount());

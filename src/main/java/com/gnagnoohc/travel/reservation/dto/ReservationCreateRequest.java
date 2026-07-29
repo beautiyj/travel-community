@@ -27,7 +27,15 @@ public class ReservationCreateRequest {
     private String phone;
 
     @DateTimeFormat(pattern = "yyyy-MM-dd")
-    private LocalDate visitDate;
+    private LocalDate visitDate;        // 숙박이면 체크인 날짜
+
+    // 숙박 전용 체크아웃 날짜. 맛집/관광지는 미전송(null)
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    private LocalDate checkOutDate;
 
     private int headcount;
+
+    // 무료예약(0원) 즉시완료 테스트 전용 오버라이드. PLACE.place_type엔 'free' 값이 없어 별도로 둔다.
+    // 실제 place 가격(0원) 데이터가 생기면 제거 예정.
+    private boolean freeTest;
 }

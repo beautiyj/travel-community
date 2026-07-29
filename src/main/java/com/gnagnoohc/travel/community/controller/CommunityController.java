@@ -37,14 +37,14 @@ public class CommunityController {
         return "community/test";
     }
 
-    // 목록
+    // 목록 (페이지네이션 포함 - page는 1부터 시작)
     @GetMapping("/community/list")
     public String list(@RequestParam(value = "category", required = false) String category,
                        @RequestParam(value = "q", required = false) String q,
+                       @RequestParam(value = "page", defaultValue = "1") int page,
                        Model model) {
 
-    	List<CommunityDto> postList = service.selectAll(category, q);
-    	model.addAttribute("postList", postList);
+    	model.addAllAttributes(service.selectPage(category, q, page));
 
         return "community/list";
     }
@@ -74,12 +74,15 @@ public class CommunityController {
 
     // 글쓰기 폼 열기 (빈 화면)
     @GetMapping("/community/write")
-    public String writeForm(HttpSession session) {
+    public String writeForm(HttpSession session, Model model) {
 
         // 로그인 안 한 사용자는 막기
         if (session.getAttribute("loginMember") == null) {
-            return "redirect:/member/login";
+            return "redirect:/auth/login";
         }
+
+        // 카테고리 드롭다운 목록: JSP에 하드코딩하지 않고 enum(PostCategory)을 그대로 넘김
+        model.addAttribute("categoryList", CommunityDto.PostCategory.values());
 
         return "community/write";
     }
@@ -126,7 +129,13 @@ public class CommunityController {
             return "redirect:/community/detail?postId=" + postId;
         }
 
+        // 본문 에디터가 기존 이미지를 토큰 위치 그대로 복원해야 해서(contentEditor.js),
+        // detail()과 마찬가지로 이미지 목록을 채워줘야 함 (안 그러면 전부 /upload/undefined로 깨짐)
+        post.setImageList(imageService.selectImages(postId));
+
         model.addAttribute("post", post);
+        // 카테고리 드롭다운 목록: JSP에 하드코딩하지 않고 enum(PostCategory)을 그대로 넘김
+        model.addAttribute("categoryList", CommunityDto.PostCategory.values());
 
         return "community/edit";
     }
@@ -170,15 +179,30 @@ public class CommunityController {
     }
 
 
-    // 장소 검색 (방문자인증후기 글쓰기/수정 시 장소 태그 검색 모달에서 AJAX로 호출)
+    // 장소 검색 (글쓰기/수정 시 장소 태그 검색 모달에서 AJAX로 호출, "더보기"로 page단위 조회)
     // ※ community/comment 공통 로직이라 CommonService로 위임
+    // - 방문자인증후기: 로그인 회원이 확정(결제완료)한 예약 장소만 검색
+    // - 그 외(일반후기 등): 기존처럼 전체 장소 검색
+    // 키워드가 빈 문자열이면 매퍼의 LIKE '%%'가 전체 행에 매칭되므로, 모달을 열어 아직
+    // 검색어를 입력하지 않은 상태에서도 전체 장소 목록을 이름 가나다순으로 보여줄 수 있음
+    // 응답 형태: {"items": [...], "hasMore": boolean} (page는 0부터 시작)
     @GetMapping("/community/place/search")
     @ResponseBody
-    public List<Map<String, Object>> searchPlaces(@RequestParam("keyword") String keyword) {
-        if (keyword == null || keyword.trim().isEmpty()) {
-            return List.of();
+    public Map<String, Object> searchPlaces(@RequestParam("keyword") String keyword,
+                                             @RequestParam(value = "category", required = false) String category,
+                                             @RequestParam(value = "page", defaultValue = "0") int page,
+                                             HttpSession session) {
+        String trimmedKeyword = keyword == null ? "" : keyword.trim();
+
+        if ("방문자인증후기".equals(category)) {
+            Object login = session.getAttribute("loginMember");
+            if (login == null) {
+                return Map.of("items", List.of(), "hasMore", false);
+            }
+            return commonService.searchConfirmedPlaces(SessionUtil.getMemberId(login), trimmedKeyword, page);
         }
-        return commonService.searchPlaces(keyword.trim());
+
+        return commonService.searchPlaces(trimmedKeyword, page);
     }
 
 
@@ -192,10 +216,12 @@ public class CommunityController {
         return post.getMemberId() == SessionUtil.getMemberId(login);
     }
 
-    // 장소 태그는 "방문자인증후기" 카테고리에서만 허용 (1게시글 1장소)
+    // 장소 태그는 "방문자인증후기"/"일반후기" 카테고리에서만 허용 (1게시글 1장소)
     // 다른 카테고리인데 placeId가 넘어왔다면(폼 조작 등) 무시하고 null 처리
     private void enforcePlaceTagRule(CommunityDto dto) {
-        if (!"방문자인증후기".equals(dto.getCategory())) {
+        String category = dto.getCategory();
+        boolean placeTagAllowed = "방문자인증후기".equals(category) || "일반후기".equals(category);
+        if (!placeTagAllowed) {
             dto.setPlaceId(null);
         }
     }

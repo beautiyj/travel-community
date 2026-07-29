@@ -348,7 +348,7 @@ public class EmailVerificationService {
 		return requestIp;
 	}
 
-	private String normalizeAndValidateEmail(String rawEmail) {
+	public String normalizeAndValidateEmail(String rawEmail) {
 		// 이 검사는 메일 주소 존재 여부가 아니라 입력 형식만 검사한다.
 		if (rawEmail == null) {
 			throw new EmailVerificationException("이메일을 입력해주세요.");
@@ -369,8 +369,7 @@ public class EmailVerificationService {
 			throw new EmailVerificationException("올바른 이메일 주소를 입력해주세요.");
 		}
 
-		int atIndex = email.lastIndexOf('@');
-		return email.substring(0, atIndex + 1)
-				+ email.substring(atIndex + 1).toLowerCase(Locale.ROOT);
+		// 로컬 가입과 OAuth 가입이 같은 UNIQUE(email) 기준을 사용하도록 전체 주소를 소문자로 통일한다.
+		return email.toLowerCase(Locale.ROOT);
 	}
 }

@@ -8,7 +8,9 @@
 (function () {
   'use strict';
 
-  const TOKEN_PATTERN = /\[\[IMG:(\d+)(?::(left|right))?\]\]|\[\[SLIDER:(\d+(?:,\d+)*)(?::(left|right))?\]\]|\[\[COLLAGE:(\d+-\d+-\d+(?:,\d+-\d+-\d+)*)(?::(left|right))?\]\]/g;
+  const TOKEN_PATTERN = /\[\[IMG:(\d+)(?::(left|right))?\]\]|\[\[SLIDER:(\d+(?:,\d+)*)(?::(left|right))?\]\]|\[\[COLLAGE:(?:(\d+)-(\d+):)?(\d+-\d+-\d+(?:-\d+)?(?:,\d+-\d+-\d+(?:-\d+)?)*)(?::(left|right))?\]\]/g;
+
+  const DEFAULT_COLLAGE_ITEM_WIDTH = 42; // % of canvas width, 폭 정보 없는 구버전 토큰의 기본값
 
   function appendText(root, str) {
     if (!str) return;
@@ -30,8 +32,9 @@
     root.appendChild(wrap);
   }
 
-  // entries: [{n, x, y}] — 겹침이 있을 수 있는 자유 배치 콜라주를 그대로 재현
-  function appendCollage(root, imgUrlFor, total, entries, align) {
+  // entries: [{n, x, y, w}] — 겹침이 있을 수 있는 자유 배치 콜라주를 그대로 재현
+  // ratio: {rw, rh} — 삽입 당시 여백을 잘라낸 캔버스 비율(없으면 정사각형 기본값 유지)
+  function appendCollage(root, imgUrlFor, total, entries, align, ratio) {
     const valid = entries.filter(function (e) { return e.n >= 0 && e.n < total; });
     if (!valid.length) return;
 
@@ -39,11 +42,13 @@
     wrap.className = 'content-collage-block align-' + (align || 'center');
     const canvas = document.createElement('div');
     canvas.className = 'collage-canvas';
+    if (ratio) canvas.style.aspectRatio = ratio.rw + ' / ' + ratio.rh;
     valid.forEach(function (entry) {
       const cell = document.createElement('div');
       cell.className = 'collage-item';
       cell.style.left = entry.x + '%';
       cell.style.top = entry.y + '%';
+      cell.style.width = (entry.w || DEFAULT_COLLAGE_ITEM_WIDTH) + '%';
       const img = document.createElement('img');
       img.src = imgUrlFor(entry.n);
       img.alt = '첨부 이미지';
@@ -179,11 +184,14 @@
       } else if (match[3] !== undefined) {
         appendSlider(root, imgUrlFor, imageUrls.length, match[3].split(',').map(Number), match[4]);
       } else {
-        const entries = match[5].split(',').map(function (s) {
+        const entries = match[7].split(',').map(function (s) {
           const parts = s.split('-').map(Number);
-          return { n: parts[0], x: parts[1], y: parts[2] };
+          return { n: parts[0], x: parts[1], y: parts[2], w: parts.length > 3 ? parts[3] : DEFAULT_COLLAGE_ITEM_WIDTH };
         });
-        appendCollage(root, imgUrlFor, imageUrls.length, entries, match[6]);
+        const ratio = (match[5] !== undefined && match[6] !== undefined)
+          ? { rw: Number(match[5]), rh: Number(match[6]) }
+          : null;
+        appendCollage(root, imgUrlFor, imageUrls.length, entries, match[8], ratio);
       }
       lastIndex = TOKEN_PATTERN.lastIndex;
     }

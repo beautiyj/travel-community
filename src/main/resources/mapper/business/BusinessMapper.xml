@@ -212,13 +212,13 @@
           AND p.member_id = #{bizMemberId}
     </insert>
 
-    <delete id="deleteClosedDate">
+    <delete id="deleteClosedDateRange">
         DELETE d
         FROM PLACE_CLOSED_DATE d
         JOIN PLACE p ON p.place_id = d.place_id
         WHERE d.place_id = #{placeId}
           AND p.member_id = #{bizMemberId}
-          AND d.closed_date = #{closedDate}
+          AND d.closed_date BETWEEN #{startDate} AND #{endDate}
     </delete>
 
     <!-- 업소 등록 폼 지역 드롭다운. 지역코드를 당분간 null로 두기로 해서 주석처리

@@ -1,6 +1,7 @@
 package com.gnagnoohc.travel.batch.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
@@ -34,8 +35,13 @@ public class TourAreaBasedSyncListDTO {
     private String zipcode;
     
     // 분류 및 법정동 코드
+    // 0729
+    @JsonProperty("lDongRegnCd")
     private String lDongRegnCd;
+
+    @JsonProperty("lDongSignguCd")
     private String lDongSignguCd;
+    
     private String lclsSystm1;
     private String lclsSystm2;
     private String lclsSystm3;

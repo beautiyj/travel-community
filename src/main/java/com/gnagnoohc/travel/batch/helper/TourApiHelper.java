@@ -214,14 +214,30 @@ public class TourApiHelper {
     /* 헬퍼 메소드 isValidItem - 수집 대상 유효성 검증 (대표 이미지 필수 존재 여부 체크)
        대표 이미지가 없으면 아예 적재x 이미지 존재 여부만 검증 -> 이후 PlaceImage테이블에 적용 필요
      */
-    public boolean isValidItem(TourAreaBasedSyncListDTO syncItem) {
-        if (syncItem == null) return false;
+    // public boolean isValidItem(TourAreaBasedSyncListDTO syncItem) {
+    //     if (syncItem == null) return false;
 
-        if (!StringUtils.hasText(syncItem.getFirstimage())) {
-            log.info("[Batch Skip] 대표 이미지가 없어 수집 제외 - contentId: {}, title: {}",
-                    syncItem.getContentid(), syncItem.getTitle());
+    //     if (!StringUtils.hasText(syncItem.getFirstimage())) {
+    //         log.info("[Batch Skip] 대표 이미지가 없어 수집 제외 - contentId: {}, title: {}",
+    //                 syncItem.getContentid(), syncItem.getTitle());
+    //         return false;
+    //     }
+    //     return true;
+    // }
+    public boolean isValidItem(TourAreaBasedSyncListDTO item) {
+        // 1. 기존 대표 이미지 체크
+        if (!StringUtils.hasText(item.getFirstimage())) {
+            log.info("[Batch Skip] 대표 이미지가 없어 수집 제외 - contentId: {}, title: {}", item.getContentid(), item.getTitle());
             return false;
         }
+
+        // 2. [추가] 지역 코드(시도 또는 시군구)가 비어있는 부실 데이터 스킵
+        if (!StringUtils.hasText(item.getLDongRegnCd()) || !StringUtils.hasText(item.getLDongSignguCd())) {
+            log.info("[Batch Skip] 법정동 지역 코드가 없어 수집 제외 - contentId: {}, title: {}", item.getContentid(), item.getTitle());
+            return false;
+        }
+
         return true;
     }
+
 }

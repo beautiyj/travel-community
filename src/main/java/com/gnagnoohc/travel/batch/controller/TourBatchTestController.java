@@ -40,10 +40,12 @@ public class TourBatchTestController {
 
     // 특정 contentTypeId 소량(limit) 테스트 - 기본값 10건
     // syncTourData -> syncTourDataForTest 호출로 변경, limit 파라미터 추가 (기본 10건)
+    // 0729 startPageNo추가
     @PostMapping("/test/batch/place")
     public String testPlaceSync(@RequestParam String contentTypeId,
+                                @RequestParam(defaultValue = "1") int startPageNo,
                                 @RequestParam(defaultValue = "10") int limit) {
-        tourApiService.syncTourDataForTest(contentTypeId, limit);
+        tourApiService.syncTourDataForTest(contentTypeId, startPageNo, limit);
         return "PLACE 소량 테스트 완료 (contentTypeId=" + contentTypeId + ", limit=" + limit + ") - 로그 확인";
     }
 

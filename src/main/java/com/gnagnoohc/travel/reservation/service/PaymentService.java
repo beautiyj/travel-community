@@ -67,13 +67,21 @@ public class PaymentService {
             throw new IllegalStateException("이미 취소된 결제입니다.");
         }
 
-        // 무료(0원) 건은 실제로 받은 돈이 없어 PG 취소를 호출할 게 없다 — 상태만 취소로 전환
-        if (p.getPaymentType() == Payment.TYPE_FREE) {
-            // no-op
-        } else if (p.getPaymentType() == Payment.TYPE_TOSS) {
-            tossPayService.cancel(p.getPaymentKey(), reason != null ? reason : "고객 요청");
-        } else {
-            kakaoPayService.cancel(p.getPaymentKey(), p.getAmount());
+        // 결제수단별 PG 취소 호출. 무료/무통장/가상카드는 실제 PG 거래가 없어 상태만 취소로 전환
+        switch (p.getPaymentType()) {
+            case Payment.TYPE_FREE:
+            case Payment.TYPE_BANK:
+            case Payment.TYPE_VIRTUAL_CARD:
+                // no-op
+                break;
+            case Payment.TYPE_TOSS:
+                tossPayService.cancel(p.getPaymentKey(), reason != null ? reason : "고객 요청");
+                break;
+            case Payment.TYPE_KAKAO:
+                kakaoPayService.cancel(p.getPaymentKey(), p.getAmount());
+                break;
+            default:
+                throw new IllegalStateException("알 수 없는 결제수단입니다. paymentType=" + p.getPaymentType());
         }
 
         paymentMapper.updateStatus(paymentId, PaymentStatus.CANCELED);

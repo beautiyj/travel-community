@@ -145,6 +145,18 @@
                                     <c:otherwise><c:set var="categoryLabel" value="관광지"/></c:otherwise>
                                 </c:choose>
 
+                                <%-- venue-detail-row__value는 소개글 줄바꿈을 살리려고 white-space: pre-line이라,
+                                     값을 span 안에서 바로 c:choose로 분기하면 태그 사이 개행까지 그대로 렌더링되어
+                                     세로로 빈 줄이 생긴다. categoryLabel과 같은 방식으로 밖에서 값만 만들어 넣는다 --%>
+                                <c:choose>
+                                    <c:when test="${placeDetail.priceType == 'FIXED'}">
+                                        <fmt:formatNumber var="priceAmount" value="${placeDetail.minPrice}" pattern="#,###" />
+                                        <c:set var="priceLabel" value="${priceAmount}원 / 1인"/>
+                                    </c:when>
+                                    <c:when test="${placeDetail.priceType == 'VARIABLE'}"><c:set var="priceLabel" value="가격변동 (현장 문의)"/></c:when>
+                                    <c:otherwise><c:set var="priceLabel" value="무료"/></c:otherwise>
+                                </c:choose>
+
                                 <div class="venue-detail-list">
                                     <div class="venue-detail-row">
                                         <span class="venue-detail-row__label">업소명</span>
@@ -158,15 +170,7 @@
                                     <c:if test="${placeDetail.placeType == 1}">
                                         <div class="venue-detail-row">
                                             <span class="venue-detail-row__label">가격</span>
-                                            <span class="venue-detail-row__value">
-                                                <c:choose>
-                                                    <c:when test="${placeDetail.priceType == 'FIXED'}">
-                                                        <fmt:formatNumber value="${placeDetail.minPrice}" pattern="#,###" />원 / 1인
-                                                    </c:when>
-                                                    <c:when test="${placeDetail.priceType == 'VARIABLE'}">가격변동 (현장 문의)</c:when>
-                                                    <c:otherwise>무료</c:otherwise>
-                                                </c:choose>
-                                            </span>
+                                            <span class="venue-detail-row__value">${priceLabel}</span>
                                         </div>
                                     </c:if>
 <%--                                    <div class="venue-detail-row">--%>

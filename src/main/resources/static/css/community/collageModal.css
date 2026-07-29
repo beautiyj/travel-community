@@ -1,0 +1,64 @@
+/* ---------- 콜라주 빌더 모달 (confirmModal.css 의 .modal-overlay/.modal 재사용) ---------- */
+.collage-modal {
+  max-width: 520px;
+}
+.collage-modal .btn-main:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 고정 캔버스 위에 사진을 자유롭게 드래그해서 배치(겹침 허용) */
+.collage-builder-canvas {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  margin-top: 12px;
+  background: var(--muted);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.collage-builder-item {
+  position: absolute;
+  width: 38%;
+  transform: translate(-50%, -50%);
+  border-radius: var(--radius-md);
+  overflow: visible;
+  cursor: grab;
+}
+.collage-builder-item img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-md);
+  border: 3px solid var(--card);
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.18);
+  pointer-events: none;
+}
+.collage-builder-item-resize-handle {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  background: var(--card);
+  border: 2px solid var(--primary);
+  cursor: nwse-resize;
+  z-index: 2;
+}
+.collage-builder-item-remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  background: var(--destructive);
+  color: var(--destructive-foreground);
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  z-index: 2;
+}

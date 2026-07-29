@@ -137,28 +137,8 @@
   <jsp:param name="modalId" value="placeSearchModal" />
 </jsp:include>
 
-<!-- 콜라주/슬라이더 빌더 모달 (write.jsp/edit.jsp 공용, contentEditor.js 가 제어) -->
-<div id="imgBlockModal" class="modal-overlay" data-modal role="dialog" aria-modal="true" aria-labelledby="imgBlockModalTitle">
-  <div class="modal img-block-modal">
-    <h2 class="modal-title" id="imgBlockModalTitle">콜라주 만들기</h2>
-    <p class="modal-message">사진을 2장 이상 선택하세요.</p>
-
-    <label for="imgBlockFileInput" class="image-upload-box">클릭해서 사진을 선택하세요 (여러 장 가능)</label>
-    <input type="file" id="imgBlockFileInput" accept="image/*" multiple hidden>
-
-    <div id="imgBlockPreview" class="img-block-preview"></div>
-    <div id="imgBlockCanvas" class="collage-builder-canvas" style="display:none;"></div>
-
-    <div class="modal-buttons">
-      <button type="button" class="btn-main" style="background: var(--card); border:1px solid var(--border); box-shadow:none;" data-modal-close>
-        <span class="btn-main-text" style="color: var(--foreground);">취소</span>
-      </button>
-      <button type="button" id="imgBlockConfirmBtn" class="btn-main" disabled>
-        <span class="btn-main-text">완료</span>
-      </button>
-    </div>
-  </div>
-</div>
+<jsp:include page="collageModal.jsp" />
+<jsp:include page="sliderModal.jsp" />
 
 <!-- 제목 글자수 초과(50자 초과) 안내 모달 - titleValidation.js가 제출 시 검사해서 띄움
      확인 버튼은 data-modal-close로 닫히기만 함 (폼 제출/새로고침 없음 → 작성 중이던 내용 유지) -->

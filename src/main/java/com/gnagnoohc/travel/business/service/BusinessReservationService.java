@@ -32,7 +32,7 @@ public class BusinessReservationService {
         return businessMapper.selectReservationStatusCounts(placeId, bizMemberId);
     }
 
-    /** 취소 요청 승인 → 카카오 환불 실행 + CANCELED 전환 (예약 파트 소유 로직, 여기서는 소유자 확인만 담당) */
+    /** 취소 요청 승인 → 결제수단별(토스/카카오 등) 환불 실행 + CANCELED 전환 (예약 파트 소유 로직, 여기서는 소유자 확인만 담당) */
     public void approveCancel(Long reservationId, Long bizMemberId) {
         requireOwner(reservationId, bizMemberId);
         paymentService.approveCancel(reservationId);

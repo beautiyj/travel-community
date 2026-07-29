@@ -18,6 +18,14 @@
 .booking-grid { display: grid; grid-template-columns: 1fr 300px; gap: 32px; align-items: start; }
 @media (max-width: 768px) { .booking-grid { grid-template-columns: 1fr; } }
 
+/* ---------- 모바일 화면 보정 ---------- */
+@media (max-width: 480px) {
+    .page-wrap { padding: 32px 16px; }
+    .page-title { font-size: var(--text-xl); margin-bottom: 20px; }
+    .method-grid { grid-template-columns: 1fr; }
+    .result-card { margin: 32px auto; padding: 28px 20px; }
+}
+
 /* ---------- 장소 정보 카드 ---------- */
 .place-card {
     background: var(--secondary); border-radius: var(--radius-md);
@@ -83,6 +91,9 @@
     background: var(--muted); color: var(--muted-foreground);
     box-shadow: none; cursor: not-allowed;
 }
+/* 예약 취소 등 되돌릴 수 없는 확정 동작용 (mypage.css .btn-danger와 같은 --danger 색 재사용) */
+.btn-danger { background: var(--danger); border: none; color: var(--danger-foreground); }
+.btn-danger:hover { background: #d92d20; }
 
 /* ---------- 요약 카드 (예약 요약 / 결제 정보) ---------- */
 .summary-card {

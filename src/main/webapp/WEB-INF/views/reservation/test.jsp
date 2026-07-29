@@ -16,12 +16,26 @@
     <!-- 1. 예약 폼 -->
     <div class="card">
         <h3>1. 예약 폼 열기</h3>
-        <p>placeId를 넣고 예약 폼으로 이동 → 폼 제출하면 예약 생성 후 결제 페이지로 넘어감</p>
+        <p>타입별로 예약 폼 이동 → 폼 제출하면 예약 생성 후 결제 페이지로 넘어감</p>
+        <p class="sub">숙박=정가(인원×단가) · 맛집/관광지=예약금(만나서결제) 흐름을 각각 테스트</p>
+        <p class="sub">타입마다 placeId를 다르게 둠 — 같은 placeId를 쓰면 회원+장소+날짜 중복체크가 타입 구분 없이 걸려
+            "이미 예약된 날짜"로 막힘(실제로는 place마다 타입이 고정이라 안 생기는 문제, 테스트만 이렇게 나눔)</p>
+        <p class="sub">장소 타입(tour/food/stay)은 이제 PLACE.place_type 조회로 정해짐 — placeId 1=stay, 2=food, 3=tour로 로컬 DB에 맞춰둠</p>
         <div class="row">
-            <input type="number" id="placeId" value="1" min="1">
-            <button type="button" onclick="location.href='/reservations/new?placeId=' + document.getElementById('placeId').value">
-                예약 폼으로 이동
-            </button>
+            <input type="number" id="placeIdStay" value="1" min="1" title="숙박 placeId">
+            <button type="button" onclick="goForm('placeIdStay')">숙박(정가)</button>
+        </div>
+        <div class="row">
+            <input type="number" id="placeIdFood" value="2" min="1" title="맛집 placeId">
+            <button type="button" onclick="goForm('placeIdFood')">맛집(예약금)</button>
+        </div>
+        <div class="row">
+            <input type="number" id="placeIdTour" value="3" min="1" title="관광지 placeId">
+            <button type="button" onclick="goForm('placeIdTour')">관광지(예약금)</button>
+        </div>
+        <div class="row">
+            <input type="number" id="placeIdFree" value="4" min="1" title="무료 테스트 placeId">
+            <button type="button" onclick="goForm('placeIdFree', true)">무료(0원, 결제 없이 즉시완료)</button>
         </div>
     </div>
 
@@ -59,6 +73,7 @@
     <div class="card">
         <h3>5. 내 예약 목록 (memberId=1) <a class="refresh" href="/reservations/test">새로고침</a></h3>
         <p>예약 생성/결제/취소/만료 후 상태 변화를 여기서 확인</p>
+        <div class="table-scroll">
         <table>
             <thead>
             <tr>
@@ -71,7 +86,7 @@
                     <td>${r.reservationId}</td>
                     <td>${r.placeId}</td>
                     <td>${r.visitorName}</td>
-                    <td>${r.visitDate}</td>
+                    <td>${r.visitDate}<c:if test="${not empty r.checkOutDate}"> ~ ${r.checkOutDate}</c:if></td>
                     <td>${r.headcount}</td>
                     <td>
                         <span class="status
@@ -90,6 +105,7 @@
             </c:if>
             </tbody>
         </table>
+        </div>
     </div>
 </div>
 

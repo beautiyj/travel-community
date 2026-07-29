@@ -27,6 +27,10 @@ public class TourApiClient {
     @Value("${tour.api.default-page}") private String defaultPage;
 
 
+    // TODO: 0728 CONFIG 파라미터 -> 명시선언으로 변경, 이후 자잘 주석은 삭제할 것
+    // 0728 🔥 401 에러 방지를 위해 서비스키를 필수로 주입받아 각 쿼리스트링에 명시
+    @Value("${tour.api.service-key}") private String serviceKey;
+
     /**
      * 위치기반 관광정보조회 /locationBasedList2
      * @param mapX GPS X좌표 (필수)
@@ -41,6 +45,10 @@ public class TourApiClient {
             return this.webClient.get()                    // HTTP GET 방식 요청
                 .uri(uriBuilder -> uriBuilder
                     .path("/locationBasedList2")
+                    .queryParam("serviceKey", serviceKey)
+                    .queryParam("MobileOS", "ETC")
+                    .queryParam("MobileApp", "Travel")
+                    .queryParam("_type", "json")
                     .queryParam("numOfRows", batchSize)
                     .queryParam("pageNo", defaultPage)
                     .queryParam("arrange", arrange)
@@ -69,6 +77,10 @@ public class TourApiClient {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
                     .path("/areaBasedList2")
+                    .queryParam("serviceKey", serviceKey)
+                    .queryParam("MobileOS", "ETC")
+                    .queryParam("MobileApp", "Travel")
+                    .queryParam("_type", "json")
                     .queryParam("numOfRows", batchSize)
                     .queryParam("pageNo", defaultPage)
                     .queryParam("arrange", arrange)
@@ -94,6 +106,10 @@ public class TourApiClient {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
                     .path("/searchKeyword2")
+                    .queryParam("serviceKey", serviceKey)
+                    .queryParam("MobileOS", "ETC")
+                    .queryParam("MobileApp", "Travel")
+                    .queryParam("_type", "json")
                     .queryParam("numOfRows", batchSize)
                     .queryParam("pageNo", defaultPage)
                     .queryParam("arrange", arrange)
@@ -118,6 +134,10 @@ public class TourApiClient {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
                     .path("/searchStay2")
+                    .queryParam("serviceKey", serviceKey)
+                    .queryParam("MobileOS", "ETC")
+                    .queryParam("MobileApp", "Travel")
+                    .queryParam("_type", "json")
                     .queryParam("numOfRows", batchSize)
                     .queryParam("pageNo", defaultPage)
                     .queryParam("arrange", arrange)             // 정렬필터 (A, C, D 등)
@@ -144,6 +164,10 @@ public class TourApiClient {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
                     .path("/detailCommon2")
+                    .queryParam("serviceKey", serviceKey)
+                    .queryParam("MobileOS", "ETC")
+                    .queryParam("MobileApp", "Travel")
+                    .queryParam("_type", "json")
                     .queryParam("contentId", contentId)
                     .build())
                 .retrieve()
@@ -165,6 +189,10 @@ public class TourApiClient {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
                     .path("/detailIntro2")
+                    .queryParam("serviceKey", serviceKey)
+                    .queryParam("MobileOS", "ETC")
+                    .queryParam("MobileApp", "Travel")
+                    .queryParam("_type", "json")
                     .queryParam("contentId", contentId)
                     .queryParam("contentTypeId", contentTypeId)
                     .build())
@@ -187,6 +215,10 @@ public class TourApiClient {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
                     .path("/detailInfo2")
+                    .queryParam("serviceKey", serviceKey)
+                    .queryParam("MobileOS", "ETC")
+                    .queryParam("MobileApp", "Travel")
+                    .queryParam("_type", "json")
                     .queryParam("contentId", contentId)
                     .queryParam("contentTypeId", contentTypeId)
                     .build())
@@ -209,6 +241,10 @@ public class TourApiClient {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
                     .path("/detailImage2")
+                    .queryParam("serviceKey", serviceKey)
+                    .queryParam("MobileOS", "ETC")
+                    .queryParam("MobileApp", "Travel")
+                    .queryParam("_type", "json")
                     .queryParam("contentId", contentId)
                     .queryParam("imageYN", imageYN)
                     .build())
@@ -233,7 +269,10 @@ public class TourApiClient {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
                     .path("/areaBasedSyncList2")
-                    .queryParam("numOfRows", batchSize)
+                    .queryParam("serviceKey", serviceKey) // 인증키 필수
+                    .queryParam("MobileOS", "ETC")        // OS 구분 필수 명시
+                    .queryParam("MobileApp", "Travel")    // 앱 이름 필수 명시
+                    .queryParam("_type", "json")          // JSON 강제 변환                    .queryParam("numOfRows", batchSize)
                     .queryParam("pageNo", pageNo)
                     .queryParam("arrange", arrange)
                     .queryParam("modifiedtime", modifiedtime)
@@ -256,6 +295,10 @@ public class TourApiClient {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
                     .path("/detailPetTour2")
+                    .queryParam("serviceKey", serviceKey)
+                    .queryParam("MobileOS", "ETC")
+                    .queryParam("MobileApp", "Travel")
+                    .queryParam("_type", "json")
                     .queryParam("numOfRows", batchSize)
                     .queryParam("pageNo", defaultPage)
                     .queryParam("contentId", contentId)
@@ -279,8 +322,12 @@ public class TourApiClient {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
                     .path("/ldongCode2")
-                    .queryParam("numOfRows", batchSize)
-                    .queryParam("pageNo", defaultPage)
+                    .queryParam("serviceKey", serviceKey)
+                    .queryParam("MobileOS", "ETC")
+                    .queryParam("MobileApp", "Travel")
+                    .queryParam("_type", "json")
+                    //                     // .queryParam("numOfRows", batchSize)
+                    // .queryParam("pageNo", defaultPage)
                     .queryParam("lDongRegnCd", lDongRegnCd)
                     .queryParam("lDongListYn", lDongListYn)
                     .build())
@@ -304,6 +351,10 @@ public class TourApiClient {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
                     .path("/lclsSystmCode2")
+                    .queryParam("serviceKey", serviceKey)
+                    .queryParam("MobileOS", "ETC")
+                    .queryParam("MobileApp", "Travel")
+                    .queryParam("_type", "json")
                     .queryParam("numOfRows", batchSize)
                     .queryParam("pageNo", defaultPage)
                     .queryParam("lclsSystm1", lclsSystm1)

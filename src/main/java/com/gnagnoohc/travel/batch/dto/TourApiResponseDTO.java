@@ -44,6 +44,12 @@ public class TourApiResponseDTO<T> {
     @Setter
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Body<T> {
+
+        // TODO: 테스트로직 후 확인 필요. 데베 연결-적재 후 처리
+        // 0728 빈 문자열("")이 들어와도 에러 없이 null 또는 빈 객체로 유연하게 파싱하도록 방어 처리
+        @com.fasterxml.jackson.databind.annotation.JsonDeserialize(using = com.fasterxml.jackson.databind.deser.std.NullifyingDeserializer.class)
+
+
         private Items<T> items;
         private int numOfRows;
         private int pageNo;

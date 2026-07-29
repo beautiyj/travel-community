@@ -29,18 +29,17 @@
   const toolCollageBtn = document.getElementById('toolCollageBtn');
   const toolSliderBtn = document.getElementById('toolSliderBtn');
 
-  const imgBlockModal = document.getElementById('imgBlockModal');
-  const imgBlockModalTitle = document.getElementById('imgBlockModalTitle');
-  const imgBlockFileInput = document.getElementById('imgBlockFileInput');
-  const imgBlockPreview = document.getElementById('imgBlockPreview');
-  const imgBlockCanvas = document.getElementById('imgBlockCanvas');
-  const imgBlockConfirmBtn = document.getElementById('imgBlockConfirmBtn');
+  const collageFileInput = document.getElementById('collageFileInput');
+  const collageCanvas = document.getElementById('collageCanvas');
+  const collageConfirmBtn = document.getElementById('collageConfirmBtn');
+  const sliderFileInput = document.getElementById('sliderFileInput');
+  const sliderPreview = document.getElementById('sliderPreview');
+  const sliderConfirmBtn = document.getElementById('sliderConfirmBtn');
 
   const fileMap = new Map();   // data-file-id -> File (새로 추가된 이미지만)
   let fileIdSeq = 0;
   let existingImageCount = 0;  // edit.jsp: 이미 저장된(잠금) 이미지 개수, write.jsp: 0
   let savedRange = null;       // 툴바 클릭 직전까지의 캐럿 위치
-  let builderMode = null;      // 'collage' | 'slider'
   let builderFiles = [];       // [{id, file, url, x?, y?}] — 빌더 모달에서 고른 이미지들
 
   /* ---------- 공통 유틸 ---------- */
@@ -403,57 +402,58 @@
     return { x: p[0], y: p[1], w: 38 };
   }
 
-  function openBuilder(mode) {
+  function openCollageBuilder() {
     saveCurrentRange();
-    builderMode = mode;
     builderFiles = [];
-    if (imgBlockModalTitle) {
-      imgBlockModalTitle.textContent = mode === 'collage' ? '콜라주 만들기' : '슬라이더 만들기';
-    }
-    if (imgBlockCanvas) imgBlockCanvas.style.display = mode === 'collage' ? '' : 'none';
-    if (imgBlockPreview) imgBlockPreview.style.display = mode === 'collage' ? 'none' : '';
-    renderBuilderState();
-    if (window.openModal) window.openModal('imgBlockModal');
+    renderCollageCanvas();
+    if (window.openModal) window.openModal('collageModal');
   }
 
-  toolCollageBtn && toolCollageBtn.addEventListener('click', function () { openBuilder('collage'); });
-  toolSliderBtn && toolSliderBtn.addEventListener('click', function () { openBuilder('slider'); });
+  function openSliderBuilder() {
+    saveCurrentRange();
+    builderFiles = [];
+    renderSliderPreview();
+    if (window.openModal) window.openModal('sliderModal');
+  }
 
-  imgBlockFileInput && imgBlockFileInput.addEventListener('change', function () {
-    const mode = builderMode;
-    Array.from(imgBlockFileInput.files).forEach(function (file) {
+  toolCollageBtn && toolCollageBtn.addEventListener('click', openCollageBuilder);
+  toolSliderBtn && toolSliderBtn.addEventListener('click', openSliderBuilder);
+
+  collageFileInput && collageFileInput.addEventListener('change', function () {
+    Array.from(collageFileInput.files).forEach(function (file) {
       if (file.type.indexOf('image/') !== 0) return;
       const item = { id: 'f' + (fileIdSeq++), file: file, url: URL.createObjectURL(file) };
-      if (builderMode === 'collage') {
-        const pos = defaultCollagePosition(builderFiles.length);
-        item.x = pos.x;
-        item.y = pos.y;
-        item.w = pos.w;
-      }
+      const pos = defaultCollagePosition(builderFiles.length);
+      item.x = pos.x;
+      item.y = pos.y;
+      item.w = pos.w;
       builderFiles.push(item);
-      if (mode === 'slider') {
-        const probe = new Image();
-        probe.onload = function () {
-          item.naturalWidth = probe.naturalWidth;
-          item.naturalHeight = probe.naturalHeight;
-          if (builderMode === 'slider') renderSliderPreview();
-        };
-        probe.src = item.url;
-      }
     });
-    imgBlockFileInput.value = '';
-    renderBuilderState();
+    collageFileInput.value = '';
+    renderCollageCanvas();
   });
 
-  function renderBuilderState() {
-    if (builderMode === 'collage') renderCollageCanvas();
-    else renderSliderPreview();
-  }
+  sliderFileInput && sliderFileInput.addEventListener('change', function () {
+    Array.from(sliderFileInput.files).forEach(function (file) {
+      if (file.type.indexOf('image/') !== 0) return;
+      const item = { id: 'f' + (fileIdSeq++), file: file, url: URL.createObjectURL(file) };
+      builderFiles.push(item);
+      const probe = new Image();
+      probe.onload = function () {
+        item.naturalWidth = probe.naturalWidth;
+        item.naturalHeight = probe.naturalHeight;
+        renderSliderPreview();
+      };
+      probe.src = item.url;
+    });
+    sliderFileInput.value = '';
+    renderSliderPreview();
+  });
 
   // 콜라주: 고정 캔버스 위에 사진을 자유롭게 드래그로 배치(겹침 허용), ×로 제거
   function renderCollageCanvas() {
-    if (!imgBlockCanvas) return;
-    imgBlockCanvas.innerHTML = '';
+    if (!collageCanvas) return;
+    collageCanvas.innerHTML = '';
     builderFiles.forEach(function (item, i) {
       const w = item.w || DEFAULT_COLLAGE_ITEM_WIDTH;
       const el = document.createElement('div');
@@ -465,13 +465,13 @@
         '<img src="' + item.url + '" alt="선택한 이미지" draggable="false">' +
         '<button type="button" class="collage-builder-item-remove" data-i="' + i + '">×</button>' +
         '<span class="collage-builder-item-resize-handle" title="드래그해서 크기 조절"></span>';
-      imgBlockCanvas.appendChild(el);
+      collageCanvas.appendChild(el);
 
       const resizeHandle = el.querySelector('.collage-builder-item-resize-handle');
       resizeHandle.addEventListener('mousedown', function (e) {
         e.preventDefault();
         e.stopPropagation();
-        const canvasRect = imgBlockCanvas.getBoundingClientRect();
+        const canvasRect = collageCanvas.getBoundingClientRect();
         const startWidthPercent = item.w || DEFAULT_COLLAGE_ITEM_WIDTH;
         const startX = e.clientX;
 
@@ -492,7 +492,7 @@
       el.addEventListener('mousedown', function (e) {
         if (e.target.closest('.collage-builder-item-remove') || e.target.closest('.collage-builder-item-resize-handle')) return;
         e.preventDefault();
-        const canvasRect = imgBlockCanvas.getBoundingClientRect();
+        const canvasRect = collageCanvas.getBoundingClientRect();
 
         function onMove(ev) {
           let x = ((ev.clientX - canvasRect.left) / canvasRect.width) * 100;
@@ -512,10 +512,10 @@
         document.addEventListener('mouseup', onUp);
       });
     });
-    if (imgBlockConfirmBtn) imgBlockConfirmBtn.disabled = builderFiles.length < 2;
+    if (collageConfirmBtn) collageConfirmBtn.disabled = builderFiles.length < 2;
   }
 
-  imgBlockCanvas && imgBlockCanvas.addEventListener('click', function (e) {
+  collageCanvas && collageCanvas.addEventListener('click', function (e) {
     const btn = e.target.closest('.collage-builder-item-remove');
     if (!btn) return;
     builderFiles.splice(Number(btn.getAttribute('data-i')), 1);
@@ -546,8 +546,8 @@
 
   // 슬라이더: 목록 형태 + ‹/›로 순서(=나열 순서) 조정, ×로 제거
   function renderSliderPreview() {
-    if (!imgBlockPreview) return;
-    imgBlockPreview.innerHTML = '';
+    if (!sliderPreview) return;
+    sliderPreview.innerHTML = '';
     const thumbSize = computeSliderThumbSize();
     builderFiles.forEach(function (item, i) {
       const div = document.createElement('div');
@@ -561,12 +561,12 @@
           '<button type="button" class="img-block-thumb-move" data-i="' + i + '" data-dir="1" title="뒤로"' + (i === builderFiles.length - 1 ? ' disabled' : '') + '>›</button>' +
         '</div>' +
         '<button type="button" class="img-block-thumb-remove" data-i="' + i + '" title="제거">×</button>';
-      imgBlockPreview.appendChild(div);
+      sliderPreview.appendChild(div);
     });
-    if (imgBlockConfirmBtn) imgBlockConfirmBtn.disabled = builderFiles.length < 2;
+    if (sliderConfirmBtn) sliderConfirmBtn.disabled = builderFiles.length < 2;
   }
 
-  imgBlockPreview && imgBlockPreview.addEventListener('click', function (e) {
+  sliderPreview && sliderPreview.addEventListener('click', function (e) {
     const moveBtn = e.target.closest('.img-block-thumb-move');
     if (moveBtn) {
       const i = Number(moveBtn.getAttribute('data-i'));
@@ -586,18 +586,23 @@
     }
   });
 
-  imgBlockConfirmBtn && imgBlockConfirmBtn.addEventListener('click', function () {
+  collageConfirmBtn && collageConfirmBtn.addEventListener('click', function () {
     if (builderFiles.length < 2) return;
     const range = savedRange ? savedRange.cloneRange() : endOfEditorRange();
     restoreRange(range);
-    if (builderMode === 'collage') {
-      const cellEls = Array.from(imgBlockCanvas.querySelectorAll('.collage-builder-item'));
-      const cropped = cropCollageToContent(builderFiles, cellEls);
-      insertCollageBlock(cropped.items, range, cropped.ratio);
-    } else {
-      insertSliderBlock(builderFiles, range);
-    }
-    if (window.closeModal) window.closeModal('imgBlockModal');
+    const cellEls = Array.from(collageCanvas.querySelectorAll('.collage-builder-item'));
+    const cropped = cropCollageToContent(builderFiles, cellEls);
+    insertCollageBlock(cropped.items, range, cropped.ratio);
+    if (window.closeModal) window.closeModal('collageModal');
+    builderFiles = [];
+  });
+
+  sliderConfirmBtn && sliderConfirmBtn.addEventListener('click', function () {
+    if (builderFiles.length < 2) return;
+    const range = savedRange ? savedRange.cloneRange() : endOfEditorRange();
+    restoreRange(range);
+    insertSliderBlock(builderFiles, range);
+    if (window.closeModal) window.closeModal('sliderModal');
     builderFiles = [];
   });
 

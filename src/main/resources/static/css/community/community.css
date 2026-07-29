@@ -688,8 +688,8 @@
   transform: translate(-50%, -50%);
   border-radius: var(--radius-md);
   overflow: hidden;
-  border: 3px solid var(--card);
-  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.18);
+  /* border: 3px solid var(--card);
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.18); */
 }
 .collage-item img {
   display: block;
@@ -766,138 +766,6 @@
 
 @media (max-width: 640px) {
   .slider-item { height: 200px; }
-}
-
-/* ---------- 콜라주/슬라이더 빌더 모달 (confirmModal.css 의 .modal-overlay/.modal 재사용) ---------- */
-.img-block-modal {
-  max-width: 520px;
-}
-.img-block-preview {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  margin-top: 12px;
-  padding: 10px;
-  max-height: 340px;
-  overflow-y: auto;
-}
-.img-block-thumb {
-  /* 크기(width/height)는 renderSliderPreview()가 선택한 사진들 중 가장 큰 사진의
-     원본 비율에 맞춰 인라인 스타일로 지정함(고정 정사각형 강제 안 함) */
-  position: relative;
-  background: var(--muted);
-  border-radius: var(--radius-md);
-}
-.img-block-thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-}
-.img-block-thumb-remove {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  width: 20px;
-  height: 20px;
-  border-radius: 9999px;
-  background: var(--destructive);
-  color: var(--destructive-foreground);
-  border: none;
-  cursor: pointer;
-  font-size: 12px;
-  line-height: 1;
-}
-/* 썸네일 순서 이동(‹/›) - 하단에 걸쳐 항상 보이게 */
-.img-block-thumb-order {
-  position: absolute;
-  bottom: -6px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 2px;
-  background: rgba(15, 23, 42, 0.7);
-  border-radius: 9999px;
-  padding: 2px;
-}
-.img-block-thumb-order button {
-  width: 18px;
-  height: 18px;
-  border: none;
-  border-radius: 9999px;
-  background: transparent;
-  color: #fff;
-  font-size: 11px;
-  line-height: 1;
-  cursor: pointer;
-}
-.img-block-thumb-order button:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-.img-block-thumb-order button:not(:disabled):hover {
-  background: rgba(255, 255, 255, 0.25);
-}
-.img-block-modal .btn-main:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* 콜라주 전용: 고정 캔버스 위에 사진을 자유롭게 드래그해서 배치(겹침 허용) */
-.collage-builder-canvas {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  margin-top: 12px;
-  background: var(--muted);
-  border: 1px dashed var(--border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-}
-.collage-builder-item {
-  position: absolute;
-  width: 38%;
-  transform: translate(-50%, -50%);
-  border-radius: var(--radius-md);
-  overflow: visible;
-  cursor: grab;
-}
-.collage-builder-item img {
-  display: block;
-  width: 100%;
-  height: auto;
-  border-radius: var(--radius-md);
-  border: 3px solid var(--card);
-  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.18);
-  pointer-events: none;
-}
-.collage-builder-item-resize-handle {
-  position: absolute;
-  right: -6px;
-  bottom: -6px;
-  width: 18px;
-  height: 18px;
-  border-radius: 3px;
-  background: var(--card);
-  border: 2px solid var(--primary);
-  cursor: nwse-resize;
-  z-index: 2;
-}
-.collage-builder-item-remove {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  width: 20px;
-  height: 20px;
-  border-radius: 9999px;
-  background: var(--destructive);
-  color: var(--destructive-foreground);
-  border: none;
-  cursor: pointer;
-  font-size: 12px;
-  line-height: 1;
-  z-index: 2;
 }
 
 /* ---------- 장소 태그 필드가 버튼 위로 옮겨오면서 생기는 여백 보정 (write.jsp/edit.jsp) ---------- */

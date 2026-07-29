@@ -2,11 +2,14 @@ package com.gnagnoohc.travel.auth.controller;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.time.LocalDateTime;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -19,9 +22,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.gnagnoohc.travel.auth.dto.LoginMemberDto;
+import com.gnagnoohc.travel.auth.dto.LocalLoginResult;
+import com.gnagnoohc.travel.auth.dto.PendingSocialAuthIntent;
+import com.gnagnoohc.travel.auth.dto.PendingSocialLink;
 import com.gnagnoohc.travel.auth.dto.PendingSocialSignup;
+import com.gnagnoohc.travel.auth.dto.SocialLinkRequest;
 import com.gnagnoohc.travel.auth.dto.SocialSignupRequest;
 import com.gnagnoohc.travel.auth.exception.SocialAuthException;
+import com.gnagnoohc.travel.auth.service.AuthService;
 import com.gnagnoohc.travel.auth.service.SocialAuthService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -40,8 +48,14 @@ public class SocialAuthController {
 
     private static final Logger log = LoggerFactory.getLogger(SocialAuthController.class);
     private static final String PENDING_SOCIAL_SIGNUP = "pendingSocialSignup";
+    private static final String PENDING_SOCIAL_LINK = "pendingSocialLink";
+    private static final String PENDING_SOCIAL_AUTH_INTENT = "pendingSocialAuthIntent";
+    private static final String LOGIN_INTENT = "LOGIN";
+    private static final String SIGNUP_INTENT = "SIGNUP";
+    private static final int AUTH_INTENT_VALID_MINUTES = 10;
 
     private final SocialAuthService socialAuthService;
+    private final AuthService authService;
 
     /**
      * 기존 화면 경로를 유지하면서 실제 OAuth2 Client 표준 시작 경로로 연결한다.
@@ -49,13 +63,23 @@ public class SocialAuthController {
     @GetMapping("/kakao")
     public String startKakaoLogin(HttpSession session) {
         // 새 로그인을 시작할 때 이전 제공자의 미완료 가입 정보를 재사용하지 않는다.
-        return startSocialLogin(session, "kakao");
+        return startSocialAuth(session, "kakao", LOGIN_INTENT);
     }
 
     @GetMapping("/google")
     public String startGoogleLogin(HttpSession session) {
         // Google 로그인도 Kakao와 동일하게 이전의 미완료 소셜 가입 정보를 제거하고 시작한다.
-        return startSocialLogin(session, "google");
+        return startSocialAuth(session, "google", LOGIN_INTENT);
+    }
+
+    @GetMapping("/kakao/signup")
+    public String startKakaoSignup(HttpSession session) {
+        return startSocialAuth(session, "kakao", SIGNUP_INTENT);
+    }
+
+    @GetMapping("/google/signup")
+    public String startGoogleSignup(HttpSession session) {
+        return startSocialAuth(session, "google", SIGNUP_INTENT);
     }
 
     @GetMapping("/social/signup")
@@ -126,6 +150,122 @@ public class SocialAuthController {
         }
     }
 
+    /**
+     * 기존 계정 확인 안내와 비밀번호 연동을 한 화면에서 처리한다.
+     * 원본 아이디와 회원 ID는 모델에 전달하지 않고 서버 세션의 후보 정보만 사용한다.
+     */
+    @GetMapping("/social/link")
+    public String socialLinkPage(
+            HttpSession session,
+            Model model,
+            RedirectAttributes redirectAttributes) {
+        PendingSocialLink pendingLink = getPendingSocialLink(session);
+        if (pendingLink == null) {
+            return redirectToSocialLogin(redirectAttributes);
+        }
+
+        addPendingLinkToModel(model, pendingLink);
+        if (!model.containsAttribute("socialLinkRequest")) {
+            model.addAttribute("socialLinkRequest", new SocialLinkRequest());
+        }
+        return "auth/social-link";
+    }
+
+    @PostMapping("/social/link")
+    public String linkSocialAccount(
+            @Valid @ModelAttribute("socialLinkRequest") SocialLinkRequest socialLinkRequest,
+            BindingResult bindingResult,
+            @RequestParam(value = "linkNonce", required = false) String linkNonce,
+            HttpServletRequest request,
+            HttpSession session,
+            Model model,
+            RedirectAttributes redirectAttributes) {
+        PendingSocialLink pendingLink = getPendingSocialLink(session);
+        if (pendingLink == null) {
+            return redirectToSocialLogin(redirectAttributes);
+        }
+
+        addPendingLinkToModel(model, pendingLink);
+        if (!matchesNonce(pendingLink.linkNonce(), linkNonce)) {
+            model.addAttribute(
+                    "socialLinkError",
+                    "유효하지 않은 소셜 연동 요청입니다. 화면을 새로고침한 뒤 다시 시도해 주세요.");
+            return "auth/social-link";
+        }
+        if (bindingResult.hasErrors()) {
+            addFieldErrorsToModel(bindingResult, model);
+            return "auth/social-link";
+        }
+
+        try {
+            // 비밀번호 실패 횟수는 연동 저장과 분리된 트랜잭션에서 먼저 확정한다.
+            LocalLoginResult loginResult = authService.authenticateSocialLinkCandidate(
+                    pendingLink.candidateMemberId(),
+                    socialLinkRequest.getUsername(),
+                    socialLinkRequest.getPassword());
+            if (loginResult.status() == LocalLoginResult.LoginStatus.LOCKED) {
+                model.addAttribute(
+                        "socialLinkError",
+                        "로그인 시도 횟수를 초과했습니다. 잠시 후 다시 시도해 주세요.");
+                return "auth/social-link";
+            }
+            if (loginResult.status() == LocalLoginResult.LoginStatus.INVALID_CREDENTIALS) {
+                model.addAttribute("socialLinkError", "아이디 또는 비밀번호를 확인해 주세요.");
+                return "auth/social-link";
+            }
+            if (loginResult.loginMember() == null
+                    || loginResult.loginMember().getMemberId() != pendingLink.candidateMemberId()) {
+                throw new SocialAuthException("연동할 회원 정보가 일치하지 않습니다.");
+            }
+
+            LoginMemberDto loginMember = socialAuthService.linkSocialAccount(
+                    pendingLink,
+                    loginResult.loginMember().getMemberId());
+            return completeLogin(request, loginMember);
+        } catch (PessimisticLockingFailureException e) {
+            // DB 트랜잭션은 이미 롤백됐으므로 pending을 유지하고 사용자가 수동으로 다시 시도하게 한다.
+            log.warn("소셜 계정 연동 중 DB 잠금 획득에 실패했습니다.");
+            model.addAttribute(
+                    "socialLinkError",
+                    "동시 처리 중입니다. 잠시 후 다시 시도해 주세요.");
+            return "auth/social-link";
+        } catch (SocialAuthException e) {
+            if (!e.isUserVisible()) {
+                log.error("소셜 계정 연동 중 내부 오류가 발생했습니다.", e);
+            }
+            model.addAttribute(
+                    "socialLinkError",
+                    e.isUserVisible()
+                            ? e.getMessage()
+                            : "소셜 계정 연동 중 오류가 발생했습니다.");
+            return "auth/social-link";
+        } catch (Exception e) {
+            log.error("소셜 계정 연동 중 예기치 않은 오류가 발생했습니다.", e);
+            model.addAttribute("socialLinkError", "소셜 계정 연동 중 오류가 발생했습니다.");
+            return "auth/social-link";
+        }
+    }
+
+    @PostMapping("/social/link/cancel")
+    public String cancelSocialLink(
+            @RequestParam(value = "linkNonce", required = false) String linkNonce,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+        PendingSocialLink pendingLink = getPendingSocialLink(session);
+        if (pendingLink == null) {
+            return redirectToSocialLogin(redirectAttributes);
+        }
+        if (!matchesNonce(pendingLink.linkNonce(), linkNonce)) {
+            redirectAttributes.addFlashAttribute(
+                    "socialLinkError",
+                    "유효하지 않은 소셜 연동 취소 요청입니다.");
+            return "redirect:/auth/social/link";
+        }
+
+        session.removeAttribute(PENDING_SOCIAL_LINK);
+        return "redirect:/auth/login";
+    }
+
     private PendingSocialSignup getPendingSocialSignup(HttpSession session) {
         Object sessionValue = session.getAttribute(PENDING_SOCIAL_SIGNUP);
         if (sessionValue instanceof PendingSocialSignup pendingSignup) {
@@ -137,6 +277,17 @@ public class SocialAuthController {
         return null;
     }
 
+    private PendingSocialLink getPendingSocialLink(HttpSession session) {
+        Object sessionValue = session.getAttribute(PENDING_SOCIAL_LINK);
+        if (sessionValue instanceof PendingSocialLink pendingLink) {
+            if (!pendingLink.isExpired()) {
+                return pendingLink;
+            }
+            session.removeAttribute(PENDING_SOCIAL_LINK);
+        }
+        return null;
+    }
+
     private void addPendingSignupToModel(
             Model model,
             PendingSocialSignup pendingSignup) {
@@ -144,6 +295,15 @@ public class SocialAuthController {
         model.addAttribute("socialEmail", pendingSignup.email());
         model.addAttribute("socialProfileImageUrl", pendingSignup.profileImageUrl());
         model.addAttribute("socialSignupNonce", pendingSignup.signupNonce());
+    }
+
+    private void addPendingLinkToModel(
+            Model model,
+            PendingSocialLink pendingLink) {
+        model.addAttribute("socialProviderName", getSocialProviderName(pendingLink.provider()));
+        model.addAttribute("maskedUsername", pendingLink.maskedUsername());
+        model.addAttribute("socialEmail", pendingLink.email());
+        model.addAttribute("socialLinkNonce", pendingLink.linkNonce());
     }
 
     private void addFieldErrorsToModel(
@@ -185,16 +345,64 @@ public class SocialAuthController {
         return switch (provider) {
             case "KAKAO" -> "카카오";
             case "GOOGLE" -> "구글";
+            case "NAVER" -> "네이버";
             default -> "소셜";
         };
     }
 
-    private String startSocialLogin(HttpSession session, String registrationId) {
-        session.removeAttribute(PENDING_SOCIAL_SIGNUP);
-        return "redirect:/oauth2/authorization/" + registrationId;
+    private String startSocialAuth(
+            HttpSession session,
+            String registrationId,
+            String intent) {
+        String normalizedRegistrationId = normalizeRegistrationId(registrationId);
+        String normalizedIntent = normalizeIntent(intent);
+
+        // 같은 세션에서 OAuth 창을 여러 개 시작해 callback 의도와 제공자가 뒤섞이지 않게 한다.
+        synchronized (session) {
+            Object sessionValue = session.getAttribute(PENDING_SOCIAL_AUTH_INTENT);
+            if (sessionValue != null) {
+                if (!(sessionValue instanceof PendingSocialAuthIntent pendingIntent)
+                        || !pendingIntent.isExpired()) {
+                    return "redirect:/auth/login?socialError=true";
+                }
+                session.removeAttribute(PENDING_SOCIAL_AUTH_INTENT);
+            }
+
+            session.removeAttribute(PENDING_SOCIAL_SIGNUP);
+            session.removeAttribute(PENDING_SOCIAL_LINK);
+            session.setAttribute(
+                    PENDING_SOCIAL_AUTH_INTENT,
+                    new PendingSocialAuthIntent(
+                            normalizedIntent,
+                            normalizedRegistrationId,
+                            LocalDateTime.now().plusMinutes(AUTH_INTENT_VALID_MINUTES)));
+        }
+        return "redirect:/oauth2/authorization/" + normalizedRegistrationId;
+    }
+
+    private String normalizeRegistrationId(String registrationId) {
+        if (registrationId == null) {
+            throw new IllegalArgumentException("지원하지 않는 소셜 로그인 제공자입니다.");
+        }
+        String normalized = registrationId.trim().toLowerCase(Locale.ROOT);
+        if (!"kakao".equals(normalized) && !"google".equals(normalized)) {
+            throw new IllegalArgumentException("지원하지 않는 소셜 로그인 제공자입니다.");
+        }
+        return normalized;
+    }
+
+    private String normalizeIntent(String intent) {
+        if (LOGIN_INTENT.equals(intent) || SIGNUP_INTENT.equals(intent)) {
+            return intent;
+        }
+        throw new IllegalArgumentException("지원하지 않는 소셜 인증 흐름입니다.");
     }
 
     private boolean matchesSignupNonce(String savedNonce, String requestNonce) {
+        return matchesNonce(savedNonce, requestNonce);
+    }
+
+    private boolean matchesNonce(String savedNonce, String requestNonce) {
         if (savedNonce == null || requestNonce == null) {
             return false;
         }

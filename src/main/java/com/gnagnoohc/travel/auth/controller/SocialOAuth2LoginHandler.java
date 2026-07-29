@@ -2,6 +2,7 @@ package com.gnagnoohc.travel.auth.controller;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -19,6 +20,8 @@ import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.stereotype.Component;
 
 import com.gnagnoohc.travel.auth.dto.LoginMemberDto;
+import com.gnagnoohc.travel.auth.dto.PendingSocialAuthIntent;
+import com.gnagnoohc.travel.auth.dto.PendingSocialLink;
 import com.gnagnoohc.travel.auth.dto.PendingSocialSignup;
 import com.gnagnoohc.travel.auth.exception.SocialAuthException;
 import com.gnagnoohc.travel.auth.service.SocialAuthService;
@@ -44,6 +47,10 @@ public class SocialOAuth2LoginHandler
     private static final String GOOGLE_REGISTRATION_ID = "google";
     private static final String GOOGLE_PROVIDER = "GOOGLE";
     private static final String PENDING_SOCIAL_SIGNUP = "pendingSocialSignup";
+    private static final String PENDING_SOCIAL_LINK = "pendingSocialLink";
+    private static final String PENDING_SOCIAL_AUTH_INTENT = "pendingSocialAuthIntent";
+    private static final String LOGIN_INTENT = "LOGIN";
+    private static final String SIGNUP_INTENT = "SIGNUP";
     private static final int SIGNUP_VALID_MINUTES = 10;
 
     private final SocialAuthService socialAuthService;
@@ -57,6 +64,8 @@ public class SocialOAuth2LoginHandler
             Authentication authentication) throws IOException {
         String redirectPath = "/auth/login?socialError=true";
         OAuth2AuthenticationToken oauthToken = null;
+        LoginMemberDto completedLogin = null;
+        String intent = null;
 
         try {
             if (!(authentication instanceof OAuth2AuthenticationToken token)) {
@@ -64,50 +73,83 @@ public class SocialOAuth2LoginHandler
             }
             oauthToken = token;
 
-            HttpSession session = request.getSession(true);
-            // 새 인증 결과가 확정되기 전에 남아 있던 미완료 가입 정보는 재사용하지 않는다.
+            HttpSession session = request.getSession(false);
+            if (session == null) {
+                throw new SocialAuthException("소셜 로그인 시작 정보를 확인할 수 없습니다.");
+            }
+            PendingSocialAuthIntent pendingIntent = consumePendingIntent(session);
+            String actualRegistrationId = normalizeRegistrationId(
+                    token.getAuthorizedClientRegistrationId());
+            if (pendingIntent.isExpired()
+                    || (!LOGIN_INTENT.equals(pendingIntent.intent())
+                            && !SIGNUP_INTENT.equals(pendingIntent.intent()))
+                    || !actualRegistrationId.equals(
+                            normalizeRegistrationId(pendingIntent.registrationId()))) {
+                throw new SocialAuthException("유효하지 않은 소셜 로그인 시작 요청입니다.");
+            }
+            intent = pendingIntent.intent();
+
+            // 새 인증 결과가 확정되기 전에 남아 있던 미완료 흐름은 재사용하지 않는다.
             session.removeAttribute(PENDING_SOCIAL_SIGNUP);
+            session.removeAttribute(PENDING_SOCIAL_LINK);
 
             SocialProfile socialProfile = extractSocialProfile(token);
-            LoginMemberDto loginMember = socialAuthService.findSocialLoginMember(
-                    socialProfile.provider(),
-                    socialProfile.providerUserId());
 
-            if (loginMember != null) {
-                session.setAttribute("loginMember", loginMember);
+            if (LOGIN_INTENT.equals(intent)) {
+                completedLogin = socialAuthService.findSocialLoginMember(
+                        socialProfile.provider(),
+                        socialProfile.providerUserId());
+                if (completedLogin == null) {
+                    throw new SocialAuthException(
+                            SocialAuthException.NOT_LINKED,
+                            "연결된 회원이 없는 소셜 계정입니다. 회원가입에서 연동해 주세요.");
+                }
                 redirectPath = "/";
             } else {
-                // 기존 연결 회원은 provider 식별자로 찾고, 신규 가입에만 검증된 이메일을 필수로 요구한다.
-                if (!socialProfile.hasVerifiedEmail()) {
-                    throw new SocialAuthException("소셜 계정에서 검증된 이메일 제공 동의가 필요합니다.");
-                }
-
-                PendingSocialSignup pendingSignup = new PendingSocialSignup(
+                String normalizedEmail = socialAuthService.normalizeVerifiedOAuthEmail(
+                        socialProfile.email(), socialProfile.emailVerified());
+                PendingSocialLink pendingLink = socialAuthService.prepareSocialLink(
                         socialProfile.provider(),
                         socialProfile.providerUserId(),
-                        socialProfile.email(),
+                        normalizedEmail,
                         socialProfile.nickname(),
-                        socialProfile.profileImageUrl(),
-                        // 전역 CSRF가 비활성화된 현재 구조에서 소셜 가입 POST는 별도 nonce로 검증한다.
-                        UUID.randomUUID().toString(),
-                        true,
-                        LocalDateTime.now().plusMinutes(SIGNUP_VALID_MINUTES));
-                session.setAttribute(PENDING_SOCIAL_SIGNUP, pendingSignup);
-                redirectPath = "/auth/social/signup";
+                        socialProfile.profileImageUrl());
+                if (pendingLink != null) {
+                    session.setAttribute(PENDING_SOCIAL_LINK, pendingLink);
+                    redirectPath = "/auth/social/link";
+                } else {
+                    PendingSocialSignup pendingSignup = new PendingSocialSignup(
+                            socialProfile.provider(),
+                            socialProfile.providerUserId(),
+                            normalizedEmail,
+                            socialProfile.nickname(),
+                            socialProfile.profileImageUrl(),
+                            // 전역 CSRF가 비활성화된 현재 구조에서 소셜 가입 POST는 별도 nonce로 검증한다.
+                            UUID.randomUUID().toString(),
+                            true,
+                            LocalDateTime.now().plusMinutes(SIGNUP_VALID_MINUTES));
+                    session.setAttribute(PENDING_SOCIAL_SIGNUP, pendingSignup);
+                    redirectPath = "/auth/social/signup";
+                }
             }
         } catch (SocialAuthException e) {
-            removePendingSignup(request);
+            removePendingSocialFlow(request);
+            redirectPath = resolveFailureRedirect(intent, e);
             if (!e.isUserVisible()) {
                 log.error("소셜 로그인 처리 중 내부 오류가 발생했습니다.", e);
             }
         } catch (Exception e) {
-            removePendingSignup(request);
+            removePendingSocialFlow(request);
             // OAuth 응답 원문이나 토큰은 기록하지 않고 예외 종류만 서버 로그에서 확인한다.
             log.error("소셜 로그인 처리 중 예기치 않은 오류가 발생했습니다.", e);
         } finally {
             cleanupOAuthAuthentication(oauthToken, request, response);
         }
 
+        if (completedLogin != null) {
+            // OAuth 임시 인증 정리가 끝난 뒤 기존 세션을 폐기하여 세션 고정 공격을 막는다.
+            completeLogin(request, completedLogin);
+        }
         response.sendRedirect(request.getContextPath() + redirectPath);
     }
 
@@ -117,13 +159,13 @@ public class SocialOAuth2LoginHandler
             HttpServletResponse response,
             org.springframework.security.core.AuthenticationException exception)
             throws IOException, ServletException {
-        removePendingSignup(request);
+        removePendingSocialFlow(request);
         clearSecurityContext(request, response);
         response.sendRedirect(request.getContextPath() + "/auth/login?socialError=true");
     }
 
     private SocialProfile extractSocialProfile(OAuth2AuthenticationToken token) {
-        return switch (token.getAuthorizedClientRegistrationId()) {
+        return switch (normalizeRegistrationId(token.getAuthorizedClientRegistrationId())) {
             case KAKAO_REGISTRATION_ID -> extractKakaoProfile(token.getPrincipal());
             case GOOGLE_REGISTRATION_ID -> extractGoogleProfile(token.getPrincipal());
             default -> throw new SocialAuthException("현재 지원하지 않는 소셜 로그인 제공자입니다.");
@@ -199,11 +241,61 @@ public class SocialOAuth2LoginHandler
         }
     }
 
-    private void removePendingSignup(HttpServletRequest request) {
+    private void removePendingSocialFlow(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
         if (session != null) {
             session.removeAttribute(PENDING_SOCIAL_SIGNUP);
+            session.removeAttribute(PENDING_SOCIAL_LINK);
+            session.removeAttribute(PENDING_SOCIAL_AUTH_INTENT);
         }
+    }
+
+    private PendingSocialAuthIntent consumePendingIntent(HttpSession session) {
+        Object sessionValue;
+        synchronized (session) {
+            sessionValue = session.getAttribute(PENDING_SOCIAL_AUTH_INTENT);
+            // callback 재전송이 같은 시작 정보를 다시 사용할 수 없도록 조회 즉시 소비한다.
+            session.removeAttribute(PENDING_SOCIAL_AUTH_INTENT);
+        }
+        if (!(sessionValue instanceof PendingSocialAuthIntent pendingIntent)) {
+            throw new SocialAuthException("소셜 로그인 시작 정보를 확인할 수 없습니다.");
+        }
+        return pendingIntent;
+    }
+
+    private String normalizeRegistrationId(String registrationId) {
+        if (registrationId == null) {
+            throw new SocialAuthException("현재 지원하지 않는 소셜 로그인 제공자입니다.");
+        }
+        String normalized = registrationId.trim().toLowerCase(Locale.ROOT);
+        if (!KAKAO_REGISTRATION_ID.equals(normalized)
+                && !GOOGLE_REGISTRATION_ID.equals(normalized)) {
+            throw new SocialAuthException("현재 지원하지 않는 소셜 로그인 제공자입니다.");
+        }
+        return normalized;
+    }
+
+    private String resolveFailureRedirect(String intent, SocialAuthException exception) {
+        if (SIGNUP_INTENT.equals(intent)) {
+            if (SocialAuthException.ALREADY_LINKED.equals(exception.getErrorCode())) {
+                return "/auth/signup?socialAlreadyLinked=true";
+            }
+            return "/auth/signup?socialLinkUnavailable=true";
+        }
+        if (SocialAuthException.NOT_LINKED.equals(exception.getErrorCode())) {
+            return "/auth/login?socialNotLinked=true";
+        }
+        return "/auth/login?socialError=true";
+    }
+
+    private void completeLogin(
+            HttpServletRequest request,
+            LoginMemberDto loginMember) {
+        HttpSession previousSession = request.getSession(false);
+        if (previousSession != null) {
+            previousSession.invalidate();
+        }
+        request.getSession(true).setAttribute("loginMember", loginMember);
     }
 
     private Map<?, ?> mapValue(Object value) {
@@ -226,8 +318,5 @@ public class SocialOAuth2LoginHandler
             String nickname,
             String profileImageUrl) {
 
-        private boolean hasVerifiedEmail() {
-            return email != null && !email.isBlank() && emailVerified;
-        }
     }
 }

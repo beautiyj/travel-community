@@ -7,16 +7,23 @@ public class SocialAuthException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
 
+    public static final String NOT_LINKED = "NOT_LINKED";
+    public static final String ALREADY_LINKED = "ALREADY_LINKED";
+    public static final String LINK_UNAVAILABLE = "LINK_UNAVAILABLE";
+
     private final boolean userVisible;
+    private final String errorCode;
 
     public SocialAuthException(String message) {
         super(message);
         this.userVisible = true;
+        this.errorCode = null;
     }
 
     public SocialAuthException(String message, Throwable cause) {
         super(message, cause);
         this.userVisible = true;
+        this.errorCode = null;
     }
 
     /**
@@ -25,9 +32,20 @@ public class SocialAuthException extends RuntimeException {
     public SocialAuthException(String message, boolean userVisible) {
         super(message);
         this.userVisible = userVisible;
+        this.errorCode = null;
+    }
+
+    public SocialAuthException(String errorCode, String message) {
+        super(message);
+        this.userVisible = true;
+        this.errorCode = errorCode;
     }
 
     public boolean isUserVisible() {
         return userVisible;
+    }
+
+    public String getErrorCode() {
+        return errorCode;
     }
 }

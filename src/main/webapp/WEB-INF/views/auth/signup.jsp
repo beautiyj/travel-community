@@ -1,4 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -51,6 +52,19 @@
                 <p>유형에 따라 이용 가능한 서비스가 달라집니다.</p>
             </div>
 
+            <c:choose>
+                <c:when test="${param.socialAlreadyLinked != null}">
+                    <div class="form-alert form-alert--error" role="alert">
+                        이미 다른 소셜 계정이 연동된 회원입니다. 기존 로그인 방법을 이용해 주세요.
+                    </div>
+                </c:when>
+                <c:when test="${param.socialLinkUnavailable != null}">
+                    <div class="form-alert form-alert--error" role="alert">
+                        소셜 회원가입 또는 계정 연동을 진행할 수 없습니다. 다른 가입 방법을 이용해 주세요.
+                    </div>
+                </c:when>
+            </c:choose>
+
             <%-- 별도 선택용 JavaScript 없이 카드 자체를 기존 회원가입 주소로 연결해 기능을 단순하게 유지한다. --%>
             <div class="signup-type-list">
                 <a class="signup-type-option signup-type-option--traveler"
@@ -82,17 +96,17 @@
                 </a>
             </div>
 
-            <%-- 기존 소셜 가입 주소와 브랜드 리소스를 유지해 디자인 변경이 인증 기능에 영향을 주지 않게 한다. --%>
+            <%-- 로그인과 회원가입 의도를 구분하는 소셜 가입 전용 주소를 사용한다. --%>
             <section class="social-login-section signup-type-social" aria-label="소셜 회원가입">
                 <div class="social-login-divider">소셜 계정으로 시작하기</div>
                 <a class="social-login-button social-login-button--kakao"
-                   href="${pageContext.request.contextPath}/auth/kakao" aria-label="카카오 로그인">
+                   href="${pageContext.request.contextPath}/auth/kakao/signup" aria-label="카카오 계정으로 가입">
                     <img class="kakao-login-standard-image"
                          src="https://k.kakaocdn.net/14/dn/btroDszwNrM/I6efHub1SN5KCJqLm1Ovx1/o.jpg"
                          alt="">
                 </a>
                 <a class="social-login-button social-login-button--google"
-                   href="${pageContext.request.contextPath}/auth/google" aria-label="Google 계정으로 가입">
+                   href="${pageContext.request.contextPath}/auth/google/signup" aria-label="Google 계정으로 가입">
                     <svg class="social-login-button__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" aria-hidden="true">
                         <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
                         <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>

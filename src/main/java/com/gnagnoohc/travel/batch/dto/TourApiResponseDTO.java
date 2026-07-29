@@ -5,6 +5,7 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.gnagnoohc.travel.batch.dto.TourApiResponseDTO.Items;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -47,8 +48,8 @@ public class TourApiResponseDTO<T> {
 
         // TODO: 테스트로직 후 확인 필요. 데베 연결-적재 후 처리
         // 0728 빈 문자열("")이 들어와도 에러 없이 null 또는 빈 객체로 유연하게 파싱하도록 방어 처리
-        @com.fasterxml.jackson.databind.annotation.JsonDeserialize(using = com.fasterxml.jackson.databind.deser.std.NullifyingDeserializer.class)
-
+        // 0729 [수정] NullifyingDeserializer는 무조건 null 처리하는 버그가 있어 EmptyStringToNullDeserializer(조건부 처리)로 교체
+        @com.fasterxml.jackson.databind.annotation.JsonDeserialize(using = com.gnagnoohc.travel.batch.dto.EmptyStringToNullDeserializer.class)
 
         private Items<T> items;
         private int numOfRows;

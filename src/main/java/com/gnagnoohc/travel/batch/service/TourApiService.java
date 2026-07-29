@@ -59,39 +59,43 @@ public class TourApiService {
     }
 
     // TODO: syncRegionData() 테스트로직 이후 최종 수정 예정, 주석코드 또한 테스트 이후 조정하여 삭제 예정
-//     // 법정동 코드 수집 및 REGION 적재 파이프라인
-//     @Transactional
-//     public void syncRegionData() {
-//         log.info("[Batch] 법정동 코드 수집 시작");
-//         try {
-//             // 0728
-//             String jsonResponse = tourApiClient.fetchLdongCode("1", "Y");
-//
-//             // 🔥 [디버깅 추가] 공공데이터 서버가 반환한 실제 응답 원문(JSON 또는 XML 에러페이지)을 콘솔에 출력
-//             log.info("[Batch Debug] 공공데이터 Raw Response: {}", jsonResponse);
-//
-//             if (!StringUtils.hasText(jsonResponse)) return;
-//             TourApiResponseDTO<TourLdongCodeDTO> response = objectMapper.readValue(
-//                     jsonResponse, new TypeReference<TourApiResponseDTO<TourLdongCodeDTO>>() {}
-//             );
-//
-//             if (response != null && response.getResponse() != null
-//                     && response.getResponse().getBody() != null
-//                     && response.getResponse().getBody().getItems() != null) {
-//
-//                 List<TourLdongCodeDTO> items = response.getResponse().getBody().getItems().getItem();
-//                 for (TourLdongCodeDTO dto : items) {
-//                     RegionDTO regionDto = tourDataConverter.convertToRegionDTO(dto);
-//                     if (regionDto != null) {
-//                         tourMapper.upsertRegion(regionDto);
-//                     }
-//                 }
-//             }
-//         } catch (Exception e) {
-//             log.error("[Batch] 법정동 코드 수집 중 오류 발생", e);
-//         }
-//         log.info("[Batch] 법정동 코드 수집 완료");
-//     }
+    // // 법정동 코드 수집 및 REGION 적재 파이프라인
+    // @Transactional
+    // public void syncRegionData() {
+    //     log.info("[Batch] 법정동 코드 수집 시작");
+    //     try {
+    //         // 0728
+    //         String jsonResponse = tourApiClient.fetchLdongCode(null, "Y");
+    //         if (!StringUtils.hasText(jsonResponse)) return;
+    //         TourApiResponseDTO<TourLdongCodeDTO> response = objectMapper.readValue(
+    //                 jsonResponse, new TypeReference<TourApiResponseDTO<TourLdongCodeDTO>>() {}
+    //         );
+
+    //         if (response != null && response.getResponse() != null
+    //                 && response.getResponse().getBody() != null
+    //                 && response.getResponse().getBody().getItems() != null) {
+
+    //             List<TourLdongCodeDTO> items = response.getResponse().getBody().getItems().getItem();
+
+    //             // TODO: 디버깅용 임시 로그 - 원인 확인 후 삭제 필요
+    //             log.info("[Batch Debug] 수집된 items 개수: {}", items.size());
+    //             if (!items.isEmpty()) {
+    //                 log.info("[Batch Debug] 첫 번째 dto 전체 내용: {}", items.get(0).toString());
+    //             }
+
+
+    //             for (TourLdongCodeDTO dto : items) {
+    //                 RegionDTO regionDto = tourDataConverter.convertToRegionDTO(dto);
+    //                 if (regionDto != null) {
+    //                     tourMapper.upsertRegion(regionDto);
+    //                 }
+    //             }
+    //         }
+    //     } catch (Exception e) {
+    //         log.error("[Batch] 법정동 코드 수집 중 오류 발생", e);
+    //     }
+    //     log.info("[Batch] 법정동 코드 수집 완료");
+    // }
 
     // 법정동 코드 수집 및 REGION 적재 파이프라인
     @Transactional
@@ -99,7 +103,7 @@ public class TourApiService {
         log.info("[Batch] 법정동 코드 수집 시작");
         try {
             // 0728
-            String jsonResponse = tourApiClient.fetchLdongCode("1", "Y");
+            String jsonResponse = tourApiClient.fetchLdongCode(null, "Y");
             if (!StringUtils.hasText(jsonResponse)) return;
             TourApiResponseDTO<TourLdongCodeDTO> response = objectMapper.readValue(
                     jsonResponse, new TypeReference<TourApiResponseDTO<TourLdongCodeDTO>>() {}
@@ -110,6 +114,33 @@ public class TourApiService {
                     && response.getResponse().getBody().getItems() != null) {
 
                 List<TourLdongCodeDTO> items = response.getResponse().getBody().getItems().getItem();
+
+                // TODO: 0729 FK 제약(FK_REGION_PARENT) 위반 문제 해결 -> 시/군/구(자식)가 시/도(부모)보다 먼저 upsert되며 발생
+                // [수정] 1단계: 269건 안의 시/도 코드(lDongRegnCd)를 중복 제거해서 먼저 부모 로우(parent_region_id=null)로 upsert
+                // 이렇게 해야 2단계에서 시/군/구가 부모를 FK로 참조할 때 이미 부모가 테이블에 존재하는 상태가 됨
+                java.util.Map<String, String> parentRegionMap = new java.util.LinkedHashMap<>();
+                for (TourLdongCodeDTO dto : items) {
+                    String regnCd = dto.getLDongRegnCd();
+                    String regnNm = dto.getLDongRegnNm();
+                    if (StringUtils.hasText(regnCd) && !parentRegionMap.containsKey(regnCd)) {
+                        parentRegionMap.put(regnCd, regnNm);
+                    }
+                }
+
+                for (java.util.Map.Entry<String, String> entry : parentRegionMap.entrySet()) {
+                    // 시/도 단독 데이터를 흉내내는 TourLdongCodeDTO 생성 (시군구 코드/명은 비워서 최상위 레벨로 처리되게 함)
+                    TourLdongCodeDTO parentDto = new TourLdongCodeDTO();
+                    parentDto.setLDongRegnCd(entry.getKey());
+                    parentDto.setLDongRegnNm(entry.getValue());
+
+                    RegionDTO parentRegionDto = tourDataConverter.convertToRegionDTO(parentDto);
+                    if (parentRegionDto != null) {
+                        tourMapper.upsertRegion(parentRegionDto);
+                    }
+                }
+
+                // [수정] 2단계: 기존 로직 그대로 - 269건(시/군/구)을 순회하며 upsert
+                // 이제 부모(시/도)가 이미 존재하므로 FK 제약 통과
                 for (TourLdongCodeDTO dto : items) {
                     RegionDTO regionDto = tourDataConverter.convertToRegionDTO(dto);
                     if (regionDto != null) {

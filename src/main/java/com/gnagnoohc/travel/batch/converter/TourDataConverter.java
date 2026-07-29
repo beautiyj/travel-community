@@ -24,30 +24,87 @@ public class TourDataConverter {
     // 공공데이터 전용 가상 비즈니스 회원 PK (시스템 유령계정)
     private static final Integer PUBLIC_DATA_MEMBER_ID = 1;
 
+    // // TourLdongCodeDTO -> RegionDTO 변환
+    // public RegionDTO convertToRegionDTO(TourLdongCodeDTO ldongCodeDTO) {
+    //     // 공통 헬퍼 parseRegionId를 통해 regionId(Long) 추출 (Y/N 응답 필드 분기 처리)
+    //     // regnCd는 y일 때 lDongRegnCd 시도코드 n일때 일반 code (시군구코드는 자동으로 y일 때만 들어오는 응답)
+    //     String regnCd = StringUtils.hasText(ldongCodeDTO.getLDongRegnCd()) ? ldongCodeDTO.getLDongRegnCd() : ldongCodeDTO.getCode();
+    //     String signguCd = ldongCodeDTO.getLDongSignguCd();
+
+    //     Integer regionId = tourApiHelper.parseRegionId(regnCd, signguCd);
+    //     if (regionId == null) return null;
+
+    //     // 법정동 명칭 시도명/시군구명 - 법정동 명칭은 "서울시종로구"가 아닌 "서울시 종로구"와 같이 공백(띄어쓰기)을 포함하도록 가공 처리
+    //     // 법정동 명칭은 동기화 로직에 없고 메타데이터인 법정동 목록 조회에만 존재
+    //     // rawName는 y일 때 lDongSignguCd 시도코드 n일때 일반 name (시군구명칭은 자동으로 y일 때만 들어오는 응답)
+        
+    //     // 0729
+    //     // String rawName = StringUtils.hasText(ldongCodeDTO.getLDongRegnNm()) ? ldongCodeDTO.getLDongRegnNm() : ldongCodeDTO.getName();
+    //     // [수정] 시도 명칭과 시군구 명칭 조합 안전하게 처리
+    //     String rawName = StringUtils.hasText(ldongCodeDTO.getLDongRegnNm()) ? ldongCodeDTO.getLDongRegnNm() : ldongCodeDTO.getName();
+
+    //     if (StringUtils.hasText(ldongCodeDTO.getLDongSignguNm())) { rawName += " " + ldongCodeDTO.getLDongSignguNm(); }
+
+    //     /* 상위 지역(시/도)과 하위 지역(시/군/구)의 계층 구조(부모-자식 관계) 설정
+    //     코드 길이가 5자리 이상(시/군/구 데이터)일 때만 부모 ID 파싱하기
+    //     - 2자리(시/도 단독, 예: "11" 서울): 최상위 지역이므로 부모가 없음 -> parentRegionId = null
+    //     - 5자리 이상(시/군/구 결합, 예: "11110" 종로구): 앞 2자리("11")를 추출하여 부모 시/도 PK 세팅 -> parentRegionId = 11L */
+    //     String rawCodeStr = regionId.toString();
+
+    //     // 0729
+    //     // Integer parentRegionId = (rawCodeStr.length() >= 5) ? Integer.parseInt(rawCodeStr.substring(0, 2)) : null;
+    //     // [수정] regionId가 시도 코드 자체인 경우(예: 11, 26 등 길이가 2~3자리인 경우) 부모는 무조건 null
+    //     // 5자리 이상일 때만 앞 2자리를 부모 ID로 추출
+    //     Integer parentRegionId = null;
+    //     if (rawCodeStr.length() >= 5) {
+    //         parentRegionId = Integer.parseInt(rawCodeStr.substring(0, 2));
+    //     } else {
+    //         parentRegionId = null; // 시/도 단독 레벨은 부모가 없음
+    //     }
+
+    //     // 최종 RegionDTO 빌드 및 적재
+    //     return RegionDTO.builder()
+    //             .regionId(regionId)
+    //             .regionName(rawName)
+    //             .parentRegionId(parentRegionId)
+    //             .build();
+    // }
+    //0729
     // TourLdongCodeDTO -> RegionDTO 변환
     public RegionDTO convertToRegionDTO(TourLdongCodeDTO ldongCodeDTO) {
-        // 공통 헬퍼 parseRegionId를 통해 regionId(Long) 추출 (Y/N 응답 필드 분기 처리)
-        // regnCd는 y일 때 lDongRegnCd 시도코드 n일때 일반 code (시군구코드는 자동으로 y일 때만 들어오는 응답)
         String regnCd = StringUtils.hasText(ldongCodeDTO.getLDongRegnCd()) ? ldongCodeDTO.getLDongRegnCd() : ldongCodeDTO.getCode();
         String signguCd = ldongCodeDTO.getLDongSignguCd();
 
-        Integer regionId = tourApiHelper.parseRegionId(regnCd, signguCd);
-        if (regionId == null) return null;
+        // 1. regionId 생성 (시도코드 + 시군구코드 결합 또는 시도코드 단독)
+        String rawCode = regnCd + (StringUtils.hasText(signguCd) ? signguCd : "");
+        Integer regionId = null;
+        try {
+            regionId = Integer.parseInt(rawCode);
+        } catch (NumberFormatException e) {
+            return null;
+        }
 
-        // 법정동 명칭 시도명/시군구명 - 법정동 명칭은 "서울시종로구"가 아닌 "서울시 종로구"와 같이 공백(띄어쓰기)을 포함하도록 가공 처리
-        // 법정동 명칭은 동기화 로직에 없고 메타데이터인 법정동 목록 조회에만 존재
-        // rawName는 y일 때 lDongSignguCd 시도코드 n일때 일반 name (시군구명칭은 자동으로 y일 때만 들어오는 응답)
+        // 2. 지역 명칭 가공 (시도명 + 시군구명)
         String rawName = StringUtils.hasText(ldongCodeDTO.getLDongRegnNm()) ? ldongCodeDTO.getLDongRegnNm() : ldongCodeDTO.getName();
-        if (StringUtils.hasText(ldongCodeDTO.getLDongSignguNm())) { rawName += " " + ldongCodeDTO.getLDongSignguNm(); }
+        if (StringUtils.hasText(ldongCodeDTO.getLDongSignguNm())) { 
+            rawName += " " + ldongCodeDTO.getLDongSignguNm(); 
+        }
 
-        /* 상위 지역(시/도)과 하위 지역(시/군/구)의 계층 구조(부모-자식 관계) 설정
-        코드 길이가 5자리 이상(시/군/구 데이터)일 때만 부모 ID 파싱하기
-        - 2자리(시/도 단독, 예: "11" 서울): 최상위 지역이므로 부모가 없음 -> parentRegionId = null
-        - 5자리 이상(시/군/구 결합, 예: "11110" 종로구): 앞 2자리("11")를 추출하여 부모 시/도 PK 세팅 -> parentRegionId = 11L */
-        String rawCodeStr = regionId.toString();
-        Integer parentRegionId = (rawCodeStr.length() >= 5) ? Integer.parseInt(rawCodeStr.substring(0, 2)) : null;
+        // 3. 부모 ID(parentRegionId) 설정
+        // 만약 자식 데이터(시군구 코드가 존재하거나, 코드가 5자리 이상)라면 앞 2자리(시도 코드)를 부모 ID로 지정
+        // 단독 시도 데이터라면 parentRegionId는 무조건 null
+        Integer parentRegionId = null;
+        if (StringUtils.hasText(signguCd) || rawCode.length() >= 5) {
+            try {
+                // 시도 코드(regnCd)를 정수로 변환하여 부모 ID로 확실히 지정
+                parentRegionId = Integer.parseInt(regnCd);
+            } catch (NumberFormatException e) {
+                parentRegionId = Integer.parseInt(rawCode.substring(0, 2));
+            }
+        } else {
+            parentRegionId = null; // 최상위 시/도 부모 없음
+        }
 
-        // 최종 RegionDTO 빌드 및 적재
         return RegionDTO.builder()
                 .regionId(regionId)
                 .regionName(rawName)

@@ -25,6 +25,12 @@ public class TourBatchTestController {
         return tourApiClient.fetchAreaBasedSyncList(pageNo, contentTypeId, null, null);
     }
 
+    // 법정동 코드 원본(raw) 응답 확인
+    @GetMapping("/test/batch/raw-region")
+    public String testRawRegionResponse() {
+        return tourApiClient.fetchLdongCode(null, "Y");
+    }
+
     // 법정동 코드 수집만 단독 테스트
     @PostMapping("/test/batch/region")
     public String testRegionSync() {

@@ -14,7 +14,7 @@ CREATE TABLE REGION (
 -- PLACE (여행지 / 맛집 / 숙박 통합 관리) 테이블
 CREATE TABLE PLACE (
     place_id        INT NOT NULL,
-    member_id       INT NOT NULL,                           -- 외래키 (공공데이터용 시스템 유령계정 & 사업자 회원 PK)
+    member_id       INT,                           -- 외래키 (공공데이터용 시스템 유령계정 & 사업자 회원 PK)
     region_id       INT NOT NULL,                           -- 외래키
     
     place_type      VARCHAR(10) NOT NULL,                   -- tour / food / stay
@@ -36,9 +36,9 @@ CREATE TABLE PLACE (
 
     CONSTRAINT PK_PLACE PRIMARY KEY (place_id),
     CONSTRAINT FK_PLACE_REGION FOREIGN KEY (region_id) 
-        REFERENCES REGION (region_id) ON DELETE CASCADE
+        REFERENCES REGION (region_id) ON DELETE CASCADE,
     -- 멤버 테이블 생성 후 적용할 것:
-    , CONSTRAINT FK_PLACE_MEMBER FOREIGN KEY (member_id) 
+    CONSTRAINT FK_PLACE_MEMBER FOREIGN KEY (member_id) 
         REFERENCES MEMBER (member_id) ON DELETE SET NULL
 );
 

@@ -92,11 +92,30 @@
         document.getElementById('sumTotal').textContent = total.toLocaleString() + '원';
     }
 
-    /** 요약의 날짜 표기. 숙박은 "체크인 ~ 체크아웃", 그 외는 날짜 하나 */
+    /** 'yyyy-MM-dd' -> {y, m, d} 숫자 파싱 */
+    function parseIso(iso) {
+        var p = iso.split('-');
+        return { y: parseInt(p[0], 10), m: parseInt(p[1], 10), d: parseInt(p[2], 10) };
+    }
+
+    /** 요약의 날짜 표기. 체크인은 항상 "YYYY.M.d", 체크아웃은 체크인과 같은 해면 "M.d",
+     *  해가 넘어가면 "YY.M.d"(두 자리 연도)로 표시해 구분한다. 그 외(숙박 아님)는 "YYYY.M.d" 하나만. */
     function updateDateLabel() {
-        var label = dateInput.value || '—';
-        if (IS_STAY && dateInput.value) {
-            label = dateInput.value + ' ~ ' + ((checkOutInput && checkOutInput.value) || '체크아웃 선택');
+        var label = '—';
+        if (dateInput.value) {
+            var inD = parseIso(dateInput.value);
+            label = inD.y + '.' + inD.m + '.' + inD.d;
+            if (IS_STAY) {
+                if (checkOutInput && checkOutInput.value) {
+                    var outD = parseIso(checkOutInput.value);
+                    var outLabel = (outD.y === inD.y)
+                        ? outD.m + '.' + outD.d
+                        : String(outD.y % 100).padStart(2, '0') + '.' + outD.m + '.' + outD.d;
+                    label += '~' + outLabel + '(' + (nights() + 1) + '일)';
+                } else {
+                    label += ' ~ 체크아웃 선택';
+                }
+            }
         }
         document.getElementById('sumDate').textContent = label;
     }

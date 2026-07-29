@@ -95,8 +95,13 @@
   padding: 33px; margin-bottom: 24px;
 }
 .detail-card h2 { font-size: 24px; font-weight: bold; margin: 12px 0 0; }
-.detail-meta { display: flex; gap: 16px; padding: 16px 0 24px; }
-.detail-meta span { display: inline-flex; align-items: center; gap: 6px; color: var(--muted-foreground); font-size: 14px; }
+.detail-author-row { display: flex; align-items: center; gap: 10px; padding: 12px 0 24px; }
+.detail-avatar { width: 36px; height: 36px; border-radius: 9999px; object-fit: cover; flex-shrink: 0; background: var(--secondary); }
+.detail-author-name { font-size: 14px; font-weight: bold; color: var(--foreground); }
+.detail-meta { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+.detail-meta span { display: inline-flex; align-items: center; gap: 4px; color: var(--muted-foreground); font-size: 13px; }
+.detail-meta .meta-icon { width: 14px; height: 14px; flex-shrink: 0; }
+.detail-meta .meta-dot { color: var(--muted-foreground); }
 .detail-body { font-size: 16px; line-height: 1.8; color: var(--foreground); white-space: pre-line; overflow-wrap: anywhere; word-break: break-word; }
 /* 좌/우 정렬(float)된 블록이 마지막 내용일 때 카드 높이가 접혀서 장소 태그/댓글 영역과 겹치는 것 방지 */
 .detail-body::after { content: ""; display: table; clear: both; }

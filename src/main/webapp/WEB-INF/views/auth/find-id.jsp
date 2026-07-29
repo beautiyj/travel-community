@@ -4,20 +4,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>아이디 찾기 | Travel Community</title>
+    <title>아이디 찾기 | 갈래말래</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/auth/auth.css">
     <script defer src="${pageContext.request.contextPath}/js/auth/find-id.js"></script>
 </head>
-<body class="auth-page">
-<main class="auth-card auth-card--small">
-    <a class="auth-brand" href="${pageContext.request.contextPath}/">Travel Community</a>
+<body class="auth-page auth-page--account-recovery">
+<main class="auth-card auth-card--small auth-card--account-recovery">
+    <a class="auth-brand" href="${pageContext.request.contextPath}/">갈래말래</a>
 
     <header class="auth-header">
         <h1>아이디 찾기</h1>
         <p>회원가입 시 등록한 이름과 이메일을 입력해주세요.</p>
     </header>
 
-    <%-- 추후 아이디 조회 컨트롤러와 연결할 입력 항목만 구성한다. --%>
+    <%-- 이름과 이메일을 현재 아이디 조회 컨트롤러로 전달한다. --%>
     <form id="findIdForm" action="${pageContext.request.contextPath}/auth/find-id" method="post" novalidate>
         <div class="form-field">
             <label for="findIdName">이름</label>

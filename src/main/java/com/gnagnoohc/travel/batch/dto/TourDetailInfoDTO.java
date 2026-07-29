@@ -18,18 +18,8 @@ public class TourDetailInfoDTO {
     @NotBlank(message = "contenttypeid: 관광타입ID는 필수 수집 항목입니다.") private String contenttypeid;
 
     // [일반 타입 공통 - 숙박, 여행코스 제외]
-    private String fldgubun;               // 일련번호
     private String infoname;               // 제목 (예: 입장료, 이용시간 등)
     private String infotext;               // 내용 (예: 무료, 09:00~18:00 등)
-    private String serialnum;              // 반복일련번호
-
-    // [여행코스 타입 - contentTypeId=25]
-    private String subcontentid;           // 하위콘텐츠ID
-    private String subname;                // 코스명
-    private String subnum;                 // 반복일련번호
-    private String subdetailoverview;      // 코스개요
-    private String subdetailimg;           // 코스이미지
-    private String subdetailalt;           // 코스이미지설명
 
     // [숙박 타입 - contentTypeId=32]
     private String roomcode;               // 객실코드

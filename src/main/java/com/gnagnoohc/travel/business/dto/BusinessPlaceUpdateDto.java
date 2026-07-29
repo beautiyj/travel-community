@@ -11,6 +11,8 @@ public class BusinessPlaceUpdateDto {
     private Long memberId;
     private String name;
     private Integer placeType;
+    private String priceType;
+    private Integer minPrice;
 //    private Long regionId;
     private String address;
     private String description;

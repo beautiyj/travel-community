@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <title>마감 관리 - 관리자 - 갈래말래</title>
     <link rel="stylesheet" href="/css/common.css">
+    <link rel="stylesheet" href="/css/components/buttonComponent.css">
+    <link rel="stylesheet" href="/css/components/confirmModal.css">
     <link rel="stylesheet" href="/css/business.css">
 </head>
 <body>
@@ -23,15 +25,17 @@
             <div class="business-closure-page">
                 <jsp:include page="common/closureCard.jsp">
                     <jsp:param name="placeId" value="${placeId}" />
-                    <jsp:param name="memberId" value="${memberId}" />
                     <jsp:param name="isClosed" value="${isClosed}" />
                 </jsp:include>
-                <jsp:include page="common/closureDateCard.jsp" />
+                <jsp:include page="common/closureDateCard.jsp">
+                    <jsp:param name="placeId" value="${placeId}" />
+                </jsp:include>
             </div>
         </div>
     </div>
 </div>
 
+<script src="/js/common.js"></script>
 <script src="/js/business-closure.js"></script>
 </body>
 </html>

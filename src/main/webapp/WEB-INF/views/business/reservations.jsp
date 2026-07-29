@@ -33,7 +33,6 @@
             <div class="business-filter-row">
                 <c:forEach var="s" items="${statusOptions}">
                     <c:url value="/business/reservations" var="filterUrl">
-                        <c:param name="memberId" value="${memberId}" />
                         <c:if test="${s != '전체'}">
                             <c:param name="status" value="${s}" />
                         </c:if>
@@ -77,7 +76,6 @@
                                     <jsp:param name="amount" value="${r.amount}" />
                                     <jsp:param name="mode" value="actionable" />
                                     <jsp:param name="reservationId" value="${r.reservationId}" />
-                                    <jsp:param name="memberId" value="${memberId}" />
                                 </jsp:include>
                             </c:forEach>
                         </div>

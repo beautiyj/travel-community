@@ -210,7 +210,7 @@ public class BusinessController {
     @PostMapping("/business/venue/register")
     public String registerVenue(
             @RequestParam String name,
-            @RequestParam String placeType,
+            @RequestParam Integer placeType,
             // 가격은 숙박일 때만 폼에 노출되므로 두 값 모두 optional. 정리/검증은 서비스가 담당
             @RequestParam(required = false) String priceType,
             @RequestParam(required = false) Integer minPrice,
@@ -229,7 +229,7 @@ public class BusinessController {
     @PostMapping("/business/venue/update")
     public String updateVenue(
             @RequestParam String name,
-            @RequestParam String placeType,
+            @RequestParam Integer placeType,
             @RequestParam(required = false) String priceType,
             @RequestParam(required = false) Integer minPrice,
             @RequestParam(required = false) Long regionId,

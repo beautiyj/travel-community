@@ -10,7 +10,7 @@ public class BusinessPlaceUpdateDto {
     private Long placeId;
     private Long memberId;
     private String name;
-    private String placeType;
+    private Integer placeType;
     private String priceType;
     private Integer minPrice;
 //    private Long regionId;

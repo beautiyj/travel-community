@@ -10,7 +10,7 @@ import java.util.List;
 public class BusinessPlaceDetailDto {
     private Long placeId;
     private String name;
-    private String placeType;
+    private Integer placeType;
     private String priceType;
     private Integer minPrice;
     private Long regionId;

@@ -30,8 +30,8 @@ public class BusinessPlaceService {
     private static final String MEMBER_ROLE_BUSINESS = "BUSINESS";
     // 수정 폼에서 아직 저장 안 된 새 사진 카드를 나타내는 photoOrder 토큰
     private static final String NEW_PHOTO_TOKEN = "new";
-    // 가격 설정 대상은 숙박(place_type='stay')뿐. 맛집/관광지는 예약금을 받지 않는다.
-    private static final String PLACE_TYPE_LODGING = "stay";
+    // 가격 설정 대상은 숙박(place_type=1)뿐. 맛집/관광지는 예약금을 받지 않는다.
+    private static final int PLACE_TYPE_LODGING = 1;
     private static final String PRICE_TYPE_FIXED = "FIXED";
     private static final String PRICE_TYPE_VARIABLE = "VARIABLE";
     private static final String PRICE_TYPE_FREE = "FREE";
@@ -59,7 +59,7 @@ public class BusinessPlaceService {
     }
 
     @Transactional
-    public void registerPlace(Long bizMemberId, String name, String placeType, String priceType,
+    public void registerPlace(Long bizMemberId, String name, Integer placeType, String priceType,
                                Integer minPrice, Long regionId,
                                String address, String description, List<MultipartFile> images) {
         if (!isBusinessMember(bizMemberId)) {
@@ -108,7 +108,7 @@ public class BusinessPlaceService {
     }
 
     @Transactional
-    public void updatePlace(Long bizMemberId, String name, String placeType, String priceType,
+    public void updatePlace(Long bizMemberId, String name, Integer placeType, String priceType,
                              Integer minPrice, Long regionId,
                              String address, String description, List<String> photoOrder,
                              List<String> removeImageUrls, List<MultipartFile> newImages) {
@@ -205,8 +205,8 @@ public class BusinessPlaceService {
      * - FIXED면 금액 필수, 그 외에는 금액을 버린다
      * 화면 JS가 이미 같은 규칙으로 토글하지만, 폼 조작/직접 요청을 막는 서버측 최종 방어선이다.
      */
-    private PriceSetting resolvePrice(String placeType, String priceType, Integer minPrice) {
-        if (!PLACE_TYPE_LODGING.equals(placeType)) {
+    private PriceSetting resolvePrice(Integer placeType, String priceType, Integer minPrice) {
+        if (placeType == null || placeType != PLACE_TYPE_LODGING) {
             return new PriceSetting(PRICE_TYPE_FREE, null);
         }
         if (priceType == null || !ALLOWED_PRICE_TYPES.contains(priceType)) {

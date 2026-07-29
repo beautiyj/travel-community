@@ -60,4 +60,10 @@ public interface ReservationMapper {
      * 0보다 크면 이미 예약된 날 → 예약 생성 직전 서버에서 재예약을 막는 최종 방어선.
      */
     int sumActiveHeadcount(@Param("placeId") Long placeId, @Param("visitDate") LocalDate visitDate);
+
+    /**
+     * 마감(휴무) 여부 조회. PLACE는 사업자(business) 파트 테이블 — 여기서는 읽기만 한다.
+     * 사업자가 /business/closure에서 껐다 켰다 하는 그 값(is_closed)을 그대로 참조.
+     */
+    Boolean findPlaceClosed(@Param("placeId") Long placeId);
 }

@@ -240,6 +240,7 @@ public class PaymentController {
             case Payment.TYPE_KAKAO -> "카카오페이";
             case Payment.TYPE_BANK -> "무통장입금";
             case Payment.TYPE_VIRTUAL_CARD -> "가상카드";
+            case Payment.TYPE_FREE -> "무료 예약";
             default -> "결제";
         });
         return "reservation/success";

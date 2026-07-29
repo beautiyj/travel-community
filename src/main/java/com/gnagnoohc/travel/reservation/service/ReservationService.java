@@ -36,6 +36,11 @@ public class ReservationService {
     /** 예약 생성 (결제 전이므로 PENDING 상태). 같은 장소·날짜 중복 예약은 거부 */
     @Transactional
     public Long create(Integer memberId, ReservationCreateRequest req) {
+        // 사업자가 휴무로 설정한 장소는 예약 자체를 막는다 (PLACE.is_closed 읽기 전용 참조)
+        if (Boolean.TRUE.equals(reservationMapper.findPlaceClosed(req.getPlaceId()))) {
+            throw new IllegalStateException("휴무 중인 장소입니다.");
+        }
+
         // 같은 슬롯(회원·장소·날짜)에 활성 예약이 있으면:
         //   - PENDING(미결제): 결제하러 갔다가 돌아온 경우이므로 그 예약을 재사용해 결제를 이어가게 한다
         //   - PAID(결제완료): 이미 확정된 예약이므로 새 예약을 거부한다
@@ -85,8 +90,9 @@ public class ReservationService {
 
     /**
      * 예약 캘린더용 마감 현황.
-     * 반환: { "booked": { "yyyy-MM-dd": 예약인원합, ... } } — 활성예약이 있는 날만 담긴다.
-     * 프론트는 booked 에 들어있는 날(=이미 예약된 날)을 마감(빨강·선택불가)으로 그린다. (1일 1팀)
+     * 반환: { "booked": { "yyyy-MM-dd": 예약인원합, ... }, "closed": 휴무 여부 }
+     * 프론트는 booked 에 들어있는 날(=이미 예약된 날)이나 closed=true(장소 전체 휴무)를
+     * 마감(빨강·선택불가)으로 그린다. (1일 1팀)
      */
     @Transactional(readOnly = true)
     public Map<String, Object> getAvailability(Long placeId) {
@@ -99,6 +105,7 @@ public class ReservationService {
         }
         Map<String, Object> result = new HashMap<>();
         result.put("booked", booked);
+        result.put("closed", Boolean.TRUE.equals(reservationMapper.findPlaceClosed(placeId)));
         return result;
     }
 
@@ -173,6 +180,10 @@ public class ReservationService {
      * TODO: 숙박/맛집 팀원의 place(가격) 테이블이 나오면 placeId로 단가·예약금 조회하도록 교체
      */
     public int calculateAmount(Reservation r) {
+        // 테스트용: placeType=free면 0원. 실제로는 place 가격이 0원인 경우에 해당(무료 예약 즉시완료 흐름 검증용 스텁)
+        if ("free".equals(r.getPlaceType())) {
+            return 0;
+        }
         if (isPayOnSite(r.getPlaceType())) {
             return RESERVE_DEPOSIT;
         }

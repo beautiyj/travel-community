@@ -145,4 +145,9 @@
           AND status IN ('PENDING', 'PAID', 'CONFIRMED')
     </select>
 
+    <!-- 휴무 여부 조회: 사업자가 /business/closure에서 설정한 PLACE.is_closed 그대로 참조 (읽기 전용) -->
+    <select id="findPlaceClosed" resultType="boolean">
+        SELECT is_closed FROM PLACE WHERE place_id = #{placeId}
+    </select>
+
 </mapper>

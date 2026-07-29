@@ -32,6 +32,10 @@
             <input type="number" id="placeIdTour" value="3" min="1" title="관광지 placeId">
             <button type="button" onclick="goForm('tour', 'placeIdTour')">관광지(예약금)</button>
         </div>
+        <div class="row">
+            <input type="number" id="placeIdFree" value="4" min="1" title="무료 테스트 placeId">
+            <button type="button" onclick="goForm('free', 'placeIdFree')">무료(0원, 결제 없이 즉시완료)</button>
+        </div>
     </div>
 
     <!-- 2. 결제 페이지 -->

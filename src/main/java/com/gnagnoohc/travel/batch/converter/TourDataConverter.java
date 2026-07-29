@@ -150,6 +150,7 @@ public class TourDataConverter {
                 .isClosed("0".equals(syncItem.getShowflag()))
                 .firstImage(thumbnailImage) // 조인 없는 카드 리스트용 1차 썸네일 세팅
                 .hashtags(hashtags)
+                .peopleCount(1)
                 .build();
     }
 

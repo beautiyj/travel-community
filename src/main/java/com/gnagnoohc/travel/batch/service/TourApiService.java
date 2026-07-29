@@ -21,6 +21,34 @@ import com.gnagnoohc.travel.tour.model.RegionDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/*  TODO: 0729 공공데이터 로직 확인 완료, 수정필요한부분:
+1. 공공데이터 관광지에 일반가게 등 섞여있는 거 코드분리 필요 - 타입세부분류 재확인,
+    공공데이터오염으로 인한 설계일 경우 필터링으로 관광지종류 1차 필터링으로 넣을 것(박물관/전시관 등의 분류처리로 필터링한 관광지 데이터 + 레저 = 관광지 필드의 데이터들)
+
+2. 이미지테이블에서 썸네일만 중복으로 들어오는 문제 해결 필요 + 그외 원본이미지 확인 필요,
+    필요 시 1장만 존재하는 가게는 필터링으로 제거 & 최소 2장부터 허가하고 / 데베에는 중복으로 들어오지 않고 SORT_ORDER에만 인덱싱처리되도록 처리 필요
+
+3. 숙박으로 지정해도 STAY가 아니라 TOUR로 들어오는 문제 확인
+    (테스트로직의 문제인지, 설정 문제인지)
+    3-1. 스테이 설정에서 협동조합 등의 숙박지역이 아닌 값까지 들어오는 처리 재확인 / 숙박 부분은 가격 재확인 후 필터링 처리 추가할 것
+
+4. 공통: 해시태그처리에서 한글이 아닌 영어타입 그대로 태그처리되는 부분 확인 필요
+    4-1. 해시 처리에서 관광지 1차 필터링 후, 무료해시가 많을 경우 무료해시 값은 N배수로 필터링 처리하여 수 조절할 것
+    4-2. 해시태그 필터링 수정 작업 필요함 해시태그 최소3필터링 진행, 숙박의 경우 숙박타입 필수로 태그(확인필요)/맛집은 메뉴태그(확인완)/관광지는 필터링처리 이후 태그 수정작업
+
+5. 금액 부분/요금설명 부분에서 NULL 많을 경우 필터링 처리해서 정보값 있는 데이터만 들여올 것
+
+6. 공공데이터 받아올 때, 데이터 오염으로 어려울 경우 각 지역군을 기준으로 1차 데이터 필터링 - 각 지역별로 일부 LIMIT걸어서 가져오기, 스케줄러로 관리 진행
+
+7. 이미지 테이블 처리 후, 저작권 분류 타입 재확인 - 필터링 처리 여부 결정
+
+8.
+
+이후 테스트 시 데베 내의 데이터 삭제 후 페이징처리 진행되는지도 재확인 필요(투어는 확인, 현재 스테이/푸드 부분 확인 필요)
+0729 아직 DEVELOP 안받아옴 / 현재 YUN원격로직: 공공데이터 미완성 상태
+
+*/
+
 /* batch 패키지 역할
     1. 요청 : 리퀘스트 파라미터 (통신, config의 웹클라이언트와 client의 api클라이언트파일) 공공데이터 API 호출
     2. 응답 : 리스폰스 파라미터 (수신, dto폴더의 각각 요청에 일치하도록 객체 생성) 데이터 수집/가공
@@ -53,7 +81,7 @@ public class TourApiService {
         for (String contentTypeId : TARGET_CONTENT_TYPES) {
             log.info("[Batch Target] contentTypeId: {} 수집 시작", contentTypeId);
             // 타입별로 pageNo=1부터 페이징 돌리는 메인 파이프라인 호출
-            syncTourData(contentTypeId);
+            syncTourData(contentTypeId, 1); //0729
         }
         log.info("[Batch Total] 전체 타깃 수집 프로세스 완료");
     }
@@ -156,10 +184,14 @@ public class TourApiService {
 
     // 메인 파이프라인 - 공공데이터 장소 수집 및 PLACE, PLACE_IMAGE 적재
     // 메인 최상위 파이프라인에선 크게 검증&스킵 처리 - 연쇄 수집&변환 처리(만들어진 컨버터) - 해당 컨버터에서 가공로직 담당하는 헬퍼로 최종 적재
+    // 0729 운영용 메인 파이프라인 (시작할 pageNo를 외부에서 주입받을 수 있도록 구조 변경)
     @Transactional
-    public void syncTourData(String contentTypeId) {
+    public void syncTourData(String contentTypeId, int startPageNo) {
         log.info("[Batch] 공공데이터 외부 수집 및 PLACE 적재 시작");
-        int pageNo = 1;
+        // 0729
+        int pageNo = startPageNo;
+        // 고정값 1 대신 전달받은 시작 페이지 사용
+        // int pageNo = 1;
         boolean hasNext = true;
 
         while (hasNext) {
@@ -202,9 +234,19 @@ public class TourApiService {
                     processSinglePlace(syncItem);
                 }
 
-                if (syncList.size() < 500) {
+                log.info("[Batch Pagination Debug] 현재 요청 pageNo: {}, 가져온 item 개수: {}", pageNo, syncList.size());
+
+                // 0729
+                // if (syncList.size() < 500) {
+                // if (syncList.isEmpty()) {
+                //     hasNext = false;
+                // } else {
+                //     pageNo++;
+                // }
+                // 수정 후 (데이터가 텅 빌 때까지 다음 페이지로 전진하도록 변경)
+                if (syncList.isEmpty()) {
                     hasNext = false;
-                } else {
+                } else if (hasNext) {
                     pageNo++;
                 }
 
@@ -218,10 +260,11 @@ public class TourApiService {
 
     // TODO: 테스트 완료 후 반드시 삭제 대상 (운영 배포 전 제거) - syncTourData 원본은 절대 건드리지 않고, 소량 검증용 오버로드로 별도 추가
     // 테스트 전용 - 지정한 limit 개수만큼만 수집하고 강제 종료 (원본 syncTourData의 무제한 페이징 대신 소량 검증용)
+    // 0729 실제테스트처럼 int startPageNo 추가하여 테스트
     @Transactional
-    public void syncTourDataForTest(String contentTypeId, int limit) {
+    public void syncTourDataForTest(String contentTypeId, int startPageNo, int limit) {
         log.info("[Batch Test] 공공데이터 소량 테스트 수집 시작 - contentTypeId: {}, limit: {}", contentTypeId, limit);
-        int pageNo = 1;
+        int pageNo = startPageNo;
         boolean hasNext = true;
         int processedCount = 0; // 테스트용 처리 개수 카운터
 
@@ -269,10 +312,15 @@ public class TourApiService {
                     }
                 }
 
-                if (hasNext && syncList.size() < 500) {
-                    hasNext = false;
-                } else if (hasNext) {
-                    pageNo++;
+                // if (hasNext && syncList.size() < 500) {
+                //     hasNext = false;
+                // } else if (hasNext) {
+                //     pageNo++;
+                // }
+                log.info("[Batch Test Pagination] 현재 페이지({}) 처리 완료. 누적 성공 건수: {}", pageNo, processedCount);
+
+                if (hasNext) {
+                    pageNo++; // 다음 페이지로 전진
                 }
 
             } catch (Exception e) {
@@ -286,6 +334,10 @@ public class TourApiService {
     /* 헬퍼 메소드 - 개별 장소의 상세정보 연쇄 수집 및 DB 적재(PLACE + PLACE_IMAGE)
        소개정보(/detailIntro2) & 반복정보(/detailInfo2) 조회용 헬퍼 각각 호출함 */
     private void processSinglePlace(TourAreaBasedSyncListDTO syncItem) {
+        // [디버그 로그 추가] 공공데이터 목록 API가 실제로 어떤 시도/시군구 코드를 들고 오는지 확인
+        log.info("[Batch Debug Place] title: {}, lDongRegnCd: {}, lDongSignguCd: {}", 
+                syncItem.getTitle(), syncItem.getLDongRegnCd(), syncItem.getLDongSignguCd());
+                
         TourItemDTO tourItem = tourDataConverter.convertToTourItemDTO(syncItem);
         TourDetailIntroDTO introDetail = null;
         TourDetailInfoDTO infoDetail = null;

@@ -62,6 +62,34 @@
 		for update
 	</select>
 
+	<!-- 다른 아이디를 제출해 타 계정의 실패 횟수를 올릴 수 없도록 연동 후보 회원까지 함께 제한한다. -->
+	<select id="findSocialLinkCandidateAuthForUpdate" resultType="memberlocalauth">
+		select local_auth.username AS username,
+			local_auth.member_id AS memberId,
+			member_info.nickname AS nickname,
+			member_info.member_role AS memberRole,
+			local_auth.password_hash AS passwordHash,
+			local_auth.failed_login_count AS failedLoginCount,
+			local_auth.locked_until AS lockedUntil,
+			case
+				when local_auth.locked_until is not null
+					and local_auth.locked_until &gt; now() then 1
+				else 0
+			end AS currentlyLocked
+		from member_local_auth local_auth
+		inner join member member_info
+			on member_info.member_id = local_auth.member_id
+		where local_auth.member_id = #{memberId}
+			and local_auth.username = #{username}
+			and (
+				(member_info.member_status = 'ACTIVE' and member_info.deleted_at is null)
+				or
+				(member_info.member_status = 'WITHDRAWN' and member_info.deleted_at is not null)
+			)
+		limit 1
+		for update
+	</select>
+
 	<!-- 비밀번호 실패 횟수 증가 -->
 	<update id="incrementFailedLoginCount">
 		update member_local_auth

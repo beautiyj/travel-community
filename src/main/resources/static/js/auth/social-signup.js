@@ -1,7 +1,7 @@
 (() => {
 	"use strict";
 
-	// [수정] 첫 화면에서도 동작하도록 DOM이 이미 준비된 경우에는 즉시 초기화한다.
+	// 첫 화면에서도 동작하도록 DOM이 이미 준비된 경우에는 즉시 초기화한다.
 	function initializeSocialSignup() {
 		const form = document.querySelector("#socialSignupForm");
 		if (!form || form.dataset.socialSignupBound === "true") {
@@ -9,17 +9,28 @@
 		}
 		form.dataset.socialSignupBound = "true";
 
-		// [추가] 이 검사는 입력 편의를 위한 UX이며, 서버의 재검사와 DB UNIQUE 제약을 대신하지 않는다.
+		// 이 검사는 입력 편의를 위한 UX이며, 서버의 재검사와 DB UNIQUE 제약을 대신하지 않는다.
 
 		const nameInput = document.querySelector("#name");
 		const nicknameInput = document.querySelector("#nickname");
+		// 로컬 회원가입과 공통 생년월일·전화번호 검증 함수를 사용한다.
+		const birthInput = document.querySelector("#birth");
+		const phoneInput = document.querySelector("#phone");
+		const genderInputs = Array.from(form.querySelectorAll("input[name='gender']"));
 		const privacyAgreedInput = document.querySelector("#privacyAgreed");
 		const checkNicknameButton = document.querySelector("#checkNicknameButton");
 		const nameError = document.querySelector("#nameError");
 		const nicknameError = document.querySelector("#nicknameError");
 		const nicknameSuccess = document.querySelector("#nicknameSuccess");
+		const birthError = document.querySelector("#birthError");
+		const phoneError = document.querySelector("#phoneError");
+		const genderError = document.querySelector("#genderError");
 		const privacyAgreedError = document.querySelector("#privacyAgreedError");
 		let checkedNickname = "";
+
+		// 브라우저 날짜 선택에서도 미래 날짜를 고를 수 없게 제한한다.
+		const today = window.SignupValidation.toLocalDateString(new Date());
+		birthInput.max = today;
 
 		checkNicknameButton.addEventListener("click", async () => {
 			clearNicknameMessage();
@@ -82,6 +93,20 @@
 			nameError.textContent = "";
 		});
 
+		birthInput.addEventListener("input", () => {
+			birthError.textContent = "";
+		});
+
+		phoneInput.addEventListener("input", () => {
+			phoneError.textContent = "";
+		});
+
+		genderInputs.forEach((input) => {
+			input.addEventListener("change", () => {
+				genderError.textContent = "";
+			});
+		});
+
 		privacyAgreedInput.addEventListener("change", () => {
 			privacyAgreedError.textContent = "";
 		});
@@ -89,23 +114,32 @@
 		form.addEventListener("submit", (event) => {
 			const nameValidation = window.SignupValidation.validateName(nameInput.value);
 			const validation = window.SignupValidation.validateNickname(nicknameInput.value);
+			const birthValidation = window.SignupValidation.validateBirth(
+				birthInput.value,
+				today
+			);
+			const phoneValidation = window.SignupValidation.validatePhone(phoneInput.value);
+			const selectedGender = genderInputs.find((input) => input.checked)?.value;
+			const genderValidation = window.SignupValidation.validateGender(selectedGender);
 			const privacyValidation = window.SignupValidation.validatePrivacyAgreement(
 				privacyAgreedInput.checked
 			);
 			nameError.textContent = nameValidation.message;
+			birthError.textContent = birthValidation.message;
+			phoneError.textContent = phoneValidation.message;
+			genderError.textContent = genderValidation.message;
 			privacyAgreedError.textContent = privacyValidation.message;
 
 			if (!nameValidation.valid) {
 				event.preventDefault();
 				nameInput.focus();
+				return;
 			}
 			if (!validation.valid) {
 				event.preventDefault();
 				clearNicknameMessage();
 				showError(validation.message);
-				if (nameValidation.valid) {
-					nicknameInput.focus();
-				}
+				nicknameInput.focus();
 				return;
 			}
 
@@ -113,17 +147,31 @@
 				event.preventDefault();
 				clearNicknameMessage();
 				showError("닉네임 중복 확인이 필요합니다.");
-				if (nameValidation.valid) {
-					nicknameInput.focus();
-				}
+				nicknameInput.focus();
+				return;
+			}
+
+			if (!birthValidation.valid) {
+				event.preventDefault();
+				birthInput.focus();
+				return;
+			}
+
+			if (!phoneValidation.valid) {
+				event.preventDefault();
+				phoneInput.focus();
+				return;
+			}
+
+			if (!genderValidation.valid) {
+				event.preventDefault();
+				genderInputs[0]?.focus();
 				return;
 			}
 
 			if (!privacyValidation.valid) {
 				event.preventDefault();
-				if (nameValidation.valid) {
-					privacyAgreedInput.focus();
-				}
+				privacyAgreedInput.focus();
 			}
 		});
 

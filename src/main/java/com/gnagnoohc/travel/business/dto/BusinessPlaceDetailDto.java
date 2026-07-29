@@ -11,6 +11,8 @@ public class BusinessPlaceDetailDto {
     private Long placeId;
     private String name;
     private Integer placeType;
+    private String priceType;
+    private Integer minPrice;
     private Long regionId;
     private String regionName;
     private String address;

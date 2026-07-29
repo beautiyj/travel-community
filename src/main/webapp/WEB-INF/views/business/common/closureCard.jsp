@@ -5,11 +5,11 @@
 즉시 예약 마감 토글 카드 (마감 관리 탭 공용 컴포넌트)
 
 사용법 (jsp:param으로 전달하는 값):
-- placeId, memberId : 토글 API(/api/business/place/closed) 호출에 필요 (필수)
-- isClosed          : 현재 마감 상태 (boolean, 필수)
+- placeId  : 토글 API(/api/business/place/closed) 호출에 필요 (필수). memberId는 서버가 세션에서 파생
+- isClosed : 현재 마감 상태 (boolean, 필수)
 
 --%>
-<div class="business-card business-closure-card" data-place-id="${param.placeId}" data-member-id="${param.memberId}">
+<div class="business-card business-closure-card" data-place-id="${param.placeId}">
     <div class="business-closure-card__head">
         <div>
             <h2 class="business-card__title" style="margin-bottom: 4px;">즉시 예약 마감</h2>

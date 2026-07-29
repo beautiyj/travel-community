@@ -62,6 +62,7 @@ public class BusinessController {
         Long memberId = currentBusinessMemberId(session);
         BusinessDashboardViewDto view = businessDashboardService.getDashboard(memberId);
 
+        model.addAttribute("placeId", view.getPlaceId());
         model.addAttribute("bizName", view.getPlaceName());
         model.addAttribute("ownerName", view.getOwnerName());
         model.addAttribute("isClosed", view.isClosed());
@@ -105,6 +106,7 @@ public class BusinessController {
         String statusParam = toReservationStatusName(status);
         List<BusinessReservationDto> reservations = businessReservationService.getReservations(ctx.getPlaceId(), memberId, statusParam);
 
+        model.addAttribute("placeId", ctx.getPlaceId());
         model.addAttribute("bizName", ctx.getPlaceName());
         model.addAttribute("ownerName", ctx.getOwnerName());
         model.addAttribute("isClosed", ctx.isClosed());
@@ -178,6 +180,7 @@ public class BusinessController {
 
         if (overview != null) {
             BusinessSidebarContextDto ctx = businessDashboardService.getSidebarContext(memberId);
+            model.addAttribute("placeId", ctx.getPlaceId());
             model.addAttribute("bizName", ctx.getPlaceName());
             model.addAttribute("ownerName", ctx.getOwnerName());
             model.addAttribute("isClosed", ctx.isClosed());
@@ -256,6 +259,7 @@ public class BusinessController {
         Integer sentimentParam = toSentimentValue(sentiment);
         List<BusinessReviewDto> reviews = businessReviewService.getReviews(ctx.getPlaceId(), sentimentParam);
 
+        model.addAttribute("placeId", ctx.getPlaceId());
         model.addAttribute("bizName", ctx.getPlaceName());
         model.addAttribute("ownerName", ctx.getOwnerName());
         model.addAttribute("isClosed", ctx.isClosed());

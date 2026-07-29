@@ -143,7 +143,14 @@
               </c:when>
               <c:otherwise>
                 <div class="comment">
-                  <div class="avatar"></div>
+                  <c:choose>
+                    <c:when test="${not empty comment.avatarUrl}">
+                      <img class="avatar" src="${comment.avatarUrl}" alt="${comment.memberName}">
+                    </c:when>
+                    <c:otherwise>
+                      <img class="avatar" src="${cp}/images/icons/default-avatar.png" alt="${comment.memberName}">
+                    </c:otherwise>
+                  </c:choose>
                   <div>
                     <div class="comment-head">
                       <span class="comment-author">${comment.memberName}</span>
@@ -210,7 +217,14 @@
                   </c:when>
                   <c:otherwise>
                     <div class="comment reply">
-                      <div class="avatar sm"></div>
+                      <c:choose>
+                        <c:when test="${not empty reply.avatarUrl}">
+                          <img class="avatar sm" src="${reply.avatarUrl}" alt="${reply.memberName}">
+                        </c:when>
+                        <c:otherwise>
+                          <img class="avatar sm" src="${cp}/images/icons/default-avatar.png" alt="${reply.memberName}">
+                        </c:otherwise>
+                      </c:choose>
                       <div>
                         <div class="comment-head">
                           <span class="comment-author">${reply.memberName}</span>

@@ -22,4 +22,16 @@ public class CommentDto {
     // ── 화면 표시용 (테이블에 없는 조인/조립 값) ──
     private String memberName;        // 작성자 이름 (member 테이블 JOIN, 사장님이면 "업체명+사장"으로 오버라이드됨)
     private boolean ownerComment;     // 업소 사장님이 자신의 사업장 리뷰에 남긴 댓글인지 (뱃지 표시용)
+    private Integer memberType;       // 작성자 회원 유형 (1: 일반, 2: 사업자, member 테이블 JOIN)
+    private String profileImgUrl;     // 일반 회원 프로필 사진 (member 테이블 JOIN)
+    private String businessImage;     // 사업자 회원의 업소 대표사진 (place.first_image, member_id로 JOIN)
+
+    // 작성자 아바타로 표시할 이미지 URL 결정 (CommunityDto.getAvatarUrl()과 동일한 로직)
+    // 사업자면 업소 대표사진, 일반 회원이면 개인 프로필 사진, 둘 다 없으면 null(→ JSP에서 기본 아바타 표시)
+    public String getAvatarUrl() {
+        if (memberType != null && memberType == 2) {
+            return businessImage;
+        }
+        return profileImgUrl;
+    }
 }

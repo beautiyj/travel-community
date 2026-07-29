@@ -125,7 +125,7 @@
 .comment { display: flex; gap: 11px; padding: 16px 0; border-top: 1px solid var(--border); }
 .comment:first-of-type { border-top: none; }
 .comment.reply { margin-left: 51px; }
-.avatar { width: 40px; height: 40px; border-radius: 9999px; background: #E2E8F0; flex-shrink: 0; }
+.avatar { width: 40px; height: 40px; border-radius: 9999px; background: #E2E8F0; flex-shrink: 0; object-fit: cover; }
 .avatar.sm { width: 28px; height: 28px; }
 .comment-head { display: flex; align-items: center; gap: 8px; }
 .comment-author { font-size: 14px; font-weight: bold; }

@@ -18,11 +18,13 @@
 		c.parent_id, c.post_id, c.member_id,
 		case when pl.member_id = c.member_id then concat(pl.name, '사장')
 		     else m.nickname end as member_name,
-		case when pl.member_id = c.member_id then 1 else 0 end as owner_comment
+		case when pl.member_id = c.member_id then 1 else 0 end as owner_comment,
+		m.member_type as memberType, m.profile_img_url as profileImgUrl, biz.first_image as businessImage
 		from comment c
 		join member m on c.member_id = m.member_id
 		join post p on c.post_id = p.post_id
 		left join place pl on p.place_id = pl.place_id
+		left join place biz on biz.member_id = c.member_id
 		where c.post_id = #{postId}
 		order by
 		case when c.parent_id is null

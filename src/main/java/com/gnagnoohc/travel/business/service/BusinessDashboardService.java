@@ -48,6 +48,7 @@ public class BusinessDashboardService {
         List<BusinessMonthlyTrendDto> monthlyTrend = businessMapper.selectMonthlyTrend(overview.getPlaceId());
 
         return BusinessDashboardViewDto.builder()
+                .placeId(overview.getPlaceId())
                 .placeName(overview.getPlaceName())
                 .ownerName(overview.getOwnerName())
                 .isClosed(overview.isClosed())

@@ -54,6 +54,12 @@
     </nav>
 
     <div class="business-sidebar__footer">
+        <%-- 일반 이용자에게 보이는 업소 상세페이지 미리보기. 새 탭으로 열어 관리 화면 흐름을 안 끊는다.
+             /place/detail?placeId= 는 아직 place(tour) 모듈 담당자가 구현 전인 가정 경로 —
+             community/detail.jsp의 장소 태그 링크와 동일한 경로를 그대로 맞춰 썼다. --%>
+        <c:if test="${not empty placeId}">
+            <a href="/place/detail?placeId=${placeId}" target="_blank" rel="noopener" class="business-nav-item">내 업소보기</a>
+        </c:if>
         <a href="/business/logout" class="business-nav-item business-nav-item--danger">로그아웃</a>
     </div>
 </aside>

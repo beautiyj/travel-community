@@ -233,7 +233,77 @@
 
   /* ---------- 새 이미지 블록 생성 (콜라주: 자유 배치, 겹침 허용) ---------- */
 
-  function insertCollageBlock(items, range) {
+  const DEFAULT_COLLAGE_ITEM_WIDTH = 42; // % of canvas width, 구버전(폭 정보 없는) 토큰의 기본값과도 동일
+
+  // 콜라주 아이템(캔버스 안에 배치된 사진 한 장)의 폭을 드래그로 조절하는 핸들.
+  // 높이는 CSS(.collage-item img { height:auto }) 덕분에 원본 비율 그대로 폭을 따라간다.
+  // stopPropagation으로 에디터 루트에 달린 블록 전체 드래그-재배치/리사이즈 리스너로
+  // 이벤트가 새지 않게 막는다.
+  function appendCollageItemResizeHandle(cell, canvasEl) {
+    const handle = document.createElement('span');
+    handle.className = 'collage-item-resize-handle';
+    handle.title = '드래그해서 크기 조절';
+    cell.appendChild(handle);
+
+    handle.addEventListener('mousedown', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const img = cell.querySelector('img');
+      const canvasRect = canvasEl.getBoundingClientRect();
+      const startWidthPercent = parseFloat(cell.style.width) || DEFAULT_COLLAGE_ITEM_WIDTH;
+      const startX = e.clientX;
+
+      function onMove(ev) {
+        const deltaPercent = ((ev.clientX - startX) / canvasRect.width) * 100;
+        const w = Math.min(80, Math.max(15, startWidthPercent + deltaPercent));
+        cell.style.width = w + '%';
+        if (img) img.setAttribute('data-w', Math.round(w));
+      }
+      function onUp() {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  }
+
+  // 빌더 캔버스(정사각형)에 배치된 사진들이 실제로 차지하는 영역(바운딩 박스)만 남기고
+  // 나머지 여백은 잘라낸다. cellEls는 items와 같은 순서로 렌더링된 .collage-builder-item
+  // 요소들이며, 이미 화면에 표시되어 있어 img.naturalWidth/Height를 바로 읽을 수 있다.
+  // 반환하는 items의 x/y/w는 그 바운딩 박스를 100%로 삼은 새 좌표계 값이고,
+  // ratio는 그 박스의 가로:세로 비율(캔버스를 더 이상 정사각형으로 그리지 않기 위함)이다.
+  function cropCollageToContent(items, cellEls) {
+    let left = Infinity, top = Infinity, right = -Infinity, bottom = -Infinity;
+    items.forEach(function (item, i) {
+      const img = cellEls[i].querySelector('img');
+      const naturalW = (img && img.naturalWidth) || 1;
+      const naturalH = (img && img.naturalHeight) || 1;
+      const h = item.w * (naturalH / naturalW);
+      left = Math.min(left, item.x - item.w / 2);
+      right = Math.max(right, item.x + item.w / 2);
+      top = Math.min(top, item.y - h / 2);
+      bottom = Math.max(bottom, item.y + h / 2);
+    });
+    const cropW = Math.max(1, right - left);
+    const cropH = Math.max(1, bottom - top);
+
+    const normalized = items.map(function (item) {
+      return {
+        id: item.id,
+        file: item.file,
+        url: item.url,
+        x: (item.x - left) / cropW * 100,
+        y: (item.y - top) / cropH * 100,
+        w: item.w / cropW * 100
+      };
+    });
+
+    return { items: normalized, ratio: { rw: Math.max(1, Math.round(cropW)), rh: Math.max(1, Math.round(cropH)) } };
+  }
+
+  function insertCollageBlock(items, range, ratio) {
     items.forEach(function (item) { fileMap.set(item.id, item.file); });
 
     const wrapper = document.createElement('div');
@@ -242,22 +312,31 @@
     wrapper.className = 'content-collage-block align-center';
     wrapper.setAttribute('data-block', 'collage');
     wrapper.setAttribute('data-align', 'center');
+    if (ratio) {
+      wrapper.setAttribute('data-canvas-rw', ratio.rw);
+      wrapper.setAttribute('data-canvas-rh', ratio.rh);
+    }
 
     const canvas = document.createElement('div');
     canvas.className = 'collage-canvas';
+    if (ratio) canvas.style.aspectRatio = ratio.rw + ' / ' + ratio.rh;
     items.forEach(function (item) {
+      const w = item.w || DEFAULT_COLLAGE_ITEM_WIDTH;
       const cell = document.createElement('div');
       cell.className = 'collage-item';
       cell.style.left = item.x + '%';
       cell.style.top = item.y + '%';
+      cell.style.width = w + '%';
       const img = document.createElement('img');
       img.src = item.url;
       img.setAttribute('data-file-id', item.id);
       img.setAttribute('data-x', item.x);
       img.setAttribute('data-y', item.y);
+      img.setAttribute('data-w', w);
       img.alt = '첨부 이미지';
       img.draggable = false;
       cell.appendChild(img);
+      appendCollageItemResizeHandle(cell, canvas);
       canvas.appendChild(cell);
     });
     wrapper.appendChild(canvas);
@@ -321,7 +400,7 @@
   function defaultCollagePosition(i) {
     const spots = [[32, 32], [68, 30], [50, 62], [74, 66], [26, 66], [50, 26], [76, 26], [24, 26], [50, 50]];
     const p = spots[i % spots.length];
-    return { x: p[0], y: p[1] };
+    return { x: p[0], y: p[1], w: 38 };
   }
 
   function openBuilder(mode) {
@@ -341,6 +420,7 @@
   toolSliderBtn && toolSliderBtn.addEventListener('click', function () { openBuilder('slider'); });
 
   imgBlockFileInput && imgBlockFileInput.addEventListener('change', function () {
+    const mode = builderMode;
     Array.from(imgBlockFileInput.files).forEach(function (file) {
       if (file.type.indexOf('image/') !== 0) return;
       const item = { id: 'f' + (fileIdSeq++), file: file, url: URL.createObjectURL(file) };
@@ -348,8 +428,18 @@
         const pos = defaultCollagePosition(builderFiles.length);
         item.x = pos.x;
         item.y = pos.y;
+        item.w = pos.w;
       }
       builderFiles.push(item);
+      if (mode === 'slider') {
+        const probe = new Image();
+        probe.onload = function () {
+          item.naturalWidth = probe.naturalWidth;
+          item.naturalHeight = probe.naturalHeight;
+          if (builderMode === 'slider') renderSliderPreview();
+        };
+        probe.src = item.url;
+      }
     });
     imgBlockFileInput.value = '';
     renderBuilderState();
@@ -365,17 +455,42 @@
     if (!imgBlockCanvas) return;
     imgBlockCanvas.innerHTML = '';
     builderFiles.forEach(function (item, i) {
+      const w = item.w || DEFAULT_COLLAGE_ITEM_WIDTH;
       const el = document.createElement('div');
       el.className = 'collage-builder-item';
       el.style.left = item.x + '%';
       el.style.top = item.y + '%';
+      el.style.width = w + '%';
       el.innerHTML =
         '<img src="' + item.url + '" alt="선택한 이미지" draggable="false">' +
-        '<button type="button" class="collage-builder-item-remove" data-i="' + i + '">×</button>';
+        '<button type="button" class="collage-builder-item-remove" data-i="' + i + '">×</button>' +
+        '<span class="collage-builder-item-resize-handle" title="드래그해서 크기 조절"></span>';
       imgBlockCanvas.appendChild(el);
 
+      const resizeHandle = el.querySelector('.collage-builder-item-resize-handle');
+      resizeHandle.addEventListener('mousedown', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const canvasRect = imgBlockCanvas.getBoundingClientRect();
+        const startWidthPercent = item.w || DEFAULT_COLLAGE_ITEM_WIDTH;
+        const startX = e.clientX;
+
+        function onMove(ev) {
+          const deltaPercent = ((ev.clientX - startX) / canvasRect.width) * 100;
+          const newW = Math.min(80, Math.max(15, startWidthPercent + deltaPercent));
+          item.w = newW;
+          el.style.width = newW + '%';
+        }
+        function onUp() {
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+        }
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
+
       el.addEventListener('mousedown', function (e) {
-        if (e.target.closest('.collage-builder-item-remove')) return;
+        if (e.target.closest('.collage-builder-item-remove') || e.target.closest('.collage-builder-item-resize-handle')) return;
         e.preventDefault();
         const canvasRect = imgBlockCanvas.getBoundingClientRect();
 
@@ -407,13 +522,38 @@
     renderCollageCanvas();
   });
 
+  // 슬라이더 썸네일 박스 크기: 선택한 사진 중 "가장 큰"(면적 기준) 사진의 원본 비율에 맞춰
+  // 하나의 크기를 정하고, 모든 썸네일이 그 크기를 공유한다(작거나 비율이 다른 사진은
+  // object-fit:contain 으로 잘리지 않고 여백과 함께 표시됨). 아직 크기를 모르는(로딩 전) 사진이
+  // 있으면 기본 정사각형으로 대체.
+  const SLIDER_THUMB_MAX_SIDE = 150;
+  const SLIDER_THUMB_MIN_RATIO = 0.5;
+  const SLIDER_THUMB_MAX_RATIO = 2;
+
+  function computeSliderThumbSize() {
+    let ref = null;
+    builderFiles.forEach(function (item) {
+      if (!item.naturalWidth || !item.naturalHeight) return;
+      if (!ref || (item.naturalWidth * item.naturalHeight) > (ref.naturalWidth * ref.naturalHeight)) ref = item;
+    });
+    if (!ref) return { w: SLIDER_THUMB_MAX_SIDE, h: SLIDER_THUMB_MAX_SIDE };
+    let ratio = ref.naturalWidth / ref.naturalHeight;
+    ratio = Math.min(SLIDER_THUMB_MAX_RATIO, Math.max(SLIDER_THUMB_MIN_RATIO, ratio));
+    return ratio >= 1
+      ? { w: SLIDER_THUMB_MAX_SIDE, h: Math.round(SLIDER_THUMB_MAX_SIDE / ratio) }
+      : { w: Math.round(SLIDER_THUMB_MAX_SIDE * ratio), h: SLIDER_THUMB_MAX_SIDE };
+  }
+
   // 슬라이더: 목록 형태 + ‹/›로 순서(=나열 순서) 조정, ×로 제거
   function renderSliderPreview() {
     if (!imgBlockPreview) return;
     imgBlockPreview.innerHTML = '';
+    const thumbSize = computeSliderThumbSize();
     builderFiles.forEach(function (item, i) {
       const div = document.createElement('div');
       div.className = 'img-block-thumb';
+      div.style.width = thumbSize.w + 'px';
+      div.style.height = thumbSize.h + 'px';
       div.innerHTML =
         '<img src="' + item.url + '" alt="선택한 이미지">' +
         '<div class="img-block-thumb-order">' +
@@ -450,8 +590,13 @@
     if (builderFiles.length < 2) return;
     const range = savedRange ? savedRange.cloneRange() : endOfEditorRange();
     restoreRange(range);
-    if (builderMode === 'collage') insertCollageBlock(builderFiles, range);
-    else insertSliderBlock(builderFiles, range);
+    if (builderMode === 'collage') {
+      const cellEls = Array.from(imgBlockCanvas.querySelectorAll('.collage-builder-item'));
+      const cropped = cropCollageToContent(builderFiles, cellEls);
+      insertCollageBlock(cropped.items, range, cropped.ratio);
+    } else {
+      insertSliderBlock(builderFiles, range);
+    }
     if (window.closeModal) window.closeModal('imgBlockModal');
     builderFiles = [];
   });
@@ -588,7 +733,7 @@
 
   /* ---------- edit.jsp: 서버가 내려준 기존 content/이미지로 초기 DOM 복원 ---------- */
 
-  const TOKEN_PATTERN = /\[\[IMG:(\d+)(?::(left|right))?\]\]|\[\[SLIDER:(\d+(?:,\d+)*)(?::(left|right))?\]\]|\[\[COLLAGE:(\d+-\d+-\d+(?:,\d+-\d+-\d+)*)(?::(left|right))?\]\]/g;
+  const TOKEN_PATTERN = /\[\[IMG:(\d+)(?::(left|right))?\]\]|\[\[SLIDER:(\d+(?:,\d+)*)(?::(left|right))?\]\]|\[\[COLLAGE:(?:(\d+)-(\d+):)?(\d+-\d+-\d+(?:-\d+)?(?:,\d+-\d+-\d+(?:-\d+)?)*)(?::(left|right))?\]\]/g;
 
   function appendText(container, str) {
     if (!str) return;
@@ -619,29 +764,39 @@
     container.appendChild(wrapper);
   }
 
-  // entries: [{n, x, y}] — 기존 콜라주. 겹침/자유배치는 그대로 재현하고, 새 콜라주처럼 편집 가능
-  function appendLockedCollage(container, imgUrlFor, entries, align) {
+  // entries: [{n, x, y, w}] — 기존 콜라주. 겹침/자유배치는 그대로 재현하고, 새 콜라주처럼 편집 가능
+  // ratio: {rw, rh} — 삽입 당시 여백을 잘라낸 캔버스 비율(없으면 정사각형 기본값 유지)
+  function appendLockedCollage(container, imgUrlFor, entries, align, ratio) {
     const wrapper = document.createElement('div');
     wrapper.contentEditable = 'false';
     wrapper.className = 'content-collage-block align-' + (align || 'center');
     wrapper.setAttribute('data-block', 'collage');
     wrapper.setAttribute('data-align', align || 'center');
+    if (ratio) {
+      wrapper.setAttribute('data-canvas-rw', ratio.rw);
+      wrapper.setAttribute('data-canvas-rh', ratio.rh);
+    }
 
     const canvas = document.createElement('div');
     canvas.className = 'collage-canvas';
+    if (ratio) canvas.style.aspectRatio = ratio.rw + ' / ' + ratio.rh;
     entries.forEach(function (entry) {
+      const w = entry.w || DEFAULT_COLLAGE_ITEM_WIDTH;
       const cell = document.createElement('div');
       cell.className = 'collage-item';
       cell.style.left = entry.x + '%';
       cell.style.top = entry.y + '%';
+      cell.style.width = w + '%';
       const img = document.createElement('img');
       img.src = imgUrlFor(entry.n);
       img.setAttribute('data-existing-index', String(entry.n));
       img.setAttribute('data-x', entry.x);
       img.setAttribute('data-y', entry.y);
+      img.setAttribute('data-w', w);
       img.alt = '첨부 이미지';
       img.draggable = false;
       cell.appendChild(img);
+      appendCollageItemResizeHandle(cell, canvas);
       canvas.appendChild(cell);
     });
     wrapper.appendChild(canvas);
@@ -705,11 +860,14 @@
         const indices = match[3].split(',').map(Number);
         appendLockedSlider(editorRoot, imgUrlFor, indices, match[4]);
       } else {
-        const entries = match[5].split(',').map(function (s) {
+        const entries = match[7].split(',').map(function (s) {
           const parts = s.split('-').map(Number);
-          return { n: parts[0], x: parts[1], y: parts[2] };
+          return { n: parts[0], x: parts[1], y: parts[2], w: parts.length > 3 ? parts[3] : DEFAULT_COLLAGE_ITEM_WIDTH };
         });
-        appendLockedCollage(editorRoot, imgUrlFor, entries, match[6]);
+        const ratio = (match[5] !== undefined && match[6] !== undefined)
+          ? { rw: Number(match[5]), rh: Number(match[6]) }
+          : null;
+        appendLockedCollage(editorRoot, imgUrlFor, entries, match[8], ratio);
       }
       lastIndex = TOKEN_PATTERN.lastIndex;
     }
@@ -773,9 +931,13 @@
           const n = resolveIndex(img);
           const x = Math.round(parseFloat(img.getAttribute('data-x') || '50'));
           const y = Math.round(parseFloat(img.getAttribute('data-y') || '50'));
-          return n + '-' + x + '-' + y;
+          const w = Math.round(parseFloat(img.getAttribute('data-w') || String(DEFAULT_COLLAGE_ITEM_WIDTH)));
+          return n + '-' + x + '-' + y + '-' + w;
         });
-        text += '[[COLLAGE:' + entries.join(',') + alignSuffix(node) + ']]\n';
+        const rw = node.getAttribute('data-canvas-rw');
+        const rh = node.getAttribute('data-canvas-rh');
+        const ratioPrefix = (rw && rh) ? (rw + '-' + rh + ':') : '';
+        text += '[[COLLAGE:' + ratioPrefix + entries.join(',') + alignSuffix(node) + ']]\n';
         return;
       }
 

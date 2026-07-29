@@ -76,9 +76,12 @@ public class ReservationService {
             throw new IllegalStateException("이미 예약하신 날짜입니다. 내 예약 내역에서 확인해 주세요.");
         }
 
+        // 무료(freeTest) 오버라이드가 아니면 PLACE.place_type을 조회해 가격 정책을 판단한다
+        String placeType = req.isFreeTest() ? "free" : reservationMapper.findPlaceType(req.getPlaceId());
+
         // 마감 백업 체크(2겹): 숙박만 '1팀 단독'이라 요청 기간과 겹치는 예약이 있으면 거부.
         // 맛집/관광지(만나서결제)는 하루 여러 팀 가능 → 이 체크를 건너뛴다. (프론트 캘린더와 동일 규칙)
-        if (isStay(req.getPlaceType())) {
+        if (isStay(placeType)) {
             if (req.getCheckOutDate() == null) {
                 throw new IllegalStateException("체크아웃 날짜를 선택해 주세요.");
             }
@@ -96,12 +99,17 @@ public class ReservationService {
         r.setVisitorName(req.getVisitorName());
         r.setPhone(req.getPhone());
         r.setVisitDate(req.getVisitDate());
-        r.setCheckOutDate(isStay(req.getPlaceType()) ? req.getCheckOutDate() : null);   // 숙박만 기간 예약
+        r.setCheckOutDate(isStay(placeType) ? req.getCheckOutDate() : null);   // 숙박만 기간 예약
         r.setHeadcount(req.getHeadcount());
-        r.setPlaceType(req.getPlaceType());   // tour/food면 이후 결제금액이 예약금으로 계산됨
         r.setStatus(ReservationStatus.PENDING);
         reservationMapper.insert(r);
         return r.getReservationId();
+    }
+
+    /** PLACE.place_type 조회(tour/food/stay). 예약 폼 렌더링에 필요 */
+    @Transactional(readOnly = true)
+    public String getPlaceType(Long placeId) {
+        return reservationMapper.findPlaceType(placeId);
     }
 
     @Transactional(readOnly = true)
@@ -216,10 +224,6 @@ public class ReservationService {
      * TODO: 숙박/맛집 팀원의 place(가격) 테이블이 나오면 placeId로 단가·예약금 조회하도록 교체
      */
     public int calculateAmount(Reservation r) {
-        // 테스트용: placeType=free면 0원. 실제로는 place 가격이 0원인 경우에 해당(무료 예약 즉시완료 흐름 검증용 스텁)
-        if ("free".equals(r.getPlaceType())) {
-            return 0;
-        }
         if (isPayOnSite(r.getPlaceType())) {
             return RESERVE_DEPOSIT;
         }

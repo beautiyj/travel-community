@@ -70,4 +70,7 @@ public interface ReservationMapper {
      * 사업자가 /business/closure에서 껐다 켰다 하는 그 값(is_closed)을 그대로 참조.
      */
     Boolean findPlaceClosed(@Param("placeId") Long placeId);
+
+    /** 장소 타입(tour/food/stay) 조회. PLACE.place_type을 읽기 전용으로 참조 */
+    String findPlaceType(@Param("placeId") Long placeId);
 }

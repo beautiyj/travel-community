@@ -35,13 +35,15 @@ public class ReservationController {
     }
 
     /**
-     * 예약 폼 페이지. 숙박/맛집 상세 페이지에서 /reservations/new?placeId=1&placeType=food 로 진입.
-     * placeType: tour/food면 예약금(만나서결제), 없거나 그 외면 정가(숙박).
+     * 예약 폼 페이지. 숙박/맛집 상세 페이지에서 /reservations/new?placeId=1 로 진입.
+     * placeType(tour/food/stay)은 PLACE 조회로 결정한다 — tour/food면 예약금(만나서결제), stay면 정가.
+     * freeTest=true면 0원 즉시완료 테스트 플래그로 취급(예약 테스트 허브 전용, PLACE.place_type엔 없는 값).
      */
     @GetMapping("/new")
     public String form(@RequestParam("placeId") Long placeId,
-                       @RequestParam(value = "placeType", required = false) String placeType,
+                       @RequestParam(value = "freeTest", required = false, defaultValue = "false") boolean freeTest,
                        Model model) {
+        String placeType = freeTest ? "free" : reservationService.getPlaceType(placeId);
         model.addAttribute("placeId", placeId);
         model.addAttribute("placeType", placeType);
         // TODO: 숙박/맛집 파트의 place 조회가 나오면 실제 단가·예약금으로 교체
@@ -70,7 +72,7 @@ public class ReservationController {
         if (bindingResult.hasErrors()) {
             log.warn("[예약 생성 검증 실패] {}", bindingResult.getAllErrors());
             model.addAttribute("placeId", req.getPlaceId());
-            model.addAttribute("placeType", req.getPlaceType());
+            model.addAttribute("placeType", req.isFreeTest() ? "free" : reservationService.getPlaceType(req.getPlaceId()));
             model.addAttribute("price", ReservationService.TEMP_UNIT_PRICE);
             model.addAttribute("deposit", ReservationService.RESERVE_DEPOSIT);
             return "reservation/reservationForm";
@@ -83,8 +85,9 @@ public class ReservationController {
         log.info("[예약 생성 완료] reservationId={}", reservationId);
 
         // 결제금액이 0원(무료)이면 결제창을 거치지 않고 곧장 결제완료 처리 → 관리자 승인 대기로 넘어간다
+        // freeTest는 PLACE.place_type과 무관한 테스트 전용 오버라이드라 여기서 직접 판단한다
         Reservation r = reservationService.getById(reservationId);
-        int amount = reservationService.calculateAmount(r);
+        int amount = req.isFreeTest() ? 0 : reservationService.calculateAmount(r);
         if (amount == 0) {
             String orderId = paymentService.generateOrderId(reservationId);
             String freeKey = "FREE-" + reservationId + "-" + System.currentTimeMillis();

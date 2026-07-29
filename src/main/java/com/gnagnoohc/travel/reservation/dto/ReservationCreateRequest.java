@@ -35,6 +35,7 @@ public class ReservationCreateRequest {
 
     private int headcount;
 
-    // 가격 정책 구분(폼 hidden). tour/food=예약금, 그 외(숙박)=정가. 없으면 정가로 취급
-    private String placeType;
+    // 무료예약(0원) 즉시완료 테스트 전용 오버라이드. PLACE.place_type엔 'free' 값이 없어 별도로 둔다.
+    // 실제 place 가격(0원) 데이터가 생기면 제거 예정.
+    private boolean freeTest;
 }

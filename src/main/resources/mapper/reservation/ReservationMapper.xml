@@ -3,44 +3,52 @@
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.gnagnoohc.travel.reservation.mapper.ReservationMapper">
 
+    <!-- RESERVATION과 PLACE를 조인하는 select 전용 — place_id/member_id/created_at이 양쪽에 다 있어 r. 접두어 필수 -->
     <sql id="reservationColumns">
-        reservation_id AS reservationId,
-        member_id      AS memberId,
-        place_id       AS placeId,
-        visitor_name   AS visitorName,
-        phone,
-        visit_date     AS visitDate,
-        check_out_date AS checkOutDate,
-        headcount,
-        place_type     AS placeType,
-        status,
-        order_id             AS orderId,
-        payment_type         AS paymentType,
-        pg_tid               AS pgTid,
-        created_at           AS createdAt,
-        cancel_reason        AS cancelReason,
-        cancel_requested_at  AS cancelRequestedAt
+        r.reservation_id AS reservationId,
+        r.member_id      AS memberId,
+        r.place_id       AS placeId,
+        r.visitor_name   AS visitorName,
+        r.phone,
+        r.visit_date     AS visitDate,
+        r.check_out_date AS checkOutDate,
+        r.headcount,
+        p.place_type     AS placeType,
+        r.status,
+        r.order_id             AS orderId,
+        r.payment_type         AS paymentType,
+        r.pg_tid               AS pgTid,
+        r.created_at           AS createdAt,
+        r.cancel_reason        AS cancelReason,
+        r.cancel_requested_at  AS cancelRequestedAt
     </sql>
 
     <insert id="insert" parameterType="com.gnagnoohc.travel.reservation.entity.Reservation"
             useGeneratedKeys="true" keyProperty="reservationId">
         INSERT INTO RESERVATION
-            (member_id, place_id, visitor_name, phone, visit_date, check_out_date, headcount, place_type, status)
+            (member_id, place_id, visitor_name, phone, visit_date, check_out_date, headcount, status)
         VALUES
-            (#{memberId}, #{placeId}, #{visitorName}, #{phone}, #{visitDate}, #{checkOutDate}, #{headcount}, #{placeType}, #{status})
+            (#{memberId}, #{placeId}, #{visitorName}, #{phone}, #{visitDate}, #{checkOutDate}, #{headcount}, #{status})
     </insert>
+
+    <!-- 장소 타입 조회: PLACE.place_type(tour/food/stay)을 그대로 참조 (읽기 전용) -->
+    <select id="findPlaceType" resultType="string">
+        SELECT place_type FROM PLACE WHERE place_id = #{placeId}
+    </select>
 
     <select id="findById" resultType="com.gnagnoohc.travel.reservation.entity.Reservation">
         SELECT <include refid="reservationColumns"/>
-        FROM RESERVATION
-        WHERE reservation_id = #{reservationId}
+        FROM RESERVATION r
+        LEFT JOIN PLACE p ON r.place_id = p.place_id
+        WHERE r.reservation_id = #{reservationId}
     </select>
 
     <select id="findByMemberId" resultType="com.gnagnoohc.travel.reservation.entity.Reservation">
         SELECT <include refid="reservationColumns"/>
-        FROM RESERVATION
-        WHERE member_id = #{memberId}
-        ORDER BY created_at DESC
+        FROM RESERVATION r
+        LEFT JOIN PLACE p ON r.place_id = p.place_id
+        WHERE r.member_id = #{memberId}
+        ORDER BY r.created_at DESC
     </select>
 
     <update id="updateStatus">
@@ -70,20 +78,22 @@
     <!-- 관리자 목록용: 특정 상태의 예약 조회 -->
     <select id="findByStatus" resultType="com.gnagnoohc.travel.reservation.entity.Reservation">
         SELECT <include refid="reservationColumns"/>
-        FROM RESERVATION
-        WHERE status = #{status}
-        ORDER BY cancel_requested_at DESC, created_at DESC
+        FROM RESERVATION r
+        LEFT JOIN PLACE p ON r.place_id = p.place_id
+        WHERE r.status = #{status}
+        ORDER BY r.cancel_requested_at DESC, r.created_at DESC
     </select>
 
     <!-- 슬롯 선점 체크: 같은 회원·장소·날짜의 활성(PENDING/PAID/CONFIRMED) 예약 1건 (없으면 null) -->
     <select id="findActiveBySlot" resultType="com.gnagnoohc.travel.reservation.entity.Reservation">
         SELECT <include refid="reservationColumns"/>
-        FROM RESERVATION
-        WHERE member_id = #{memberId}
-          AND place_id = #{placeId}
-          AND visit_date = #{visitDate}
-          AND status IN ('PENDING', 'PAID', 'CONFIRMED')
-        ORDER BY reservation_id DESC
+        FROM RESERVATION r
+        LEFT JOIN PLACE p ON r.place_id = p.place_id
+        WHERE r.member_id = #{memberId}
+          AND r.place_id = #{placeId}
+          AND r.visit_date = #{visitDate}
+          AND r.status IN ('PENDING', 'PAID', 'CONFIRMED')
+        ORDER BY r.reservation_id DESC
         LIMIT 1
     </select>
 
@@ -99,10 +109,11 @@
     <!-- 정합성 보정 배치: 결제 준비까지 갔으나 아직 PENDING인 건 조회 (cutoff로 진행 중 건 유예) -->
     <select id="findReadyForInquiry" resultType="com.gnagnoohc.travel.reservation.entity.Reservation">
         SELECT <include refid="reservationColumns"/>
-        FROM RESERVATION
-        WHERE status = 'PENDING'
-          AND order_id IS NOT NULL
-          AND created_at &lt; #{cutoff}
+        FROM RESERVATION r
+        LEFT JOIN PLACE p ON r.place_id = p.place_id
+        WHERE r.status = 'PENDING'
+          AND r.order_id IS NOT NULL
+          AND r.created_at &lt; #{cutoff}
     </select>
 
     <!-- 스케줄러: 30분 지난 미결제 건 일괄 만료 -->

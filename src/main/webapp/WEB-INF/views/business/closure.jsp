@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <title>마감 관리 - 관리자 - 갈래말래</title>
     <link rel="stylesheet" href="/css/common.css">
+    <link rel="stylesheet" href="/css/components/buttonComponent.css">
+    <link rel="stylesheet" href="/css/components/confirmModal.css">
     <link rel="stylesheet" href="/css/business.css">
 </head>
 <body>
@@ -33,6 +35,7 @@
     </div>
 </div>
 
+<script src="/js/common.js"></script>
 <script src="/js/business-closure.js"></script>
 </body>
 </html>

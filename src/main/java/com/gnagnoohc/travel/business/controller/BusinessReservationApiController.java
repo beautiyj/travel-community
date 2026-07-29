@@ -49,31 +49,56 @@ public class BusinessReservationApiController {
                 businessReservationService.getClosedDates(placeId, (long) login.getMemberId()));
     }
 
+    // endDate를 안 보내면 하루짜리 마감(startDate=endDate)으로 처리한다.
     @PostMapping("/place/closed-dates")
-    public ResponseEntity<Void> addClosedDate(
+    public ResponseEntity<Void> addClosedDates(
             @RequestParam Long placeId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate closedDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             HttpSession session
     ) {
         LoginMemberDto login = requireBusinessLogin(session);
         if (login == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        businessReservationService.addClosedDate(placeId, (long) login.getMemberId(), closedDate);
+        businessReservationService.addClosedDateRange(
+                placeId, (long) login.getMemberId(), startDate, endDate != null ? endDate : startDate);
         return ResponseEntity.ok().build();
     }
 
+    // 목록에서 하루짜리 행이든 묶인 구간 행이든 같은 방식으로 지운다 (endDate 생략 시 하루만).
     @DeleteMapping("/place/closed-dates")
-    public ResponseEntity<Void> removeClosedDate(
+    public ResponseEntity<Void> removeClosedDates(
             @RequestParam Long placeId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate closedDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             HttpSession session
     ) {
         LoginMemberDto login = requireBusinessLogin(session);
         if (login == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        businessReservationService.removeClosedDate(placeId, (long) login.getMemberId(), closedDate);
+        businessReservationService.removeClosedDateRange(
+                placeId, (long) login.getMemberId(), startDate, endDate != null ? endDate : startDate);
+        return ResponseEntity.ok().build();
+    }
+
+    // 마감 구간 수정: 기존 구간(oldStartDate~oldEndDate)을 지우고 새 구간(newStartDate~newEndDate)으로 교체한다.
+    @PutMapping("/place/closed-dates")
+    public ResponseEntity<Void> updateClosedDates(
+            @RequestParam Long placeId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate oldStartDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate oldEndDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate newStartDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate newEndDate,
+            HttpSession session
+    ) {
+        LoginMemberDto login = requireBusinessLogin(session);
+        if (login == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        businessReservationService.updateClosedDateRange(
+                placeId, (long) login.getMemberId(), oldStartDate, oldEndDate, newStartDate, newEndDate);
         return ResponseEntity.ok().build();
     }
 

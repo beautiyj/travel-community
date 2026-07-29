@@ -400,22 +400,141 @@ body {
     margin-top: 16px;
 }
 
-.business-closure-date-form {
-    display: flex;
-    gap: 8px;
+/* ── 날짜별 마감 달력 ── */
+.business-closure-calendar {
+    border: 1px solid var(--business-border);
+    border-radius: 12px;
+    padding: 16px;
     margin-bottom: 16px;
 }
 
-.business-closure-date-form .business-form-input {
-    flex: 1;
+.business-closure-calendar__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
 }
 
-.business-closure-date-form .business-btn {
+.business-closure-calendar__title {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.business-closure-calendar__nav {
+    border: none;
+    background: none;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 18px;
+    line-height: 1;
+    color: var(--business-muted);
+    cursor: pointer;
+}
+
+.business-closure-calendar__nav:hover {
+    background: var(--business-bg);
+    color: var(--business-text);
+}
+
+.business-closure-calendar__weekdays,
+.business-closure-calendar__grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+}
+
+.business-closure-calendar__weekdays span {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--business-muted);
+    padding-bottom: 8px;
+}
+
+.business-closure-calendar__grid {
+    gap: 4px;
+    /* 드래그로 기간을 선택할 때 브라우저 기본 텍스트 선택(파란 하이라이트)이 같이 뜨는 걸 막는다 */
+    user-select: none;
+}
+
+.business-closure-calendar__day {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    border: none;
+    background: none;
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--business-text);
+    cursor: pointer;
+}
+
+.business-closure-calendar__day:hover:not(:disabled):not(.is-selected) {
+    background: var(--business-bg);
+}
+
+.business-closure-calendar__day--empty {
+    visibility: hidden;
+}
+
+.business-closure-calendar__day:disabled {
+    cursor: not-allowed;
+}
+
+.business-closure-calendar__day.is-past {
+    color: var(--business-border);
+}
+
+.business-closure-calendar__day.is-today {
+    box-shadow: inset 0 0 0 1px var(--business-primary);
+}
+
+.business-closure-calendar__day.is-closed {
+    color: var(--business-danger);
+    font-weight: 700;
+}
+
+.business-closure-calendar__day.is-closed::after {
+    content: "";
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--business-danger);
+}
+
+.business-closure-calendar__day.is-selected {
+    background: var(--business-primary);
+    color: #fff;
+}
+
+.business-closure-date-form {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.business-closure-date-form__label {
+    font-size: 13px;
+    color: var(--business-muted);
+}
+
+.business-closure-date-form__actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.business-closure-date-form #closure-date-add {
     padding: 10px 18px;
     font-size: 14px;
 }
 
-.business-closure-date-form .business-btn:disabled {
+.business-closure-date-form #closure-date-add:disabled {
     background: var(--business-border);
     color: var(--business-muted);
     cursor: not-allowed;
@@ -452,6 +571,28 @@ body {
 .business-closure-date-row__tag {
     font-size: 12px;
     color: #f87171;
+}
+
+.business-closure-date-row__actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.business-closure-date-row__edit {
+    border: none;
+    background: none;
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--business-muted);
+    cursor: pointer;
+    border-radius: 6px;
+}
+
+.business-closure-date-row__edit:hover {
+    background: rgba(0, 0, 0, 0.04);
+    color: var(--business-text);
 }
 
 .business-closure-date-row__remove {
@@ -544,6 +685,15 @@ body {
 }
 .business-btn--danger:hover {
     background: #fef2f2;
+}
+.business-btn--outline {
+    background: #fff;
+    color: var(--business-muted);
+    border: 1px solid var(--business-border);
+}
+.business-btn--outline:hover {
+    background: var(--business-bg);
+    color: var(--business-text);
 }
 
 /* ── Filter row ── */

@@ -63,10 +63,12 @@ public interface BusinessMapper {
             @Param("closedDate") LocalDate closedDate
     );
 
-    int deleteClosedDate(
+    // 하루만 지울 때도 startDate=endDate로 넘기면 되므로 단건/구간 삭제를 하나로 합쳤다
+    int deleteClosedDateRange(
             @Param("placeId") Long placeId,
             @Param("bizMemberId") Long bizMemberId,
-            @Param("closedDate") LocalDate closedDate
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
     );
 
 //    List<BusinessRegionOptionDto> selectRegionOptions();

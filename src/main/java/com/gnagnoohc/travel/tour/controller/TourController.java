@@ -1,10 +1,14 @@
 package com.gnagnoohc.travel.tour.controller;
 
+import java.util.List;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+
+import com.gnagnoohc.travel.tour.model.PlaceDTO;
 
 @Controller
 public class TourController {
@@ -21,29 +25,23 @@ public class TourController {
     // return "tour/detail";
     // }
 
-    @GetMapping("/tour/list")
-    public String tourList(@RequestParam(required = false) String areaCode,
-            @RequestParam(required = false) String categoryCode,
+    // TODO: 미완성, 테스트용로직연결만 생성. 이후 수정필요. 필요 폼: 전체데이터목록창/클릭시넘어가는상세창 2개만.
+    @GetMapping("tour/list")
+    public String tourList(
+            @RequestParam(value = "placeType", defaultValue = "tour") String placeType,
+            @RequestParam(value = "regionId", required = false) Integer regionId,
+            @RequestParam(value = "page", defaultValue = "1") int page,
             Model model) {
 
-        // List<TourItemDto> tourList = tourService.getTourListByArea(areaCode);
-        // model.addAttribute("tourList", tourList);
+        // 1. 조건별 및 가상 비즈니스 계정 상위 노출 적용된 장소 목록 조회
+        List<PlaceDTO> placeList = tourService.getPlaceList(placeType, regionId, page);
+        
+        // 2. 뷰(JSP) 단으로 데이터 넘기기
+        model.addAttribute("placeList", placeList);
+        model.addAttribute("selectedPlaceType", placeType); // stay, food, tour
+        model.addAttribute("selectedRegionId", regionId);
 
-        // // 지역 드롭다운용 데이터
-        // List<RegionDto> regionList = regionService.getAllRegions();
-        // model.addAttribute("regionList", regionList);
-        // model.addAttribute("areaCode", areaCode);
-        // regionList.stream().filter(r -> r.getCode().equals(areaCode)).findFirst()
-        //         .ifPresent(r -> model.addAttribute("areaName", r.getName()));
-
-        // // 카테고리 드롭다운용 데이터 (lclsSystmCode2로 미리 저장해둔 데이터)
-        // List<CategoryDto> categoryList = categoryService.getAllCategories();
-        // model.addAttribute("categoryList", categoryList);
-        // model.addAttribute("categoryCode", categoryCode);
-        // categoryList.stream().filter(c -> c.getCode().equals(categoryCode)).findFirst()
-        //         .ifPresent(c -> model.addAttribute("categoryName", c.getName()));
-
-        return "tour/list";
+        return "tour/list"; // -> 하나의 통합 뷰 파일(/WEB-INF/views/tour/list.jsp)로 리턴!
     }
 
 }

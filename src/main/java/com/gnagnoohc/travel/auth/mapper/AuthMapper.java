@@ -24,6 +24,11 @@ public interface AuthMapper {
 	// 같은 계정의 로그인 요청이 동시에 처리되지 않도록 인증 행을 잠가 조회한다.
 	MemberLocalAuth findLocalLoginAuthForUpdate(@Param("username") String username);
 
+	// 소셜 연동 대상 회원과 입력 아이디가 모두 일치할 때만 해당 인증 행을 잠근다.
+	MemberLocalAuth findSocialLinkCandidateAuthForUpdate(
+			@Param("memberId") int memberId,
+			@Param("username") String username);
+
 	int incrementFailedLoginCount(@Param("username") String username);
 
 	int lockLocalLogin(@Param("username") String username);

@@ -680,7 +680,6 @@
 .collage-item {
   position: absolute;
   width: 42%;
-  aspect-ratio: 1 / 1;
   transform: translate(-50%, -50%);
   border-radius: var(--radius-md);
   overflow: hidden;
@@ -690,8 +689,24 @@
 .collage-item img {
   display: block;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
+}
+.collage-item-resize-handle {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background: var(--card);
+  border: 2px solid var(--primary);
+  cursor: nwse-resize;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+  z-index: 2;
+}
+.collage-item:hover .collage-item-resize-handle {
+  opacity: 1;
 }
 
 /* ---------- 슬라이더 블록: 사진을 나란히 배치한 스트립 + 하단 커스텀 슬라이드바 ---------- */
@@ -755,20 +770,23 @@
 .img-block-preview {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 16px;
   margin-top: 12px;
-  max-height: 260px;
+  padding: 10px;
+  max-height: 340px;
   overflow-y: auto;
 }
 .img-block-thumb {
+  /* 크기(width/height)는 renderSliderPreview()가 선택한 사진들 중 가장 큰 사진의
+     원본 비율에 맞춰 인라인 스타일로 지정함(고정 정사각형 강제 안 함) */
   position: relative;
-  width: 88px;
-  height: 88px;
+  background: var(--muted);
+  border-radius: var(--radius-md);
 }
 .img-block-thumb img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
 }
@@ -835,7 +853,6 @@
 .collage-builder-item {
   position: absolute;
   width: 38%;
-  aspect-ratio: 1 / 1;
   transform: translate(-50%, -50%);
   border-radius: var(--radius-md);
   overflow: visible;
@@ -844,12 +861,23 @@
 .collage-builder-item img {
   display: block;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
   border-radius: var(--radius-md);
   border: 3px solid var(--card);
   box-shadow: 0 4px 10px rgba(15, 23, 42, 0.18);
   pointer-events: none;
+}
+.collage-builder-item-resize-handle {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  background: var(--card);
+  border: 2px solid var(--primary);
+  cursor: nwse-resize;
+  z-index: 2;
 }
 .collage-builder-item-remove {
   position: absolute;

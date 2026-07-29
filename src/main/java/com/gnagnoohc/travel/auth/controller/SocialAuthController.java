@@ -5,6 +5,7 @@ import java.security.MessageDigest;
 import java.time.LocalDateTime;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -50,6 +51,8 @@ public class SocialAuthController {
     private static final String PENDING_SOCIAL_SIGNUP = "pendingSocialSignup";
     private static final String PENDING_SOCIAL_LINK = "pendingSocialLink";
     private static final String PENDING_SOCIAL_AUTH_INTENT = "pendingSocialAuthIntent";
+    private static final String PENDING_SOCIAL_AUTH_FLOW_ID = "pendingSocialAuthFlowId";
+    private static final String PENDING_SOCIAL_AUTH_STATE = "pendingSocialAuthState";
     private static final String LOGIN_INTENT = "LOGIN";
     private static final String SIGNUP_INTENT = "SIGNUP";
     private static final int AUTH_INTENT_VALID_MINUTES = 10;
@@ -72,6 +75,11 @@ public class SocialAuthController {
         return startSocialAuth(session, "google", LOGIN_INTENT);
     }
 
+    @GetMapping("/naver")
+    public String startNaverLogin(HttpSession session) {
+        return startSocialAuth(session, "naver", LOGIN_INTENT);
+    }
+
     @GetMapping("/kakao/signup")
     public String startKakaoSignup(HttpSession session) {
         return startSocialAuth(session, "kakao", SIGNUP_INTENT);
@@ -80,6 +88,11 @@ public class SocialAuthController {
     @GetMapping("/google/signup")
     public String startGoogleSignup(HttpSession session) {
         return startSocialAuth(session, "google", SIGNUP_INTENT);
+    }
+
+    @GetMapping("/naver/signup")
+    public String startNaverSignup(HttpSession session) {
+        return startSocialAuth(session, "naver", SIGNUP_INTENT);
     }
 
     @GetMapping("/social/signup")
@@ -356,20 +369,16 @@ public class SocialAuthController {
             String intent) {
         String normalizedRegistrationId = normalizeRegistrationId(registrationId);
         String normalizedIntent = normalizeIntent(intent);
+        String flowId = UUID.randomUUID().toString();
 
-        // 같은 세션에서 OAuth 창을 여러 개 시작해 callback 의도와 제공자가 뒤섞이지 않게 한다.
+        // 새 OAuth 시작은 이전에 완료되지 않은 흐름을 폐기하고 현재 요청으로 교체한다.
+        // Spring Security가 새 authorization request의 state를 저장하므로 이전 callback은 검증에 실패한다.
         synchronized (session) {
-            Object sessionValue = session.getAttribute(PENDING_SOCIAL_AUTH_INTENT);
-            if (sessionValue != null) {
-                if (!(sessionValue instanceof PendingSocialAuthIntent pendingIntent)
-                        || !pendingIntent.isExpired()) {
-                    return "redirect:/auth/login?socialError=true";
-                }
-                session.removeAttribute(PENDING_SOCIAL_AUTH_INTENT);
-            }
-
+            session.removeAttribute(PENDING_SOCIAL_AUTH_INTENT);
             session.removeAttribute(PENDING_SOCIAL_SIGNUP);
             session.removeAttribute(PENDING_SOCIAL_LINK);
+            session.removeAttribute(PENDING_SOCIAL_AUTH_STATE);
+            session.setAttribute(PENDING_SOCIAL_AUTH_FLOW_ID, flowId);
             session.setAttribute(
                     PENDING_SOCIAL_AUTH_INTENT,
                     new PendingSocialAuthIntent(
@@ -377,7 +386,7 @@ public class SocialAuthController {
                             normalizedRegistrationId,
                             LocalDateTime.now().plusMinutes(AUTH_INTENT_VALID_MINUTES)));
         }
-        return "redirect:/oauth2/authorization/" + normalizedRegistrationId;
+        return "redirect:/oauth2/authorization/" + normalizedRegistrationId + "?flow=" + flowId;
     }
 
     private String normalizeRegistrationId(String registrationId) {
@@ -385,7 +394,9 @@ public class SocialAuthController {
             throw new IllegalArgumentException("지원하지 않는 소셜 로그인 제공자입니다.");
         }
         String normalized = registrationId.trim().toLowerCase(Locale.ROOT);
-        if (!"kakao".equals(normalized) && !"google".equals(normalized)) {
+        if (!"kakao".equals(normalized)
+                && !"google".equals(normalized)
+                && !"naver".equals(normalized)) {
             throw new IllegalArgumentException("지원하지 않는 소셜 로그인 제공자입니다.");
         }
         return normalized;

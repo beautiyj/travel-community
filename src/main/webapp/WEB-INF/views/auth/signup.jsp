@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>회원 유형 선택 | 갈래말래</title>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/auth/auth.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/auth/auth.css?v=naver-20260729-7">
 </head>
 <body class="auth-page auth-page--signup-type">
 <main class="signup-type-shell">
@@ -101,9 +101,12 @@
                 <div class="social-login-divider">소셜 계정으로 시작하기</div>
                 <a class="social-login-button social-login-button--kakao"
                    href="${pageContext.request.contextPath}/auth/kakao/signup" aria-label="카카오 계정으로 가입">
-                    <img class="kakao-login-standard-image"
-                         src="https://k.kakaocdn.net/14/dn/btroDszwNrM/I6efHub1SN5KCJqLm1Ovx1/o.jpg"
-                         alt="">
+                    <span class="kakao-login-content">
+                        <img class="kakao-login-symbol"
+                             src="${pageContext.request.contextPath}/images/auth/kakao-login-symbol.png?v=naver-20260729-6"
+                             alt="">
+                        <span class="kakao-login-label">카카오 로그인</span>
+                    </span>
                 </a>
                 <a class="social-login-button social-login-button--google"
                    href="${pageContext.request.contextPath}/auth/google/signup" aria-label="Google 계정으로 가입">
@@ -115,7 +118,13 @@
                     </svg>
                     <span>Google 계정으로 가입</span>
                 </a>
-                <button class="social-login-button social-login-button--naver" type="button" disabled>네이버 가입 (준비 중)</button>
+                <a class="social-login-button social-login-button--naver"
+                   href="${pageContext.request.contextPath}/auth/naver/signup" aria-label="네이버로 시작하기">
+                    <img class="naver-login-icon"
+                         src="${pageContext.request.contextPath}/images/auth/NAVER_login_Light_KR_green_icon_H48.png?v=naver-20260729-7"
+                         alt="">
+                    <span>네이버로 시작하기</span>
+                </a>
             </section>
 
             <p class="auth-switch signup-type-switch">

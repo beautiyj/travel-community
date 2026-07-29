@@ -6,6 +6,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.http.converter.FormHttpMessageConverter;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -19,7 +21,9 @@ import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
+import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepository;
+import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.security.oauth2.core.http.converter.OAuth2AccessTokenResponseHttpMessageConverter;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -32,6 +36,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestTemplate;
 
 import com.gnagnoohc.travel.auth.controller.SocialOAuth2LoginHandler;
+import com.gnagnoohc.travel.auth.security.SocialOAuth2AuthorizationRequestRepository;
 
 @Configuration
 @EnableWebSecurity
@@ -68,6 +73,20 @@ public class SecurityConfig {
         RestClientAuthorizationCodeTokenResponseClient tokenClient =
                 new RestClientAuthorizationCodeTokenResponseClient();
         tokenClient.setRestClient(restClient);
+        tokenClient.addParametersConverter(grantRequest -> {
+            MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
+            if ("naver".equals(
+                    grantRequest.getClientRegistration().getRegistrationId())) {
+                String state = grantRequest.getAuthorizationExchange()
+                        .getAuthorizationResponse()
+                        .getState();
+                if (state != null && !state.isBlank()) {
+                    // 네이버 토큰 API는 callback에서 검증된 state를 토큰 요청에도 요구한다.
+                    parameters.add("state", state);
+                }
+            }
+            return parameters;
+        });
         return tokenClient;
     }
 
@@ -91,10 +110,18 @@ public class SecurityConfig {
     }
 
     @Bean
+    public AuthorizationRequestRepository<OAuth2AuthorizationRequest>
+            socialAuthorizationRequestRepository() {
+        return new SocialOAuth2AuthorizationRequestRepository();
+    }
+
+    @Bean
     public SecurityFilterChain filterChain(
             HttpSecurity http,
             SocialOAuth2LoginHandler socialOAuth2LoginHandler,
             OAuth2AuthorizedClientRepository authorizedClientRepository,
+            AuthorizationRequestRepository<OAuth2AuthorizationRequest>
+                    authorizationRequestRepository,
             SecurityContextRepository securityContextRepository,
             OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> tokenClient,
             OAuth2UserService<OAuth2UserRequest, OAuth2User> userService,
@@ -106,6 +133,9 @@ public class SecurityConfig {
                 .securityContext(context ->
                         context.securityContextRepository(securityContextRepository))
                 .oauth2Login(oauth2 -> oauth2
+                        .authorizationEndpoint(authorization -> authorization
+                                .authorizationRequestRepository(
+                                        authorizationRequestRepository))
                         // callback 경로와 ClientRegistration의 redirect-uri를 같은 규칙으로 맞춘다.
                         .redirectionEndpoint(redirection ->
                                 redirection.baseUri("/auth/callback/*"))

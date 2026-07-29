@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>로그인 | 갈래말래</title>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/auth/auth.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/auth/auth.css?v=naver-20260729-7">
     <script defer src="${pageContext.request.contextPath}/js/auth/login.js"></script>
 </head>
 <body class="auth-page auth-page--login">
@@ -86,12 +86,15 @@
     <%-- 공통 소셜 로그인 컴포넌트 적용 전까지 우선순위만 맞춰 임시로 노출한다. --%>
     <section class="social-login-section" aria-label="소셜 로그인">
         <div class="social-login-divider"><span>또는</span></div>
-        <%-- 일반 카카오 로그인 공식 버튼 리소스를 사용해 심볼과 레이블 비율을 유지한다. --%>
+        <%-- 카카오 공식 PSD의 말풍선 심볼 레이어와 프로젝트 레이블을 사용한다. --%>
         <a class="social-login-button social-login-button--kakao"
            href="${pageContext.request.contextPath}/auth/kakao" aria-label="카카오 로그인">
-            <img class="kakao-login-standard-image"
-                 src="https://k.kakaocdn.net/14/dn/btroDszwNrM/I6efHub1SN5KCJqLm1Ovx1/o.jpg"
-                 alt="">
+            <span class="kakao-login-content">
+                <img class="kakao-login-symbol"
+                     src="${pageContext.request.contextPath}/images/auth/kakao-login-symbol.png?v=naver-20260729-6"
+                     alt="">
+                <span class="kakao-login-label">카카오 로그인</span>
+            </span>
         </a>
         <%-- 기존 소셜 버튼 구조는 유지하고 Google 로고만 작은 아이콘으로 추가한다. --%>
         <a class="social-login-button social-login-button--google"
@@ -104,7 +107,13 @@
             </svg>
             <span>Google 계정으로 로그인</span>
         </a>
-        <button class="social-login-button social-login-button--naver" type="button" disabled>네이버 로그인 (준비 중)</button>
+        <a class="social-login-button social-login-button--naver"
+           href="${pageContext.request.contextPath}/auth/naver" aria-label="네이버 로그인">
+            <img class="naver-login-icon"
+                 src="${pageContext.request.contextPath}/images/auth/NAVER_login_Light_KR_green_icon_H48.png?v=naver-20260729-7"
+                 alt="">
+            <span>네이버 로그인</span>
+        </a>
     </section>
 
     <div class="auth-links">

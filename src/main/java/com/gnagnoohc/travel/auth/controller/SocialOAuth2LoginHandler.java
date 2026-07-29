@@ -46,9 +46,14 @@ public class SocialOAuth2LoginHandler
     private static final String KAKAO_PROVIDER = "KAKAO";
     private static final String GOOGLE_REGISTRATION_ID = "google";
     private static final String GOOGLE_PROVIDER = "GOOGLE";
+    private static final String NAVER_REGISTRATION_ID = "naver";
+    private static final String NAVER_PROVIDER = "NAVER";
+    private static final int NAVER_PROVIDER_USER_ID_MAX_LENGTH = 64;
     private static final String PENDING_SOCIAL_SIGNUP = "pendingSocialSignup";
     private static final String PENDING_SOCIAL_LINK = "pendingSocialLink";
     private static final String PENDING_SOCIAL_AUTH_INTENT = "pendingSocialAuthIntent";
+    private static final String PENDING_SOCIAL_AUTH_FLOW_ID = "pendingSocialAuthFlowId";
+    private static final String PENDING_SOCIAL_AUTH_STATE = "pendingSocialAuthState";
     private static final String LOGIN_INTENT = "LOGIN";
     private static final String SIGNUP_INTENT = "SIGNUP";
     private static final int SIGNUP_VALID_MINUTES = 10;
@@ -77,7 +82,7 @@ public class SocialOAuth2LoginHandler
             if (session == null) {
                 throw new SocialAuthException("소셜 로그인 시작 정보를 확인할 수 없습니다.");
             }
-            PendingSocialAuthIntent pendingIntent = consumePendingIntent(session);
+            PendingSocialAuthIntent pendingIntent = consumePendingIntent(request, session);
             String actualRegistrationId = normalizeRegistrationId(
                     token.getAuthorizedClientRegistrationId());
             if (pendingIntent.isExpired()
@@ -133,13 +138,13 @@ public class SocialOAuth2LoginHandler
                 }
             }
         } catch (SocialAuthException e) {
-            removePendingSocialFlow(request);
+            removePendingSocialFlowIfMatching(request);
             redirectPath = resolveFailureRedirect(intent, e);
             if (!e.isUserVisible()) {
                 log.error("소셜 로그인 처리 중 내부 오류가 발생했습니다.", e);
             }
         } catch (Exception e) {
-            removePendingSocialFlow(request);
+            removePendingSocialFlowIfMatching(request);
             // OAuth 응답 원문이나 토큰은 기록하지 않고 예외 종류만 서버 로그에서 확인한다.
             log.error("소셜 로그인 처리 중 예기치 않은 오류가 발생했습니다.", e);
         } finally {
@@ -159,7 +164,7 @@ public class SocialOAuth2LoginHandler
             HttpServletResponse response,
             org.springframework.security.core.AuthenticationException exception)
             throws IOException, ServletException {
-        removePendingSocialFlow(request);
+        removePendingSocialFlowIfMatching(request);
         clearSecurityContext(request, response);
         response.sendRedirect(request.getContextPath() + "/auth/login?socialError=true");
     }
@@ -168,6 +173,7 @@ public class SocialOAuth2LoginHandler
         return switch (normalizeRegistrationId(token.getAuthorizedClientRegistrationId())) {
             case KAKAO_REGISTRATION_ID -> extractKakaoProfile(token.getPrincipal());
             case GOOGLE_REGISTRATION_ID -> extractGoogleProfile(token.getPrincipal());
+            case NAVER_REGISTRATION_ID -> extractNaverProfile(token.getPrincipal());
             default -> throw new SocialAuthException("현재 지원하지 않는 소셜 로그인 제공자입니다.");
         };
     }
@@ -209,6 +215,33 @@ public class SocialOAuth2LoginHandler
                 stringValue(attributes.get("picture")));
     }
 
+    private SocialProfile extractNaverProfile(OAuth2User oauth2User) {
+        Map<String, Object> attributes = oauth2User.getAttributes();
+        if (!"00".equals(stringValue(attributes.get("resultcode")))) {
+            throw new SocialAuthException("네이버 회원 정보를 확인할 수 없습니다.");
+        }
+
+        Map<?, ?> response = mapValue(attributes.get("response"));
+        String providerUserId = response == null ? null : stringValue(response.get("id"));
+        if (providerUserId == null
+                || providerUserId.length() > NAVER_PROVIDER_USER_ID_MAX_LENGTH) {
+            throw new SocialAuthException("유효하지 않은 네이버 회원 식별 정보입니다.");
+        }
+
+        /*
+         * 네이버는 email_verified 필드를 반환하지 않는다.
+         * 이 프로젝트에서는 인증 성공 응답의 이메일을 검증된 이메일로 신뢰한다.
+         * 이메일은 신규 가입·연동에서만 필수이며 기존 연결 회원 로그인은 식별자만 사용한다.
+         */
+        return new SocialProfile(
+                NAVER_PROVIDER,
+                providerUserId,
+                stringValue(response.get("email")),
+                true,
+                null,
+                stringValue(response.get("profile_image")));
+    }
+
     private void cleanupOAuthAuthentication(
             OAuth2AuthenticationToken authentication,
             HttpServletRequest request,
@@ -241,26 +274,55 @@ public class SocialOAuth2LoginHandler
         }
     }
 
-    private void removePendingSocialFlow(HttpServletRequest request) {
+    private void removePendingSocialFlowIfMatching(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
-        if (session != null) {
+        if (session == null) {
+            return;
+        }
+
+        String callbackState = validState(request.getParameter("state"));
+        synchronized (session) {
+            String pendingState = session.getAttribute(PENDING_SOCIAL_AUTH_STATE)
+                    instanceof String state ? validState(state) : null;
+            if (callbackState == null || !callbackState.equals(pendingState)) {
+                return;
+            }
             session.removeAttribute(PENDING_SOCIAL_SIGNUP);
             session.removeAttribute(PENDING_SOCIAL_LINK);
             session.removeAttribute(PENDING_SOCIAL_AUTH_INTENT);
+            session.removeAttribute(PENDING_SOCIAL_AUTH_FLOW_ID);
+            session.removeAttribute(PENDING_SOCIAL_AUTH_STATE);
         }
     }
 
-    private PendingSocialAuthIntent consumePendingIntent(HttpSession session) {
+    private PendingSocialAuthIntent consumePendingIntent(
+            HttpServletRequest request,
+            HttpSession session) {
         Object sessionValue;
         synchronized (session) {
+            String callbackState = validState(request.getParameter("state"));
+            String pendingState = session.getAttribute(PENDING_SOCIAL_AUTH_STATE)
+                    instanceof String state ? validState(state) : null;
+            if (callbackState == null || !callbackState.equals(pendingState)) {
+                throw new SocialAuthException("소셜 로그인 시작 정보를 확인할 수 없습니다.");
+            }
+
             sessionValue = session.getAttribute(PENDING_SOCIAL_AUTH_INTENT);
-            // callback 재전송이 같은 시작 정보를 다시 사용할 수 없도록 조회 즉시 소비한다.
-            session.removeAttribute(PENDING_SOCIAL_AUTH_INTENT);
+            if (sessionValue instanceof PendingSocialAuthIntent) {
+                // callback 재전송이 같은 시작 정보를 다시 사용할 수 없도록 state와 함께 소비한다.
+                session.removeAttribute(PENDING_SOCIAL_AUTH_INTENT);
+                session.removeAttribute(PENDING_SOCIAL_AUTH_FLOW_ID);
+                session.removeAttribute(PENDING_SOCIAL_AUTH_STATE);
+            }
         }
         if (!(sessionValue instanceof PendingSocialAuthIntent pendingIntent)) {
             throw new SocialAuthException("소셜 로그인 시작 정보를 확인할 수 없습니다.");
         }
         return pendingIntent;
+    }
+
+    private String validState(String state) {
+        return state == null || state.isBlank() ? null : state;
     }
 
     private String normalizeRegistrationId(String registrationId) {
@@ -269,7 +331,8 @@ public class SocialOAuth2LoginHandler
         }
         String normalized = registrationId.trim().toLowerCase(Locale.ROOT);
         if (!KAKAO_REGISTRATION_ID.equals(normalized)
-                && !GOOGLE_REGISTRATION_ID.equals(normalized)) {
+                && !GOOGLE_REGISTRATION_ID.equals(normalized)
+                && !NAVER_REGISTRATION_ID.equals(normalized)) {
             throw new SocialAuthException("현재 지원하지 않는 소셜 로그인 제공자입니다.");
         }
         return normalized;

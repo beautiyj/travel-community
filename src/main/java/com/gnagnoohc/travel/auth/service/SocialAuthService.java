@@ -435,6 +435,7 @@ public class SocialAuthService {
                 || providerUserId.isBlank()
                 || providerUserId.length() > 255
                 || (KAKAO.equals(provider) && !providerUserId.matches("^[0-9]+$"))
+                || (NAVER.equals(provider) && providerUserId.length() > 64)
                 || (provider + "_" + providerUserId).length() > 100) {
             throw new SocialAuthException("유효하지 않은 소셜 회원 식별 정보입니다.");
         }

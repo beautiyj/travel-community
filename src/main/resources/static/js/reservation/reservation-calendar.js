@@ -16,6 +16,7 @@
     if (!hidden || !grid) return;
 
     var booked   = {};                     // { 'yyyy-MM-dd': 예약인원합 } — 활성예약이 있는 날만 담김
+    var closed   = false;                  // 장소 전체가 휴무로 지정됐는지 (PLACE.is_closed)
     var selected = hidden.value || null;   // 복원된 값이 있으면 유지
 
     // 숙박만 '1일 1팀'이라 예약된 날을 막는다. 맛집/관광지(tour/food)는 하루에 여러 팀 → 마감 없음(항상 초록)
@@ -74,8 +75,8 @@
             if (isPast(viewYear, viewMonth, d)) {
                 cell.classList.add('is-past');
                 cell.disabled = true;
-            } else if ((booked[dateStr] || 0) > 0) {
-                cell.classList.add('is-full');       // 이미 예약 있는 날 = 빨강, 선택 불가 (1일 1팀)
+            } else if (closed || (booked[dateStr] || 0) > 0) {
+                cell.classList.add('is-full');       // 휴무 장소이거나 이미 예약 있는 날 = 빨강, 선택 불가 (1일 1팀)
                 cell.disabled = true;
             } else {
                 cell.classList.add('is-available');  // 예약 가능 = 초록
@@ -103,14 +104,16 @@
 
     render();   // 우선 한 번 그려서 빈 화면 방지 (마감 현황 로드 전엔 전부 가능)
 
-    // 숙박만 마감 현황 로드 → 예약된 날 빨강. 맛집/관광지는 조회 안 함(전부 초록).
+    // 마감/휴무 현황 로드 (장소 타입 무관 — 휴무는 숙박/맛집/관광지 모두 확인해야 함).
+    // 숙박만 예약된 날짜(booked)도 함께 반영, 맛집/관광지는 booked 무시(전부 초록·휴무 시에만 빨강).
     // 실패하면 전부 가능으로 둔다(프론트는 UX용, 최종 방어는 서버)
-    if (BLOCK_BOOKED && placeId != null && placeId !== '') {
+    if (placeId != null && placeId !== '') {
         fetch('/reservations/availability?placeId=' + placeId)
             .then(function (res) { return res.ok ? res.json() : null; })
             .then(function (data) {
                 if (!data) return;
-                booked = data.booked || {};
+                if (BLOCK_BOOKED) booked = data.booked || {};
+                closed = !!data.closed;
                 render();
             })
             .catch(function () { /* 조회 실패 무시 */ });

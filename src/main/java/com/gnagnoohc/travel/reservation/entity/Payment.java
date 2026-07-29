@@ -13,6 +13,7 @@ public class Payment {
     public static final int TYPE_KAKAO = 2;
     public static final int TYPE_BANK = 3;          // 무통장입금 (가상)
     public static final int TYPE_VIRTUAL_CARD = 4;  // 가상카드 (가상)
+    public static final int TYPE_FREE = 5;          // 무료(결제금액 0원) — PG 호출 없이 바로 PAID
 
     private Long paymentId;
     private Long reservationId;

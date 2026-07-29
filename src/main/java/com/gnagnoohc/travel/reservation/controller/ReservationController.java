@@ -2,6 +2,9 @@ package com.gnagnoohc.travel.reservation.controller;
 
 import com.gnagnoohc.travel.auth.dto.LoginMemberDto;
 import com.gnagnoohc.travel.reservation.dto.ReservationCreateRequest;
+import com.gnagnoohc.travel.reservation.entity.Payment;
+import com.gnagnoohc.travel.reservation.entity.Reservation;
+import com.gnagnoohc.travel.reservation.service.PaymentService;
 import com.gnagnoohc.travel.reservation.service.ReservationService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
@@ -21,6 +24,7 @@ import java.util.Map;
 public class ReservationController {
 
     private final ReservationService reservationService;
+    private final PaymentService paymentService;
 
     /** 개발용 테스트 허브. 예약~결제~취소 흐름을 수동으로 확인하는 페이지 */
     @GetMapping("/test")
@@ -47,9 +51,9 @@ public class ReservationController {
     }
 
     /**
-     * 예약 캘린더용: 장소의 이미 예약된 날짜 목록.
-     * 프론트 캘린더가 이 값으로 "예약된 날 = 빨강(선택 불가)"을 그린다. (1일 1팀)
-     * 응답 예: { "booked": { "2026-07-29": 10, "2026-07-30": 5 } }
+     * 예약 캘린더용: 장소의 이미 예약된 날짜 목록 + 휴무 여부.
+     * 프론트 캘린더가 이 값으로 "예약된 날/휴무 장소 = 빨강(선택 불가)"을 그린다. (1일 1팀)
+     * 응답 예: { "booked": { "2026-07-29": 10, "2026-07-30": 5 }, "closed": false }
      */
     @GetMapping("/availability")
     @ResponseBody
@@ -77,6 +81,18 @@ public class ReservationController {
         log.info("[예약 생성 요청] memberId={}, {}", memberId, req);
         Long reservationId = reservationService.create(memberId, req);
         log.info("[예약 생성 완료] reservationId={}", reservationId);
+
+        // 결제금액이 0원(무료)이면 결제창을 거치지 않고 곧장 결제완료 처리 → 관리자 승인 대기로 넘어간다
+        Reservation r = reservationService.getById(reservationId);
+        int amount = reservationService.calculateAmount(r);
+        if (amount == 0) {
+            String orderId = paymentService.generateOrderId(reservationId);
+            String freeKey = "FREE-" + reservationId + "-" + System.currentTimeMillis();
+            Payment payment = paymentService.saveSuccess(reservationId, 0, freeKey, orderId, Payment.TYPE_FREE);
+            log.info("[무료 예약 즉시 완료] reservationId={}, paymentId={}", reservationId, payment.getPaymentId());
+            return "redirect:/payments/complete/" + payment.getPaymentId();
+        }
+
         return "redirect:/payments/checkout/" + reservationId;
     }
 

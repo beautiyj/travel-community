@@ -195,12 +195,12 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 // ── 가격 설정 (등록/수정 폼 공용) ──
-// 1) 가격은 숙박(placeType=1)만 설정 대상이라 업종이 숙박일 때만 영역을 노출한다.
+// 1) 가격은 숙박(placeType='stay')만 설정 대상이라 업종이 숙박일 때만 영역을 노출한다.
 //    맛집/관광지는 서버가 무조건 FREE로 저장하므로 여기서 값을 보내지 않아도 된다.
 // 2) 가격 유형 라디오에서 "가격입력"(FIXED)을 고른 경우에만 금액 input을 연다.
 // 사진 그리드 로직과 무관하게 동작해야 해서 별도 리스너로 분리했다.
 document.addEventListener("DOMContentLoaded", function () {
-    var LODGING_PLACE_TYPE = "1";
+    var LODGING_PLACE_TYPE = "stay";
 
     var priceGroup = document.querySelector(".js-price-group");
     if (!priceGroup) return;

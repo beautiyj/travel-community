@@ -22,9 +22,21 @@ public class CommunityDto {
     
     // ── 화면 표시용 (post 테이블에 없는 조인/조립 값) ──
     private String nickname;               // 작성자 이름 (member 테이블 JOIN으로 채움)
+    private Integer memberType;            // 작성자 회원 유형 (1: 일반, 2: 사업자, member 테이블 JOIN)
+    private String profileImgUrl;          // 일반 회원 프로필 사진 (member 테이블 JOIN)
+    private String businessImage;          // 사업자 회원의 업소 대표사진 (place.first_image, member_id로 JOIN)
     private String placeName;              // 태그된 장소 이름 (place 테이블 JOIN, place_id 없으면 null)
     private List<ImageDto> imageList;       // 이미지 목록
     private List<CommentDto> commentList;   // 댓글 목록
+
+    // 작성자 아바타로 표시할 이미지 URL 결정
+    // 사업자면 업소 대표사진, 일반 회원이면 개인 프로필 사진, 둘 다 없으면 null(→ JSP에서 기본 아바타 표시)
+    public String getAvatarUrl() {
+        if (memberType != null && memberType == 2) {
+            return businessImage;
+        }
+        return profileImgUrl;
+    }
 
     // ── 카테고리 화면 표시용 (community.css 의 .badge 클래스와 매칭) ──
     // JSP 에서 postCategoryTag.jsp 같은 별도 컴포넌트 없이 이 getter들을 바로 사용

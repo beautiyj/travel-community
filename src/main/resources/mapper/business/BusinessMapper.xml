@@ -64,6 +64,8 @@
         <id     property="placeId"    column="place_id"/>
         <result property="name"       column="name"/>
         <result property="placeType"  column="place_type"/>
+        <result property="priceType"  column="price_type"/>
+        <result property="minPrice"   column="min_price"/>
         <result property="regionId"   column="region_id"/>
         <result property="regionName" column="region_name"/>
         <result property="address"    column="address"/>
@@ -189,6 +191,36 @@
           AND member_id = #{bizMemberId}
     </update>
 
+    <!-- ── 날짜별 예약 마감 (PLACE_CLOSED_DATE) ──
+         조회/추가/삭제 모두 PLACE와 조인해 소유자(bizMemberId)를 확인한다.
+         남의 업소 place_id를 넣어 요청해도 0건이 되어 서비스에서 예외로 걸린다. -->
+    <select id="selectClosedDates" resultType="java.time.LocalDate">
+        SELECT d.closed_date
+        FROM PLACE_CLOSED_DATE d
+        JOIN PLACE p ON p.place_id = d.place_id
+        WHERE d.place_id = #{placeId}
+          AND p.member_id = #{bizMemberId}
+          AND d.closed_date >= CURDATE()
+        ORDER BY d.closed_date
+    </select>
+
+    <insert id="insertClosedDate">
+        INSERT INTO PLACE_CLOSED_DATE (place_id, closed_date)
+        SELECT #{placeId}, #{closedDate}
+        FROM PLACE p
+        WHERE p.place_id = #{placeId}
+          AND p.member_id = #{bizMemberId}
+    </insert>
+
+    <delete id="deleteClosedDateRange">
+        DELETE d
+        FROM PLACE_CLOSED_DATE d
+        JOIN PLACE p ON p.place_id = d.place_id
+        WHERE d.place_id = #{placeId}
+          AND p.member_id = #{bizMemberId}
+          AND d.closed_date BETWEEN #{startDate} AND #{endDate}
+    </delete>
+
     <!-- 업소 등록 폼 지역 드롭다운. 지역코드를 당분간 null로 두기로 해서 주석처리
     <select id="selectRegionOptions" resultMap="regionOptionResultMap">
         SELECT region_id, region_name
@@ -209,11 +241,11 @@
     <insert id="insertOwnerPlace" parameterType="com.gnagnoohc.travel.business.dto.BusinessPlaceRegisterDto"
             useGeneratedKeys="true" keyProperty="placeId" keyColumn="place_id">
         INSERT INTO PLACE (
-            content_id, content_type_id, place_type, <!-- region_id, --> member_id,
-            name, description, address, <!-- mapx, mapy, --> admin_type, first_image
+            place_type, price_type, min_price, <!-- region_id, --> member_id,
+            name, description, address, <!-- mapx, mapy, --> first_image
         ) VALUES (
-            #{contentId}, #{contentTypeId}, #{placeType}, <!-- #{regionId}, --> #{memberId},
-            #{name}, #{description}, #{address}, <!-- #{mapx}, #{mapy}, --> #{adminType}, #{firstImage}
+            #{placeType}, #{priceType}, #{minPrice}, <!-- #{regionId}, --> #{memberId},
+            #{name}, #{description}, #{address}, <!-- #{mapx}, #{mapy}, --> #{firstImage}
         )
     </insert>
 
@@ -224,7 +256,8 @@
 
     <!-- 업소정보 수정 폼 진입 시 기존 값 채우기용. 지역명까지 같이 조회 -->
     <select id="selectPlaceDetailByMember" resultMap="placeDetailResultMap">
-        SELECT p.place_id, p.name, p.place_type, p.region_id, r.region_name, p.address, p.description, p.is_closed
+        SELECT p.place_id, p.name, p.place_type, p.price_type, p.min_price,
+               p.region_id, r.region_name, p.address, p.description, p.is_closed
         FROM PLACE p
         LEFT JOIN REGION r ON r.region_id = p.region_id
         WHERE p.member_id = #{bizMemberId}
@@ -244,6 +277,8 @@
         UPDATE PLACE
         SET name = #{name},
             place_type = #{placeType},
+            price_type = #{priceType},
+            min_price = #{minPrice},
             <!-- region_id = #{regionId}, -->
             address = #{address},
             description = #{description},
@@ -259,21 +294,18 @@
           AND image_url = #{imageUrl}
     </delete>
 
-    <!-- 후기 확인 목록. 후기는 별도 테이블 없이 post(category='후기') + place_id로 식별.
-         답글은 커뮤니티 상세(댓글)에서 처리하므로 여기서는 목록 표시에 필요한 값만 조회한다 -->
-    <!-- p.nickname은 커뮤니티 글쓰기(insert)에서 채워지지 않는 경우가 있어(NULL) member 조인으로 폴백 -->
+    <!-- 방문자 인증 후기목록. post(category='VERIFIED_REVIEW') + place_id로 식별-->
     <!-- sentiment 필터 : REVIEW_ANALYSIS가 아직 없는(미분석) 후기는 필터 적용 시 제외된다.
          화면 진입 시 ReviewSentimentService가 먼저 미분석 후기를 분석해두므로 실제로는 거의 발생하지 않는다 -->
     <select id="selectReviewsByPlace" resultMap="reviewResultMap">
         SELECT p.post_id, p.title, p.content, p.created_at,
-               COALESCE(p.nickname, m.nickname) AS nickname,
+               m.nickname AS nickname,
                p.readcount
         FROM post p
         JOIN member m ON m.member_id = p.member_id
         LEFT JOIN REVIEW_ANALYSIS ra ON ra.post_id = p.post_id
         WHERE p.place_id = #{placeId}
---           todo: category value값은 추후 전달받기로 하였음 (아직 미정)
-          AND p.category = '후기'
+          AND p.category = 'VERIFIED_REVIEW'
         <if test="sentiment != null">
             AND ra.sentiment = #{sentiment}
         </if>
@@ -286,7 +318,7 @@
         FROM post p
         LEFT JOIN REVIEW_ANALYSIS ra ON ra.post_id = p.post_id
         WHERE p.place_id = #{placeId}
-          AND p.category = '후기'
+          AND p.category = 'VERIFIED_REVIEW'
           AND ra.post_id IS NULL
     </select>
 

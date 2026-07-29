@@ -41,8 +41,8 @@
     </div>
 
     <nav class="business-sidebar__nav">
-        <a href="/business/dashboard?memberId=${memberId}" class="business-nav-item${activeTab == 'overview' ? ' is-active' : ''}">대시보드</a>
-        <a href="/business/reservations?memberId=${memberId}" class="business-nav-item${activeTab == 'reservations' ? ' is-active' : ''}">
+        <a href="/business/dashboard" class="business-nav-item${activeTab == 'overview' ? ' is-active' : ''}">대시보드</a>
+        <a href="/business/reservations" class="business-nav-item${activeTab == 'reservations' ? ' is-active' : ''}">
             예약 관리
             <c:if test="${(pendingCount + cancelRequestCount) > 0}">
                 <span class="business-badge">${pendingCount + cancelRequestCount}</span>
@@ -50,11 +50,16 @@
         </a>
         <a href="/business/closure" class="business-nav-item${activeTab == 'closure' ? ' is-active' : ''}">마감 관리</a>
         <a href="/business/venue" class="business-nav-item${activeTab == 'venue' ? ' is-active' : ''}">업소 관리</a>
-        <a href="/business/reviews?memberId=${memberId}" class="business-nav-item${activeTab == 'reviews' ? ' is-active' : ''}">후기 확인</a>
+        <a href="/business/reviews" class="business-nav-item${activeTab == 'reviews' ? ' is-active' : ''}">후기 확인</a>
     </nav>
 
     <div class="business-sidebar__footer">
-        <a href="/" class="business-nav-item">사용자 화면</a>
+        <%-- 일반 이용자에게 보이는 업소 상세페이지 미리보기. 새 탭으로 열어 관리 화면 흐름을 안 끊는다.
+             /place/detail?placeId= 는 아직 place(tour) 모듈 담당자가 구현 전인 가정 경로 —
+             community/detail.jsp의 장소 태그 링크와 동일한 경로를 그대로 맞춰 썼다. --%>
+        <c:if test="${not empty placeId}">
+            <a href="/place/detail?placeId=${placeId}" target="_blank" rel="noopener" class="business-nav-item">내 업소보기</a>
+        </c:if>
         <a href="/business/logout" class="business-nav-item business-nav-item--danger">로그아웃</a>
     </div>
 </aside>

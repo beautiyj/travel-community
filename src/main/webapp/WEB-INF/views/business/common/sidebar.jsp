@@ -54,7 +54,6 @@
     </nav>
 
     <div class="business-sidebar__footer">
-        <a href="/" class="business-nav-item">사용자 화면</a>
         <a href="/business/logout" class="business-nav-item business-nav-item--danger">로그아웃</a>
     </div>
 </aside>

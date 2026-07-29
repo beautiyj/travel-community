@@ -688,6 +688,56 @@ body {
     resize: vertical;
 }
 
+/* 가격 설정 (숙박 업소 등록/수정 폼) */
+.business-price-options {
+    display: flex;
+    gap: 8px;
+}
+
+.business-price-option {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    border: 1px solid var(--business-border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.business-price-option:has(input:checked) {
+    border-color: var(--business-primary);
+    background: #f0f9ff;
+}
+
+.business-price-input {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.business-price-input .business-form-input {
+    flex: 1;
+}
+
+.business-price-input__unit {
+    font-size: 14px;
+    color: var(--business-muted);
+}
+
+.business-price-hint {
+    margin: 8px 0 0;
+    font-size: 12px;
+    color: var(--business-muted);
+}
+
+.business-price-input.is-hidden,
+.business-form-group.is-hidden {
+    display: none;
+}
+
 .business-form-actions {
     display: flex;
     justify-content: flex-end;

@@ -14,6 +14,7 @@ import com.gnagnoohc.travel.business.dto.BusinessReviewSentimentCountsDto;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Mapper
@@ -49,6 +50,23 @@ public interface BusinessMapper {
             @Param("placeId") Long placeId,
             @Param("bizMemberId") Long bizMemberId,
             @Param("isClosed") boolean isClosed
+    );
+
+    // ── 날짜별 예약 마감 (PLACE_CLOSED_DATE) ──
+    // 지난 날짜는 의미가 없으므로 오늘 이후만 조회한다
+    List<LocalDate> selectClosedDates(@Param("placeId") Long placeId, @Param("bizMemberId") Long bizMemberId);
+
+    // 소유자가 아니면 0건 INSERT. 같은 날짜 중복은 UNIQUE 제약과 별개로 여기서도 무시(INSERT IGNORE 아님)
+    int insertClosedDate(
+            @Param("placeId") Long placeId,
+            @Param("bizMemberId") Long bizMemberId,
+            @Param("closedDate") LocalDate closedDate
+    );
+
+    int deleteClosedDate(
+            @Param("placeId") Long placeId,
+            @Param("bizMemberId") Long bizMemberId,
+            @Param("closedDate") LocalDate closedDate
     );
 
 //    List<BusinessRegionOptionDto> selectRegionOptions();

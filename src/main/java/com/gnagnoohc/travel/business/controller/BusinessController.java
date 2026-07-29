@@ -208,6 +208,9 @@ public class BusinessController {
     public String registerVenue(
             @RequestParam String name,
             @RequestParam Integer placeType,
+            // 가격은 숙박일 때만 폼에 노출되므로 두 값 모두 optional. 정리/검증은 서비스가 담당
+            @RequestParam(required = false) String priceType,
+            @RequestParam(required = false) Integer minPrice,
             @RequestParam(required = false) Long regionId,
             @RequestParam String address,
             @RequestParam(required = false) String description,
@@ -215,7 +218,7 @@ public class BusinessController {
             HttpSession session
     ) {
         Long memberId = currentBusinessMemberId(session);
-        businessPlaceService.registerPlace(memberId, name, placeType, regionId, address, description, images);
+        businessPlaceService.registerPlace(memberId, name, placeType, priceType, minPrice, regionId, address, description, images);
         return "redirect:/business/venue";
     }
 
@@ -224,6 +227,8 @@ public class BusinessController {
     public String updateVenue(
             @RequestParam String name,
             @RequestParam Integer placeType,
+            @RequestParam(required = false) String priceType,
+            @RequestParam(required = false) Integer minPrice,
             @RequestParam(required = false) Long regionId,
             @RequestParam String address,
             @RequestParam(required = false) String description,
@@ -235,7 +240,7 @@ public class BusinessController {
             HttpSession session
     ) {
         Long memberId = currentBusinessMemberId(session);
-        businessPlaceService.updatePlace(memberId, name, placeType, regionId, address, description, photoOrder, removeImageUrls, newImages);
+        businessPlaceService.updatePlace(memberId, name, placeType, priceType, minPrice, regionId, address, description, photoOrder, removeImageUrls, newImages);
         return "redirect:/business/venue";
     }
 

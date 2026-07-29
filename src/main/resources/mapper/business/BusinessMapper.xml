@@ -64,6 +64,8 @@
         <id     property="placeId"    column="place_id"/>
         <result property="name"       column="name"/>
         <result property="placeType"  column="place_type"/>
+        <result property="priceType"  column="price_type"/>
+        <result property="minPrice"   column="min_price"/>
         <result property="regionId"   column="region_id"/>
         <result property="regionName" column="region_name"/>
         <result property="address"    column="address"/>
@@ -189,6 +191,36 @@
           AND member_id = #{bizMemberId}
     </update>
 
+    <!-- ── 날짜별 예약 마감 (PLACE_CLOSED_DATE) ──
+         조회/추가/삭제 모두 PLACE와 조인해 소유자(bizMemberId)를 확인한다.
+         남의 업소 place_id를 넣어 요청해도 0건이 되어 서비스에서 예외로 걸린다. -->
+    <select id="selectClosedDates" resultType="java.time.LocalDate">
+        SELECT d.closed_date
+        FROM PLACE_CLOSED_DATE d
+        JOIN PLACE p ON p.place_id = d.place_id
+        WHERE d.place_id = #{placeId}
+          AND p.member_id = #{bizMemberId}
+          AND d.closed_date >= CURDATE()
+        ORDER BY d.closed_date
+    </select>
+
+    <insert id="insertClosedDate">
+        INSERT INTO PLACE_CLOSED_DATE (place_id, closed_date)
+        SELECT #{placeId}, #{closedDate}
+        FROM PLACE p
+        WHERE p.place_id = #{placeId}
+          AND p.member_id = #{bizMemberId}
+    </insert>
+
+    <delete id="deleteClosedDate">
+        DELETE d
+        FROM PLACE_CLOSED_DATE d
+        JOIN PLACE p ON p.place_id = d.place_id
+        WHERE d.place_id = #{placeId}
+          AND p.member_id = #{bizMemberId}
+          AND d.closed_date = #{closedDate}
+    </delete>
+
     <!-- 업소 등록 폼 지역 드롭다운. 지역코드를 당분간 null로 두기로 해서 주석처리
     <select id="selectRegionOptions" resultMap="regionOptionResultMap">
         SELECT region_id, region_name
@@ -209,10 +241,10 @@
     <insert id="insertOwnerPlace" parameterType="com.gnagnoohc.travel.business.dto.BusinessPlaceRegisterDto"
             useGeneratedKeys="true" keyProperty="placeId" keyColumn="place_id">
         INSERT INTO PLACE (
-            place_type, <!-- region_id, --> member_id,
+            place_type, price_type, min_price, <!-- region_id, --> member_id,
             name, description, address, <!-- mapx, mapy, --> first_image
         ) VALUES (
-            #{placeType}, <!-- #{regionId}, --> #{memberId},
+            #{placeType}, #{priceType}, #{minPrice}, <!-- #{regionId}, --> #{memberId},
             #{name}, #{description}, #{address}, <!-- #{mapx}, #{mapy}, --> #{firstImage}
         )
     </insert>
@@ -224,7 +256,8 @@
 
     <!-- 업소정보 수정 폼 진입 시 기존 값 채우기용. 지역명까지 같이 조회 -->
     <select id="selectPlaceDetailByMember" resultMap="placeDetailResultMap">
-        SELECT p.place_id, p.name, p.place_type, p.region_id, r.region_name, p.address, p.description, p.is_closed
+        SELECT p.place_id, p.name, p.place_type, p.price_type, p.min_price,
+               p.region_id, r.region_name, p.address, p.description, p.is_closed
         FROM PLACE p
         LEFT JOIN REGION r ON r.region_id = p.region_id
         WHERE p.member_id = #{bizMemberId}
@@ -244,6 +277,8 @@
         UPDATE PLACE
         SET name = #{name},
             place_type = #{placeType},
+            price_type = #{priceType},
+            min_price = #{minPrice},
             <!-- region_id = #{regionId}, -->
             address = #{address},
             description = #{description},

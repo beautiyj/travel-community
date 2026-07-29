@@ -30,6 +30,13 @@ public class BusinessPlaceService {
     private static final String MEMBER_ROLE_BUSINESS = "BUSINESS";
     // 수정 폼에서 아직 저장 안 된 새 사진 카드를 나타내는 photoOrder 토큰
     private static final String NEW_PHOTO_TOKEN = "new";
+    // 가격 설정 대상은 숙박(place_type=1)뿐. 맛집/관광지는 예약금을 받지 않는다.
+    private static final int PLACE_TYPE_LODGING = 1;
+    private static final String PRICE_TYPE_FIXED = "FIXED";
+    private static final String PRICE_TYPE_VARIABLE = "VARIABLE";
+    private static final String PRICE_TYPE_FREE = "FREE";
+    private static final Set<String> ALLOWED_PRICE_TYPES =
+            Set.of(PRICE_TYPE_FIXED, PRICE_TYPE_VARIABLE, PRICE_TYPE_FREE);
 
     private final BusinessMapper businessMapper;
 
@@ -52,7 +59,8 @@ public class BusinessPlaceService {
     }
 
     @Transactional
-    public void registerPlace(Long bizMemberId, String name, Integer placeType, Long regionId,
+    public void registerPlace(Long bizMemberId, String name, Integer placeType, String priceType,
+                               Integer minPrice, Long regionId,
                                String address, String description, List<MultipartFile> images) {
         if (!isBusinessMember(bizMemberId)) {
             throw new IllegalStateException("사업자 회원만 업소를 등록할 수 있습니다.");
@@ -67,10 +75,14 @@ public class BusinessPlaceService {
             throw new IllegalArgumentException("사진을 최소 1장 등록해야 합니다.");
         }
 
+        PriceSetting price = resolvePrice(placeType, priceType, minPrice);
+
         List<String> savedUrls = nonEmpty.stream().map(this::saveImageFile).toList();
 
         BusinessPlaceRegisterDto place = BusinessPlaceRegisterDto.builder()
                 .placeType(placeType)
+                .priceType(price.priceType())
+                .minPrice(price.minPrice())
 //                .regionId(regionId)
                 .memberId(bizMemberId)
                 .name(name)
@@ -96,7 +108,8 @@ public class BusinessPlaceService {
     }
 
     @Transactional
-    public void updatePlace(Long bizMemberId, String name, Integer placeType, Long regionId,
+    public void updatePlace(Long bizMemberId, String name, Integer placeType, String priceType,
+                             Integer minPrice, Long regionId,
                              String address, String description, List<String> photoOrder,
                              List<String> removeImageUrls, List<MultipartFile> newImages) {
         BusinessPlaceOverviewDto overview = businessMapper.selectPlaceOverviewByMember(bizMemberId);
@@ -104,6 +117,9 @@ public class BusinessPlaceService {
             throw new IllegalStateException("등록된 업소가 없습니다.");
         }
         Long placeId = overview.getPlaceId();
+
+        // 사진을 지우고 다시 넣기 전에 먼저 검증해야 실패 시 기존 사진이 날아가지 않는다
+        PriceSetting price = resolvePrice(placeType, priceType, minPrice);
 
         List<String> currentImages = businessMapper.selectPlaceImages(placeId);
         Set<String> currentImageSet = Set.copyOf(currentImages);
@@ -156,6 +172,8 @@ public class BusinessPlaceService {
                 .memberId(bizMemberId)
                 .name(name)
                 .placeType(placeType)
+                .priceType(price.priceType())
+                .minPrice(price.minPrice())
 //                .regionId(regionId)
                 .address(address)
                 .description(description)
@@ -180,6 +198,30 @@ public class BusinessPlaceService {
         }
         return "/uploads/place/" + filename;
     }
+
+    /**
+     * 폼에서 온 가격 입력을 DB 제약(CK_PLACE_PRICE_TYPE / CK_PLACE_MIN_PRICE)에 맞게 정리한다.
+     * - 숙박이 아니면 무조건 FREE + min_price null (폼에서 가격 영역 자체가 숨겨져 값이 안 온다)
+     * - FIXED면 금액 필수, 그 외에는 금액을 버린다
+     * 화면 JS가 이미 같은 규칙으로 토글하지만, 폼 조작/직접 요청을 막는 서버측 최종 방어선이다.
+     */
+    private PriceSetting resolvePrice(Integer placeType, String priceType, Integer minPrice) {
+        if (placeType == null || placeType != PLACE_TYPE_LODGING) {
+            return new PriceSetting(PRICE_TYPE_FREE, null);
+        }
+        if (priceType == null || !ALLOWED_PRICE_TYPES.contains(priceType)) {
+            throw new IllegalArgumentException("가격 유형을 선택해주세요.");
+        }
+        if (!PRICE_TYPE_FIXED.equals(priceType)) {
+            return new PriceSetting(priceType, null);
+        }
+        if (minPrice == null || minPrice < 0) {
+            throw new IllegalArgumentException("가격입력을 선택한 경우 금액을 0원 이상으로 입력해야 합니다.");
+        }
+        return new PriceSetting(PRICE_TYPE_FIXED, minPrice);
+    }
+
+    private record PriceSetting(String priceType, Integer minPrice) {}
 
     private String extractExtension(String originalFilename) {
         if (originalFilename == null) {

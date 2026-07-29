@@ -25,7 +25,9 @@
                     <jsp:param name="placeId" value="${placeId}" />
                     <jsp:param name="isClosed" value="${isClosed}" />
                 </jsp:include>
-                <jsp:include page="common/closureDateCard.jsp" />
+                <jsp:include page="common/closureDateCard.jsp">
+                    <jsp:param name="placeId" value="${placeId}" />
+                </jsp:include>
             </div>
         </div>
     </div>

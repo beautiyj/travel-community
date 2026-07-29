@@ -8,6 +8,7 @@ import com.gnagnoohc.travel.reservation.service.ReservationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -48,6 +49,31 @@ public class BusinessReservationService {
         int updated = businessMapper.updatePlaceClosed(placeId, bizMemberId, isClosed);
         if (updated == 0) {
             throw new IllegalArgumentException("해당 업소가 없거나 처리 권한이 없습니다.");
+        }
+    }
+
+    /* ------------------- 날짜별 예약 마감 ------------------- */
+
+    public List<LocalDate> getClosedDates(Long placeId, Long bizMemberId) {
+        return businessMapper.selectClosedDates(placeId, bizMemberId);
+    }
+
+    /** 마감 날짜 추가. 지난 날짜는 막고, 이미 등록된 날짜는 그대로 성공 처리한다(멱등). */
+    public void addClosedDate(Long placeId, Long bizMemberId, LocalDate closedDate) {
+        if (closedDate.isBefore(LocalDate.now())) {
+            throw new IllegalArgumentException("지난 날짜는 마감할 수 없습니다.");
+        }
+        if (businessMapper.selectClosedDates(placeId, bizMemberId).contains(closedDate)) {
+            return;
+        }
+        if (businessMapper.insertClosedDate(placeId, bizMemberId, closedDate) == 0) {
+            throw new IllegalArgumentException("해당 업소가 없거나 처리 권한이 없습니다.");
+        }
+    }
+
+    public void removeClosedDate(Long placeId, Long bizMemberId, LocalDate closedDate) {
+        if (businessMapper.deleteClosedDate(placeId, bizMemberId, closedDate) == 0) {
+            throw new IllegalArgumentException("해당 마감 날짜가 없거나 처리 권한이 없습니다.");
         }
     }
 }

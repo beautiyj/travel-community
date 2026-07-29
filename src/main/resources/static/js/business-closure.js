@@ -50,17 +50,42 @@ document.addEventListener("DOMContentLoaded", function () {
             : "예약을 정상적으로 받고 있습니다.";
     }
 
-    // ── 날짜별 마감 설정 (UI만, 백엔드 미연동) ──
-    // 마감 날짜를 저장할 테이블(PLACE_CLOSED_DATE)이 아직 없어서 서버에 저장하지 않고
-    // 브라우저 메모리(closedDates 배열)에만 담아 보여준다. 새로고침하면 초기화됨.
-    // 테이블이 생기면 이 배열 대신 fetch로 조회/추가/삭제하도록 교체 예정.
+    // ── 날짜별 마감 설정 ──
+    // PLACE_CLOSED_DATE 테이블에 저장한다. 화면 진입 시 GET으로 목록을 불러오고,
+    // 추가/삭제는 POST/DELETE 후 서버 응답이 성공했을 때만 화면에 반영한다.
+    // (즉시 마감 토글과 달리 낙관적 갱신을 쓰지 않는다 — 목록은 되돌리기가 번거롭다)
+    var dateCard = document.querySelector(".business-closure-date-card");
     var dateInput = document.getElementById("closure-date-input");
     var addBtn = document.getElementById("closure-date-add");
     var listEl = document.getElementById("closure-date-list");
     var emptyEl = document.getElementById("closure-date-empty");
 
-    if (dateInput && addBtn && listEl && emptyEl) {
+    if (dateCard && dateInput && addBtn && listEl && emptyEl) {
+        var placeId = dateCard.dataset.placeId;
         var closedDates = [];
+
+        // 지난 날짜는 서버에서도 거부하므로 달력에서 아예 못 고르게 막는다
+        dateInput.min = new Date().toISOString().slice(0, 10);
+
+        function datesUrl(extraParams) {
+            var url = "/api/business/place/closed-dates?placeId=" + encodeURIComponent(placeId);
+            return extraParams ? url + extraParams : url;
+        }
+
+        function loadDateList() {
+            fetch(datesUrl())
+                .then(function (res) {
+                    if (!res.ok) throw new Error("조회 실패");
+                    return res.json();
+                })
+                .then(function (dates) {
+                    closedDates = dates;
+                    renderDateList();
+                })
+                .catch(function () {
+                    window.alert("마감 날짜를 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.");
+                });
+        }
 
         function renderDateList() {
             listEl.innerHTML = "";
@@ -108,21 +133,38 @@ document.addEventListener("DOMContentLoaded", function () {
         addBtn.addEventListener("click", function () {
             var value = dateInput.value;
             if (!value || closedDates.indexOf(value) !== -1) return;
-            closedDates.push(value);
-            closedDates.sort();
-            dateInput.value = "";
+
             addBtn.disabled = true;
-            renderDateList();
+            fetch(datesUrl("&closedDate=" + encodeURIComponent(value)), { method: "POST" })
+                .then(function (res) {
+                    if (!res.ok) throw new Error("추가 실패");
+                    dateInput.value = "";
+                    loadDateList();
+                })
+                .catch(function () {
+                    window.alert("마감 날짜 추가에 실패했습니다. 다시 시도해주세요.");
+                    addBtn.disabled = false;
+                });
         });
 
         listEl.addEventListener("click", function (e) {
             var removeBtn = e.target.closest(".business-closure-date-row__remove");
-            if (!removeBtn) return;
+            if (!removeBtn || removeBtn.disabled) return;
             var row = removeBtn.closest(".business-closure-date-row");
-            closedDates = closedDates.filter(function (d) { return d !== row.dataset.date; });
-            renderDateList();
+            var date = row.dataset.date;
+
+            removeBtn.disabled = true;
+            fetch(datesUrl("&closedDate=" + encodeURIComponent(date)), { method: "DELETE" })
+                .then(function (res) {
+                    if (!res.ok) throw new Error("삭제 실패");
+                    loadDateList();
+                })
+                .catch(function () {
+                    window.alert("마감 날짜 삭제에 실패했습니다. 다시 시도해주세요.");
+                    removeBtn.disabled = false;
+                });
         });
 
-        renderDateList();
+        loadDateList();
     }
 });

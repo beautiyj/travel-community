@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <!DOCTYPE html>
 <html>
 <head>
@@ -69,10 +70,15 @@
 
                                 <form class="business-form" action="/business/venue/update" method="post" enctype="multipart/form-data">
 
+                                    <%-- address를 안 넘기면 수정 화면에서 주소가 빈 값으로 뜨고,
+                                         business-venue.js의 제출 검증에 걸려 매번 주소를 다시 검색해야 한다 --%>
                                     <jsp:include page="common/venueFormFields.jsp">
                                         <jsp:param name="idPrefix" value="edit-" />
                                         <jsp:param name="name" value="${placeDetail.name}" />
                                         <jsp:param name="placeType" value="${placeDetail.placeType}" />
+                                        <jsp:param name="priceType" value="${placeDetail.priceType}" />
+                                        <jsp:param name="minPrice" value="${placeDetail.minPrice}" />
+                                        <jsp:param name="address" value="${placeDetail.address}" />
                                         <jsp:param name="description" value="${placeDetail.description}" />
                                     </jsp:include>
 
@@ -148,6 +154,21 @@
                                         <span class="venue-detail-row__label">카테고리</span>
                                         <span class="venue-detail-row__value">${categoryLabel}</span>
                                     </div>
+                                    <%-- 가격은 숙박만 설정 대상이라 숙박일 때만 보여준다 --%>
+                                    <c:if test="${placeDetail.placeType == 1}">
+                                        <div class="venue-detail-row">
+                                            <span class="venue-detail-row__label">가격</span>
+                                            <span class="venue-detail-row__value">
+                                                <c:choose>
+                                                    <c:when test="${placeDetail.priceType == 'FIXED'}">
+                                                        <fmt:formatNumber value="${placeDetail.minPrice}" pattern="#,###" />원 / 1인
+                                                    </c:when>
+                                                    <c:when test="${placeDetail.priceType == 'VARIABLE'}">가격변동 (현장 문의)</c:when>
+                                                    <c:otherwise>무료</c:otherwise>
+                                                </c:choose>
+                                            </span>
+                                        </div>
+                                    </c:if>
 <%--                                    <div class="venue-detail-row">--%>
 <%--                                        <span class="venue-detail-row__label">지역</span>--%>
 <%--                                        <span class="venue-detail-row__value">${placeDetail.regionName}</span>--%>

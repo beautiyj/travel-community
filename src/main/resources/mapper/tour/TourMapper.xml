@@ -5,7 +5,7 @@
 
     <!-- 1. REGION 테이블 UPSERT -->
     <insert id="upsertRegion" parameterType="com.gnagnoohc.travel.tour.model.RegionDTO">
-        INSERT INTO region (
+        INSERT INTO REGION (
             region_id,
             region_name,
             parent_region_id
@@ -21,7 +21,7 @@
 
     <!-- 2. PLACE 테이블 UPSERT -->
     <insert id="upsertPlace" parameterType="com.gnagnoohc.travel.tour.model.PlaceDTO">
-        INSERT INTO place (
+        INSERT INTO PLACE (
             place_id,
             member_id,
             region_id,
@@ -77,7 +77,7 @@
 
     <!-- 3. PLACE_IMAGE 테이블 INSERT -->
     <insert id="insertPlaceImage" parameterType="com.gnagnoohc.travel.tour.model.PlaceImageDTO">
-        INSERT INTO place_image (
+        INSERT INTO PLACE_IMAGE (
             place_id,
             image_url,
             sort_order
@@ -108,7 +108,7 @@
             min_price AS minPrice,
             use_fee_info AS useFeeInfo,
             people_count AS peopleCount
-        FROM place
+        FROM PLACE
         WHERE place_id = #{placeId}
     </select>
 

@@ -16,40 +16,34 @@ java {
 
 // //tour 관련 도메인 빌드제외 코드
 // //todo: 개발완료되면 해당 코드 전체 삭제
- sourceSets {
- 	main {
-		java {
- 			exclude 'com/gnagnoohc/travel/batch/**'
- 			exclude 'com/gnagnoohc/travel/tour/**'
- 		}
- 		resources {
- 			exclude 'mapper/tour/**'
- 		}
- 	}
- }
+// sourceSets {
+// 	main {
+// 		java {
+// 			exclude 'com/gnagnoohc/travel/batch/**'
+// 			exclude 'com/gnagnoohc/travel/tour/**'
+// 		}
+// 		resources {
+// 			exclude 'mapper/tour/**'
+// 		}
+// 	}
+// }
 
 // yun - tour/batch 관련 도메인만 포함하고 나머지 빌드 제외 (로컬 개인 테스트용)
 // TODO: 개발완료되면 해당 코드 전체 삭제
-// sourceSets {
-//     main {
-//         java {
-//             // 메인 애플리케이션 클래스(TravelApplication.java)와 batch, tour 패키지만 컴파일 대상에 포함
-//             include 'com/gnagnoohc/travel/TravelApplication.java'
-//             include 'com/gnagnoohc/travel/batch/**'
-//             include 'com/gnagnoohc/travel/tour/**'
-//             include 'com/gnagnoohc/travel/config/**'
-//         }
-//         resources {
-//             // tour 관련 매퍼 XML 및 기본 설정 파일 포함
-//             include 'mapper/tour/**'
-//             include 'application.yml'
-//             include 'application.properties'
-// 			include 'application-secret.properties'
-//             include 'static/**'
-//             include 'templates/**'
-//         }
-//     }
-// }
+sourceSets {
+	main {
+		java {
+			// tour 배치(관광공사 API)만 제외. batch/payment(결제 정합성 보정)는 컴파일 포함
+			exclude 'com/gnagnoohc/travel/batch/client/**'
+			exclude 'com/gnagnoohc/travel/batch/dto/**'
+			exclude 'com/gnagnoohc/travel/batch/service/**'
+			exclude 'com/gnagnoohc/travel/tour/**'
+		}
+		resources {
+			exclude 'mapper/tour/**'
+		}
+	}
+}
 
 repositories {
 	mavenCentral()
@@ -68,7 +62,7 @@ dependencies {
 	providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'
 
 	// Security
-	// implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
@@ -87,7 +81,7 @@ dependencies {
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter-test:3.0.5'
-    // testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'org.springframework.security:spring-security-test'
 	testCompileOnly 'org.projectlombok:lombok'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	testAnnotationProcessor 'org.projectlombok:lombok'

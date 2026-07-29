@@ -69,7 +69,8 @@ public class SignUpRequest {
 	@Pattern(regexp = "^01[016789]-?\\d{3,4}-?\\d{4}$", message = "휴대전화 번호를 확인해주세요.")
 	private String phone;
 
-	@Pattern(regexp = "^(MALE|FEMALE)$", message = "성별 값이 올바르지 않습니다.")
+	@NotBlank(message = "성별을 선택해주세요.")
+	@Pattern(regexp = "^(MALE|FEMALE|NONE)$", message = "성별 값이 올바르지 않습니다.")
 	private String gender;
 
 	// 약관 동의 및 항목 간 검증

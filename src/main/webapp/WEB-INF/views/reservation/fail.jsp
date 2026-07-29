@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="/css/components/smallButton.css">
 </head>
 <body>
+<jsp:include page="/WEB-INF/views/common/header.jsp" />
 <div class="result-card">
     <div class="result-icon fail">&#10005;</div>
     <h2>결제에 실패했습니다</h2>

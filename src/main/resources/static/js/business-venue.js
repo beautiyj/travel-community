@@ -171,6 +171,9 @@ document.addEventListener("DOMContentLoaded", function () {
             }).open();
         });
 
+        // 수정 폼은 서버에서 합쳐진 주소 한 덩어리를 address에 채워 내려주므로 상세주소는 비어 있다.
+        // 이 상태로 제출하면 상세주소를 덧붙이지 않고 기존 주소가 그대로 유지된다.
+
         // 주소 미입력 시 제출 막기 (readonly input은 required 검증 대상에서 제외되므로 직접 체크)
         // + 제출 직전 상세주소를 address 값에 합쳐서 하나의 필드로 전송
         if (btn.form) {
@@ -189,4 +192,42 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     refresh();
+});
+
+// ── 가격 설정 (등록/수정 폼 공용) ──
+// 1) 가격은 숙박(placeType=1)만 설정 대상이라 업종이 숙박일 때만 영역을 노출한다.
+//    맛집/관광지는 서버가 무조건 FREE로 저장하므로 여기서 값을 보내지 않아도 된다.
+// 2) 가격 유형 라디오에서 "가격입력"(FIXED)을 고른 경우에만 금액 input을 연다.
+// 사진 그리드 로직과 무관하게 동작해야 해서 별도 리스너로 분리했다.
+document.addEventListener("DOMContentLoaded", function () {
+    var LODGING_PLACE_TYPE = "1";
+
+    var priceGroup = document.querySelector(".js-price-group");
+    if (!priceGroup) return;
+
+    var placeTypeSelect = document.querySelector('select[name="placeType"]');
+    var priceInputBox = priceGroup.querySelector(".js-price-input");
+    var priceInput = priceInputBox.querySelector('input[name="minPrice"]');
+    var priceRadios = priceGroup.querySelectorAll('input[name="priceType"]');
+
+    function syncPriceGroup() {
+        var isLodging = !placeTypeSelect || placeTypeSelect.value === LODGING_PLACE_TYPE;
+        priceGroup.classList.toggle("is-hidden", !isLodging);
+
+        var checked = priceGroup.querySelector('input[name="priceType"]:checked');
+        var isFixed = isLodging && checked && checked.value === "FIXED";
+        priceInputBox.classList.toggle("is-hidden", !isFixed);
+
+        // 숨겨진 상태의 값이 그대로 제출되지 않도록 비활성화한다 (disabled 필드는 전송 대상에서 제외됨)
+        priceInput.disabled = !isFixed;
+        priceInput.required = isFixed;
+        if (!isFixed) priceInput.value = "";
+    }
+
+    if (placeTypeSelect) placeTypeSelect.addEventListener("change", syncPriceGroup);
+    priceRadios.forEach(function (radio) {
+        radio.addEventListener("change", syncPriceGroup);
+    });
+
+    syncPriceGroup();
 });

@@ -3,8 +3,113 @@
 
 <mapper namespace="com.gnagnoohc.travel.tour.mapper.TourMapper">
 
-    <!-- <select id="selectTourList" resultType="tourDto">
-        SELECT * FROM tour_table
-    </select> -->
+    <!-- 1. REGION 테이블 UPSERT -->
+    <insert id="upsertRegion" parameterType="com.gnagnoohc.travel.tour.model.RegionDTO">
+        INSERT INTO region (
+            region_id,
+            region_name,
+            parent_region_id
+        ) VALUES (
+            #{regionId},
+            #{regionName},
+            #{parentRegionId}
+        )
+        ON DUPLICATE KEY UPDATE
+            region_name = VALUES(region_name),
+            parent_region_id = VALUES(parent_region_id);
+    </insert>
+
+    <!-- 2. PLACE 테이블 UPSERT -->
+    <insert id="upsertPlace" parameterType="com.gnagnoohc.travel.tour.model.PlaceDTO">
+        INSERT INTO place (
+            place_id,
+            member_id,
+            region_id,
+            place_type,
+            name,
+            description,
+            address,
+            mapx,
+            mapy,
+            is_closed,
+            created_at,
+            updated_at,
+            first_image,
+            hashtags,
+            min_price,
+            use_fee_info,
+            people_count
+        ) VALUES (
+            #{placeId},
+            #{memberId},
+            #{regionId},
+            #{placeType},
+            #{name},
+            #{description},
+            #{address},
+            #{mapx},
+            #{mapy},
+            #{isClosed},
+            NOW(),
+            NOW(),
+            #{firstImage},
+            #{hashtags},
+            #{minPrice},
+            #{useFeeInfo},
+            #{peopleCount}
+        )
+        ON DUPLICATE KEY UPDATE
+            region_id = VALUES(region_id),
+            place_type = VALUES(place_type),
+            name = VALUES(name),
+            description = VALUES(description),
+            address = VALUES(address),
+            mapx = VALUES(mapx),
+            mapy = VALUES(mapy),
+            is_closed = VALUES(is_closed),
+            updated_at = NOW(),
+            first_image = VALUES(first_image),
+            hashtags = VALUES(hashtags),
+            min_price = VALUES(min_price),
+            use_fee_info = VALUES(use_fee_info),
+            people_count = VALUES(people_count);
+    </insert>
+
+    <!-- 3. PLACE_IMAGE 테이블 INSERT -->
+    <insert id="insertPlaceImage" parameterType="com.gnagnoohc.travel.tour.model.PlaceImageDTO">
+        INSERT INTO place_image (
+            place_id,
+            image_url,
+            sort_order
+        ) VALUES (
+            #{placeId},
+            #{imageUrl},
+            #{sortOrder}
+        );
+    </insert>
+
+    <!-- 4. PLACE 단건 조회 -->
+    <select id="selectPlaceById" resultType="com.gnagnoohc.travel.tour.model.PlaceDTO">
+        SELECT 
+            place_id AS placeId,
+            member_id AS memberId,
+            region_id AS regionId,
+            place_type AS placeType,
+            name,
+            description,
+            address,
+            mapx,
+            mapy,
+            is_closed AS isClosed,
+            created_at AS createdAt,
+            updated_at AS updatedAt,
+            first_image AS firstImage,
+            hashtags,
+            min_price AS minPrice,
+            use_fee_info AS useFeeInfo,
+            people_count AS peopleCount
+        FROM place
+        WHERE place_id = #{placeId}
+    </select>
 
 </mapper>

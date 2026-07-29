@@ -1,17 +1,8 @@
 /* ============================================================
    placeSearchModal.css — 장소 검색 모달 (community write/edit 전용)
+   - 오버레이(배경 어둡게/중앙 정렬/열고닫기)는 confirmModal.css 의
+     .modal-overlay/.is-open 공통 규칙을 그대로 씀. 여기는 내부 박스 전용 스타일만.
    ============================================================ */
-
-.place-search-modal-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.45);
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-.place-search-modal-overlay.open { display: flex; }
 
 .place-search-modal {
   background: var(--card, #fff);

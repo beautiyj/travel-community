@@ -61,11 +61,32 @@
       </c:if>
     </div>
 
-    <!-- 작성자 / 작성일 / 조회수 (community.css 의 .detail-meta) -->
-    <div class="detail-meta">
-      <span>작성자 ${post.nickname}</span>
-      <span><fmt:formatDate value="${post.createdAt}" pattern="yyyy-MM-dd" /></span>
-      <span>조회 <fmt:formatNumber value="${post.readcount}" pattern="#,##0" /></span>
+    <!-- 작성자 프로필 사진 + 닉네임 / 작성일·조회수·댓글수 (community.css 의 .detail-author-row) -->
+    <div class="detail-author-row">
+      <c:choose>
+        <c:when test="${not empty post.avatarUrl}">
+          <img class="detail-avatar" src="${post.avatarUrl}" alt="${post.nickname}">
+        </c:when>
+        <c:otherwise>
+          <img class="detail-avatar" src="${cp}/images/icons/default-avatar.png" alt="${post.nickname}">
+        </c:otherwise>
+      </c:choose>
+      <div>
+        <div class="detail-author-name">${post.nickname}</div>
+        <div class="detail-meta">
+          <span><fmt:formatDate value="${post.createdAt}" pattern="yyyy-MM-dd" /></span>
+          <span class="meta-dot">&middot;</span>
+          <span>
+            <img src="${cp}/images/icons/eye.png" alt="조회수" class="meta-icon">
+            <fmt:formatNumber value="${post.readcount}" pattern="#,##0" />
+          </span>
+          <span class="meta-dot">&middot;</span>
+          <span>
+            <img src="${cp}/images/icons/comment.png" alt="댓글수" class="meta-icon">
+            ${fn:length(post.commentList)}
+          </span>
+        </div>
+      </div>
     </div>
 
     <!-- 장소 태그: 방문자인증후기로 태그된 장소가 있을 때만 노출 (community.css 의 .place-tag)

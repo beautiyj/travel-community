@@ -9,6 +9,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 import com.gnagnoohc.travel.mypage.dto.MypageDto;
 import com.gnagnoohc.travel.mypage.service.MypageService;
@@ -18,69 +22,86 @@ import jakarta.servlet.http.HttpSession;
 @Controller
 @RequestMapping("/mypage")
 public class MypageController {
-	
-	@Autowired
-	private MypageService mypageService;
+
+    @Autowired
+    private MypageService mypageService;
 
     @GetMapping("/test")
     public String mypageTest() {
-        // /WEB-INF/views/mypage/test.jsp
-        return "mypage/test"; 
-    }
-    
-    @GetMapping("")
-    public String mypage() {
-    	return "mypage/mypage";
-    }
-    
-    @GetMapping("/info")
-    public String memberInfo(Model model) {
-    	
-    	MypageDto member = mypageService.getMemberInfo(1L);
-    	System.out.println("member:"+ member);
-    	
-    	model.addAttribute("member", member);
-    	
-    	return "mypage/info";
-    }
-    
-    @GetMapping("/edit")
-    public String editForm(Model model) {
-    	
-    	MypageDto member = mypageService.getMemberInfo(1L);
-    	System.out.println("member:" + member);
-    	
-    	model.addAttribute("member", member);
-    	
-    	return "mypage/edit";
-    }
-    
-    @PostMapping("/edit")
-    public String editMember(MypageDto member) {
-    	System.out.println("수정할 member:" + member);
-    	
-    	mypageService.updateMember(member);
-    	
-    	return "redirect:/mypage/info";
+        return "mypage/test";
     }
 
+    @GetMapping("")
+    public String mypage(HttpSession session) {
+        Long memberId = getMemberId(session);
+        if (memberId == null) {
+            return "redirect:/auth/login";
+        }
+
+        MypageDto member = mypageService.getMemberInfo(memberId);
+        if (member == null) {
+            session.invalidate();
+            return "redirect:/auth/login";
+        }
+
+        if (Integer.valueOf(2).equals(member.getMemberType())) {
+            return "redirect:/business/mypage";
+        }
+        return "redirect:/mypage/info";
+    }
+
+    @GetMapping("/info")
+    public String memberInfo(Model model, HttpSession session) {
+
+        MypageDto member =
+                mypageService.getMemberInfo(getMemberId(session));
+
+        System.out.println("member: " + member);
+
+        model.addAttribute("member", member);
+
+        return "mypage/info";
+    }
+
+    @GetMapping("/edit")
+    public String editForm(Model model, HttpSession session) {
+
+        MypageDto member =
+                mypageService.getMemberInfo(getMemberId(session));
+
+        System.out.println("member: " + member);
+
+        model.addAttribute("member", member);
+
+        return "mypage/edit";
+    }
+
+    @PostMapping("/edit")
+    public String editMember(MypageDto member, HttpSession session) {
+
+        System.out.println("수정할 member: " + member);
+
+        member.setMemberId(getMemberId(session));
+        int result = mypageService.updateMember(member);
+
+        System.out.println("회원정보 수정 결과: " + result);
+
+        return "redirect:/mypage/info";
+    }
+
+    /*
     @GetMapping("/password")
     public String passwordForm(Model model) {
-    	
-    	MypageDto member = mypageService.getMemberInfo(1L);
-    	
-    	System.out.println("password member:" + member);
-    	
-    	model.addAttribute("member", member);
-    	
-    	return "mypage/password";
+
+        MypageDto member = mypageService.getMemberInfo(1L);
+
+        model.addAttribute("member", member);
+
+        return "mypage/password";
     }
-    
-    /*
+
     @PostMapping("/password")
     public String changePassword(MypageDto member, Model model) {
-
-        System.out.println("password change member:" + member);
 
         if (!member.getNewPassword().equals(member.getNewPasswordCheck())) {
             model.addAttribute("member", member);
@@ -92,31 +113,38 @@ public class MypageController {
         return "redirect:/mypage/info";
     }
     */
-    
+
     @GetMapping("/reservation")
-    public String reservation(Model model) {
-    	
-    	List<MypageDto> reservationList = mypageService.getReservationList(1L);
-    	
-    	System.out.println("reservationList:" + reservationList);
-    	
-    	model.addAttribute("reservationList", reservationList);
-    	
-    	return "mypage/reservation";
+    public String reservation(Model model, HttpSession session) {
+
+        Long memberId = getMemberId(session);
+        List<MypageDto> reservationList =
+                mypageService.getReservationList(memberId);
+
+        System.out.println("reservationList: " + reservationList);
+
+        model.addAttribute("reservationList", reservationList);
+        model.addAttribute("member", mypageService.getMemberInfo(memberId));
+
+        return "mypage/reservation";
     }
-        
+
     @GetMapping("/wishlist")
-    public String wishlist(Model model) {
-    	
-    	List<MypageDto> wishlist = mypageService.getWishlist(1L);
-    	
-    	System.out.println("wishlist:" + wishlist);
-    	
-    	model.addAttribute("wishlist", wishlist);
-    	
-    	return "mypage/wishlist";
+    public String wishlist(Model model, HttpSession session) {
+
+        Long memberId = getMemberId(session);
+        if (memberId == null) {
+            return "redirect:/auth/login";
+        }
+
+        List<MypageDto> wishlist = mypageService.getWishlist(memberId);
+
+        model.addAttribute("wishlist", wishlist);
+        model.addAttribute("member", mypageService.getMemberInfo(memberId));
+
+        return "mypage/wishlist";
     }
-      
+
     @GetMapping("/withdraw")
     public String withdrawForm() {
         return "mypage/withdraw";
@@ -125,40 +153,107 @@ public class MypageController {
     @PostMapping("/withdraw")
     public String withdrawMember(HttpSession session) {
 
-        mypageService.withdrawMember(1L);
+        int result = mypageService.withdrawMember(getMemberId(session));
+
+        System.out.println("회원 탈퇴 결과: " + result);
 
         session.invalidate();
 
         return "redirect:/";
     }
-    
+
     @GetMapping("/logout")
     public String logout(HttpSession session) {
-    	
-    	session.invalidate();
-    	
-    	return "redirect:/";
+
+        session.invalidate();
+
+        return "redirect:/";
     }
-    
+
     @PostMapping("/wishlist/delete")
-    public String deleteWishlist(@RequestParam("wishlistId") Long wishlistId) {
+    public String deleteWishlist(
+            @RequestParam("wishlistId") Long wishlistId,
+            HttpSession session) {
 
-        System.out.println("삭제할 wishlist: " + wishlistId);
-
-        mypageService.deleteWishlist(wishlistId);
+        Long memberId = getMemberId(session);
+        if (memberId != null) {
+            mypageService.deleteWishlist(wishlistId, memberId);
+        }
 
         return "redirect:/mypage/wishlist";
     }
-    
-    @PostMapping("/reservation/cancel")
-    public String cancelReservation(@RequestParam("reservationId") Long reservationId) {
-    	
-    	System.out.println("취소할 reservationId:" + reservationId);
-    	
-    	mypageService.cancelReservation(reservationId);
-    	
-    	return "redirect:/mypage/reservation";
+
+    @PostMapping("/wishlist/toggle")
+    @ResponseBody
+    public ResponseEntity<WishlistResponse> toggleWishlist(
+            @RequestParam("placeId") Long placeId,
+            HttpSession session) {
+
+        Long memberId = getMemberId(session);
+        if (memberId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new WishlistResponse(false, "로그인이 필요합니다."));
+        }
+
+        boolean wishlisted = mypageService.toggleWishlist(memberId, placeId);
+        return ResponseEntity.ok(new WishlistResponse(
+                wishlisted,
+                wishlisted ? "찜목록에 추가했습니다." : "찜목록에서 삭제했습니다."));
     }
-    
-    
+
+    @GetMapping("/wishlist/status/{placeId}")
+    @ResponseBody
+    public ResponseEntity<WishlistResponse> wishlistStatus(
+            @PathVariable Long placeId,
+            HttpSession session) {
+
+        Long memberId = getMemberId(session);
+        if (memberId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new WishlistResponse(false, "로그인이 필요합니다."));
+        }
+
+        return ResponseEntity.ok(new WishlistResponse(
+                mypageService.isWishlisted(memberId, placeId), null));
+    }
+
+    private Long getMemberId(HttpSession session) {
+        Object value = session.getAttribute("memberId");
+        if (value instanceof Long memberId) {
+            return memberId;
+        }
+        if (value instanceof Integer memberId) {
+            return memberId.longValue();
+        }
+        return null;
+    }
+
+    public record WishlistResponse(boolean wishlisted, String message) {
+    }
+
+    @PostMapping("/reservation/cancel")
+    public String cancelReservation(
+            @RequestParam("reservationId") Long reservationId) {
+
+        System.out.println("취소할 reservationId: " + reservationId);
+
+        int result = mypageService.cancelReservation(reservationId);
+
+        System.out.println("예약 취소 결과: " + result);
+
+        return "redirect:/mypage/reservation";
+    }
+
+    @GetMapping("/payment")
+    public String paymentList(Model model, HttpSession session) {
+
+        Long memberId = getMemberId(session);
+        List<MypageDto> paymentList =
+                mypageService.getPaymentCompleteList(memberId);
+
+        model.addAttribute("paymentList", paymentList);
+        model.addAttribute("member", mypageService.getMemberInfo(memberId));
+
+        return "mypage/payment";
+    }
 }

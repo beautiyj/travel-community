@@ -46,4 +46,6 @@ public class MypageDto {
 	private Integer headcount;
 	private String status;
 	
+	private Long wishlistId;
+	
 }

@@ -15,7 +15,8 @@ public class Reservation {
     private Long placeId;
     private String visitorName;
     private String phone;
-    private LocalDate visitDate;
+    private LocalDate visitDate;        // 숙박이면 체크인 날짜, 맛집/관광지는 방문일
+    private LocalDate checkOutDate;     // 숙박만 사용. 맛집/관광지는 null (당일 방문)
     private int headcount;
     private String placeType;           // 가격 정책 구분: tour/food=예약금(만나서결제), 그 외(숙박)=정가
     private ReservationStatus status;   // DB 저장은 영어(PENDING/PAID/...), 표시는 status.label

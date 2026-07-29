@@ -69,7 +69,15 @@
             <div class="summary-row"><span class="label">예약자</span><span class="value">${reservation.visitorName}</span></div>
             <div class="summary-row"><span class="label">연락처</span><span class="value">${reservation.phone}</span></div>
             <div class="summary-row"><span class="label">장소</span><span class="value">장소 #${reservation.placeId}</span></div>
-            <div class="summary-row"><span class="label">날짜</span><span class="value">${reservation.visitDate}</span></div>
+            <c:choose>
+                <c:when test="${not empty reservation.checkOutDate}">
+                    <div class="summary-row"><span class="label">기간</span>
+                        <span class="value">${reservation.visitDate} ~ ${reservation.checkOutDate}</span></div>
+                </c:when>
+                <c:otherwise>
+                    <div class="summary-row"><span class="label">날짜</span><span class="value">${reservation.visitDate}</span></div>
+                </c:otherwise>
+            </c:choose>
             <div class="summary-row"><span class="label">인원</span><span class="value">${reservation.headcount}명</span></div>
             <c:if test="${payOnSite}">
                 <div class="summary-row"><span class="label">결제 방식</span><span class="value">예약금 선결제 · 나머지 현장 결제</span></div>

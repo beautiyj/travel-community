@@ -8,6 +8,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Date;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -24,11 +27,31 @@ public class ReservationService {
     public static final int RESERVE_DEPOSIT = 10000;
 
     /**
+     * 맛집·관광지 하루 정원(명). 지금은 캘린더에 "7/10" 남은 자리를 보여주는 표시용으로만 쓴다.
+     * 초과해도 예약은 막지 않는다(차단은 추후). TODO: 관리자 정원 설정이 생기면 그 값으로 교체.
+     */
+    public static final int DAILY_CAPACITY = 10;
+
+    /**
      * 만나서 결제(예약금만 선결제) 대상인지. tour(관광지)·food(맛집)만 예약금, 그 외(숙박 등)는 정가.
      * 프론트(reservation-form.js)·뷰의 분기와 동일 규칙.
      */
     public static boolean isPayOnSite(String placeType) {
         return "tour".equals(placeType) || "food".equals(placeType);
+    }
+
+    /** 기간 예약(체크인·체크아웃) 대상인지. 숙박만 해당 — 맛집/관광지·무료는 당일 방문 */
+    public static boolean isStay(String placeType) {
+        return !isPayOnSite(placeType) && !"free".equals(placeType);
+    }
+
+    /** 숙박 박수. 체크아웃이 없으면(맛집/관광지 등) 1로 취급 */
+    public static int nightsOf(Reservation r) {
+        if (r.getCheckOutDate() == null || r.getVisitDate() == null) {
+            return 1;
+        }
+        long nights = ChronoUnit.DAYS.between(r.getVisitDate(), r.getCheckOutDate());
+        return nights > 0 ? (int) nights : 1;
     }
 
     private final ReservationMapper reservationMapper;
@@ -49,15 +72,21 @@ public class ReservationService {
             if (existing.getStatus() == ReservationStatus.PENDING) {
                 return existing.getReservationId();
             }
-            throw new IllegalStateException("이미 예약이 완료된 날짜입니다.");
+            // "마감"이 아니라 본인이 이미 잡아둔 예약이므로, 그 사실이 드러나게 안내한다
+            throw new IllegalStateException("이미 예약하신 날짜입니다. 내 예약 내역에서 확인해 주세요.");
         }
 
-        // 마감 백업 체크(2겹): 숙박만 '1일 1팀'이라 그 날 활성 예약이 하나라도 있으면 거부.
+        // 마감 백업 체크(2겹): 숙박만 '1팀 단독'이라 요청 기간과 겹치는 예약이 있으면 거부.
         // 맛집/관광지(만나서결제)는 하루 여러 팀 가능 → 이 체크를 건너뛴다. (프론트 캘린더와 동일 규칙)
-        if (!isPayOnSite(req.getPlaceType())) {
-            int booked = reservationMapper.sumActiveHeadcount(req.getPlaceId(), req.getVisitDate());
-            if (booked > 0) {
-                throw new IllegalStateException("이미 예약된 날짜입니다. 다른 날짜를 선택해 주세요.");
+        if (isStay(req.getPlaceType())) {
+            if (req.getCheckOutDate() == null) {
+                throw new IllegalStateException("체크아웃 날짜를 선택해 주세요.");
+            }
+            if (!req.getCheckOutDate().isAfter(req.getVisitDate())) {
+                throw new IllegalStateException("체크아웃 날짜는 체크인 다음 날부터 선택할 수 있습니다.");
+            }
+            if (reservationMapper.countOverlapping(req.getPlaceId(), req.getVisitDate(), req.getCheckOutDate()) > 0) {
+                throw new IllegalStateException("이미 예약된 기간입니다. 다른 날짜를 선택해 주세요.");
             }
         }
 
@@ -67,6 +96,7 @@ public class ReservationService {
         r.setVisitorName(req.getVisitorName());
         r.setPhone(req.getPhone());
         r.setVisitDate(req.getVisitDate());
+        r.setCheckOutDate(isStay(req.getPlaceType()) ? req.getCheckOutDate() : null);   // 숙박만 기간 예약
         r.setHeadcount(req.getHeadcount());
         r.setPlaceType(req.getPlaceType());   // tour/food면 이후 결제금액이 예약금으로 계산됨
         r.setStatus(ReservationStatus.PENDING);
@@ -97,15 +127,21 @@ public class ReservationService {
     @Transactional(readOnly = true)
     public Map<String, Object> getAvailability(Long placeId) {
         Map<String, Integer> booked = new LinkedHashMap<>();
-        for (Map<String, Object> row : reservationMapper.findBookedHeadcountByDate(placeId)) {
-            // visitDate 는 java.sql.Date, booked 는 SUM 결과(Long) — 문자열 날짜 → 인원수로 담는다
-            String date = String.valueOf(row.get("visitDate"));
-            int count = ((Number) row.get("booked")).intValue();
-            booked.put(date, count);
+        for (Map<String, Object> row : reservationMapper.findActiveRanges(placeId)) {
+            LocalDate from = ((Date) row.get("visitDate")).toLocalDate();
+            Date rawTo = (Date) row.get("checkOutDate");
+            // 체크아웃이 없으면(맛집/관광지 등 당일) 하루만 막고, 있으면 체크아웃 전날까지 막는다
+            LocalDate to = (rawTo != null) ? rawTo.toLocalDate() : from.plusDays(1);
+            int count = ((Number) row.get("headcount")).intValue();
+
+            for (LocalDate d = from; d.isBefore(to); d = d.plusDays(1)) {
+                booked.merge(d.toString(), count, Integer::sum);
+            }
         }
         Map<String, Object> result = new HashMap<>();
         result.put("booked", booked);
         result.put("closed", Boolean.TRUE.equals(reservationMapper.findPlaceClosed(placeId)));
+        result.put("capacity", DAILY_CAPACITY);   // 맛집·관광지 캘린더의 남은 자리 표시용(차단 아님)
         return result;
     }
 
@@ -176,7 +212,7 @@ public class ReservationService {
     /**
      * 결제 금액 계산 (모든 결제수단이 이 값을 공통으로 사용).
      * - 관광지·맛집(만나서 결제): 예약금 정액 RESERVE_DEPOSIT (인원 무관)
-     * - 그 외(숙박): 인원 × 단가
+     * - 숙박: 박수 × 인원 × 단가
      * TODO: 숙박/맛집 팀원의 place(가격) 테이블이 나오면 placeId로 단가·예약금 조회하도록 교체
      */
     public int calculateAmount(Reservation r) {
@@ -187,6 +223,6 @@ public class ReservationService {
         if (isPayOnSite(r.getPlaceType())) {
             return RESERVE_DEPOSIT;
         }
-        return r.getHeadcount() * TEMP_UNIT_PRICE;
+        return nightsOf(r) * r.getHeadcount() * TEMP_UNIT_PRICE;
     }
 }

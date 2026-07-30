@@ -79,7 +79,10 @@ public class ReservationController {
         }
         // 로그인 세션의 회원 식별. 로그인이 "loginMember"(LoginMemberDto)로 저장하므로 그 memberId를 사용
         LoginMemberDto loginMember = (LoginMemberDto) session.getAttribute("loginMember");
-        Integer memberId = (loginMember != null) ? loginMember.getMemberId() : 1;   // 미로그인 시 개발용 임시값
+        if (loginMember == null) {
+            return "redirect:/auth/login";
+        }
+        Integer memberId = loginMember.getMemberId();
         log.info("[예약 생성 요청] memberId={}, {}", memberId, req);
         Long reservationId = reservationService.create(memberId, req);
         log.info("[예약 생성 완료] reservationId={}", reservationId);
@@ -108,7 +111,10 @@ public class ReservationController {
                                              @RequestParam(value = "reason", required = false) String reason,
                                              HttpSession session) {
         LoginMemberDto loginMember = (LoginMemberDto) session.getAttribute("loginMember");
-        Integer memberId = (loginMember != null) ? loginMember.getMemberId() : 1;   // 미로그인 시 개발용 임시값
+        if (loginMember == null) {
+            throw new IllegalStateException("로그인이 필요합니다.");
+        }
+        Integer memberId = loginMember.getMemberId();
 
         reservationService.requestCancel(reservationId, memberId, reason);
         log.info("[취소 요청] reservationId={}, memberId={}, reason={}", reservationId, memberId, reason);

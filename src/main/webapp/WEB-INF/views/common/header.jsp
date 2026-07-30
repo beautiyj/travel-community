@@ -14,6 +14,7 @@
             <span class="name">갈래말래</span>
         </a>
 
+        <%--TODO: tour 도메인 확정시 링크 수정 --%>
         <nav class="nav">
             <a href="${cp}/tour/list">숙박</a>
             <a href="${cp}/tour/list">맛집</a>
@@ -33,13 +34,29 @@
                 <jsp:param name="width" value="140px" />
             </jsp:include>
 
-            <a href="${cp}/member/login" class="link-text">로그인</a>
+            <%-- 로그인 세션(loginMember) 유무에 따라 UI변경 --%>
+            <c:choose>
+                <c:when test="${not empty sessionScope.loginMember}">
+                    <a href="${cp}/mypage" class="link-text">마이페이지</a>
 
-            <jsp:include page="/WEB-INF/views/common/buttonComponent.jsp">
-                <jsp:param name="text" value="회원가입" />
-                <jsp:param name="size" value="var(--text-sm)" />
-                <jsp:param name="onclick" value="location.href='${cp}/member/signup'" />
-            </jsp:include>
+                    <%-- 로그아웃은 POST 전용(AuthController)이라 링크가 아닌 폼 제출로 처리 --%>
+                    <form action="${cp}/auth/logout" method="post" style="display:contents;">
+                        <jsp:include page="/WEB-INF/views/common/buttonComponent.jsp">
+                            <jsp:param name="text" value="로그아웃" />
+                            <jsp:param name="size" value="var(--text-sm)" />
+                        </jsp:include>
+                    </form>
+                </c:when>
+                <c:otherwise>
+                    <a href="${cp}/auth/login" class="link-text">로그인</a>
+
+                    <jsp:include page="/WEB-INF/views/common/buttonComponent.jsp">
+                        <jsp:param name="text" value="회원가입" />
+                        <jsp:param name="size" value="var(--text-sm)" />
+                        <jsp:param name="onclick" value="location.href='${cp}/auth/signup'" />
+                    </jsp:include>
+                </c:otherwise>
+            </c:choose>
         </div>
     </div>
 </header>

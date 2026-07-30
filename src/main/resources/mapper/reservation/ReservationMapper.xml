@@ -3,39 +3,52 @@
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.gnagnoohc.travel.reservation.mapper.ReservationMapper">
 
+    <!-- RESERVATION과 PLACE를 조인하는 select 전용 — place_id/member_id/created_at이 양쪽에 다 있어 r. 접두어 필수 -->
     <sql id="reservationColumns">
-        reservation_id AS reservationId,
-        member_id      AS memberId,
-        place_id       AS placeId,
-        visitor_name   AS visitorName,
-        phone,
-        visit_date     AS visitDate,
-        headcount,
-        status,
-        created_at           AS createdAt,
-        cancel_reason        AS cancelReason,
-        cancel_requested_at  AS cancelRequestedAt
+        r.reservation_id AS reservationId,
+        r.member_id      AS memberId,
+        r.place_id       AS placeId,
+        r.visitor_name   AS visitorName,
+        r.phone,
+        r.visit_date     AS visitDate,
+        r.check_out_date AS checkOutDate,
+        r.headcount,
+        p.place_type     AS placeType,
+        r.status,
+        r.order_id             AS orderId,
+        r.payment_type         AS paymentType,
+        r.pg_tid               AS pgTid,
+        r.created_at           AS createdAt,
+        r.cancel_reason        AS cancelReason,
+        r.cancel_requested_at  AS cancelRequestedAt
     </sql>
 
     <insert id="insert" parameterType="com.gnagnoohc.travel.reservation.entity.Reservation"
             useGeneratedKeys="true" keyProperty="reservationId">
         INSERT INTO RESERVATION
-            (member_id, place_id, visitor_name, phone, visit_date, headcount, status)
+            (member_id, place_id, visitor_name, phone, visit_date, check_out_date, headcount, status)
         VALUES
-            (#{memberId}, #{placeId}, #{visitorName}, #{phone}, #{visitDate}, #{headcount}, #{status})
+            (#{memberId}, #{placeId}, #{visitorName}, #{phone}, #{visitDate}, #{checkOutDate}, #{headcount}, #{status})
     </insert>
+
+    <!-- 장소 타입 조회: PLACE.place_type(tour/food/stay)을 그대로 참조 (읽기 전용) -->
+    <select id="findPlaceType" resultType="string">
+        SELECT place_type FROM PLACE WHERE place_id = #{placeId}
+    </select>
 
     <select id="findById" resultType="com.gnagnoohc.travel.reservation.entity.Reservation">
         SELECT <include refid="reservationColumns"/>
-        FROM RESERVATION
-        WHERE reservation_id = #{reservationId}
+        FROM RESERVATION r
+        LEFT JOIN PLACE p ON r.place_id = p.place_id
+        WHERE r.reservation_id = #{reservationId}
     </select>
 
     <select id="findByMemberId" resultType="com.gnagnoohc.travel.reservation.entity.Reservation">
         SELECT <include refid="reservationColumns"/>
-        FROM RESERVATION
-        WHERE member_id = #{memberId}
-        ORDER BY created_at DESC
+        FROM RESERVATION r
+        LEFT JOIN PLACE p ON r.place_id = p.place_id
+        WHERE r.member_id = #{memberId}
+        ORDER BY r.created_at DESC
     </select>
 
     <update id="updateStatus">
@@ -65,19 +78,42 @@
     <!-- 관리자 목록용: 특정 상태의 예약 조회 -->
     <select id="findByStatus" resultType="com.gnagnoohc.travel.reservation.entity.Reservation">
         SELECT <include refid="reservationColumns"/>
-        FROM RESERVATION
-        WHERE status = #{status}
-        ORDER BY cancel_requested_at DESC, created_at DESC
+        FROM RESERVATION r
+        LEFT JOIN PLACE p ON r.place_id = p.place_id
+        WHERE r.status = #{status}
+        ORDER BY r.cancel_requested_at DESC, r.created_at DESC
     </select>
 
-    <!-- 슬롯 선점 체크: 활성 상태(PENDING/PAID)인 동일 장소·날짜 예약 수 -->
-    <select id="countActive" resultType="int">
-        SELECT COUNT(*)
-        FROM RESERVATION
-        WHERE member_id = #{memberId}
-          AND place_id = #{placeId}
-          AND visit_date = #{visitDate}
-          AND status IN ('PENDING', 'PAID')
+    <!-- 슬롯 선점 체크: 같은 회원·장소·날짜의 활성(PENDING/PAID/CONFIRMED) 예약 1건 (없으면 null) -->
+    <select id="findActiveBySlot" resultType="com.gnagnoohc.travel.reservation.entity.Reservation">
+        SELECT <include refid="reservationColumns"/>
+        FROM RESERVATION r
+        LEFT JOIN PLACE p ON r.place_id = p.place_id
+        WHERE r.member_id = #{memberId}
+          AND r.place_id = #{placeId}
+          AND r.visit_date = #{visitDate}
+          AND r.status IN ('PENDING', 'PAID', 'CONFIRMED')
+        ORDER BY r.reservation_id DESC
+        LIMIT 1
+    </select>
+
+    <!-- 결제 준비 시: 발급한 orderId·시도 PG·(카카오)tid를 예약 행에 기록 (배치 조회 키 확보) -->
+    <update id="markPaymentReady">
+        UPDATE RESERVATION
+        SET order_id = #{orderId},
+            payment_type = #{paymentType},
+            pg_tid = #{pgTid}
+        WHERE reservation_id = #{reservationId}
+    </update>
+
+    <!-- 정합성 보정 배치: 결제 준비까지 갔으나 아직 PENDING인 건 조회 (cutoff로 진행 중 건 유예) -->
+    <select id="findReadyForInquiry" resultType="com.gnagnoohc.travel.reservation.entity.Reservation">
+        SELECT <include refid="reservationColumns"/>
+        FROM RESERVATION r
+        LEFT JOIN PLACE p ON r.place_id = p.place_id
+        WHERE r.status = 'PENDING'
+          AND r.order_id IS NOT NULL
+          AND r.created_at &lt; #{cutoff}
     </select>
 
     <!-- 스케줄러: 30분 지난 미결제 건 일괄 만료 -->
@@ -89,16 +125,51 @@
     </update>
 
     <!--
-      스케줄러: 방문일이 지난 예약을 방문완료로 전환.
-      visit_date < CURDATE() 이므로 방문 당일에는 PAID가 유지된다.
-      (관리자 대시보드의 '오늘 방문 인원'이 visit_date = CURDATE() AND status = 'PAID'로 집계하기 때문)
-      CANCEL_REQUESTED 건은 관리자가 처리해야 하므로 전환 대상에서 제외한다.
+      스케줄러: 방문일이 지난 '예약확정(CONFIRMED)' 건을 이용완료로 전환.
+      visit_date < CURDATE() 이므로 방문 당일에는 CONFIRMED가 유지된다.
+      (관리자 대시보드의 '오늘 방문 인원'이 visit_date = CURDATE() AND status = 'CONFIRMED'로 집계 — 이 쿼리는 관리자 파트에서 함께 수정)
+      결제만 되고 미승인(PAID)이거나 CANCEL_REQUESTED 건은 전환 대상에서 제외한다.
     -->
     <update id="completeVisited">
         UPDATE RESERVATION
         SET status = 'COMPLETED'
-        WHERE status = 'PAID'
-          AND visit_date &lt; CURDATE()
+        WHERE status = 'CONFIRMED'
+          AND COALESCE(check_out_date, visit_date) &lt; CURDATE()
     </update>
+
+    <!--
+      캘린더 마감 표시용: 장소의 활성 예약 구간 목록.
+      숙박은 기간 예약이라 GROUP BY로는 중간 날짜를 못 잡는다 → 구간 그대로 반환하고 서비스에서 펼친다.
+      진행 중인 숙박(체크인은 과거지만 체크아웃이 오늘 이후)도 포함해야 하므로 종료일 기준으로 거른다.
+    -->
+    <select id="findActiveRanges" resultType="map">
+        SELECT visit_date     AS visitDate,
+               check_out_date AS checkOutDate,
+               headcount      AS headcount
+        FROM RESERVATION
+        WHERE place_id = #{placeId}
+          AND status IN ('PENDING', 'PAID', 'CONFIRMED')
+          AND COALESCE(check_out_date, visit_date) &gt;= CURDATE()
+    </select>
+
+    <!--
+      숙박 기간 겹침 판정. 표준 구간 겹침 조건:
+        기존.checkIn < 신규.checkOut  AND  신규.checkIn < 기존.checkOut
+      반개구간이라 "기존 체크아웃일 == 신규 체크인일"은 겹치지 않는다(퇴실 후 입실).
+      기존 단일날짜 예약(check_out_date IS NULL)은 1박(다음날 체크아웃)으로 간주.
+    -->
+    <select id="countOverlapping" resultType="int">
+        SELECT COUNT(*)
+        FROM RESERVATION
+        WHERE place_id = #{placeId}
+          AND status IN ('PENDING', 'PAID', 'CONFIRMED')
+          AND visit_date &lt; #{checkOutDate}
+          AND #{checkInDate} &lt; COALESCE(check_out_date, DATE_ADD(visit_date, INTERVAL 1 DAY))
+    </select>
+
+    <!-- 휴무 여부 조회: 사업자가 /business/closure에서 설정한 PLACE.is_closed 그대로 참조 (읽기 전용) -->
+    <select id="findPlaceClosed" resultType="boolean">
+        SELECT is_closed FROM PLACE WHERE place_id = #{placeId}
+    </select>
 
 </mapper>

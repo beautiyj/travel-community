@@ -13,5 +13,4 @@ public interface CommentMapper {
 	CommentDto selectComment(int commentId);
 	void insertComment(CommentDto comment);
 	void deleteComment(int commentId);
-	void deleteReplies(int parentId);
 }

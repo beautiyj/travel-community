@@ -10,6 +10,7 @@ import java.util.List;
 @Setter
 @Builder
 public class BusinessDashboardViewDto {
+    private Long placeId;
     private String placeName;
     private String ownerName;
     private boolean isClosed;

@@ -73,4 +73,18 @@ public interface ReservationMapper {
 
     /** 장소 타입(tour/food/stay) 조회. PLACE.place_type을 읽기 전용으로 참조 */
     String findPlaceType(@Param("placeId") Long placeId);
+
+    /** 장소 이름 조회. PLACE.name을 읽기 전용으로 참조 (예약 폼 표시용) */
+    String findPlaceName(@Param("placeId") Long placeId);
+
+    /**
+     * 날짜별 마감(PLACE_CLOSED_DATE) 겹침 체크: 요청 기간([fromDate, toDate))과 겹치는 마감일 수.
+     * 0이면 마감일과 안 겹침. PLACE_CLOSED_DATE도 business 파트 테이블 — 읽기만 한다.
+     */
+    int countClosedDatesInRange(@Param("placeId") Long placeId,
+                                @Param("fromDate") LocalDate fromDate,
+                                @Param("toDate") LocalDate toDate);
+
+    /** 예약 캘린더용: 오늘 이후 날짜별 마감일(PLACE_CLOSED_DATE) 목록 */
+    List<LocalDate> findClosedDates(@Param("placeId") Long placeId);
 }

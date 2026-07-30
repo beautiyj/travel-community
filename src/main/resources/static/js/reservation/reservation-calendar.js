@@ -25,8 +25,9 @@
     // 숙박만 '1팀 단독'이라 예약된 날을 막는다. 맛집/관광지는 하루에 여러 팀 → 마감 없음(항상 초록)
     var BLOCK_BOOKED = !PAY_ON_SITE;
 
-    var booked   = {};                       // { 'yyyy-MM-dd': 예약인원합 } — 활성예약이 있는 날만 담김
-    var closed   = false;                    // 장소 전체가 휴무로 지정됐는지 (PLACE.is_closed)
+    var booked      = {};                    // { 'yyyy-MM-dd': 예약인원합 } — 활성예약이 있는 날만 담김
+    var closed      = false;                 // 장소 전체가 휴무로 지정됐는지 (PLACE.is_closed)
+    var closedDates = {};                    // { 'yyyy-MM-dd': true } — 날짜별 마감(PLACE_CLOSED_DATE)
     var capacity = 0;                        // 맛집·관광지 하루 정원(표시용). 0이면 표시 안 함
     var checkIn  = hidden.value || null;     // 복원된 값이 있으면 유지
     var checkOut = (hiddenTo && hiddenTo.value) || null;
@@ -54,7 +55,7 @@
 
     /** 'yyyy-MM-dd' 문자열은 사전순 비교가 곧 날짜순 비교라 그대로 대소 비교한다 */
     function isBlocked(dateStr) {
-        return closed || (booked[dateStr] || 0) > 0;
+        return closed || !!closedDates[dateStr] || (booked[dateStr] || 0) > 0;
     }
 
     /** 체크인~체크아웃 사이(반개구간)에 마감일이 끼어 있으면 그 기간은 잡을 수 없다 */
@@ -137,7 +138,9 @@
             cell.textContent = d;
 
             // 체크아웃 당일은 다음 손님이 체크인할 수 있으므로(반개구간) 마감으로 치지 않는다
-            var blockedHere = BLOCK_BOOKED && isBlocked(dateStr);
+            // 휴무(closed)·날짜별 마감(closedDates)은 장소 타입 무관하게 항상 막는다.
+            // 예약된 날짜(booked)만 숙박(BLOCK_BOOKED)에서만 막는다 — 맛집/관광지는 하루 여러 팀 가능.
+            var blockedHere = closed || !!closedDates[dateStr] || (BLOCK_BOOKED && (booked[dateStr] || 0) > 0);
 
             if (isPast(viewYear, viewMonth, d)) {
                 cell.classList.add('is-past');
@@ -192,9 +195,19 @@
                 // 숙박은 마감 판정에, 맛집/관광지는 남은 자리 표시에 booked를 쓴다
                 booked = data.booked || {};
                 closed = !!data.closed;
+                closedDates = {};
+                (data.closedDates || []).forEach(function (d) { closedDates[d] = true; });
                 if (!BLOCK_BOOKED) capacity = data.capacity || 0;
                 render();
+                // 이미 선택된 날짜가 있으면(복원값) 방금 받은 정원 정보로 결제하기 버튼 상태를 다시 계산시킨다
+                if (checkIn) hidden.dispatchEvent(new Event('change'));
             })
             .catch(function () { /* 조회 실패 무시 */ });
     }
+
+    /** 맛집·관광지 정원 체크용: 해당 날짜에 남은 자리 수. 숙박(정원 표시 없음)은 항상 무제한 취급 */
+    window.RESERVATION_REMAINING_SEATS = function (dateStr) {
+        if (capacity <= 0) return Infinity;
+        return Math.max(0, capacity - (booked[dateStr] || 0));
+    };
 })();

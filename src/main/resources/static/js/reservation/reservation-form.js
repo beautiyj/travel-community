@@ -47,17 +47,17 @@
     }
 
     // 입력값을 sessionStorage에 저장 (입력할 때마다 호출)
+    // 날짜(visitDate/checkOutDate)는 일부러 저장하지 않는다 — 새로고침 사이 관리자가 마감시켜도
+    // 복원된 날짜로 결제하기가 눌리는 걸 막기 위해, 날짜는 매번 캘린더에서 다시 고르게 한다
     function saveDraft() {
         sessionStorage.setItem(DRAFT_KEY, JSON.stringify({
-            visitorName:  nameInput.value,
-            phone:        phoneInput.value,
-            visitDate:    dateInput.value,
-            checkOutDate: checkOutInput ? checkOutInput.value : '',
-            headcount:    headcountInput.value
+            visitorName: nameInput.value,
+            phone:       phoneInput.value,
+            headcount:   headcountInput.value
         }));
     }
 
-    // 저장된 입력값을 폼에 복원 (페이지 로드 시 1회). 뒤로가기·새로고침 대응
+    // 저장된 입력값을 폼에 복원 (페이지 로드 시 1회). 뒤로가기·새로고침 대응. 날짜는 복원 대상 아님(위 saveDraft 참고)
     function restoreDraft() {
         var raw = sessionStorage.getItem(DRAFT_KEY);
         if (!raw) return;
@@ -65,8 +65,6 @@
             var d = JSON.parse(raw);
             if (d.visitorName) nameInput.value      = d.visitorName;
             if (d.phone)       phoneInput.value     = d.phone;
-            if (d.visitDate)   dateInput.value      = d.visitDate;
-            if (d.checkOutDate && checkOutInput) checkOutInput.value = d.checkOutDate;
             if (d.headcount)   headcountInput.value = d.headcount;
         } catch (e) { /* 손상된 데이터는 무시 */ }
     }

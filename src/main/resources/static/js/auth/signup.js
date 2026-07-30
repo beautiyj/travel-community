@@ -13,7 +13,8 @@ const signupErrorElementIds = Object.freeze({
 	birth: "birthError",
 	phone: "phoneError",
 	gender: "genderError",
-	privacyAgreed: "privacyAgreedError"
+	privacyAgreed: "privacyAgreedError",
+	businessRegistrationFile: "businessRegistrationFileError"
 });
 
 // 오류 태그와 대응하는 성공 안내 태그를 연결한다.
@@ -74,6 +75,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	bindPasswordMatchEvents(elements);
 	bindFieldMessageClearEvents();
+	bindBusinessRegistrationFileEvents(elements);
 	bindWorkflowStateInvalidationEvents(elements);
 	bindEmailVerificationEvents(elements);
 	bindDuplicateCheckEvents(elements);
@@ -90,6 +92,9 @@ function getSignupElements() {
 		loginId: document.querySelector("#login_id"),
 		password: document.querySelector("#password"),
 		passwordConfirm: document.querySelector("#passwordConfirm"),
+		businessRegistrationFile: document.querySelector("#businessRegistrationFile"),
+		businessRegistrationFileButton: document.querySelector("#businessRegistrationFileButton"),
+		businessRegistrationFileInfo: document.querySelector("#businessRegistrationFileInfo"),
 		nickname: document.querySelector("#nickname"),
 		email: document.querySelector("#email"),
 		verificationCode: document.querySelector("#verificationCode"),
@@ -154,6 +159,45 @@ function bindFieldMessageClearEvents() {
 			clearMessage();
 		});
 	});
+}
+
+// 숨긴 파일 입력은 버튼으로 열고, 선택 결과는 스크린 리더에도 전달되는 정보 영역에 표시한다.
+function bindBusinessRegistrationFileEvents({
+	businessRegistrationFile,
+	businessRegistrationFileButton,
+	businessRegistrationFileInfo
+}) {
+	if (!businessRegistrationFile
+		|| !businessRegistrationFileButton
+		|| !businessRegistrationFileInfo) {
+		return;
+	}
+
+	businessRegistrationFileButton.addEventListener("click", () => {
+		businessRegistrationFile.click();
+	});
+
+	businessRegistrationFile.addEventListener("change", () => {
+		const selectedFile = businessRegistrationFile.files[0];
+		businessRegistrationFileInfo.textContent = selectedFile
+			? `${selectedFile.name} (${formatFileSize(selectedFile.size)})`
+			: "선택된 파일 없음";
+		clearFieldMessage("businessRegistrationFileError");
+		clearMessage();
+	});
+}
+
+function formatFileSize(bytes) {
+	if (bytes <= 0) {
+		return "0 B";
+	}
+	const units = ["B", "KB", "MB"];
+	const unitIndex = Math.min(
+		Math.floor(Math.log(bytes) / Math.log(1024)),
+		units.length - 1
+	);
+	const value = Math.round((bytes / 1024 ** unitIndex) * 10) / 10;
+	return `${value} ${units[unitIndex]}`;
 }
 
 // 확인 완료 후 원본 값이 바뀌면 서버에서 확인했던 상태를 무효화한다.
@@ -468,7 +512,9 @@ function showFieldMessage(elementId, message, isError) {
 	const { errorElement, successElement } = getFieldMessageElements(elementId);
 	const hasMessage = typeof message === "string" && message.trim() !== "";
 	const displayMessage = hasMessage ? message : "요청 처리 중 오류가 발생했습니다.";
-	errorElement.textContent = !isError && hasMessage ? "" : displayMessage;
+	if (errorElement) {
+		errorElement.textContent = !isError && hasMessage ? "" : displayMessage;
+	}
 	if (successElement) {
 		successElement.textContent = !isError && hasMessage ? message : "";
 		successElement.style.color = !isError && hasMessage ? "#087f5b" : "";
@@ -477,7 +523,9 @@ function showFieldMessage(elementId, message, isError) {
 
 function clearFieldMessage(elementId) {
 	const { errorElement, successElement } = getFieldMessageElements(elementId);
-	errorElement.textContent = "";
+	if (errorElement) {
+		errorElement.textContent = "";
+	}
 	if (successElement) {
 		successElement.textContent = "";
 		successElement.style.color = "";
@@ -486,7 +534,9 @@ function clearFieldMessage(elementId) {
 
 function setError(elementId, message) {
 	const { errorElement, successElement } = getFieldMessageElements(elementId);
-	errorElement.textContent = message;
+	if (errorElement) {
+		errorElement.textContent = message;
+	}
 	if (successElement) {
 		successElement.textContent = "";
 		successElement.style.color = "";
@@ -503,7 +553,9 @@ class ResponseFormatError extends Error {
 
 // trim이나 정규화 없이 DTO로 전송될 원본 입력값을 복사한다.
 function readSignupValues(form) {
+	const businessRegistrationFileInput = form.elements.businessRegistrationFile;
 	return {
+		memberType: Number(form.elements.memberType.value),
 		name: form.elements.name.value,
 		loginId: form.elements.loginId.value,
 		password: form.elements.password.value,
@@ -513,7 +565,10 @@ function readSignupValues(form) {
 		birth: form.elements.birth.value,
 		phone: form.elements.phone.value,
 		gender: form.elements.gender.value,
-		privacyAgreed: form.elements.privacyAgreed.checked
+		privacyAgreed: form.elements.privacyAgreed.checked,
+		businessRegistrationFile: businessRegistrationFileInput
+			? businessRegistrationFileInput.files[0] || null
+			: null
 	};
 }
 

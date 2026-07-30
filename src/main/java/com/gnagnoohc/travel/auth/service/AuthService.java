@@ -40,6 +40,39 @@ public class AuthService {
 			return LocalLoginResult.invalidCredentials();
 		}
 
+		return authenticateLockedLocalAuth(localAuth, rawPassword);
+	}
+
+	/**
+	 * 소셜 연동 후보 회원에게 속한 아이디만 인증한다.
+	 * 다른 아이디를 제출하면 그 계정의 인증 행을 조회하지 않아 실패 횟수도 변경하지 않는다.
+	 */
+	@Transactional
+	public LocalLoginResult authenticateSocialLinkCandidate(
+			int candidateMemberId,
+			String username,
+			String rawPassword) {
+		if (candidateMemberId <= 0
+				|| username == null
+				|| !username.trim().matches("^[A-Za-z0-9]{5,20}$")
+				|| rawPassword == null
+				|| rawPassword.isBlank()) {
+			return LocalLoginResult.invalidCredentials();
+		}
+
+		MemberLocalAuth localAuth = mapper.findSocialLinkCandidateAuthForUpdate(
+				candidateMemberId, username.trim());
+		if (localAuth == null) {
+			return LocalLoginResult.invalidCredentials();
+		}
+
+		return authenticateLockedLocalAuth(localAuth, rawPassword);
+	}
+
+	// 일반 로그인과 소셜 연동 인증이 같은 실패 횟수·잠금 정책을 사용한다.
+	private LocalLoginResult authenticateLockedLocalAuth(
+			MemberLocalAuth localAuth,
+			String rawPassword) {
 		// 잠금 중에는 비밀번호를 검사하지 않고 실패 횟수와 잠금 시간도 변경하지 않는다.
 		if (localAuth.isCurrentlyLocked()) {
 			return LocalLoginResult.locked();
@@ -133,6 +166,10 @@ public class AuthService {
 				&& signUpRequest.getMemberType() != 2) {
 			throw new SignupException("잘못된 회원 유형");
 		}
+
+		if (!isSelectableGender(signUpRequest.getGender())) {
+			throw new SignupException("성별을 선택해주세요.");
+		}
 	}
 
 	// 회원 공통 정보 생성
@@ -144,12 +181,23 @@ public class AuthService {
 		member.setEmail(verifiedEmail.getEmail());
 		member.setNickname(signUpRequest.getNickname());
 		member.setMemberType(signUpRequest.getMemberType());
-		member.setPhone(signUpRequest.getPhone());
-		member.setGender(signUpRequest.getGender());
+		// 입력 형식과 관계없이 같은 전화번호를 하나의 숫자 형식으로 저장한다.
+		member.setPhone(signUpRequest.getPhone().replace("-", ""));
+		member.setGender(toStoredGender(signUpRequest.getGender()));
 		member.setBirth(signUpRequest.getBirth());
 		member.setEmailVerified("Y");
 		member.setEmailVerifiedAt(verifiedEmail.getVerifiedAt());
 		return member;
+	}
+
+	private boolean isSelectableGender(String gender) {
+		return "MALE".equals(gender)
+				|| "FEMALE".equals(gender)
+				|| "NONE".equals(gender);
+	}
+
+	private String toStoredGender(String gender) {
+		return "NONE".equals(gender) ? null : gender;
 	}
 
 	// 회원 공통 정보 저장

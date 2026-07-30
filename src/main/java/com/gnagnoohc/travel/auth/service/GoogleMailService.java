@@ -26,7 +26,7 @@ public class GoogleMailService {
 		SimpleMailMessage message = new SimpleMailMessage();
 		message.setFrom(fromAddress);
 		message.setTo(recipient);
-		message.setSubject("[Travel Community] 이메일 인증번호");
+		message.setSubject("[갈래말래] 이메일 인증번호");
 		message.setText(
 				"이메일 인증번호는 " + verificationCode + " 입니다.\n"
 				+ "인증번호는 5분 동안 유효합니다.\n"

@@ -12,6 +12,7 @@ const signupErrorElementIds = Object.freeze({
 	nickname: "nicknameError",
 	birth: "birthError",
 	phone: "phoneError",
+	gender: "genderError",
 	privacyAgreed: "privacyAgreedError"
 });
 
@@ -143,6 +144,13 @@ function bindFieldMessageClearEvents() {
 	].forEach(([fieldId, messageId]) => {
 		document.querySelector(`#${fieldId}`).addEventListener("change", () => {
 			clearFieldMessage(messageId);
+			clearMessage();
+		});
+	});
+
+	document.querySelectorAll("input[name='gender']").forEach((input) => {
+		input.addEventListener("change", () => {
+			clearFieldMessage("genderError");
 			clearMessage();
 		});
 	});
@@ -504,6 +512,7 @@ function readSignupValues(form) {
 		nickname: form.elements.nickname.value,
 		birth: form.elements.birth.value,
 		phone: form.elements.phone.value,
+		gender: form.elements.gender.value,
 		privacyAgreed: form.elements.privacyAgreed.checked
 	};
 }

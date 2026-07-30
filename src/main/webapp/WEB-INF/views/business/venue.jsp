@@ -140,8 +140,8 @@
                                 </c:if>
 
                                 <c:choose>
-                                    <c:when test="${placeDetail.placeType == 1}"><c:set var="categoryLabel" value="숙박"/></c:when>
-                                    <c:when test="${placeDetail.placeType == 2}"><c:set var="categoryLabel" value="맛집"/></c:when>
+                                    <c:when test="${placeDetail.placeType == 'stay'}"><c:set var="categoryLabel" value="숙박"/></c:when>
+                                    <c:when test="${placeDetail.placeType == 'food'}"><c:set var="categoryLabel" value="맛집"/></c:when>
                                     <c:otherwise><c:set var="categoryLabel" value="관광지"/></c:otherwise>
                                 </c:choose>
 
@@ -167,7 +167,7 @@
                                         <span class="venue-detail-row__value">${categoryLabel}</span>
                                     </div>
                                     <%-- 가격은 숙박만 설정 대상이라 숙박일 때만 보여준다 --%>
-                                    <c:if test="${placeDetail.placeType == 1}">
+                                    <c:if test="${placeDetail.placeType == 'stay'}">
                                         <div class="venue-detail-row">
                                             <span class="venue-detail-row__label">가격</span>
                                             <span class="venue-detail-row__value">${priceLabel}</span>

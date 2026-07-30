@@ -11,11 +11,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import com.gnagnoohc.travel.auth.dto.LoginMemberDto;
 import com.gnagnoohc.travel.mypage.dto.MypageDto;
+import com.gnagnoohc.travel.mypage.service.BusinessMediaStorage;
 import com.gnagnoohc.travel.mypage.service.MypageService;
 
 import jakarta.servlet.http.HttpSession;
@@ -26,6 +29,9 @@ public class MypageController {
 
     @Autowired
     private MypageService mypageService;
+
+    @Autowired
+    private BusinessMediaStorage mediaStorage;
 
     @GetMapping("/test")
     public String mypageTest() {
@@ -46,7 +52,7 @@ public class MypageController {
         }
 
         if (Integer.valueOf(2).equals(member.getMemberType())) {
-            return "redirect:/business/mypage";
+            return "redirect:/mypage/business-info";
         }
         return "redirect:/mypage/info";
     }
@@ -78,42 +84,60 @@ public class MypageController {
     }
 
     @PostMapping("/edit")
-    public String editMember(MypageDto member, HttpSession session) {
+    public String editMember(
+            MypageDto member,
+            @RequestParam(value = "profileImage", required = false)
+            MultipartFile profileImage,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
 
-        System.out.println("수정할 member: " + member);
+        Long memberId = getMemberId(session);
+        member.setMemberId(memberId);
 
-        member.setMemberId(getMemberId(session));
-        int result = mypageService.updateMember(member);
+        try {
+            mypageService.verifyCurrentPassword(
+                    memberId, member.getCurrentPassword());
+            mypageService.updateMember(member);
 
-        System.out.println("회원정보 수정 결과: " + result);
+            if (profileImage != null && !profileImage.isEmpty()) {
+                String imageUrl =
+                        mediaStorage.storeProfile(profileImage, memberId);
+                mypageService.updateProfileImage(memberId, imageUrl);
+            }
 
-        return "redirect:/mypage/info";
+            redirectAttributes.addFlashAttribute(
+                    "message", "회원정보를 수정했습니다.");
+            return "redirect:/mypage/info";
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            return "redirect:/mypage/edit";
+        }
     }
 
-    /*
     @GetMapping("/password")
-    public String passwordForm(Model model) {
-
-        MypageDto member = mypageService.getMemberInfo(1L);
-
-        model.addAttribute("member", member);
-
+    public String passwordForm() {
         return "mypage/password";
     }
 
     @PostMapping("/password")
-    public String changePassword(MypageDto member, Model model) {
-
-        if (!member.getNewPassword().equals(member.getNewPasswordCheck())) {
-            model.addAttribute("member", member);
-            return "mypage/password";
+    public String changePassword(
+            MypageDto member,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+        try {
+            mypageService.changePassword(
+                    getMemberId(session),
+                    member.getCurrentPassword(),
+                    member.getNewPassword(),
+                    member.getNewPasswordCheck());
+            redirectAttributes.addFlashAttribute(
+                    "message", "비밀번호를 변경했습니다.");
+            return "redirect:/mypage/info";
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            return "redirect:/mypage/password";
         }
-
-        mypageService.changePassword(member);
-
-        return "redirect:/mypage/info";
     }
-    */
 
     @GetMapping("/reservation")
     public String reservation(Model model, HttpSession session) {

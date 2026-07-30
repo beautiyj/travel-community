@@ -200,6 +200,13 @@ button, input, select, textarea { font: inherit; }
   margin-top: 30px;
 }
 
+.profile-edit__message { margin-bottom: 20px; padding: 12px 16px; border-radius: var(--radius-md); font-size: var(--text-sm); }
+.profile-edit__message--error { border: 1px solid #fecaca; background: #fef2f2; color: var(--danger); }
+.profile-edit__preview { display: block; width: 96px; height: 96px; margin-bottom: 12px; border: 1px solid var(--border); border-radius: 50%; object-fit: cover; }
+.profile-edit__password { display: grid; gap: 16px; margin: 8px 0 24px; padding: 20px; border: 1px solid var(--border); border-radius: var(--radius-lg); }
+.profile-edit__password legend { padding: 0 8px; font-size: var(--text-base); font-weight: var(--font-weight-bold); }
+.profile-edit__password > p { color: var(--muted-foreground); font-size: var(--text-sm); }
+
 .profile-edit__actions .btn-main {
   display: inline-flex;
   align-items: center;
@@ -246,11 +253,15 @@ button, input, select, textarea { font: inherit; }
 .mypage-sidebar__menu a:hover { background: var(--secondary); }
 .mypage-sidebar__menu .is-active { background: var(--primary-soft); color: var(--primary); }
 .mypage-sidebar__menu .mypage-sidebar__logout { margin-top: 4px; color: var(--danger); }
+.mypage-sidebar__menu .mypage-sidebar__withdraw { color: var(--foreground); font-weight: var(--font-weight-bold); }
 .mypage-content__header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
 .mypage-content__header h2 { font-size: var(--text-xl); font-weight: var(--font-weight-bold); }
 .mypage-content__header em { color: var(--muted-foreground); font-size: var(--text-base); font-style: normal; }
 .mypage-primary-link { padding: 9px 16px; border-radius: 8px; background: var(--primary); color: #fff; font-size: var(--text-sm); font-weight: var(--font-weight-bold); }
 .mypage-primary-link:hover { filter: brightness(.95); }
+.member-info-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+.mypage-secondary-link { padding: 9px 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); color: var(--foreground); font-size: var(--text-sm); font-weight: var(--font-weight-bold); }
+.mypage-secondary-link:hover { background: var(--secondary); }
 .member-info-list { overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--card); }
 .member-info-list div { display: grid; grid-template-columns: 128px 1fr; align-items: center; min-height: 58px; padding: 12px 24px; border-bottom: 1px solid var(--border); }
 .member-info-list div:last-child { border-bottom: 0; }

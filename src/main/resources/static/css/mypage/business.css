@@ -1,8 +1,8 @@
 /* mypage/business 전용 스타일 */
 :root {
-  --biz-primary: #0f766e;
-  --biz-soft: #f0fdfa;
-  --biz-border: #dbe5e4;
+  --biz-primary: var(--primary);
+  --biz-soft: var(--primary-soft);
+  --biz-border: var(--border);
   --biz-text: #14201f;
   --biz-muted: #64748b;
   --biz-danger: #b42318;
@@ -48,7 +48,7 @@ button, input, textarea { font: inherit; }
 
 /* 일반회원 마이페이지와 동일한 사업자 전용 레이아웃 보정 */
 .business-mypage .mypage-sidebar__profile {
-  background: linear-gradient(145deg, #0f766e, #0d9488);
+  background: var(--primary);
 }
 .business-profile-type {
   width: fit-content;
@@ -109,7 +109,7 @@ button, input, textarea { font: inherit; }
   background: #f1f5f9;
 }
 .business-image-upload,
-.business-profile-editor form,
+.business-profile-editor__controls,
 .business-reapproval form {
   display: flex;
   flex-wrap: wrap;
@@ -183,6 +183,89 @@ button, input, textarea { font: inherit; }
   font-size: 14px;
   line-height: 1.6;
 }
+.business-approval-card {
+  padding: 24px;
+  border: 1px solid var(--biz-border);
+  border-radius: 16px;
+  background: #fff;
+}
+.business-approval-card h3 { margin: 0 0 8px; font-size: 19px; }
+.business-approval-card > p {
+  margin: 0;
+  color: var(--biz-muted);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.business-approval-summary {
+  margin: 20px 0 0;
+  border-top: 1px solid var(--biz-border);
+}
+.business-approval-summary div {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--biz-border);
+}
+.business-approval-summary dt { color: var(--biz-muted); }
+.business-approval-summary dd { margin: 0; font-weight: 700; }
+.business-approval-form {
+  display: grid;
+  gap: 8px;
+  margin-top: 22px;
+}
+.business-approval-form label { font-size: 14px; font-weight: 700; }
+.business-file-input {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+.business-file-input__name {
+  display: flex;
+  min-width: 0;
+  height: 46px;
+  padding: 0 13px;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid var(--biz-border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--biz-text);
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.business-file-input__button {
+  display: inline-flex;
+  height: 46px;
+  padding: 0 17px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--primary);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--primary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.business-file-input__button:hover { background: var(--primary-soft); }
+.business-file-input input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+.business-file-input:focus-within .business-file-input__name,
+.business-file-input input:focus-visible + * {
+  border-color: var(--primary);
+}
+.business-file-input__help {
+  color: var(--biz-muted);
+  font-size: 12px;
+}
+.business-approval-form button { width: fit-content; border: 0; cursor: pointer; }
 @media (max-width: 720px) {
   .business-place-gallery { grid-template-columns: 1fr 1fr; }
   .business-profile-editor { align-items: flex-start; flex-direction: column; }

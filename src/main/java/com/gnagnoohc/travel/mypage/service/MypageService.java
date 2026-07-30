@@ -14,7 +14,12 @@ public interface MypageService {
 
 	int updateProfileImage(Long memberId, String profileImgUrl);
 
-//	int changePassword(MypageDto member);
+	void verifyCurrentPassword(Long memberId, String currentPassword);
+
+	void changePassword(Long memberId,
+	                    String currentPassword,
+	                    String newPassword,
+	                    String newPasswordCheck);
 
 	List<MypageDto> getReservationList(Long memberId);
 

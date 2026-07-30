@@ -18,10 +18,10 @@
         <span class="business-profile-type">사업자 회원</span>
     </div>
     <nav class="mypage-sidebar__menu">
-        <a class="${param.active eq 'dashboard' ? 'is-active' : ''}" href="${cp}/business/mypage">사업장 정보</a>
-        <a class="${param.active eq 'info' ? 'is-active' : ''}" href="${cp}/business/mypage/info">기본 정보</a>
-        <a class="${param.active eq 'edit' ? 'is-active' : ''}" href="${cp}/business/mypage/edit">회원정보 수정</a>
-        <a href="${cp}/business/mypage/withdraw">회원 탈퇴</a>
+        <a class="${param.active eq 'info' ? 'is-active' : ''}" href="${cp}/mypage/business-info">기본 정보</a>
+        <a class="${param.active eq 'approval' ? 'is-active' : ''}" href="${cp}/mypage/business-info/approval">사업자 승인 관리</a>
+        <a class="${param.active eq 'places' ? 'is-active' : ''}" href="${cp}/mypage/business-info/places">내 사업장 목록</a>
+        <a href="${cp}/mypage/business-info/withdraw">회원 탈퇴</a>
         <a class="mypage-sidebar__logout" href="${cp}/mypage/logout">로그아웃</a>
     </nav>
 </aside>

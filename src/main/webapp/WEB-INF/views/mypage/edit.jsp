@@ -24,21 +24,35 @@
 
         <h1 class="profile-edit__title">회원정보 수정</h1>
 
-        <form class="profile-edit__form" action="${cp}/mypage/edit" method="post">
+        <c:if test="${not empty error}">
+            <p class="profile-edit__message profile-edit__message--error">
+                <c:out value="${error}" />
+            </p>
+        </c:if>
+
+        <form class="profile-edit__form" action="${cp}/mypage/edit"
+              method="post" enctype="multipart/form-data">
             <input type="hidden" name="memberId" value="<c:out value='${member.memberId}'/>">
             <input type="hidden" name="nickname" value="<c:out value='${member.nickname}'/>">
+
+            <div class="input-field">
+                <label for="profileImage">프로필 이미지</label>
+                <c:if test="${not empty member.profileImgUrl}">
+                    <img class="profile-edit__preview"
+                         src="<c:out value='${member.profileImgUrl}'/>"
+                         alt="현재 프로필 이미지">
+                </c:if>
+                <input id="profileImage" name="profileImage" type="file"
+                       accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+                <small class="input-field__help">
+                    JPG, PNG, WEBP 파일을 최대 5MB까지 업로드할 수 있습니다.
+                </small>
+            </div>
 
             <jsp:include page="/WEB-INF/views/mypage/components/readOnlyField.jsp">
                 <jsp:param name="label" value="아이디" />
                 <jsp:param name="id" value="loginId" />
                 <jsp:param name="value" value="${member.loginId}" />
-                <jsp:param name="helpText" value="수정이 불가능한 항목입니다" />
-            </jsp:include>
-
-            <jsp:include page="/WEB-INF/views/mypage/components/readOnlyField.jsp">
-                <jsp:param name="label" value="비밀번호" />
-                <jsp:param name="id" value="password" />
-                <jsp:param name="value" value="••••••••" />
                 <jsp:param name="helpText" value="수정이 불가능한 항목입니다" />
             </jsp:include>
 
@@ -63,6 +77,14 @@
                 <jsp:param name="value" value="${member.phone}" />
                 <jsp:param name="placeholder" value="010-1234-5678" />
                 <jsp:param name="maxlength" value="20" />
+                <jsp:param name="required" value="true" />
+            </jsp:include>
+
+            <jsp:include page="/WEB-INF/views/common/inputField.jsp">
+                <jsp:param name="label" value="현재 비밀번호" />
+                <jsp:param name="name" value="currentPassword" />
+                <jsp:param name="type" value="password" />
+                <jsp:param name="placeholder" value="회원정보 수정을 위해 입력해 주세요" />
                 <jsp:param name="required" value="true" />
             </jsp:include>
 

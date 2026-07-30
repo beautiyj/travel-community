@@ -3,6 +3,7 @@ package com.gnagnoohc.travel.mypage.service;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,6 +15,9 @@ public class MypageServiceImpl implements MypageService {
 
     @Autowired
     private MypageRepository mypageRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @Override
     public MypageDto getMemberInfo(Long memberId) {
@@ -45,10 +49,51 @@ public class MypageServiceImpl implements MypageService {
                 memberId, profileImgUrl);
     }
     
-//    @Override
-//    public int changePassword(MypageDto member) {
-//    	return mypageRepository.changePassword(member);
-//    }
+    @Override
+    public void verifyCurrentPassword(
+            Long memberId, String currentPassword) {
+        requirePositive(memberId, "memberId");
+        if (currentPassword == null || currentPassword.isBlank()) {
+            throw new IllegalArgumentException("현재 비밀번호를 입력해 주세요.");
+        }
+
+        String passwordHash = mypageRepository.getPasswordHash(memberId);
+        if (passwordHash == null
+                || !passwordEncoder.matches(currentPassword, passwordHash)) {
+            throw new IllegalArgumentException("현재 비밀번호가 일치하지 않습니다.");
+        }
+    }
+
+    @Override
+    @Transactional
+    public void changePassword(
+            Long memberId,
+            String currentPassword,
+            String newPassword,
+            String newPasswordCheck) {
+        requirePositive(memberId, "memberId");
+        verifyCurrentPassword(memberId, currentPassword);
+        if (newPassword == null
+                || !newPassword.matches("^(?=.*[A-Za-z])(?=.*\\d)\\S{8,20}$")) {
+            throw new IllegalArgumentException(
+                    "새 비밀번호는 영문과 숫자를 포함한 8~20자여야 합니다.");
+        }
+        if (!newPassword.equals(newPasswordCheck)) {
+            throw new IllegalArgumentException("새 비밀번호 확인이 일치하지 않습니다.");
+        }
+
+        String passwordHash = mypageRepository.getPasswordHash(memberId);
+        if (passwordEncoder.matches(newPassword, passwordHash)) {
+            throw new IllegalArgumentException(
+                    "새 비밀번호는 현재 비밀번호와 다르게 입력해 주세요.");
+        }
+
+        int updated = mypageRepository.updatePassword(
+                memberId, passwordEncoder.encode(newPassword));
+        if (updated != 1) {
+            throw new IllegalStateException("비밀번호를 변경하지 못했습니다.");
+        }
+    }
     
     @Override
     public List<MypageDto> getReservationList(Long memberId){

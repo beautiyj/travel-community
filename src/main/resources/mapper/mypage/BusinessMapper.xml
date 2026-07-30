@@ -16,8 +16,6 @@
         <result property="address" column="address"/>
         <result property="closed" column="is_closed"/>
         <result property="firstImage" column="first_image"/>
-        <result property="hashtags" column="hashtags"/>
-        <result property="minPrice" column="min_price"/>
         <collection property="images"
                     ofType="com.gnagnoohc.travel.mypage.dto.BusinessPlaceImageDto"
                     column="place_id"
@@ -37,24 +35,34 @@
         where member_id = #{memberId}
     </select>
 
-    <update id="resubmitApplication"
+    <insert id="saveApplication"
             parameterType="com.gnagnoohc.travel.mypage.dto.BusinessApplicationDto">
-        update business_application
-        set business_registration_img_url = #{documentUrl},
+        insert into business_application (
+            member_id,
+            business_registration_img_url,
+            application_status,
+            applied_at
+        )
+        values (
+            #{memberId},
+            #{documentUrl},
+            'PENDING',
+            now()
+        )
+        on duplicate key update
+            business_registration_img_url =
+                values(business_registration_img_url),
             application_status = 'PENDING',
             applied_at = now(),
             approved_by = null,
             approved_at = null
-        where member_id = #{memberId}
-          and application_status = 'APPROVED'
-    </update>
+    </insert>
 
     <select id="findPlacesByMemberId"
             parameterType="long"
             resultMap="businessPlaceMap">
         select place_id, member_id, region_id, place_type, name,
-               description, address, is_closed, first_image,
-               hashtags, min_price
+               description, address, is_closed, first_image
         from PLACE
         where member_id = #{memberId}
         order by created_at desc
@@ -68,28 +76,5 @@
         where place_id = #{placeId}
         order by sort_order, image_id
     </select>
-
-    <select id="countOwnedPlace"
-            parameterType="map"
-            resultType="int">
-        select count(*)
-        from PLACE
-        where place_id = #{placeId}
-          and member_id = #{memberId}
-    </select>
-
-    <insert id="insertPlaceImage" parameterType="map">
-        insert into PLACE_IMAGE (place_id, image_url, sort_order)
-        values (
-            #{placeId},
-            #{imageUrl},
-            (select next_order
-             from (
-                 select coalesce(max(pi.sort_order), -1) + 1 as next_order
-                 from PLACE_IMAGE pi
-                 where pi.place_id = #{placeId}
-             ) image_order)
-        )
-    </insert>
 
 </mapper>

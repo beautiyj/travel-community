@@ -10,6 +10,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -101,15 +103,41 @@ public class TourDataConverter {
     // TODO: footer에 TourDetailImageDTO - cpyrhtDivCd (저작권표기) 추가 필요 & 프론트에서 Type3의 경우 비율유지하며 적용 필요
     // TourDetailImageDTO -> PlaceImageDTO 변환
     // 대표 이미지 등록 시 sortOrder=0 지정, 상세/서브 이미지 등록 시 순번(sortOrder) 지정
-    public PlaceImageDTO convertToPlaceImageDTO(Integer placeId, String imageUrl, int sortOrder) {
-        if (!StringUtils.hasText(imageUrl) || placeId == null) {
-            return null;
+//    public PlaceImageDTO convertToPlaceImageDTO(Integer placeId, String imageUrl, int sortOrder) {
+//        if (!StringUtils.hasText(imageUrl) || placeId == null) {
+//            return null;
+//        }
+//        return PlaceImageDTO.builder()
+//                .placeId(placeId)
+//                .imageUrl(imageUrl)
+//                .sortOrder(sortOrder)
+//                .build();
+//    }
+    // 플레이스 다중 이미지 변환 시 중복 URL 제거 및 sortOrder 인덱싱 처리 (최소 이미지 수 검증 포함)
+    public List<PlaceImageDTO> convertToPlaceImageDTOs(Integer placeId, List<String> imageUrls) {
+        if (imageUrls == null || imageUrls.isEmpty() || placeId == null) {
+            return List.of();
         }
-        return PlaceImageDTO.builder()
-                .placeId(placeId)
-                .imageUrl(imageUrl)
-                .sortOrder(sortOrder)
-                .build();
+
+        // 중복 이미지 제거 (Distinct) 및 유효한 이미지 URL만 필터링
+        List<String> distinctUrls = imageUrls.stream()
+                .filter(StringUtils::hasText)
+                .distinct()
+                .toList();
+
+        // TODO: 0730 1장만 존재하는 가게 필터링 또는 최소 이미지 수 조건 적용 (예: 최소 2장 이상일 때만 서브 이미지 허용 등, 정책에 따른 방어), 이후테스트필수
+        // 필요 시 아래 조건으로 최소 수량 제한 가능 (현재는 전체 유효 이미지 대상 순번 부여)
+        List<PlaceImageDTO> imageDTOs = new ArrayList<>();
+        for (int i = 0; i < distinctUrls.size(); i++) {
+            imageDTOs.add(
+                    PlaceImageDTO.builder()
+                            .placeId(placeId)
+                            .imageUrl(distinctUrls.get(i))
+                            .sortOrder(i) // 0번은 대표, 이후 1, 2, 3... 순차 인덱싱
+                            .build()
+            );
+        }
+        return imageDTOs;
     }
 
     // 카드형 썸네일 대표 이미지 결정: 목록 API의 썸네일(firstimage2) 우선, 없을 경우 원본(firstimage) Fallback 사용

@@ -207,6 +207,28 @@ public class TourApiHelper {
         return null;
     }
 
+    // 헬퍼 메서드 - processSinglePlace 사용 용도의 이미지 정보(/detailImage2) 조회
+    public List<TourDetailImageDTO> fetchDetailImages(String contentId) {
+        try {
+            // imageYN="Y"를 인자로 전달하여 해당 장소의 원본 및 썸네일 이미지 목록 조회
+            String imageJson = tourApiClient.fetchDetailImage(contentId, "Y");
+            if (StringUtils.hasText(imageJson)) {
+                TourApiResponseDTO<TourDetailImageDTO> imageResponse = objectMapper.readValue(
+                        imageJson, new TypeReference<TourApiResponseDTO<TourDetailImageDTO>>() {}
+                );
+                if (imageResponse != null && imageResponse.getResponse() != null
+                        && imageResponse.getResponse().getBody() != null
+                        && imageResponse.getResponse().getBody().getItems() != null
+                        && !imageResponse.getResponse().getBody().getItems().getItem().isEmpty()) {
+                    return imageResponse.getResponse().getBody().getItems().getItem();
+                }
+            }
+        } catch (Exception e) {
+            log.warn("[Batch] detailImage2 호출 실패 - contentId: {}", contentId);
+        }
+        return List.of();
+    }
+
     /* 헬퍼 메소드 isValidItem - 수집 대상 유효성 검증 (대표 이미지 필수 존재 여부 체크)
        대표 이미지가 없으면 아예 적재x 이미지 존재 여부만 검증 -> 이후 PlaceImage테이블에 적용 필요
      */

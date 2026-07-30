@@ -126,6 +126,22 @@ public class ReservationService {
         return reservationMapper.findPlaceType(placeId);
     }
 
+    /**
+     * 결제 확정 직전 마지막 방어: 예약 생성(PENDING) 이후 결제 대기 중에 관리자가 마감시켰을 수 있으니
+     * PaymentService.saveSuccess()에서 PAID로 바꾸기 전에 다시 한 번 확인한다.
+     */
+    @Transactional(readOnly = true)
+    public void assertStillAvailable(Long reservationId) {
+        Reservation r = getById(reservationId);
+        if (Boolean.TRUE.equals(reservationMapper.findPlaceClosed(r.getPlaceId()))) {
+            throw new IllegalStateException("휴무 중인 장소입니다.");
+        }
+        LocalDate closedRangeTo = isStay(r.getPlaceType()) ? r.getCheckOutDate() : r.getVisitDate().plusDays(1);
+        if (reservationMapper.countClosedDatesInRange(r.getPlaceId(), r.getVisitDate(), closedRangeTo) > 0) {
+            throw new IllegalStateException("마감된 날짜가 포함되어 있습니다.");
+        }
+    }
+
     /** PLACE.name 조회. 예약 폼 표시용 */
     @Transactional(readOnly = true)
     public String getPlaceName(Long placeId) {

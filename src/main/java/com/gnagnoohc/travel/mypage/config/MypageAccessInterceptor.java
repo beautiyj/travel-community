@@ -3,6 +3,7 @@ package com.gnagnoohc.travel.mypage.config;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
+import com.gnagnoohc.travel.auth.dto.LoginMemberDto;
 import com.gnagnoohc.travel.mypage.dto.MypageDto;
 import com.gnagnoohc.travel.mypage.service.MypageService;
 
@@ -53,7 +54,11 @@ public class MypageAccessInterceptor implements HandlerInterceptor {
         if (session == null) {
             return null;
         }
-        Object value = session.getAttribute("memberId");
-        return value instanceof Number number ? number.longValue() : null;
+
+        Object loginMember = session.getAttribute("loginMember");
+        if (loginMember instanceof LoginMemberDto member) {
+            return (long) member.getMemberId();
+        }
+        return null;
     }
 }

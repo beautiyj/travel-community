@@ -47,7 +47,4 @@ public class MypageDto {
 	
 	private Long wishlistId;
 	
-	private String email;
-	private String memberRole;
-	
 }

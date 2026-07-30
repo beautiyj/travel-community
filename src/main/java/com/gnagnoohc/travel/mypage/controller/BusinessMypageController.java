@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.gnagnoohc.travel.auth.dto.LoginMemberDto;
 import com.gnagnoohc.travel.mypage.dto.BusinessApplicationDto;
 import com.gnagnoohc.travel.mypage.service.BusinessDocumentStorage;
 import com.gnagnoohc.travel.mypage.service.BusinessMediaStorage;
@@ -200,8 +201,8 @@ public class BusinessMypageController {
     }
 
     private Long sessionMemberId(HttpSession session) {
-        Object value = session.getAttribute("memberId");
-        return value instanceof Number number
-                ? number.longValue() : null;
+        Object loginMember = session.getAttribute("loginMember");
+        return loginMember instanceof LoginMemberDto member
+                ? (long) member.getMemberId() : null;
     }
 }

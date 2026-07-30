@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import com.gnagnoohc.travel.auth.dto.LoginMemberDto;
 import com.gnagnoohc.travel.mypage.dto.MypageDto;
 import com.gnagnoohc.travel.mypage.service.MypageService;
 
@@ -218,12 +219,9 @@ public class MypageController {
     }
 
     private Long getMemberId(HttpSession session) {
-        Object value = session.getAttribute("memberId");
-        if (value instanceof Long memberId) {
-            return memberId;
-        }
-        if (value instanceof Integer memberId) {
-            return memberId.longValue();
+        Object loginMember = session.getAttribute("loginMember");
+        if (loginMember instanceof LoginMemberDto member) {
+            return (long) member.getMemberId();
         }
         return null;
     }

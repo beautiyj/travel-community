@@ -96,6 +96,13 @@ public class PaymentController {
             return bridgeToFail(model, "결제 정보가 만료되었습니다. 다시 시도해 주세요.");
         }
 
+        // 카카오 승인(=이체) 전 마감 재검증 — 여기서 걸리면 카카오에 승인 요청 자체를 보내지 않는다
+        try {
+            reservationService.assertStillAvailable(reservationId);
+        } catch (IllegalStateException e) {
+            return bridgeToFail(model, e.getMessage());
+        }
+
         KakaoApproveResponse approve = kakaoPayService.approve(tid, orderId, memberId, pgToken);
         Payment payment = paymentService.saveSuccess(
                 reservationId, amount, approve.getTid(), orderId, Payment.TYPE_KAKAO);

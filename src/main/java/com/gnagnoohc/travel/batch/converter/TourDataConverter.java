@@ -74,6 +74,9 @@ public class TourDataConverter {
         // 헬퍼 메소드 parseMinPrice - extractFeeInfo에서 추출한 원문 텍스트를 전달하여 검색/정렬용 최저가 숫자(minPrice) 파싱
         Integer minPrice = tourApiHelper.parseMinPrice(useFeeInfo);
 
+        // TODO: 부가정보컬럼 추가 시 - 0730 부가정보(주차, 휴무일, 영업시간 등) 정제 문장 추출
+//        String extraInfo = tourApiHelper.extractExtraInfo(introDetail, placeType);
+
         // TODO: 0730 해시태그 파일 분리, 테스트로직에서 확인 필요
         // HashtagGenerator.java - cat1/cat2/cat3(대중소분류) 전달하도록 변경
         String hashtags = hashtagGenerator.generateHashtags(
@@ -97,6 +100,7 @@ public class TourDataConverter {
                 .firstImage(thumbnailImage) // 조인 없는 카드 리스트용 1차 썸네일 세팅
                 .hashtags(hashtags)
                 .peopleCount(1)
+//                .extraInfo(extraInfo) // TODO: 부가정보컬럼 추가 시 -  0730 extraInfo 추가 세팅
                 .build();
     }
 

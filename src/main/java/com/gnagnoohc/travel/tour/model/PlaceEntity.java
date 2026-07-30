@@ -7,13 +7,13 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+// TODO: 공공데이터 필터링 최종 마무리 후 SQL도 수정 필요함 0730기준 isClosed 자료형 int(0,1)바꾸기 및 공통sql에서 최종 작업 후 테이블생성쿼리 재전달
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 public class PlaceEntity {
     private Integer placeId;
     private Integer regionId;
-    // TODO: 공공데이터 넣은 유령계정 1L 자료형은 이후 수정 필요
     private Integer memberId;
     private String placeType;      // tour / food / stay 변환값으로 들어옴
     private String name;           // title공공데이터 -> name으로받아와서저장
@@ -21,7 +21,7 @@ public class PlaceEntity {
     private String address;        // address (addr1+addr2)
     private BigDecimal mapx;       // mapx (DECIMAL 12,9, 경도)
     private BigDecimal mapy;       // mapy (DECIMAL 12,9, 위도)
-    private boolean isClosed;      // BOOLEAN, 1:문닫음, 0:영업중 
+    private boolean isClosed;      // BOOLEAN, 1:문닫음, 0:영업중
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

@@ -36,7 +36,6 @@ public class WebClientConfig {
         log.info("Loaded Tour API ServiceKey: [{}]", serviceKey);
         log.info("Loaded Tour API BaseUrl: [{}]", baseUrl);
 
-        
         // 공통 파라미터 맵 구성 - 중복되는 공공데이터 api 공통 요소 기입
         DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory(baseUrl);
         
@@ -46,13 +45,6 @@ public class WebClientConfig {
 
         return builder
             .uriBuilderFactory(factory)
-            // Map.of(...) 강제로 캐스팅, 타입 불일치 해소(타입 불일치/널세이프티 경고 방지용으로 명시해둠)
-            // .defaultUriVariables((Map<String, ?>) (Map<String, String>) Map.of(
-                // "serviceKey", serviceKey,
-                // "MobileOS", "ETC",
-                // "MobileApp", "Travel",
-                // "_type", "json"
-            // ))
             .build();
     }
 
@@ -61,6 +53,7 @@ public class WebClientConfig {
      * host·인증(SECRET_KEY)을 여기 한 곳에서 세팅 → 서비스/배치가 중복 없이 재사용.
      */
     @Bean
+    @Qualifier("kakaoPayRestClient")
     public RestClient kakaoPayRestClient() {
         return RestClient.builder()
             .baseUrl("https://open-api.kakaopay.com")

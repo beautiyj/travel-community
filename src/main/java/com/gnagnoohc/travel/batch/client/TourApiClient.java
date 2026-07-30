@@ -6,29 +6,22 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
 // batch: 데이터 수집 로직
-// 중복되는 파라미터는 Config에서 생성한 빈 주입하는 방식으로 사용!
-
-// 한국관광공사 TourAPI 엔드포인트를 호출하여 대용량 데이터를 받아오는 통신 컴포넌트
-// 공공데이터 서버 호출, JSON XML 데이터 받아오기
+// 중복되는 파라미터는 Config에서 생성한 빈 주입하는 방식으로 사용하려 했으나 공공데이터 응답의 명시적 선언이 응답파라미터에 무조건 필요한 관계로 baseurl만 config 설정.
+// 한국관광공사 TourAPI 엔드포인트를 호출하여 대용량 데이터를 받아오는 통신 컴포넌트: 공공데이터 서버 호출, JSON XML 데이터 받아오는 역할
 // XML -> JSON 변환은 주소 뒤에 필수 파라미터 세팅에 _type = "json" 꼭 추가해야 변환됨
-
 @Component
 public class TourApiClient {
 
     private final WebClient webClient;
 
-    // config의 @Bean 주입 - 공통적으로 적용되는 api키, url 엔드포인트를 포함하여 중복파라미터 생략 가능
+    // config의 @Bean 주입 - 공통적으로 적용되는 url 엔드포인트 생략
     public TourApiClient(@Qualifier("tourWebClient") WebClient tourWebClient) {
         this.webClient = tourWebClient;
     }
 
-    // 테스트용 공공데이터 조회량 - 500/1페이지
+    // 테스트용 공공데이터 조회량 batchSize & defaultPage - 프로퍼티에서 수정 가능
     @Value("${tour.api.batch-size}") private String batchSize;
     @Value("${tour.api.default-page}") private String defaultPage;
-
-
-    // TODO: 0728 CONFIG 파라미터 -> 명시선언으로 변경, 이후 자잘 주석은 삭제할 것
-    // 0728 🔥 401 에러 방지를 위해 서비스키를 필수로 주입받아 각 쿼리스트링에 명시
     @Value("${tour.api.service-key}") private String serviceKey;
 
     /**
@@ -57,7 +50,7 @@ public class TourApiClient {
                     .queryParam("radius", radius)
                     .build())
                 .retrieve()                                // 공공데이터 서버가 응답한 결과 추출
-                .bodyToMono(String.class)    // 받아온 JSON 데이터 전체를 String 변환
+                .bodyToMono(String.class)                  // 받아온 JSON 데이터 전체를 String 변환
                 .block();                                  // 동기식 배치를 위해 block() 처리하여 대기
         } catch (Exception e) {
             // 에러 로그는 나중에 batch_execution_log 테이블에 기록할 수 있도록 예외를 던지거나 기록 조치
@@ -128,6 +121,7 @@ public class TourApiClient {
      * contentTypeId 숙박에서만 유효
      * @param 법정동 시도/시군구 및 분류체계 대/중/소분류 조건 필터링 (옵션)
      */
+    // TODO: 숙박 정보 필터링 옵션 체크 필수 - 공공데이터 매뉴얼 폴더 내 코드파일
     public String fetchSearchStay(String lDongRegnCd, String lDongSignguCd, 
                                 String lclsSystm1, String lclsSystm2, String lclsSystm3, String arrange) {
         try {
@@ -184,6 +178,7 @@ public class TourApiClient {
      * @param contentId 콘텐츠 ID (필수)
      * @param contentTypeId 관광타입 ID (필수)
      */
+    // TODO: 필터링처리 옵션 체크
     public String fetchDetailIntro(String contentId, String contentTypeId) {
         try {
             return this.webClient.get()
@@ -193,6 +188,8 @@ public class TourApiClient {
                     .queryParam("MobileOS", "ETC")
                     .queryParam("MobileApp", "Travel")
                     .queryParam("_type", "json")
+                    .queryParam("numOfRows", batchSize)
+                    .queryParam("pageNo", defaultPage)
                     .queryParam("contentId", contentId)
                     .queryParam("contentTypeId", contentTypeId)
                     .build())
@@ -210,6 +207,7 @@ public class TourApiClient {
      * @param contentId 콘텐츠 ID (필수)
      * @param contentTypeId 관광타입 ID (필수)
      */
+    // TODO: 필터링 처리 옵션 체크
     public String fetchDetailInfo(String contentId, String contentTypeId) {
         try {
             return this.webClient.get()
@@ -219,6 +217,8 @@ public class TourApiClient {
                     .queryParam("MobileOS", "ETC")
                     .queryParam("MobileApp", "Travel")
                     .queryParam("_type", "json")
+                    .queryParam("numOfRows", batchSize)
+                    .queryParam("pageNo", defaultPage)
                     .queryParam("contentId", contentId)
                     .queryParam("contentTypeId", contentTypeId)
                     .build())
@@ -236,6 +236,7 @@ public class TourApiClient {
      * @param contentId 콘텐츠 ID (필수)
      * @param imageYN 이미지조회 구분 Y/N (옵션, Y=콘텐츠이미지조회 N="음식점"타입의음식메뉴이미지)
      */
+    // TODO: 필터링 처리 옵션 체크 & 사진 개수 필터링 재체크 필수
     public String fetchDetailImage(String contentId, String imageYN) {
         try {
             return this.webClient.get()
@@ -245,6 +246,8 @@ public class TourApiClient {
                     .queryParam("MobileOS", "ETC")
                     .queryParam("MobileApp", "Travel")
                     .queryParam("_type", "json")
+                    .queryParam("numOfRows", batchSize)
+                    .queryParam("pageNo", defaultPage)
                     .queryParam("contentId", contentId)
                     .queryParam("imageYN", imageYN)
                     .build())
@@ -264,16 +267,17 @@ public class TourApiClient {
      * 
      * 동기화 목록에서만 페이징 매개변수 처리
      */
-    public String fetchAreaBasedSyncList(int pageNo, String modifiedtime, String showflag, String arrange) {
+    public String fetchAreaBasedSyncList(int defaultPage, String modifiedtime, String showflag, String arrange) {
         try {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
                     .path("/areaBasedSyncList2")
-                    .queryParam("serviceKey", serviceKey) // 인증키 필수
-                    .queryParam("MobileOS", "ETC")        // OS 구분 필수 명시
-                    .queryParam("MobileApp", "Travel")    // 앱 이름 필수 명시
-                    .queryParam("_type", "json")          // JSON 강제 변환                    .queryParam("numOfRows", batchSize)
-                    .queryParam("pageNo", pageNo)
+                    .queryParam("serviceKey", serviceKey)
+                    .queryParam("MobileOS", "ETC")
+                    .queryParam("MobileApp", "Travel")
+                    .queryParam("_type", "json")
+                    .queryParam("numOfRows", batchSize)
+                    .queryParam("pageNo", defaultPage)
                     .queryParam("arrange", arrange)
                     .queryParam("modifiedtime", modifiedtime)
                     .queryParam("showflag", showflag)

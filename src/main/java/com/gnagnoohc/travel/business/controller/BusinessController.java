@@ -122,6 +122,14 @@ public class BusinessController {
         return "business/reservations";
     }
 
+    //예약관리 : 결제완료(PAID) → 예약확정(CONFIRMED) 승인 (상태 전환은 reservation 파트 ReservationService 호출)
+    @PostMapping("/business/reservations/{reservationId}/confirm")
+    public String confirmReservation(@PathVariable Long reservationId, HttpSession session) {
+        Long memberId = currentBusinessMemberId(session);
+        businessReservationService.confirm(reservationId, memberId);
+        return "redirect:/business/reservations";
+    }
+
     //예약관리 : 취소 요청 승인 (환불 실행은 reservation 파트 PaymentService 호출)
     @PostMapping("/business/reservations/{reservationId}/cancel-approve")
     public String approveCancelReservation(@PathVariable Long reservationId, HttpSession session) {
@@ -143,7 +151,7 @@ public class BusinessController {
         if (label == null || "전체".equals(label)) return null;
         return switch (label) {
             case "취소요청" -> ReservationStatus.CANCEL_REQUESTED.name();
-            case "확정" -> ReservationStatus.PAID.name();
+            case "확정" -> ReservationStatus.CONFIRMED.name();
             case "완료" -> ReservationStatus.COMPLETED.name();
             case "취소" -> ReservationStatus.CANCELED.name();
             default -> label;

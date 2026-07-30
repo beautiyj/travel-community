@@ -27,10 +27,10 @@ public class ReservationService {
     public static final int RESERVE_DEPOSIT = 10000;
 
     /**
-     * 맛집·관광지 하루 정원(명). 지금은 캘린더에 "7/10" 남은 자리를 보여주는 표시용으로만 쓴다.
-     * 초과해도 예약은 막지 않는다(차단은 추후). TODO: 관리자 정원 설정이 생기면 그 값으로 교체.
+     * 맛집·관광지 하루 정원(명). 캘린더에 "남은 자리" 표시 + create()에서 초과 시 예약 차단에 쓴다.
+     * TODO: 관리자 정원 설정이 생기면(장소별 값) 이 고정값 대신 그쪽 조회로 교체.
      */
-    public static final int DAILY_CAPACITY = 10;
+    public static final int DAILY_CAPACITY = 15;
 
     /**
      * 만나서 결제(예약금만 선결제) 대상인지. tour(관광지)·food(맛집)만 예약금, 그 외(숙박 등)는 정가.
@@ -97,6 +97,14 @@ public class ReservationService {
         LocalDate closedRangeTo = isStay(placeType) ? req.getCheckOutDate() : req.getVisitDate().plusDays(1);
         if (reservationMapper.countClosedDatesInRange(req.getPlaceId(), req.getVisitDate(), closedRangeTo) > 0) {
             throw new IllegalStateException("마감된 날짜가 포함되어 있습니다.");
+        }
+
+        // 맛집/관광지 하루 정원(DAILY_CAPACITY) 초과 시 거부. 숙박은 1팀 단독이라 위 overlap 체크로 이미 처리됨
+        if (isPayOnSite(placeType)) {
+            int already = reservationMapper.sumHeadcountOnDate(req.getPlaceId(), req.getVisitDate());
+            if (already + req.getHeadcount() > DAILY_CAPACITY) {
+                throw new IllegalStateException("정원이 초과되어 예약할 수 없습니다.");
+            }
         }
 
         Reservation r = new Reservation();

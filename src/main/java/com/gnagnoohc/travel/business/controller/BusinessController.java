@@ -130,6 +130,14 @@ public class BusinessController {
         return "redirect:/business/reservations";
     }
 
+    //예약관리 : 결제완료(PAID) 예약 거절 (reservation 파트 연동 대기 중, businessReservationService.reject 참고)
+    @PostMapping("/business/reservations/{reservationId}/reject")
+    public String rejectReservation(@PathVariable Long reservationId, HttpSession session) {
+        Long memberId = currentBusinessMemberId(session);
+        businessReservationService.reject(reservationId, memberId);
+        return "redirect:/business/reservations";
+    }
+
     //예약관리 : 취소 요청 승인 (환불 실행은 reservation 파트 PaymentService 호출)
     @PostMapping("/business/reservations/{reservationId}/cancel-approve")
     public String approveCancelReservation(@PathVariable Long reservationId, HttpSession session) {

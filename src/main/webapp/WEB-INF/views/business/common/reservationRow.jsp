@@ -46,6 +46,13 @@
                                     <jsp:param name="theme" value="primary" />
                                 </jsp:include>
                             </form>
+                            <%-- 거절 시 환불(PaymentService.cancel) 실행. businessReservationService.reject() 참고 --%>
+                            <form method="post" action="/business/reservations/${param.reservationId}/reject" class="business-inline-form">
+                                <jsp:include page="/WEB-INF/views/common/smallButton.jsp">
+                                    <jsp:param name="text" value="예약거절" />
+                                    <jsp:param name="theme" value="danger" />
+                                </jsp:include>
+                            </form>
                         </c:when>
                         <c:otherwise>
                             <!-- 실제 예약확정 액션 연결은 예약 관리 탭 구현 시 진행 -->
@@ -102,6 +109,13 @@
                                 <jsp:include page="/WEB-INF/views/common/smallButton.jsp">
                                     <jsp:param name="text" value="예약확정" />
                                     <jsp:param name="theme" value="primary" />
+                                </jsp:include>
+                            </form>
+                            <%-- 거절 시 환불(PaymentService.cancel) 실행. businessReservationService.reject() 참고 --%>
+                            <form method="post" action="/business/reservations/${param.reservationId}/reject" class="business-inline-form">
+                                <jsp:include page="/WEB-INF/views/common/smallButton.jsp">
+                                    <jsp:param name="text" value="예약거절" />
+                                    <jsp:param name="theme" value="danger" />
                                 </jsp:include>
                             </form>
                         </c:when>

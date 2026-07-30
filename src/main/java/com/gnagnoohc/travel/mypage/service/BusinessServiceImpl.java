@@ -25,17 +25,13 @@ public class BusinessServiceImpl implements BusinessService {
 
     @Override
     @Transactional
-    public void resubmit(Long memberId, BusinessApplicationDto application) {
+    public void submitApplication(
+            Long memberId, BusinessApplicationDto application) {
         validateMemberId(memberId);
-        BusinessApplicationDto current =
-                businessRepository.findApplicationByMemberId(memberId);
-        if (current == null || !"APPROVED".equals(current.getStatus())) {
-            throw new IllegalStateException(
-                    "승인 완료된 사업자만 재승인을 요청할 수 있습니다.");
-        }
         prepareApplication(memberId, application);
-        if (businessRepository.resubmitApplication(application) != 1) {
-            throw new IllegalStateException("사업자 재신청을 저장하지 못했습니다.");
+        if (businessRepository.saveApplication(application) != 1) {
+            throw new IllegalStateException(
+                    "사업자 승인 신청을 저장하지 못했습니다.");
         }
     }
 
@@ -43,25 +39,6 @@ public class BusinessServiceImpl implements BusinessService {
     public List<BusinessPlaceDto> getPlaces(Long memberId) {
         validateMemberId(memberId);
         return businessRepository.findPlacesByMemberId(memberId);
-    }
-
-    @Override
-    @Transactional
-    public void addPlaceImage(
-            Long memberId, Long placeId, String imageUrl) {
-        validateMemberId(memberId);
-        if (placeId == null || placeId <= 0
-                || businessRepository.countOwnedPlace(
-                        placeId, memberId) != 1) {
-            throw new IllegalArgumentException(
-                    "본인 소유의 사업장만 이미지를 등록할 수 있습니다.");
-        }
-        if (imageUrl == null || imageUrl.isBlank()
-                || businessRepository.insertPlaceImage(
-                        placeId, imageUrl) != 1) {
-            throw new IllegalStateException(
-                    "사업장 이미지를 저장하지 못했습니다.");
-        }
     }
 
     private void prepareApplication(

@@ -15,7 +15,9 @@ public class MypageDto {
 	private String name;
 	private String loginId;
 	private String nickname;
+	private String email;
 	private Integer memberType;
+	private String memberRole;
 
 	private String phone;
 	private String gender;
@@ -32,6 +34,10 @@ public class MypageDto {
 	private LocalDateTime createdAt;
 	private LocalDateTime updatedAt;
 	private LocalDateTime deletedAt;
+
+	public LocalDate getCreatedDate() {
+		return createdAt == null ? null : createdAt.toLocalDate();
+	}
 
 	private String password;
 	private String currentPassword;

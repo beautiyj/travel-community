@@ -1,11 +1,5 @@
 package com.gnagnoohc.travel.batch.service;
 
-import java.util.List;
-
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gnagnoohc.travel.batch.client.TourApiClient;
@@ -13,13 +7,18 @@ import com.gnagnoohc.travel.batch.converter.TourDataConverter;
 import com.gnagnoohc.travel.batch.dto.*;
 import com.gnagnoohc.travel.batch.dto.TourApiResponseDTO.Header;
 import com.gnagnoohc.travel.batch.helper.TourApiHelper;
+import com.gnagnoohc.travel.batch.validator.TourValidator;
 import com.gnagnoohc.travel.tour.mapper.TourMapper;
 import com.gnagnoohc.travel.tour.model.PlaceDTO;
 import com.gnagnoohc.travel.tour.model.PlaceImageDTO;
 import com.gnagnoohc.travel.tour.model.RegionDTO;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+
+import java.util.List;
 
 /*  TODO: 0729 공공데이터 로직 확인 완료, 수정필요한부분:
 1. 공공데이터 관광지에 일반가게 등 섞여있는 거 코드분리 필요 - 타입세부분류 재확인,
@@ -65,6 +64,7 @@ public class TourApiService {
     private final ObjectMapper objectMapper;
     private final TourDataConverter tourDataConverter;
     private final TourApiHelper tourApiHelper;
+    private final TourValidator tourValidator;
 
     // contentTypeId 5가지만 선별하여 데이터 가져오기
     private static final List<String> TARGET_CONTENT_TYPES = List.of(
@@ -228,6 +228,10 @@ public class TourApiService {
 
                 // 수집 DTO -> 서비스 PlaceDTO 변환 및 DB 적재
                 for (TourAreaBasedSyncListDTO syncItem : syncList) {
+                    // 1차 필터링: Validator 검증 통과한 데이터만 살아남음
+                    if (!tourValidator.isValid(syncItem)) {
+                        continue;
+                    }
                     // 1) 대표 이미지가 없으면 연쇄 호출 및 저장 과정 전체 스킵(우리의 서비스에 적재x)
                     if (!tourApiHelper.isValidItem(syncItem)) { continue; }
                     // 2) 단일 아이템 수집 및 DB 적재는 헬퍼 메서드로 위임하기

@@ -2,7 +2,7 @@
    reservation-calendar.js — 예약 폼(reservationForm.jsp)의 방문날짜 캘린더
    - /reservations/availability?placeId=… 로 이미 예약된 날짜 목록을 받아
      예약가능(초록) / 마감(빨강·선택불가) / 지난날(비활성)을 그린다
-   - 숙박(stay): 체크인·체크아웃 두 번 클릭으로 기간 선택 (#visitDate, #checkOutDate)
+   - 숙박(stay): 체크인·체크아웃 두 번 클릭으로 기간 선택, 또는 마우스로 끌어서(드래그) 한 번에 선택 (#visitDate, #checkOutDate)
      맛집/관광지·무료: 기존대로 날짜 하나만 선택 (#visitDate)
    - 날짜 선택 시 hidden에 값을 넣고 'change' 이벤트를 쏴서,
      reservation-form.js(요약·검증·임시저장)가 그대로 이어받게 한다 (기존 흐름 재사용)
@@ -31,6 +31,12 @@
     var capacity = 0;                        // 맛집·관광지 하루 정원(표시용). 0이면 표시 안 함
     var checkIn  = hidden.value || null;     // 복원된 값이 있으면 유지
     var checkOut = (hiddenTo && hiddenTo.value) || null;
+
+    // 숙박 기간 드래그 선택용 상태 (마우스 누른 채로 끌어서 체크인~체크아웃 한 번에 선택)
+    var dragging   = false;
+    var dragMoved  = false;   // 실제로 다른 날짜로 넘어갔는지(=드래그). false면 일반 클릭이라 onPick에 맡긴다
+    var dragAnchor = null;
+    var dragEnd    = null;
 
     var today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -79,6 +85,22 @@
         var left = capacity - (booked[checkIn] || 0);
         if (left < 0) left = 0;
         box.textContent = '남은 자리 ' + left + '/' + capacity;
+    }
+
+    /** 드래그 중 미리보기: DOM을 다시 그리지 않고 이미 있는 셀들의 선택 클래스만 갱신한다 */
+    function previewRange(fromStr, toStr) {
+        var cells = grid.querySelectorAll('.rsv-cal-day[data-date]');
+        for (var i = 0; i < cells.length; i++) {
+            var ds = cells[i].getAttribute('data-date');
+            cells[i].classList.remove('is-selected', 'is-range-start', 'is-range-end', 'is-in-range');
+            if (ds === fromStr) {
+                cells[i].classList.add('is-selected', 'is-range-start');
+            } else if (toStr && ds === toStr) {
+                cells[i].classList.add('is-range-end');
+            } else if (toStr && ds > fromStr && ds < toStr) {
+                cells[i].classList.add('is-in-range');
+            }
+        }
     }
 
     /** hidden 값을 갱신하고 reservation-form.js가 듣는 change를 쏜다 */
@@ -136,6 +158,7 @@
             cell.type = 'button';
             cell.className = 'rsv-cal-day';
             cell.textContent = d;
+            cell.setAttribute('data-date', dateStr);
 
             // 체크아웃 당일은 다음 손님이 체크인할 수 있으므로(반개구간) 마감으로 치지 않는다
             // 휴무(closed)·날짜별 마감(closedDates)은 장소 타입 무관하게 항상 막는다.
@@ -152,14 +175,32 @@
                 cell.classList.add('is-available');  // 예약 가능 = 초록
                 (function (ds) {
                     cell.addEventListener('click', function () { onPick(ds); });
+                    if (RANGE_MODE) {
+                        // 마우스를 누른 채 끌면 체크인~체크아웃을 한 번에 선택. 그냥 클릭(안 끌면)은 위 click(onPick)이 처리
+                        cell.addEventListener('mousedown', function () {
+                            dragging = true;
+                            dragMoved = false;
+                            dragAnchor = ds;
+                            dragEnd = null;
+                        });
+                        cell.addEventListener('mouseenter', function () {
+                            if (!dragging || ds === dragAnchor) return;
+                            dragMoved = true;
+                            if (ds > dragAnchor && !hasBlockedBetween(dragAnchor, ds)) {
+                                dragEnd = ds;
+                                previewRange(dragAnchor, ds);
+                            }
+                        });
+                    }
                 })(dateStr);
             }
 
-            // 선택 상태 표시: 체크인 / 사이 구간 / 체크아웃
-            if (dateStr === checkIn) {
+            // 선택 상태 표시: 체크인 / 사이 구간 / 체크아웃. 마감이면 선택 표시를 얹지 않는다(마감이 우선)
+            // — 예: 새로고침으로 복원된 날짜를 그 사이 관리자가 마감시킨 경우, 파랑(선택)이 아니라 빨강(마감)으로 보여야 한다
+            if (!blockedHere && dateStr === checkIn) {
                 cell.classList.add('is-selected');
                 if (RANGE_MODE && checkOut) cell.classList.add('is-range-start');
-            } else if (RANGE_MODE && checkOut) {
+            } else if (!blockedHere && RANGE_MODE && checkOut) {
                 if (dateStr === checkOut) cell.classList.add('is-range-end');
                 else if (dateStr > checkIn && dateStr < checkOut) cell.classList.add('is-in-range');
             }
@@ -182,12 +223,26 @@
         render();
     });
 
+    // 드래그 종료: 실제로 다른 날짜까지 끌었을 때만 확정한다. 제자리 클릭이면 그냥 두고 click(onPick)이 처리하게 둔다
+    document.addEventListener('mouseup', function () {
+        if (!dragging) return;
+        dragging = false;
+        if (dragMoved && dragEnd) {
+            checkIn = dragAnchor;
+            checkOut = dragEnd;
+            apply();
+        }
+        dragAnchor = null;
+        dragEnd = null;
+    });
+
     render();   // 우선 한 번 그려서 빈 화면 방지 (마감 현황 로드 전엔 전부 가능)
 
     // 마감/휴무 현황 로드 (장소 타입 무관 — 휴무는 숙박/맛집/관광지 모두 확인해야 함).
     // 숙박만 예약된 날짜(booked)도 함께 반영, 맛집/관광지는 booked 무시(전부 초록·휴무 시에만 빨강).
     // 실패하면 전부 가능으로 둔다(프론트는 UX용, 최종 방어는 서버)
-    if (placeId != null && placeId !== '') {
+    function loadAvailability() {
+        if (placeId == null || placeId === '') return;
         fetch('/reservations/availability?placeId=' + placeId)
             .then(function (res) { return res.ok ? res.json() : null; })
             .then(function (data) {
@@ -204,6 +259,13 @@
             })
             .catch(function () { /* 조회 실패 무시 */ });
     }
+
+    loadAvailability();   // 최초 로드
+
+    // 탭이 백그라운드에 있다가 다시 보이게 될 때(포커스 복귀) 마감 현황 재조회
+    document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible') loadAvailability();
+    });
 
     /** 맛집·관광지 정원 체크용: 해당 날짜에 남은 자리 수. 숙박(정원 표시 없음)은 항상 무제한 취급 */
     window.RESERVATION_REMAINING_SEATS = function (dateStr) {

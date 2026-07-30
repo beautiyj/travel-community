@@ -46,6 +46,13 @@ public interface BusinessMapper {
             @Param("bizMemberId") Long bizMemberId
     );
 
+    // 예약 거절(환불) 전 대상 결제건 조회. 소유자 확인 + 결제완료(DONE) 건만 골라
+    // reservation 파트 PaymentService.cancel(paymentId, reason)에 그대로 넘길 수 있게 한다.
+    Long selectDonePaymentId(
+            @Param("reservationId") Long reservationId,
+            @Param("bizMemberId") Long bizMemberId
+    );
+
     int updatePlaceClosed(
             @Param("placeId") Long placeId,
             @Param("bizMemberId") Long bizMemberId,

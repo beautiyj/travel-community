@@ -183,6 +183,19 @@
           AND p.member_id = #{bizMemberId}
     </select>
 
+    <!-- 예약 거절(환불) 대상 결제건. 소유자 확인 + DONE 상태 결제만 골라 하나 반환한다.
+         (재시도 등으로 같은 예약에 결제 이력이 여러 건 있어도 현재 유효한 결제 하나만 잡히도록) -->
+    <select id="selectDonePaymentId" resultType="long">
+        SELECT pay.payment_id
+        FROM RESERVATION r
+        JOIN PLACE p ON p.place_id = r.place_id
+        JOIN PAYMENT pay ON pay.reservation_id = r.reservation_id
+        WHERE r.reservation_id = #{reservationId}
+          AND p.member_id = #{bizMemberId}
+          AND pay.payment_status = 'DONE'
+        LIMIT 1
+    </select>
+
     <!-- 즉시 예약마감 토글 -->
     <update id="updatePlaceClosed">
         UPDATE PLACE

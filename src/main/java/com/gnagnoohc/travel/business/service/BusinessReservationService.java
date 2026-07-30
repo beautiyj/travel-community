@@ -38,6 +38,21 @@ public class BusinessReservationService {
         reservationService.approve(reservationId);
     }
 
+    /**
+     * 결제완료(PAID) 예약 거절 → 환불 실행.
+     * reservation 파트의 PaymentService.cancel(paymentId, reason)이 Reservation.status를 보지 않고
+     * Payment.status(DONE→CANCELED 여부)만 확인하므로, 여기서 소유자 확인 + 유효한 결제건 조회만 하고
+     * 실제 환불/상태 전환은 그대로 위임한다 (reservation 파트에 별도 진입점을 추가할 필요 없음).
+     */
+    public void reject(Long reservationId, Long bizMemberId) {
+        requireOwner(reservationId, bizMemberId);
+        Long paymentId = businessMapper.selectDonePaymentId(reservationId, bizMemberId);
+        if (paymentId == null) {
+            throw new IllegalStateException("환불할 결제완료 내역이 없습니다.");
+        }
+        paymentService.cancel(paymentId, "사업자 거절");
+    }
+
     /** 취소 요청 승인 → 카카오 환불 실행 + CANCELED 전환 (예약 파트 소유 로직, 여기서는 소유자 확인만 담당) */
     public void approveCancel(Long reservationId, Long bizMemberId) {
         requireOwner(reservationId, bizMemberId);

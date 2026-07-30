@@ -93,6 +93,12 @@ public class ReservationService {
             }
         }
 
+        // 관리자가 날짜별로 마감 지정한 날(PLACE_CLOSED_DATE)이 요청 기간에 포함되면 거부
+        LocalDate closedRangeTo = isStay(placeType) ? req.getCheckOutDate() : req.getVisitDate().plusDays(1);
+        if (reservationMapper.countClosedDatesInRange(req.getPlaceId(), req.getVisitDate(), closedRangeTo) > 0) {
+            throw new IllegalStateException("마감된 날짜가 포함되어 있습니다.");
+        }
+
         Reservation r = new Reservation();
         r.setMemberId(memberId);
         r.setPlaceId(req.getPlaceId());
@@ -149,6 +155,7 @@ public class ReservationService {
         Map<String, Object> result = new HashMap<>();
         result.put("booked", booked);
         result.put("closed", Boolean.TRUE.equals(reservationMapper.findPlaceClosed(placeId)));
+        result.put("closedDates", reservationMapper.findClosedDates(placeId));
         result.put("capacity", DAILY_CAPACITY);   // 맛집·관광지 캘린더의 남은 자리 표시용(차단 아님)
         return result;
     }

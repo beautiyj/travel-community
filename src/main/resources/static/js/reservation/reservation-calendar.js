@@ -25,8 +25,9 @@
     // 숙박만 '1팀 단독'이라 예약된 날을 막는다. 맛집/관광지는 하루에 여러 팀 → 마감 없음(항상 초록)
     var BLOCK_BOOKED = !PAY_ON_SITE;
 
-    var booked   = {};                       // { 'yyyy-MM-dd': 예약인원합 } — 활성예약이 있는 날만 담김
-    var closed   = false;                    // 장소 전체가 휴무로 지정됐는지 (PLACE.is_closed)
+    var booked      = {};                    // { 'yyyy-MM-dd': 예약인원합 } — 활성예약이 있는 날만 담김
+    var closed      = false;                 // 장소 전체가 휴무로 지정됐는지 (PLACE.is_closed)
+    var closedDates = {};                    // { 'yyyy-MM-dd': true } — 날짜별 마감(PLACE_CLOSED_DATE)
     var capacity = 0;                        // 맛집·관광지 하루 정원(표시용). 0이면 표시 안 함
     var checkIn  = hidden.value || null;     // 복원된 값이 있으면 유지
     var checkOut = (hiddenTo && hiddenTo.value) || null;
@@ -54,7 +55,7 @@
 
     /** 'yyyy-MM-dd' 문자열은 사전순 비교가 곧 날짜순 비교라 그대로 대소 비교한다 */
     function isBlocked(dateStr) {
-        return closed || (booked[dateStr] || 0) > 0;
+        return closed || !!closedDates[dateStr] || (booked[dateStr] || 0) > 0;
     }
 
     /** 체크인~체크아웃 사이(반개구간)에 마감일이 끼어 있으면 그 기간은 잡을 수 없다 */
@@ -192,6 +193,8 @@
                 // 숙박은 마감 판정에, 맛집/관광지는 남은 자리 표시에 booked를 쓴다
                 booked = data.booked || {};
                 closed = !!data.closed;
+                closedDates = {};
+                (data.closedDates || []).forEach(function (d) { closedDates[d] = true; });
                 if (!BLOCK_BOOKED) capacity = data.capacity || 0;
                 render();
             })

@@ -36,6 +36,10 @@
         SELECT place_type FROM PLACE WHERE place_id = #{placeId}
     </select>
 
+    <select id="findPlaceName" resultType="string">
+        SELECT name FROM PLACE WHERE place_id = #{placeId}
+    </select>
+
     <select id="findById" resultType="com.gnagnoohc.travel.reservation.entity.Reservation">
         SELECT <include refid="reservationColumns"/>
         FROM RESERVATION r

@@ -46,6 +46,7 @@ public class ReservationController {
         String placeType = freeTest ? "free" : reservationService.getPlaceType(placeId);
         model.addAttribute("placeId", placeId);
         model.addAttribute("placeType", placeType);
+        model.addAttribute("placeName", reservationService.getPlaceName(placeId));
         // TODO: 숙박/맛집 파트의 place 조회가 나오면 실제 단가·예약금으로 교체
         model.addAttribute("price", ReservationService.TEMP_UNIT_PRICE);
         model.addAttribute("deposit", ReservationService.RESERVE_DEPOSIT);

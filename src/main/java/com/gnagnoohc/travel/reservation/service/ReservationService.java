@@ -118,6 +118,12 @@ public class ReservationService {
         return reservationMapper.findPlaceType(placeId);
     }
 
+    /** PLACE.name 조회. 예약 폼 표시용 */
+    @Transactional(readOnly = true)
+    public String getPlaceName(Long placeId) {
+        return reservationMapper.findPlaceName(placeId);
+    }
+
     @Transactional(readOnly = true)
     public Reservation getById(Long reservationId) {
         Reservation r = reservationMapper.findById(reservationId);

@@ -8,12 +8,13 @@ import org.apache.ibatis.annotations.Param;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Mapper
 public interface ReservationMapper {
     void insert(Reservation reservation);
     Reservation findById(Long reservationId);
-    List<Reservation> findByMemberId(Long memberId);
+    List<Reservation> findByMemberId(Integer memberId);
     void updateStatus(@Param("reservationId") Long reservationId, @Param("status") ReservationStatus status);
 
     /** 취소 요청: 상태를 CANCEL_REQUESTED로 바꾸고 사유·요청시각 기록 */
@@ -25,14 +26,51 @@ public interface ReservationMapper {
     /** 관리자 목록용: 특정 상태의 예약 조회 (예: CANCEL_REQUESTED 건 모아보기) */
     List<Reservation> findByStatus(@Param("status") ReservationStatus status);
 
-    /** 슬롯 선점 체크: 같은 회원이 같은 장소·날짜에 이미 활성(PENDING/PAID) 예약이 있는지 */
-    int countActive(@Param("memberId") Long memberId,
-                    @Param("placeId") Long placeId,
-                    @Param("visitDate") LocalDate visitDate);
+    /**
+     * 슬롯 선점 체크: 같은 회원이 같은 장소·날짜에 가진 활성(PENDING/PAID) 예약 1건. 없으면 null.
+     * PENDING이면 재사용(결제 이어가기), PAID면 중복 거부 판단에 쓴다.
+     */
+    Reservation findActiveBySlot(@Param("memberId") Integer memberId,
+                                 @Param("placeId") Long placeId,
+                                 @Param("visitDate") LocalDate visitDate);
+
+    /** 결제 준비 시: 발급한 orderId·시도 PG·(카카오)tid를 예약 행에 기록 (정합성 보정 배치의 조회 키 확보) */
+    void markPaymentReady(@Param("reservationId") Long reservationId,
+                          @Param("orderId") String orderId,
+                          @Param("paymentType") int paymentType,
+                          @Param("pgTid") String pgTid);
+
+    /** 정합성 보정 배치: 결제 준비까지 갔으나(order_id 있음) cutoff 이전 생성돼 아직 PENDING인 건 조회 */
+    List<Reservation> findReadyForInquiry(@Param("cutoff") LocalDateTime cutoff);
 
     /** 스케줄러: cutoff 이전에 생성됐는데 아직 PENDING인 건을 EXPIRED로 일괄 전환. 처리 건수 반환 */
     int expirePending(@Param("cutoff") LocalDateTime cutoff);
 
     /** 스케줄러: 방문일이 지난 PAID 예약을 COMPLETED로 일괄 전환. 처리 건수 반환 */
     int completeVisited();
+
+    /**
+     * 예약 캘린더용: 장소의 '오늘 이후' 활성 예약 목록(체크인·체크아웃·인원).
+     * 숙박은 기간 예약이라 날짜별 GROUP BY로는 중간 날짜를 알 수 없다.
+     * 서비스에서 이 목록을 받아 구간을 날짜 단위로 펼쳐 마감일을 계산한다.
+     */
+    List<Map<String, Object>> findActiveRanges(@Param("placeId") Long placeId);
+
+    /**
+     * 숙박 기간 겹침 판정: 요청 구간과 겹치는 활성 예약 수 (0이면 예약 가능).
+     * 반개구간이라 체크아웃 당일에 다음 손님이 체크인하는 것은 겹침이 아니다.
+     * 기존 단일날짜 예약(check_out_date IS NULL)은 1박짜리로 취급한다.
+     */
+    int countOverlapping(@Param("placeId") Long placeId,
+                         @Param("checkInDate") LocalDate checkInDate,
+                         @Param("checkOutDate") LocalDate checkOutDate);
+
+    /**
+     * 마감(휴무) 여부 조회. PLACE는 사업자(business) 파트 테이블 — 여기서는 읽기만 한다.
+     * 사업자가 /business/closure에서 껐다 켰다 하는 그 값(is_closed)을 그대로 참조.
+     */
+    Boolean findPlaceClosed(@Param("placeId") Long placeId);
+
+    /** 장소 타입(tour/food/stay) 조회. PLACE.place_type을 읽기 전용으로 참조 */
+    String findPlaceType(@Param("placeId") Long placeId);
 }

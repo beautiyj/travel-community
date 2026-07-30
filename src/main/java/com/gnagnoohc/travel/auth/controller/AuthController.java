@@ -4,6 +4,7 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -61,7 +62,15 @@ public class AuthController {
 			return "auth/login";
 		}
 
-		LocalLoginResult loginResult = service.authenticateLocal(username, password);
+		LocalLoginResult loginResult;
+		try {
+			loginResult = service.authenticateLocal(username, password);
+		} catch (PessimisticLockingFailureException e) {
+			// DB가 이 로그인 요청을 데드락 victim으로 선택하면 자격 증명 오류와 구분해 수동 재시도를 안내한다.
+			log.warn("로컬 로그인 중 DB 잠금 획득에 실패했습니다.");
+			model.addAttribute("usernameError", "동시 처리 중입니다. 잠시 후 다시 시도해 주세요.");
+			return "auth/login";
+		}
 		switch (loginResult.status()) {
 		case LOCKED:
 			return "redirect:/auth/login?locked";

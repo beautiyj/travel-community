@@ -24,7 +24,7 @@ public class CommentController {
 		// 로그인 확인
 		Object login = session.getAttribute("loginMember");
 		if (login == null) {
-			return "redirect:/member/login";
+			return "redirect:/auth/login";
 		}
 
 		// 작성자(memberId) 세팅
@@ -53,19 +53,13 @@ public class CommentController {
 
 		Object login = session.getAttribute("loginMember");
 		if (login == null) {
-			return "redirect:/member/login";
+			return "redirect:/auth/login";
 		}
 
 		// 본인 댓글인지 확인
 		CommentDto comment = service.selectComment(commentId);
 		if (!isOwner(comment, login)) {
 			return "redirect:/community/detail?postId=" + postId;
-		}
-
-		// 원댓글(parentId 없음)을 지우는 경우, 딸린 대댓글부터 먼저 삭제
-		// (대댓글 작성자가 다를 수 있어도 원댓글이 사라지면 함께 지우는 게 일반적인 정책)
-		if (comment.getParentId() == null) {
-			service.deleteReplies(commentId);
 		}
 
 		service.deleteComment(commentId);

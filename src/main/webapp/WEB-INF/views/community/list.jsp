@@ -138,5 +138,6 @@
 <script src="${cp}/js/common.js"></script>
 <script src="${cp}/js/common/highlightKeyword.js"></script>
 <script src="${cp}/js/community/postSearchHighlight.js"></script>
+<script src="${cp}/js/community/categoryTabFix.js"></script>
 </body>
 </html>

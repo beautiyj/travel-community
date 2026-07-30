@@ -62,7 +62,7 @@
     <!-- 4. 결제 취소 -->
     <div class="card">
         <h3>4. 결제 취소(환불) API 호출</h3>
-        <p>POST /payments/{paymentId}/cancel — 카카오페이 취소 + 예약 '예약취소' 전환</p>
+        <p>POST /payments/{paymentId}/cancel — 결제수단별 취소(토스/카카오는 PG 취소 API 호출, 무통장·가상카드·무료는 상태만 전환) + 예약 '예약취소' 전환</p>
         <div class="row">
             <input type="number" id="cancelPaymentId" placeholder="paymentId" min="1">
             <button type="button" class="danger" onclick="cancelPayment()">결제 취소</button>

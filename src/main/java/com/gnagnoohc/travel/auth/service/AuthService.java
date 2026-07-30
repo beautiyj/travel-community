@@ -93,6 +93,7 @@ public class AuthService {
 			return LocalLoginResult.success(new LoginMemberDto(
 					localAuth.getMemberId(),
 					localAuth.getNickname(),
+					localAuth.getMemberType(),
 					localAuth.getMemberRole()));
 		}
 

@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /*  TODO: 0729 공공데이터 로직 확인 완료, 수정필요한부분:
@@ -30,11 +31,14 @@ import java.util.List;
     (테스트로직의 문제인지, 설정 문제인지)
     3-1. 스테이 설정에서 협동조합 등의 숙박지역이 아닌 값까지 들어오는 처리 재확인 / 숙박 부분은 가격 재확인 후 필터링 처리 추가할 것
 
-4. 공통: 해시태그처리에서 한글이 아닌 영어타입 그대로 태그처리되는 부분 확인 필요
+4. 공통: HashtagGenerator 처리완료
     4-1. 해시 처리에서 관광지 1차 필터링 후, 무료해시가 많을 경우 무료해시 값은 N배수로 필터링 처리하여 수 조절할 것
-    4-2. 해시태그 필터링 수정 작업 필요함 해시태그 최소3필터링 진행, 숙박의 경우 숙박타입 필수로 태그(확인필요)/맛집은 메뉴태그(확인완)/관광지는 필터링처리 이후 태그 수정작업
+    4-2. HashtagGenerator 처리완료
 
 5. 금액 부분/요금설명 부분에서 NULL 많을 경우 필터링 처리해서 정보값 있는 데이터만 들여올 것
+
+
+
 
 6. 공공데이터 받아올 때, 데이터 오염으로 어려울 경우 각 지역군을 기준으로 1차 데이터 필터링 - 각 지역별로 일부 LIMIT걸어서 가져오기, 스케줄러로 관리 진행
 
@@ -133,7 +137,8 @@ public class TourApiService {
             String jsonResponse = tourApiClient.fetchLdongCode(null, "Y");
             if (!StringUtils.hasText(jsonResponse)) return;
             TourApiResponseDTO<TourLdongCodeDTO> response = objectMapper.readValue(
-                    jsonResponse, new TypeReference<TourApiResponseDTO<TourLdongCodeDTO>>() {}
+                    jsonResponse, new TypeReference<TourApiResponseDTO<TourLdongCodeDTO>>() {
+                    }
             );
 
             if (response != null && response.getResponse() != null
@@ -203,7 +208,8 @@ public class TourApiService {
                 }
                 // JSON 파싱
                 TourApiResponseDTO<TourAreaBasedSyncListDTO> response = objectMapper.readValue(
-                        jsonResponse, new TypeReference<TourApiResponseDTO<TourAreaBasedSyncListDTO>>() {}
+                        jsonResponse, new TypeReference<TourApiResponseDTO<TourAreaBasedSyncListDTO>>() {
+                        }
                 );
 
                 if (response != null && response.getResponse() != null && response.getResponse().getHeader() != null) {
@@ -232,21 +238,16 @@ public class TourApiService {
                         continue;
                     }
                     // 1) 대표 이미지가 없으면 연쇄 호출 및 저장 과정 전체 스킵(우리의 서비스에 적재x)
-                    if (!tourApiHelper.isValidItem(syncItem)) { continue; }
+                    if (!tourApiHelper.isValidItem(syncItem)) {
+                        continue;
+                    }
                     // 2) 단일 아이템 수집 및 DB 적재는 헬퍼 메서드로 위임하기
                     processSinglePlace(syncItem);
                 }
 
                 log.info("[Batch Pagination Debug] 현재 요청 pageNo: {}, 가져온 item 개수: {}", pageNo, syncList.size());
 
-                // 0729
-                // if (syncList.size() < 500) {
-                // if (syncList.isEmpty()) {
-                //     hasNext = false;
-                // } else {
-                //     pageNo++;
-                // }
-                // 수정 후 (데이터가 텅 빌 때까지 다음 페이지로 전진하도록 변경)
+                // TODO: 테스트 시 데이터 한도 추가 필요(데이터 리밋걸기 필요함)
                 if (syncList.isEmpty()) {
                     hasNext = false;
                 } else if (hasNext) {
@@ -279,7 +280,8 @@ public class TourApiService {
                     break;
                 }
                 TourApiResponseDTO<TourAreaBasedSyncListDTO> response = objectMapper.readValue(
-                        jsonResponse, new TypeReference<TourApiResponseDTO<TourAreaBasedSyncListDTO>>() {}
+                        jsonResponse, new TypeReference<TourApiResponseDTO<TourAreaBasedSyncListDTO>>() {
+                        }
                 );
 
                 if (response != null && response.getResponse() != null && response.getResponse().getHeader() != null) {
@@ -302,7 +304,9 @@ public class TourApiService {
                 if (syncList.isEmpty()) break;
 
                 for (TourAreaBasedSyncListDTO syncItem : syncList) {
-                    if (!tourApiHelper.isValidItem(syncItem)) { continue; }
+                    if (!tourApiHelper.isValidItem(syncItem)) {
+                        continue;
+                    }
 
                     processSinglePlace(syncItem);
                     processedCount++;
@@ -335,12 +339,12 @@ public class TourApiService {
     }
 
     /* 헬퍼 메소드 - 개별 장소의 상세정보 연쇄 수집 및 DB 적재(PLACE + PLACE_IMAGE)
-       소개정보(/detailIntro2) & 반복정보(/detailInfo2) 조회용 헬퍼 각각 호출함 */
+           소개정보(/detailIntro2) & 반복정보(/detailInfo2) 조회용 헬퍼 각각 호출함 */
     private void processSinglePlace(TourAreaBasedSyncListDTO syncItem) {
         // [디버그 로그 추가] 공공데이터 목록 API가 실제로 어떤 시도/시군구 코드를 들고 오는지 확인
-        log.info("[Batch Debug Place] title: {}, lDongRegnCd: {}, lDongSignguCd: {}", 
+        log.info("[Batch Debug Place] title: {}, lDongRegnCd: {}, lDongSignguCd: {}",
                 syncItem.getTitle(), syncItem.getLDongRegnCd(), syncItem.getLDongSignguCd());
-                
+
         TourItemDTO tourItem = tourDataConverter.convertToTourItemDTO(syncItem);
         TourDetailIntroDTO introDetail = null;
         TourDetailInfoDTO infoDetail = null;
@@ -355,29 +359,49 @@ public class TourApiService {
                 infoDetail = tourApiHelper.fetchDetailInfo(syncItem.getContentid(), syncItem.getContenttypeid());
             }
         }
-        // PlaceImage 판단 로직에서 썸네일(카드용) 이미지 먼저 계산 -> convertToPlaceDTO로 전달
-        String thumbnailImage = tourDataConverter.resolveThumbnailImage(syncItem);
 
-        // convertToPlaceDTO -> 서비스 PlaceDTO 변환 및 해시태그 생성
-        PlaceDTO placeDto = tourDataConverter.convertToPlaceDTO(syncItem, tourItem, introDetail, infoDetail, thumbnailImage);
-        
-        // TODO: 0728 데이터베이스 연결 후 테스트 로직 연동 - 로그 확인, 이후 삭제 필요
-        // // 0728🔥 [추천 위치] DB 적재 직전에 로그 찍기 (가공된 모든 데이터가 담겨 있으므로 확인하기 가장 좋습니다)
-        // log.info("[Batch Test Log] 파싱된 장소 데이터 -> ID: {}, 타이틀: {}, 타입: {}, 가격: {}, 썸네일: {}",
-        //         placeDto.getPlaceId(), placeDto.getName(), placeDto.getPlaceType(), placeDto.getMinPrice(), placeDto.getFirstImage());
-
-        tourMapper.upsertPlace(placeDto);
-
-        // 대표 이미지가 있는 경우 PLACE_IMAGE 테이블 INSERT 적재 (원본 이미지 저장)
-        if (StringUtils.hasText(syncItem.getFirstimage()) && placeDto.getPlaceId() != null) {
-            PlaceImageDTO imageDto = tourDataConverter.convertToPlaceImageDTO(
-                    placeDto.getPlaceId(), syncItem.getFirstimage(), 0
-            );
-            if (imageDto != null) {
-                tourMapper.insertPlaceImage(imageDto);
-            }
+        // 0730 상세 이미지 API를 먼저 조회하여 최소 이미지 개수(2장 이상) 검증 수행
+        List<TourDetailImageDTO> detailImages = tourApiHelper.fetchDetailImages(syncItem.getContentid());
+        List<String> imageUrls = new ArrayList<>();
+        if (detailImages != null && !detailImages.isEmpty()) {
+            imageUrls = detailImages.stream()
+                    .map(TourDetailImageDTO::getOriginimgurl)
+                    .filter(StringUtils::hasText)
+                    .distinct() // 중복 URL 제거
+                    .toList();
+        }
+        // TODO: 0730 이미지 여러 장 적재 테스트 (이미지 1장의 경우 적재X 최소 2장 이상부터 적재, 여러 장의 경우 sortOrder 인덱싱처리 잘 되는지 테스트로직으로 확인 필수
+        if (imageUrls.size() < 2) {
+            log.info("[Batch Skip] 이미지가 1장뿐이거나 없어 수집 제외 - contentId: {}, title: {}",
+                    syncItem.getContentid(), syncItem.getTitle());
+            return; // 컷오프
         }
 
+        // PlaceImage 판단 로직에서 썸네일(카드용) 이미지 먼저 계산 -> convertToPlaceDTO로 전달
+        String thumbnailImage = tourDataConverter.resolveThumbnailImage(syncItem);
+        // convertToPlaceDTO -> 서비스 PlaceDTO 변환 및 해시태그 생성
+        PlaceDTO placeDto = tourDataConverter.convertToPlaceDTO(syncItem, tourItem, introDetail, infoDetail, thumbnailImage);
+        tourMapper.upsertPlace(placeDto);
+
+//        // 대표 이미지가 있는 경우 PLACE_IMAGE 테이블 INSERT 적재 (원본 이미지 저장)
+//        if (StringUtils.hasText(syncItem.getFirstimage()) && placeDto.getPlaceId() != null) {
+//            PlaceImageDTO imageDto = tourDataConverter.convertToPlaceImageDTO(
+//                    placeDto.getPlaceId(), syncItem.getFirstimage(), 0
+//            );
+//            if (imageDto != null) {
+//                tourMapper.insertPlaceImage(imageDto);
+//            }
+//        }
+        // 0730 PLACE_IMAGE 테이블에 sortOrder 순번에 맞춰 다중 적재 (컨버터 복수형 호출 방식으로 연결)
+        if (placeDto.getPlaceId() != null) {
+            List<PlaceImageDTO> imageDtos = tourDataConverter.convertToPlaceImageDTOs(placeDto.getPlaceId(), imageUrls);
+
+            for (PlaceImageDTO imageDto : imageDtos) {
+                if (imageDto != null) {
+                    tourMapper.insertPlaceImage(imageDto);
+                }
+            }
+        }
     }
 
 }

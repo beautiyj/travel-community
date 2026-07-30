@@ -1,22 +1,16 @@
 package com.gnagnoohc.travel.batch.helper;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gnagnoohc.travel.batch.client.TourApiClient;
-import com.gnagnoohc.travel.batch.dto.TourApiResponseDTO;
-import com.gnagnoohc.travel.batch.dto.TourAreaBasedSyncListDTO;
-import com.gnagnoohc.travel.batch.dto.TourDetailInfoDTO;
-import com.gnagnoohc.travel.batch.dto.TourDetailIntroDTO;
-import com.gnagnoohc.travel.batch.dto.TourItemDTO;
-
+import com.gnagnoohc.travel.batch.dto.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 @Component
@@ -72,8 +66,6 @@ public class TourApiHelper {
         }
     }
 
-    // TODO: 0728 18:00 테스트로직 이후 헬퍼 메소드 수정 - 법정동 조회 로직 Y/N 선택 방향 및 배치 서비스단에서 변환 처리 일괄로
-
     /* 공통 헬퍼 메소드 - 법정동 시도/시군구 코드를 조합하여 DB의 region_id(Long PK)를 생성
      - 법정동코드조회 TourLdongCodeDTO 메타데이터와 실제 동기화 로직의 areaBasedSyncList2 필드 공통 헬퍼용 메소드
      - regnCd 시도코드 signguCd 시군구코드
@@ -98,14 +90,18 @@ public class TourApiHelper {
         }
     }
 
+    // TODO: 0730 대분류AC숙박-중분류AC05 관광코드 28 & 분류VE문화관광-중분류VE05-소분류VE050200리조트 관광코드 12만 STAY 예외처리 적용(최종 확인 필요)
     // contentTypeId 코드 형태 -> 문자열 형태 변환
-    public String convertContentType(String contentTypeId) {
+    public String convertContentType(String contentTypeId, String lclsSystm2, String lclsSystm3) {
         if (contentTypeId == null) return "tour";
+        if ("AC05".equals(lclsSystm2)) { return "stay"; }
+        if ("VE050200".equals(lclsSystm3)) { return "stay"; }
+
         return switch (contentTypeId) {
             case "32"             -> "stay";
             case "39"             -> "food";
-            case "12", "14", "28" -> "tour"; // 관광지(12), 문화시설(14), 레포츠(28)
-            default               -> "tour"; // contentTypeId 선별 처리작업은 완료했지만 예외 방어용 기본값 설정해두기
+            case "12", "14", "28" -> "tour";
+            default               -> "tour";
         };
     }
 

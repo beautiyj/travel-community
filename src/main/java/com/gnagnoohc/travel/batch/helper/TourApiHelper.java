@@ -258,4 +258,64 @@ public class TourApiHelper {
         return true;
     }
 
+    /* TODO: 0730 부가정보(휴무일, 영업시간, 주차, 문의처 등) 컬럼 추가 시 - 정제 헬퍼 메소드
+       - 타입별(tour, stay, food)로 제공되는 필드가 다르므로 분기하여 단일 문장으로 가공
+       - HTML 태그 제거 및 공백 정돈 처리 적용
+     */
+//    public String extractExtraInfo(TourDetailIntroDTO introDetail, String placeType) {
+//        if (introDetail == null) return null;
+//
+//        List<String> infoParts = new ArrayList<>();
+//
+//        // HTML 태그 제거 및 공백 정리용 내부 람다 함수
+//        java.util.function.Function<String, String> cleanText = text ->
+//                StringUtils.hasText(text) ? text.replaceAll("<[^>]*>", " ").replaceAll("\\s+", " ").trim() : null;
+//
+//        if ("stay".equals(placeType)) {
+//            // [숙박 32] 입/퇴실 시간, 주차, 문의처
+//            String checkin = cleanText.apply(introDetail.getCheckintime());
+//            String checkout = cleanText.apply(introDetail.getCheckouttime());
+//            if (checkin != null || checkout != null) {
+//                infoParts.add("[입/퇴실] " + (checkin != null ? checkin : "") + (checkout != null ? " / " + checkout : ""));
+//            }
+//            String parking = cleanText.apply(introDetail.getParkinglodging());
+//            if (parking != null) infoParts.add("[주차] " + parking);
+//            String info = cleanText.apply(introDetail.getInfocenterlodging());
+//            if (info != null) infoParts.add("[문의] " + info);
+//
+//        } else if ("food".equals(placeType)) {
+//            // [음식점 39] 영업시간, 쉬는날, 주차, 문의처
+//            String opentime = cleanText.apply(introDetail.getOpentimefood());
+//            if (opentime != null) infoParts.add("[영업시간] " + opentime);
+//            String rest = cleanText.apply(introDetail.getRestdatefood());
+//            if (rest != null) infoParts.add("[휴무일] " + rest);
+//            String parking = cleanText.apply(introDetail.getParkingfood());
+//            if (parking != null) infoParts.add("[주차] " + parking);
+//            String info = cleanText.apply(introDetail.getInfocenterfood());
+//            if (info != null) infoParts.add("[문의] " + info);
+//
+//        } else if ("tour".equals(placeType)) {
+//            // [관광지/문화시설/레포츠 12, 14, 28] 쉬는날, 이용시간, 주차, 문의처
+//            String rest = cleanText.apply(firstHasText(introDetail.getRestdate(), introDetail.getRestdateculture(), introDetail.getRestdateleports()));
+//            if (rest != null) infoParts.add("[휴무일] " + rest);
+//            String usetime = cleanText.apply(firstHasText(introDetail.getUsetime(), introDetail.getUsetimeculture(), introDetail.getUsetimeleports()));
+//            if (usetime != null) infoParts.add("[이용시간] " + usetime);
+//            String parking = cleanText.apply(firstHasText(introDetail.getParking(), introDetail.getParkingculture(), introDetail.getParkingleports()));
+//            if (parking != null) infoParts.add("[주차] " + parking);
+//            String info = cleanText.apply(firstHasText(introDetail.getInfocenter(), introDetail.getInfocenterculture(), introDetail.getInfocenterleports()));
+//            if (info != null) infoParts.add("[문의] " + info);
+//        }
+//
+//        if (infoParts.isEmpty()) return null;
+//        return String.join(" | ", infoParts);
+//    }
+//
+//    // 우선순위에 따라 유효한 첫 번째 문자열 반환 헬퍼
+//    private String firstHasText(String... values) {
+//        for (String val : values) {
+//            if (StringUtils.hasText(val)) return val;
+//        }
+//        return null;
+//    }
+
 }

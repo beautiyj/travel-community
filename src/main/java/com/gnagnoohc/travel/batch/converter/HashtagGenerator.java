@@ -128,6 +128,9 @@ public class HashtagGenerator {
             tags.add("#반려동물동반");
         }
 
+        // TODO: 부가정보컬럼 추가 시 - 0730 소개정보(intro) 기반 주차/휴무일 부가정보 태그 자동 추가
+        addExtraIntroTags(tags, intro);
+
         // TODO: 4-1 무료해시 N배수 제한 로직 - 정확한 기준 확정 후 반영 예정 (일단 기존 방식 유지)
         if ("tour".equals(placeType)) {
             addFreeFeeTag(tags, intro);
@@ -195,6 +198,31 @@ public class HashtagGenerator {
         } else {
             addTagByCode(tags, CAT3_NAME, cat3); // 그 외는 기본 소분류명 그대로
         }
+    }
+
+    // [수정] 0730 부가정보(주차가능, 연중무휴) 태그 자동 생성 메서드 추가
+    private void addExtraIntroTags(List<String> tags, TourDetailIntroDTO intro) {
+        if (intro == null) return;
+
+        // 주차 가능 여부 검사 (타입별 주차 필드 전용 헬퍼 활용)
+        String parking = firstHasText(intro.getParking(), intro.getParkingculture(), intro.getParkingleports(), intro.getParkinglodging(), intro.getParkingfood());
+        if (StringUtils.hasText(parking) && parking.contains("가능")) {
+            tags.add("#주차가능");
+        }
+
+        // 쉬는날 연중무휴 여부 검사 (타입별 휴무일 필드 전용 헬퍼 활용)
+        String restdate = firstHasText(intro.getRestdate(), intro.getRestdateculture(), intro.getRestdateleports(), intro.getRestdatefood());
+        if (StringUtils.hasText(restdate) && restdate.contains("연중무휴")) {
+            tags.add("#연중무휴");
+        }
+    }
+
+    // 우선순위에 따라 유효한 첫 번째 문자열 반환 헬퍼
+    private String firstHasText(String... values) {
+        for (String val : values) {
+            if (StringUtils.hasText(val)) return val;
+        }
+        return null;
     }
 
     // 코드 -> 한글명 매핑 조회 후 태그 추가 (매핑에 없으면 조용히 스킵, 원문 코드값을 그대로 태그화하지 않음)

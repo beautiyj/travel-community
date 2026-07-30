@@ -36,6 +36,14 @@
 		values(#{username}, #{passwordHash}, sysdate(), 0, #{memberId})
 	</insert>
 
+	<!-- 사업자 가입 신청은 DB 기본값을 사용해 PENDING 상태로 생성한다. -->
+	<insert id="insertBusinessApplication">
+		insert into business_application(
+			member_id, business_registration_file_key
+		)
+		values(#{memberId}, #{fileKey})
+	</insert>
+
 	<!-- 로컬 로그인 및 계정 잠금 -->
 	<!-- 같은 계정의 로그인 요청이 동시에 처리되지 않도록 인증 행을 잠가 조회한다. -->
 	<select id="findLocalLoginAuthForUpdate" resultType="memberlocalauth">

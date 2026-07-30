@@ -64,8 +64,9 @@
 </form>
   </div>
 
-  <!-- 목록 테이블 (community.css 의 .table / .row / .table-head / .post-row) -->
-  <div class="table">
+  <!-- 목록 테이블 (community.css 의 .table / .row / .table-head / .post-row)
+       data-search-keyword: postSearchHighlight.js가 제목/작성자에서 이 검색어를 굵게 강조 표시할 때 사용 -->
+  <div class="table" data-search-keyword="<c:out value="${param.q}" />">
     <div class="table-head row">
       <span>카테고리</span>
       <span>제목</span>
@@ -83,8 +84,8 @@
             <%-- postCategoryTag.jsp 컴포넌트 파일이 없어서 DTO getter로 직접 렌더링
                  (community.css 의 .badge.review/.recruit/.general/.verified 사용) --%>
             <span class="badge ${post.categoryCss}">${post.categoryLabel}</span>
-            <span class="post-title">${post.title}</span>
-            <span class="cell-muted">${post.nickname}</span>
+            <span class="post-title js-highlight">${post.title}</span>
+            <span class="cell-muted js-highlight">${post.nickname}</span>
             <span class="cell-muted">
               <fmt:formatDate value="${post.createdAt}" pattern="yyyy-MM-dd" />
             </span>
@@ -102,8 +103,40 @@
       </c:otherwise>
     </c:choose>
   </div>
+
+  <%-- 페이지네이션: 결과가 한 페이지(10건)를 넘을 때만 표시.
+       처음(«)/이전은 첫 블록(1~10페이지)일 때, 다음/마지막(»)은 마지막 블록일 때 아예 렌더링하지 않음(비활성 표시 아님).
+       모든 링크는 category/q를 그대로 유지 (list.jsp 상단 카테고리 탭과 동일한 방식으로 쿼리스트링 구성) --%>
+  <c:if test="${totalPages > 1}">
+    <center>
+      <div class="pagination">
+        <c:if test="${startPage > 1}">
+          <a class="page-nav" href="${cp}/community/list?category=${param.category}&q=${param.q}&page=1">&laquo;</a>
+          <a class="page-nav" href="${cp}/community/list?category=${param.category}&q=${param.q}&page=${startPage - 1}">이전</a>
+        </c:if>
+
+        <c:forEach var="p" begin="${startPage}" end="${endPage}">
+          <c:choose>
+            <c:when test="${p == page}">
+              <span class="page-num active">${p}</span>
+            </c:when>
+            <c:otherwise>
+              <a class="page-num" href="${cp}/community/list?category=${param.category}&q=${param.q}&page=${p}">${p}</a>
+            </c:otherwise>
+          </c:choose>
+        </c:forEach>
+
+        <c:if test="${endPage < totalPages}">
+          <a class="page-nav" href="${cp}/community/list?category=${param.category}&q=${param.q}&page=${endPage + 1}">다음</a>
+          <a class="page-nav" href="${cp}/community/list?category=${param.category}&q=${param.q}&page=${totalPages}">&raquo;</a>
+        </c:if>
+      </div>
+    </center>
+  </c:if>
 </div>
 
 <script src="${cp}/js/common.js"></script>
+<script src="${cp}/js/common/highlightKeyword.js"></script>
+<script src="${cp}/js/community/postSearchHighlight.js"></script>
 </body>
 </html>

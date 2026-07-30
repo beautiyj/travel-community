@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <!DOCTYPE html>
 <html>
 <head>
@@ -35,7 +36,6 @@
                         <p class="business-empty">아직 등록된 업소가 없습니다. 아래 정보를 입력해 업소를 등록해주세요.</p>
 
                         <form class="business-form" action="/business/venue/register" method="post" enctype="multipart/form-data">
-                            <input type="hidden" name="memberId" value="${memberId}" />
 
                             <jsp:include page="common/venueFormFields.jsp" />
 
@@ -69,12 +69,16 @@
                                 <h2 class="business-card__title">업소 정보 수정</h2>
 
                                 <form class="business-form" action="/business/venue/update" method="post" enctype="multipart/form-data">
-                                    <input type="hidden" name="memberId" value="${memberId}" />
 
+                                    <%-- address를 안 넘기면 수정 화면에서 주소가 빈 값으로 뜨고,
+                                         business-venue.js의 제출 검증에 걸려 매번 주소를 다시 검색해야 한다 --%>
                                     <jsp:include page="common/venueFormFields.jsp">
                                         <jsp:param name="idPrefix" value="edit-" />
                                         <jsp:param name="name" value="${placeDetail.name}" />
                                         <jsp:param name="placeType" value="${placeDetail.placeType}" />
+                                        <jsp:param name="priceType" value="${placeDetail.priceType}" />
+                                        <jsp:param name="minPrice" value="${placeDetail.minPrice}" />
+                                        <jsp:param name="address" value="${placeDetail.address}" />
                                         <jsp:param name="description" value="${placeDetail.description}" />
                                     </jsp:include>
 
@@ -106,7 +110,7 @@
                                     </div>
 
                                     <div class="venue-form-actions">
-                                        <a href="/business/venue?memberId=${memberId}" class="venue-btn venue-btn--outline">취소</a>
+                                        <a href="/business/venue" class="venue-btn venue-btn--outline">취소</a>
                                         <button class="venue-btn venue-btn--solid" type="submit">저장</button>
                                     </div>
                                 </form>
@@ -117,7 +121,6 @@
                                 <div class="venue-header">
                                     <h2 class="business-card__title" style="margin:0;">업소 정보</h2>
                                     <c:url value="/business/venue" var="editUrl">
-                                        <c:param name="memberId" value="${memberId}" />
                                         <c:param name="edit" value="true" />
                                     </c:url>
                                     <a href="${editUrl}" class="business-btn business-btn--primary business-btn--sm">정보 수정</a>
@@ -137,9 +140,21 @@
                                 </c:if>
 
                                 <c:choose>
-                                    <c:when test="${placeDetail.placeType == 1}"><c:set var="categoryLabel" value="숙박"/></c:when>
-                                    <c:when test="${placeDetail.placeType == 2}"><c:set var="categoryLabel" value="맛집"/></c:when>
+                                    <c:when test="${placeDetail.placeType == 'stay'}"><c:set var="categoryLabel" value="숙박"/></c:when>
+                                    <c:when test="${placeDetail.placeType == 'food'}"><c:set var="categoryLabel" value="맛집"/></c:when>
                                     <c:otherwise><c:set var="categoryLabel" value="관광지"/></c:otherwise>
+                                </c:choose>
+
+                                <%-- venue-detail-row__value는 소개글 줄바꿈을 살리려고 white-space: pre-line이라,
+                                     값을 span 안에서 바로 c:choose로 분기하면 태그 사이 개행까지 그대로 렌더링되어
+                                     세로로 빈 줄이 생긴다. categoryLabel과 같은 방식으로 밖에서 값만 만들어 넣는다 --%>
+                                <c:choose>
+                                    <c:when test="${placeDetail.priceType == 'FIXED'}">
+                                        <fmt:formatNumber var="priceAmount" value="${placeDetail.minPrice}" pattern="#,###" />
+                                        <c:set var="priceLabel" value="${priceAmount}원 / 1인"/>
+                                    </c:when>
+                                    <c:when test="${placeDetail.priceType == 'VARIABLE'}"><c:set var="priceLabel" value="가격변동 (현장 문의)"/></c:when>
+                                    <c:otherwise><c:set var="priceLabel" value="무료"/></c:otherwise>
                                 </c:choose>
 
                                 <div class="venue-detail-list">
@@ -151,6 +166,13 @@
                                         <span class="venue-detail-row__label">카테고리</span>
                                         <span class="venue-detail-row__value">${categoryLabel}</span>
                                     </div>
+                                    <%-- 가격은 숙박만 설정 대상이라 숙박일 때만 보여준다 --%>
+                                    <c:if test="${placeDetail.placeType == 'stay'}">
+                                        <div class="venue-detail-row">
+                                            <span class="venue-detail-row__label">가격</span>
+                                            <span class="venue-detail-row__value">${priceLabel}</span>
+                                        </div>
+                                    </c:if>
 <%--                                    <div class="venue-detail-row">--%>
 <%--                                        <span class="venue-detail-row__label">지역</span>--%>
 <%--                                        <span class="venue-detail-row__value">${placeDetail.regionName}</span>--%>

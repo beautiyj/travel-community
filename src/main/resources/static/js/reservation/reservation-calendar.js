@@ -138,7 +138,9 @@
             cell.textContent = d;
 
             // 체크아웃 당일은 다음 손님이 체크인할 수 있으므로(반개구간) 마감으로 치지 않는다
-            var blockedHere = BLOCK_BOOKED && isBlocked(dateStr);
+            // 휴무(closed)·날짜별 마감(closedDates)은 장소 타입 무관하게 항상 막는다.
+            // 예약된 날짜(booked)만 숙박(BLOCK_BOOKED)에서만 막는다 — 맛집/관광지는 하루 여러 팀 가능.
+            var blockedHere = closed || !!closedDates[dateStr] || (BLOCK_BOOKED && (booked[dateStr] || 0) > 0);
 
             if (isPast(viewYear, viewMonth, d)) {
                 cell.classList.add('is-past');
@@ -197,7 +199,15 @@
                 (data.closedDates || []).forEach(function (d) { closedDates[d] = true; });
                 if (!BLOCK_BOOKED) capacity = data.capacity || 0;
                 render();
+                // 이미 선택된 날짜가 있으면(복원값) 방금 받은 정원 정보로 결제하기 버튼 상태를 다시 계산시킨다
+                if (checkIn) hidden.dispatchEvent(new Event('change'));
             })
             .catch(function () { /* 조회 실패 무시 */ });
     }
+
+    /** 맛집·관광지 정원 체크용: 해당 날짜에 남은 자리 수. 숙박(정원 표시 없음)은 항상 무제한 취급 */
+    window.RESERVATION_REMAINING_SEATS = function (dateStr) {
+        if (capacity <= 0) return Infinity;
+        return Math.max(0, capacity - (booked[dateStr] || 0));
+    };
 })();

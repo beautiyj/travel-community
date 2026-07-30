@@ -36,6 +36,10 @@
         SELECT place_type FROM PLACE WHERE place_id = #{placeId}
     </select>
 
+    <select id="findPlaceName" resultType="string">
+        SELECT name FROM PLACE WHERE place_id = #{placeId}
+    </select>
+
     <select id="findById" resultType="com.gnagnoohc.travel.reservation.entity.Reservation">
         SELECT <include refid="reservationColumns"/>
         FROM RESERVATION r
@@ -170,6 +174,22 @@
     <!-- 휴무 여부 조회: 사업자가 /business/closure에서 설정한 PLACE.is_closed 그대로 참조 (읽기 전용) -->
     <select id="findPlaceClosed" resultType="boolean">
         SELECT is_closed FROM PLACE WHERE place_id = #{placeId}
+    </select>
+
+    <!-- 날짜별 마감(PLACE_CLOSED_DATE) 겹침 체크. 역시 business 파트 테이블 읽기 전용 참조 -->
+    <select id="countClosedDatesInRange" resultType="int">
+        SELECT COUNT(*)
+        FROM PLACE_CLOSED_DATE
+        WHERE place_id = #{placeId}
+          AND closed_date &gt;= #{fromDate}
+          AND closed_date &lt; #{toDate}
+    </select>
+
+    <!-- 예약 캘린더용: 오늘 이후 날짜별 마감일 목록 -->
+    <select id="findClosedDates" resultType="java.time.LocalDate">
+        SELECT closed_date FROM PLACE_CLOSED_DATE
+        WHERE place_id = #{placeId} AND closed_date &gt;= CURDATE()
+        ORDER BY closed_date
     </select>
 
 </mapper>

@@ -40,6 +40,12 @@ public class TourValidator {
     public boolean isValid(TourAreaBasedSyncListDTO item) {
         if (item == null) return false;
 
+        // 0731 수정: 최상위 1차 필터링: 콘텐츠타입 5가지 아닌 값이 들어오면 아예 적재 x
+        String contentTypeId = item.getContenttypeid();
+        if (!List.of("12", "14", "28", "32", "39").contains(contentTypeId)) {
+            return false;
+        }
+
         // 기본 공통 필수값 체크 (대표 이미지 및 법정동 지역 코드 누락 방어용 로직)
         if (!StringUtils.hasText(item.getFirstimage()) || !StringUtils.hasText(item.getLDongRegnCd()) || !StringUtils.hasText(item.getLDongSignguCd())) { return false; }
 
@@ -47,7 +53,8 @@ public class TourValidator {
         // if (item.getMinPrice() == null || item.getMinPrice() < 0) { return false; }
 
         String title = item.getTitle();
-        String contentTypeId = item.getContenttypeid();
+        // 0731 수정: 상단에서 이미 선언된 contentTypeId 변수와 중복되므로 타입 선언(String) 제거
+        contentTypeId = item.getContenttypeid();
         String cat1 = item.getLclsSystm1();
         String cat2 = item.getLclsSystm2();
         String cat3 = item.getLclsSystm3();

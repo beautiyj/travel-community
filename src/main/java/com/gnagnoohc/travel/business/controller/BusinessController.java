@@ -2,9 +2,8 @@ package com.gnagnoohc.travel.business.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gnagnoohc.travel.business.dto.BusinessDashboardViewDto;
+import com.gnagnoohc.travel.business.dto.BusinessPlaceFormDto;
 import com.gnagnoohc.travel.business.dto.BusinessPlaceOverviewDto;
-import com.gnagnoohc.travel.business.dto.BusinessReservationDto;
-import com.gnagnoohc.travel.business.dto.BusinessReviewDto;
 import com.gnagnoohc.travel.business.dto.BusinessSidebarContextDto;
 import com.gnagnoohc.travel.business.exception.BusinessAuthException;
 import com.gnagnoohc.travel.business.exception.NoPlaceRegisteredException;
@@ -13,8 +12,6 @@ import com.gnagnoohc.travel.business.service.BusinessDashboardService;
 import com.gnagnoohc.travel.business.service.BusinessPlaceService;
 import com.gnagnoohc.travel.business.service.BusinessReservationService;
 import com.gnagnoohc.travel.business.service.BusinessReviewService;
-import com.gnagnoohc.travel.auth.dto.LoginMemberDto;
-import com.gnagnoohc.travel.reservation.entity.ReservationStatus;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,22 +19,22 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Controller
 @RequiredArgsConstructor
 public class BusinessController {
-    // 사업자 조치가 필요한 상태(결제완료=확정/거절 대기, 취소요청)를 앞쪽에 두고 나머지는 예약 진행 순서대로 배치
-    private static final List<String> RESERVATION_STATUS_OPTIONS = List.of("전체", "결제완료", "취소요청", "확정", "완료", "취소");
-    private static final List<String> REVIEW_SENTIMENT_OPTIONS = List.of("전체", "긍정", "중립", "부정");
+
+    private static final String DEFAULT_FILTER_LABEL = "전체";
 
     private final BusinessDashboardService businessDashboardService;
     private final BusinessReservationService businessReservationService;
@@ -45,54 +42,21 @@ public class BusinessController {
     private final BusinessReviewService businessReviewService;
     private final ObjectMapper objectMapper;
 
-    // 로그인 세션에서 사업자 회원 ID를 얻는다. 미로그인/권한부족이면 BusinessAuthException으로 리다이렉트 처리.
-    // 세션의 memberId는 int라 서비스 시그니처(Long)에 맞춰 변환한다.
-    private Long currentBusinessMemberId(HttpSession session) {
-        LoginMemberDto login = BusinessSessionSupport.getLogin(session);
-        if (login == null) {
-            throw new BusinessAuthException("/auth/login");
-        }
-        if (!BusinessSessionSupport.isBusiness(login)) {
-            throw new BusinessAuthException("/");
-        }
-        return (long) login.getMemberId();
-    }
-
     @GetMapping("/business/dashboard")
     public String dashboard(HttpSession session, Model model) {
-        Long memberId = currentBusinessMemberId(session);
+        Long memberId = BusinessSessionSupport.requireBusinessMemberId(session);
         BusinessDashboardViewDto view = businessDashboardService.getDashboard(memberId);
 
-        model.addAttribute("placeId", view.getPlaceId());
-        model.addAttribute("bizName", view.getPlaceName());
-        model.addAttribute("ownerName", view.getOwnerName());
-        model.addAttribute("isClosed", view.isClosed());
-        model.addAttribute("bizFirstImage", view.getFirstImage());
+        addSidebarAttributes(model, view.getSidebar());
         model.addAttribute("todayLabel", view.getTodayLabel());
         model.addAttribute("todayReservations", view.getTodayReservations());
         model.addAttribute("monthlyTrend", view.getMonthlyTrend());
         model.addAttribute("monthlyCount", view.getMonthlyCount());
-        model.addAttribute("pendingCount", view.getPendingCount());
         model.addAttribute("todayVisitors", view.getTodayVisitors());
-        model.addAttribute("cancelRequestCount", view.getCancelRequestCount());
         model.addAttribute("reviewSentiment", view.getReviewSentiment());
         model.addAttribute("keywordCloudJson", toKeywordCloudJson(view.getReviewSentiment().getKeywords()));
 
         return "business/dashboard";
-    }
-
-    // wordcloud2.js가 기대하는 [[word, weight], ...] 형태로 직렬화. JSP에 <script>로 그대로 삽입되므로
-    // Jackson으로 안전하게 이스케이프한다 (후기 키워드는 사용자가 작성한 텍스트에서 추출된 값이라 직접 문자열 결합하지 않음)
-    private String toKeywordCloudJson(List<KeywordCount> keywords) {
-        try {
-            List<List<Object>> pairs = keywords.stream()
-                    .map(k -> List.<Object>of(k.word(), k.count()))
-                    .toList();
-            return objectMapper.writeValueAsString(pairs);
-        } catch (Exception e) {
-            log.warn("워드클라우드 키워드 JSON 직렬화 실패", e);
-            return "[]";
-        }
     }
 
     //예약 관리
@@ -102,31 +66,105 @@ public class BusinessController {
             HttpSession session,
             Model model
     ) {
-        Long memberId = currentBusinessMemberId(session);
+        Long memberId = BusinessSessionSupport.requireBusinessMemberId(session);
         BusinessSidebarContextDto ctx = businessDashboardService.getSidebarContext(memberId);
-        String statusParam = toReservationStatusName(status);
-        List<BusinessReservationDto> reservations = businessReservationService.getReservations(ctx.getPlaceId(), memberId, statusParam);
 
-        model.addAttribute("placeId", ctx.getPlaceId());
-        model.addAttribute("bizName", ctx.getPlaceName());
-        model.addAttribute("ownerName", ctx.getOwnerName());
-        model.addAttribute("isClosed", ctx.isClosed());
-        model.addAttribute("bizFirstImage", ctx.getFirstImage());
-        model.addAttribute("pendingCount", ctx.getPendingCount());
-        model.addAttribute("cancelRequestCount", ctx.getCancelRequestCount());
-        model.addAttribute("statusOptions", RESERVATION_STATUS_OPTIONS);
-        model.addAttribute("statusFilter", status == null ? "전체" : status);
-        model.addAttribute("statusCounts", businessReservationService.getStatusCounts(ctx.getPlaceId(), memberId));
+        addSidebarAttributes(model, ctx);
+        addFilterAttributes(model, status,
+                ReservationFilter.toTabs(businessReservationService.getStatusCounts(ctx.getPlaceId(), memberId)));
         model.addAttribute("todayLabel", businessDashboardService.todayLabel());
-        model.addAttribute("reservations", reservations);
+        model.addAttribute("reservations", businessReservationService.getReservations(
+                ctx.getPlaceId(), memberId, ReservationFilter.toStatusName(status)));
 
         return "business/reservations";
     }
 
+    //후기 확인 : 답글은 커뮤니티 상세(댓글)에서 처리하므로 여기서는 목록만 보여준다. 감성분석 결과(긍정/중립/부정)로 필터링 가능
+    @GetMapping("/business/reviews")
+    public String reviews(
+            @RequestParam(required = false) String sentiment,
+            HttpSession session,
+            Model model
+    ) {
+        Long memberId = BusinessSessionSupport.requireBusinessMemberId(session);
+        BusinessSidebarContextDto ctx = businessDashboardService.getSidebarContext(memberId);
+
+        addSidebarAttributes(model, ctx);
+        addFilterAttributes(model, sentiment,
+                ReviewFilter.toTabs(businessReviewService.getSentimentCounts(ctx.getPlaceId())));
+        model.addAttribute("reviews", businessReviewService.getReviews(
+                ctx.getPlaceId(), ReviewFilter.toSentimentValue(sentiment)));
+
+        return "business/reviews";
+    }
+
+    //마감 관리 : 즉시 예약 마감 토글 화면
+    @GetMapping("/business/closure")
+    public String closure(HttpSession session, Model model) {
+        Long memberId = BusinessSessionSupport.requireBusinessMemberId(session);
+        addSidebarAttributes(model, businessDashboardService.getSidebarContext(memberId));
+        return "business/closure";
+    }
+
+    //업소관리
+    @GetMapping("/business/venue")
+    public String venue(
+            @RequestParam(defaultValue = "false") boolean edit,
+            HttpSession session,
+            Model model
+    ) {
+        Long memberId = BusinessSessionSupport.requireBusinessMemberId(session);
+        BusinessPlaceOverviewDto overview = businessPlaceService.findOverview(memberId);
+        model.addAttribute("place", overview);
+
+        // 아직 업소를 등록하지 않았으면 사이드바에 채울 값 자체가 없으므로 등록 화면 분기만 준비한다
+        if (overview == null) {
+            model.addAttribute("canRegister", businessPlaceService.isBusinessMember(memberId));
+            return "business/venue";
+        }
+
+        addSidebarAttributes(model, businessDashboardService.getSidebarContext(memberId));
+        // 읽기뷰도 React 참고 화면과 동일하게 카테고리/지역/주소/소개/전체 사진을 보여줘야 해서 항상 상세 조회
+        model.addAttribute("placeDetail", businessPlaceService.findDetail(memberId));
+        model.addAttribute("editing", edit);
+
+        return "business/venue";
+    }
+
+    //업소 등록
+    @PostMapping("/business/venue/register")
+    public String registerVenue(
+            @ModelAttribute BusinessPlaceFormDto form,
+            @RequestParam(required = false) List<MultipartFile> images,
+            HttpSession session
+    ) {
+        Long memberId = BusinessSessionSupport.requireBusinessMemberId(session);
+        businessPlaceService.registerPlace(memberId, form, images);
+        return "redirect:/business/venue";
+    }
+
+    //업소 정보 수정
+    @PostMapping("/business/venue/update")
+    public String updateVenue(
+            @ModelAttribute BusinessPlaceFormDto form,
+            // 수정 화면에서 드래그로 정한 최종 사진 순서(기존/신규 카드 통합). 기존 사진은 URL, 신규 사진은 "new" 토큰.
+            // "new" 토큰은 등장하는 순서대로 newImages의 파일과 하나씩 매칭된다.
+            @RequestParam(required = false) List<String> photoOrder,
+            @RequestParam(required = false) List<String> removeImageUrls,
+            @RequestParam(required = false) List<MultipartFile> newImages,
+            HttpSession session
+    ) {
+        Long memberId = BusinessSessionSupport.requireBusinessMemberId(session);
+        businessPlaceService.updatePlace(memberId, form, photoOrder, removeImageUrls, newImages);
+        return "redirect:/business/venue";
+    }
+
+    /* ------------------- 예약 관리 액션 ------------------- */
+
     //예약관리 : 결제완료(PAID) → 예약확정(CONFIRMED) 승인 (상태 전환은 reservation 파트 ReservationService 호출)
     @PostMapping("/business/reservations/{reservationId}/confirm")
     public String confirmReservation(@PathVariable Long reservationId, HttpSession session, RedirectAttributes redirectAttributes) {
-        Long memberId = currentBusinessMemberId(session);
+        Long memberId = BusinessSessionSupport.requireBusinessMemberId(session);
         return runReservationAction(redirectAttributes,
                 () -> businessReservationService.confirm(reservationId, memberId));
     }
@@ -136,7 +174,7 @@ public class BusinessController {
     public String rejectReservation(@PathVariable Long reservationId,
                                      @RequestParam(required = false) String reason,
                                      HttpSession session, RedirectAttributes redirectAttributes) {
-        Long memberId = currentBusinessMemberId(session);
+        Long memberId = BusinessSessionSupport.requireBusinessMemberId(session);
         return runReservationAction(redirectAttributes,
                 () -> businessReservationService.reject(reservationId, memberId, reason));
     }
@@ -144,7 +182,7 @@ public class BusinessController {
     //예약관리 : 취소 요청 승인 (환불 실행은 reservation 파트 PaymentService 호출)
     @PostMapping("/business/reservations/{reservationId}/cancel-approve")
     public String approveCancelReservation(@PathVariable Long reservationId, HttpSession session, RedirectAttributes redirectAttributes) {
-        Long memberId = currentBusinessMemberId(session);
+        Long memberId = BusinessSessionSupport.requireBusinessMemberId(session);
         return runReservationAction(redirectAttributes,
                 () -> businessReservationService.approveCancel(reservationId, memberId));
     }
@@ -152,7 +190,7 @@ public class BusinessController {
     //예약관리 : 취소 요청 거절 (PAID 원복은 reservation 파트 ReservationService 호출)
     @PostMapping("/business/reservations/{reservationId}/cancel-reject")
     public String rejectCancelReservation(@PathVariable Long reservationId, HttpSession session, RedirectAttributes redirectAttributes) {
-        Long memberId = currentBusinessMemberId(session);
+        Long memberId = BusinessSessionSupport.requireBusinessMemberId(session);
         return runReservationAction(redirectAttributes,
                 () -> businessReservationService.rejectCancel(reservationId, memberId));
     }
@@ -176,128 +214,10 @@ public class BusinessController {
         return "redirect:/business/reservations";
     }
 
-    //필터
-    private static String toReservationStatusName(String label) {
-        if (label == null || "전체".equals(label)) return null;
-        return switch (label) {
-            case "결제완료" -> ReservationStatus.PAID.name();
-            case "취소요청" -> ReservationStatus.CANCEL_REQUESTED.name();
-            case "확정" -> ReservationStatus.CONFIRMED.name();
-            case "완료" -> ReservationStatus.COMPLETED.name();
-            case "취소" -> ReservationStatus.CANCELED.name();
-            default -> label;
-        };
-    }
+    /* ------------------- 화면 공통 모델 ------------------- */
 
-    //마감 관리 : 즉시 예약 마감 토글 화면
-    @GetMapping("/business/closure")
-    public String closure(HttpSession session, Model model) {
-        Long memberId = currentBusinessMemberId(session);
-        BusinessSidebarContextDto ctx = businessDashboardService.getSidebarContext(memberId);
-
-        model.addAttribute("bizName", ctx.getPlaceName());
-        model.addAttribute("ownerName", ctx.getOwnerName());
-        model.addAttribute("isClosed", ctx.isClosed());
-        model.addAttribute("bizFirstImage", ctx.getFirstImage());
-        model.addAttribute("pendingCount", ctx.getPendingCount());
-        model.addAttribute("cancelRequestCount", ctx.getCancelRequestCount());
-        model.addAttribute("placeId", ctx.getPlaceId());
-
-        return "business/closure";
-    }
-
-    //업소관리
-    @GetMapping("/business/venue")
-    public String venue(
-            @RequestParam(defaultValue = "false") boolean edit,
-            HttpSession session,
-            Model model
-    ) {
-        Long memberId = currentBusinessMemberId(session);
-        BusinessPlaceOverviewDto overview = businessPlaceService.findOverview(memberId);
-        model.addAttribute("place", overview);
-
-        if (overview != null) {
-            BusinessSidebarContextDto ctx = businessDashboardService.getSidebarContext(memberId);
-            model.addAttribute("placeId", ctx.getPlaceId());
-            model.addAttribute("bizName", ctx.getPlaceName());
-            model.addAttribute("ownerName", ctx.getOwnerName());
-            model.addAttribute("isClosed", ctx.isClosed());
-            model.addAttribute("bizFirstImage", ctx.getFirstImage());
-            model.addAttribute("pendingCount", ctx.getPendingCount());
-            model.addAttribute("cancelRequestCount", ctx.getCancelRequestCount());
-
-            // 읽기뷰도 React 참고 화면과 동일하게 카테고리/지역/주소/소개/전체 사진을 보여줘야 해서 항상 상세 조회
-            model.addAttribute("placeDetail", businessPlaceService.findDetail(memberId));
-
-            if (edit) {
-                model.addAttribute("editing", true);
-//                model.addAttribute("regionOptions", businessPlaceService.getRegionOptions());
-            }
-        } else {
-            boolean canRegister = businessPlaceService.isBusinessMember(memberId);
-            model.addAttribute("canRegister", canRegister);
-//            if (canRegister) {
-//                model.addAttribute("regionOptions", businessPlaceService.getRegionOptions());
-//            }
-        }
-
-        return "business/venue";
-    }
-
-    //업소 등록
-    @PostMapping("/business/venue/register")
-    public String registerVenue(
-            @RequestParam String name,
-            @RequestParam String placeType,
-            // 가격은 숙박일 때만 폼에 노출되므로 두 값 모두 optional. 정리/검증은 서비스가 담당
-            @RequestParam(required = false) String priceType,
-            @RequestParam(required = false) Integer minPrice,
-            @RequestParam(required = false) Long regionId,
-            @RequestParam String address,
-            @RequestParam(required = false) String description,
-            @RequestParam(required = false) List<MultipartFile> images,
-            HttpSession session
-    ) {
-        Long memberId = currentBusinessMemberId(session);
-        businessPlaceService.registerPlace(memberId, name, placeType, priceType, minPrice, regionId, address, description, images);
-        return "redirect:/business/venue";
-    }
-
-    //업소 정보 수정
-    @PostMapping("/business/venue/update")
-    public String updateVenue(
-            @RequestParam String name,
-            @RequestParam String placeType,
-            @RequestParam(required = false) String priceType,
-            @RequestParam(required = false) Integer minPrice,
-            @RequestParam(required = false) Long regionId,
-            @RequestParam String address,
-            @RequestParam(required = false) String description,
-            // 수정 화면에서 드래그로 정한 최종 사진 순서(기존/신규 카드 통합). 기존 사진은 URL, 신규 사진은 "new" 토큰.
-            // "new" 토큰은 등장하는 순서대로 newImages의 파일과 하나씩 매칭된다.
-            @RequestParam(required = false) List<String> photoOrder,
-            @RequestParam(required = false) List<String> removeImageUrls,
-            @RequestParam(required = false) List<MultipartFile> newImages,
-            HttpSession session
-    ) {
-        Long memberId = currentBusinessMemberId(session);
-        businessPlaceService.updatePlace(memberId, name, placeType, priceType, minPrice, regionId, address, description, photoOrder, removeImageUrls, newImages);
-        return "redirect:/business/venue";
-    }
-
-    //후기 확인 : 답글은 커뮤니티 상세(댓글)에서 처리하므로 여기서는 목록만 보여준다. 감성분석 결과(긍정/중립/부정)로 필터링 가능
-    @GetMapping("/business/reviews")
-    public String reviews(
-            @RequestParam(required = false) String sentiment,
-            HttpSession session,
-            Model model
-    ) {
-        Long memberId = currentBusinessMemberId(session);
-        BusinessSidebarContextDto ctx = businessDashboardService.getSidebarContext(memberId);
-        Integer sentimentParam = toSentimentValue(sentiment);
-        List<BusinessReviewDto> reviews = businessReviewService.getReviews(ctx.getPlaceId(), sentimentParam);
-
+    // 모든 business 화면이 공유하는 사이드바(common/sidebar.jsp) 표시값
+    private void addSidebarAttributes(Model model, BusinessSidebarContextDto ctx) {
         model.addAttribute("placeId", ctx.getPlaceId());
         model.addAttribute("bizName", ctx.getPlaceName());
         model.addAttribute("ownerName", ctx.getOwnerName());
@@ -305,25 +225,26 @@ public class BusinessController {
         model.addAttribute("bizFirstImage", ctx.getFirstImage());
         model.addAttribute("pendingCount", ctx.getPendingCount());
         model.addAttribute("cancelRequestCount", ctx.getCancelRequestCount());
-        model.addAttribute("sentimentOptions", REVIEW_SENTIMENT_OPTIONS);
-        model.addAttribute("sentimentFilter", sentiment == null ? "전체" : sentiment);
-        model.addAttribute("sentimentCounts", businessReviewService.getSentimentCounts(ctx.getPlaceId()));
-        model.addAttribute("reviews", reviews);
-
-        return "business/reviews";
     }
 
-    // 필터 탭의 한글 라벨 -> REVIEW_ANALYSIS.sentiment 값 (긍정=1, 중립=0, 부정=-1, 전체/미지정=null)
-    private Integer toSentimentValue(String sentimentLabel) {
-        if (sentimentLabel == null) {
-            return null;
+    // 필터 탭(common/filterTabs.jsp) 표시값. tabs는 "라벨 -> 건수" 순서가 유지된 맵
+    private void addFilterAttributes(Model model, String selectedLabel, Map<String, Integer> tabs) {
+        model.addAttribute("filterTabs", tabs);
+        model.addAttribute("filterSelected", selectedLabel == null ? DEFAULT_FILTER_LABEL : selectedLabel);
+    }
+
+    // wordcloud2.js가 기대하는 [[word, weight], ...] 형태로 직렬화. JSP에 <script>로 그대로 삽입되므로
+    // Jackson으로 안전하게 이스케이프한다 (후기 키워드는 사용자가 작성한 텍스트에서 추출된 값이라 직접 문자열 결합하지 않음)
+    private String toKeywordCloudJson(List<KeywordCount> keywords) {
+        try {
+            List<List<Object>> pairs = keywords.stream()
+                    .map(k -> List.<Object>of(k.word(), k.count()))
+                    .toList();
+            return objectMapper.writeValueAsString(pairs);
+        } catch (Exception e) {
+            log.warn("워드클라우드 키워드 JSON 직렬화 실패", e);
+            return "[]";
         }
-        return switch (sentimentLabel) {
-            case "긍정" -> 1;
-            case "중립" -> 0;
-            case "부정" -> -1;
-            default -> null;
-        };
     }
 
     // 아직 업소를 등록하지 않은 사업자가 dashboard/reservations에 접근하면 등록 화면으로 안내

@@ -1,6 +1,7 @@
 package com.gnagnoohc.travel.business.service;
 
 import com.gnagnoohc.travel.business.dto.BusinessPlaceDetailDto;
+import com.gnagnoohc.travel.business.dto.BusinessPlaceFormDto;
 import com.gnagnoohc.travel.business.dto.BusinessPlaceOverviewDto;
 import com.gnagnoohc.travel.business.dto.BusinessPlaceRegisterDto;
 import com.gnagnoohc.travel.business.dto.BusinessPlaceUpdateDto;
@@ -59,9 +60,8 @@ public class BusinessPlaceService {
     }
 
     @Transactional
-    public void registerPlace(Long bizMemberId, String name, String placeType, String priceType,
-                               Integer minPrice, Long regionId,
-                               String address, String description, List<MultipartFile> images) {
+    public void registerPlace(Long bizMemberId, BusinessPlaceFormDto form, List<MultipartFile> images) {
+        requireRequiredFields(form);
         if (!isBusinessMember(bizMemberId)) {
             throw new IllegalStateException("사업자 회원만 업소를 등록할 수 있습니다.");
         }
@@ -69,25 +69,24 @@ public class BusinessPlaceService {
             throw new IllegalStateException("이미 등록된 업소가 있습니다.");
         }
 
-        List<MultipartFile> nonEmpty = images == null ? List.of()
-                : images.stream().filter(f -> !f.isEmpty()).toList();
+        List<MultipartFile> nonEmpty = toNonEmpty(images);
         if (nonEmpty.isEmpty()) {
             throw new IllegalArgumentException("사진을 최소 1장 등록해야 합니다.");
         }
 
-        PriceSetting price = resolvePrice(placeType, priceType, minPrice);
+        PriceSetting price = resolvePrice(form);
 
         List<String> savedUrls = nonEmpty.stream().map(this::saveImageFile).toList();
 
         BusinessPlaceRegisterDto place = BusinessPlaceRegisterDto.builder()
-                .placeType(placeType)
+                .placeType(form.getPlaceType())
                 .priceType(price.priceType())
                 .minPrice(price.minPrice())
-//                .regionId(regionId)
+//                .regionId(form.getRegionId())
                 .memberId(bizMemberId)
-                .name(name)
-                .description(description)
-                .address(address)
+                .name(form.getName())
+                .description(form.getDescription())
+                .address(form.getAddress())
 //                .mapx(null)
 //                .mapy(null)
                 .firstImage(savedUrls.get(0))
@@ -108,10 +107,9 @@ public class BusinessPlaceService {
     }
 
     @Transactional
-    public void updatePlace(Long bizMemberId, String name, String placeType, String priceType,
-                             Integer minPrice, Long regionId,
-                             String address, String description, List<String> photoOrder,
+    public void updatePlace(Long bizMemberId, BusinessPlaceFormDto form, List<String> photoOrder,
                              List<String> removeImageUrls, List<MultipartFile> newImages) {
+        requireRequiredFields(form);
         BusinessPlaceOverviewDto overview = businessMapper.selectPlaceOverviewByMember(bizMemberId);
         if (overview == null) {
             throw new IllegalStateException("등록된 업소가 없습니다.");
@@ -119,15 +117,13 @@ public class BusinessPlaceService {
         Long placeId = overview.getPlaceId();
 
         // 사진을 지우고 다시 넣기 전에 먼저 검증해야 실패 시 기존 사진이 날아가지 않는다
-        PriceSetting price = resolvePrice(placeType, priceType, minPrice);
+        PriceSetting price = resolvePrice(form);
 
         List<String> currentImages = businessMapper.selectPlaceImages(placeId);
         Set<String> currentImageSet = Set.copyOf(currentImages);
         Set<String> toRemove = removeImageUrls == null ? Set.of() : Set.copyOf(removeImageUrls);
 
-        List<MultipartFile> nonEmptyNewImages = newImages == null ? List.of()
-                : newImages.stream().filter(f -> !f.isEmpty()).toList();
-        List<String> newUrls = nonEmptyNewImages.stream().map(this::saveImageFile).toList();
+        List<String> newUrls = toNonEmpty(newImages).stream().map(this::saveImageFile).toList();
 
         // photoOrder는 기존/신규 카드를 한 그리드에서 드래그로 섞은 최종 순서.
         // 기존 사진은 URL 그대로, 신규 사진은 "new" 토큰으로 오고, 토큰이 나온 순서대로 newUrls를 하나씩 매칭한다.
@@ -170,13 +166,13 @@ public class BusinessPlaceService {
         BusinessPlaceUpdateDto update = BusinessPlaceUpdateDto.builder()
                 .placeId(placeId)
                 .memberId(bizMemberId)
-                .name(name)
-                .placeType(placeType)
+                .name(form.getName())
+                .placeType(form.getPlaceType())
                 .priceType(price.priceType())
                 .minPrice(price.minPrice())
-//                .regionId(regionId)
-                .address(address)
-                .description(description)
+//                .regionId(form.getRegionId())
+                .address(form.getAddress())
+                .description(form.getDescription())
                 .firstImage(firstImage)
                 .build();
 
@@ -199,22 +195,43 @@ public class BusinessPlaceService {
         return "/uploads/place/" + filename;
     }
 
+    // 업소명·주소는 폼에서 required지만 직접 요청으로 우회할 수 있어 서버에서도 확인한다
+    // (DB NOT NULL 제약에 걸려 500이 나기 전에 어떤 값이 빠졌는지 알려주기 위함)
+    private void requireRequiredFields(BusinessPlaceFormDto form) {
+        if (form.getName() == null || form.getName().isBlank()) {
+            throw new IllegalArgumentException("업소명을 입력해주세요.");
+        }
+        if (form.getAddress() == null || form.getAddress().isBlank()) {
+            throw new IllegalArgumentException("주소를 입력해주세요.");
+        }
+        if (form.getPlaceType() == null || form.getPlaceType().isBlank()) {
+            throw new IllegalArgumentException("업종을 선택해주세요.");
+        }
+    }
+
+    // 파일 input은 선택 없이 제출해도 빈 파트가 실려올 수 있어 걸러낸다
+    private List<MultipartFile> toNonEmpty(List<MultipartFile> files) {
+        return files == null ? List.of() : files.stream().filter(f -> !f.isEmpty()).toList();
+    }
+
     /**
      * 폼에서 온 가격 입력을 DB 제약(CK_PLACE_PRICE_TYPE / CK_PLACE_MIN_PRICE)에 맞게 정리한다.
      * - 숙박이 아니면 무조건 FREE + min_price null (폼에서 가격 영역 자체가 숨겨져 값이 안 온다)
      * - FIXED면 금액 필수, 그 외에는 금액을 버린다
      * 화면 JS가 이미 같은 규칙으로 토글하지만, 폼 조작/직접 요청을 막는 서버측 최종 방어선이다.
      */
-    private PriceSetting resolvePrice(String placeType, String priceType, Integer minPrice) {
-        if (!PLACE_TYPE_LODGING.equals(placeType)) {
+    private PriceSetting resolvePrice(BusinessPlaceFormDto form) {
+        if (!PLACE_TYPE_LODGING.equals(form.getPlaceType())) {
             return new PriceSetting(PRICE_TYPE_FREE, null);
         }
+        String priceType = form.getPriceType();
         if (priceType == null || !ALLOWED_PRICE_TYPES.contains(priceType)) {
             throw new IllegalArgumentException("가격 유형을 선택해주세요.");
         }
         if (!PRICE_TYPE_FIXED.equals(priceType)) {
             return new PriceSetting(priceType, null);
         }
+        Integer minPrice = form.getMinPrice();
         if (minPrice == null || minPrice < 0) {
             throw new IllegalArgumentException("가격입력을 선택한 경우 금액을 0원 이상으로 입력해야 합니다.");
         }

@@ -749,12 +749,12 @@ body {
 }
 .business-btn--outline {
     background: #fff;
-    color: var(--business-muted);
-    border: 1px solid var(--business-border);
+    color: var(--business-primary-dark);
+    border: 1px solid var(--business-primary);
 }
 .business-btn--outline:hover {
-    background: var(--business-bg);
-    color: var(--business-text);
+    background: #f0f9ff;
+    color: var(--business-primary-dark);
 }
 
 /* ── Filter row ── */

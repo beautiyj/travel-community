@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 
@@ -124,33 +125,51 @@ public class BusinessController {
 
     //예약관리 : 결제완료(PAID) → 예약확정(CONFIRMED) 승인 (상태 전환은 reservation 파트 ReservationService 호출)
     @PostMapping("/business/reservations/{reservationId}/confirm")
-    public String confirmReservation(@PathVariable Long reservationId, HttpSession session) {
+    public String confirmReservation(@PathVariable Long reservationId, HttpSession session, RedirectAttributes redirectAttributes) {
         Long memberId = currentBusinessMemberId(session);
-        businessReservationService.confirm(reservationId, memberId);
+        try {
+            businessReservationService.confirm(reservationId, memberId);
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("reservationError", e.getMessage());
+        }
         return "redirect:/business/reservations";
     }
 
-    //예약관리 : 결제완료(PAID) 예약 거절 (reservation 파트 연동 대기 중, businessReservationService.reject 참고)
+    //예약관리 : 결제완료(PAID) 예약 거절 → 환불 (reason은 사업자가 입력한 거절 사유, 비어있으면 서비스에서 기본 문구로 대체)
     @PostMapping("/business/reservations/{reservationId}/reject")
-    public String rejectReservation(@PathVariable Long reservationId, HttpSession session) {
+    public String rejectReservation(@PathVariable Long reservationId,
+                                     @RequestParam(required = false) String reason,
+                                     HttpSession session, RedirectAttributes redirectAttributes) {
         Long memberId = currentBusinessMemberId(session);
-        businessReservationService.reject(reservationId, memberId);
+        try {
+            businessReservationService.reject(reservationId, memberId, reason);
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("reservationError", e.getMessage());
+        }
         return "redirect:/business/reservations";
     }
 
     //예약관리 : 취소 요청 승인 (환불 실행은 reservation 파트 PaymentService 호출)
     @PostMapping("/business/reservations/{reservationId}/cancel-approve")
-    public String approveCancelReservation(@PathVariable Long reservationId, HttpSession session) {
+    public String approveCancelReservation(@PathVariable Long reservationId, HttpSession session, RedirectAttributes redirectAttributes) {
         Long memberId = currentBusinessMemberId(session);
-        businessReservationService.approveCancel(reservationId, memberId);
+        try {
+            businessReservationService.approveCancel(reservationId, memberId);
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("reservationError", e.getMessage());
+        }
         return "redirect:/business/reservations";
     }
 
     //예약관리 : 취소 요청 거절 (PAID 원복은 reservation 파트 ReservationService 호출)
     @PostMapping("/business/reservations/{reservationId}/cancel-reject")
-    public String rejectCancelReservation(@PathVariable Long reservationId, HttpSession session) {
+    public String rejectCancelReservation(@PathVariable Long reservationId, HttpSession session, RedirectAttributes redirectAttributes) {
         Long memberId = currentBusinessMemberId(session);
-        businessReservationService.rejectCancel(reservationId, memberId);
+        try {
+            businessReservationService.rejectCancel(reservationId, memberId);
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("reservationError", e.getMessage());
+        }
         return "redirect:/business/reservations";
     }
 

@@ -9,6 +9,8 @@
     <link rel="stylesheet" href="/css/common.css">
     <link rel="stylesheet" href="/css/business.css">
     <link rel="stylesheet" href="/css/components/smallButton.css">
+    <link rel="stylesheet" href="/css/components/buttonComponent.css">
+    <link rel="stylesheet" href="/css/components/confirmModal.css">
 </head>
 <body>
 
@@ -30,6 +32,10 @@
         </div>
 
         <div class="business-content">
+            <c:if test="${not empty reservationError}">
+                <div class="business-alert business-alert--error">${reservationError}</div>
+            </c:if>
+
             <div class="business-filter-row">
                 <c:forEach var="s" items="${statusOptions}">
                     <c:url value="/business/reservations" var="filterUrl">
@@ -85,6 +91,9 @@
         </div>
     </div>
 </div>
+
+<script src="/js/common.js"></script>
+<script src="/js/business/business-reservations.js"></script>
 
 </body>
 </html>

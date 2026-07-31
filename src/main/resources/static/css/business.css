@@ -327,6 +327,64 @@ body {
     padding: 24px 0;
 }
 
+/* ── 예약 관리 액션 실패 안내 (예: 이미 처리된 예약을 다시 승인/거절 시도) ── */
+.business-alert {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 16px;
+}
+
+.business-alert--error {
+    background: #fee2e2;
+    color: var(--business-danger);
+    border: 1px solid #fecaca;
+}
+
+/* ── 예약 거절 사유 입력 (rejectReasonModal.jsp) ──
+   고객 취소요청 모달(reservation/success.jsp의 cancelModal)과 동일한 select+기타직접입력 UX */
+.business-modal-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.business-modal-select {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid var(--business-border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+.business-modal-select:focus {
+    outline: none;
+    border-color: var(--business-primary);
+}
+
+.business-modal-textarea {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid var(--business-border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: 14px;
+    resize: vertical;
+    min-height: 70px;
+    margin-top: -12px;
+    margin-bottom: 20px;
+}
+
+.business-modal-textarea:focus {
+    outline: none;
+    border-color: var(--business-primary);
+}
+
 /* ── Closure (즉시 예약 마감 토글) ── */
 .business-closure-page {
     max-width: 520px;

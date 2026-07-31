@@ -58,6 +58,12 @@
             approved_at = null
     </insert>
 
+    <delete id="deletePendingApplication" parameterType="long">
+        delete from business_application
+        where member_id = #{memberId}
+          and application_status = 'PENDING'
+    </delete>
+
     <select id="findPlacesByMemberId"
             parameterType="long"
             resultMap="businessPlaceMap">

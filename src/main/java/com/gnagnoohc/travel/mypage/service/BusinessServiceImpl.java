@@ -28,10 +28,26 @@ public class BusinessServiceImpl implements BusinessService {
     public void submitApplication(
             Long memberId, BusinessApplicationDto application) {
         validateMemberId(memberId);
+        BusinessApplicationDto current =
+                businessRepository.findApplicationByMemberId(memberId);
+        if (current != null && "PENDING".equals(current.getStatus())) {
+            throw new IllegalStateException(
+                    "승인 대기 중에는 사업자등록증을 다시 제출할 수 없습니다.");
+        }
         prepareApplication(memberId, application);
         if (businessRepository.saveApplication(application) != 1) {
             throw new IllegalStateException(
                     "사업자 승인 신청을 저장하지 못했습니다.");
+        }
+    }
+
+    @Override
+    @Transactional
+    public void cancelPendingApplication(Long memberId) {
+        validateMemberId(memberId);
+        if (businessRepository.deletePendingApplication(memberId) != 1) {
+            throw new IllegalStateException(
+                    "승인 대기 중인 사업자 신청만 취소할 수 있습니다.");
         }
     }
 

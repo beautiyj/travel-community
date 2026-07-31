@@ -7,11 +7,17 @@
         <jsp:param name="title" value="사업자 회원 탈퇴"/>
     </jsp:include>
 </head>
-<body>
-<main class="withdraw-page">
-    <section class="withdraw-card">
+<body class="business-mypage">
+<main class="mypage-page">
+    <h1 class="mypage-page__title">마이페이지</h1>
+    <div class="mypage-layout">
+        <jsp:include page="/WEB-INF/views/mypage/business/components/sidebar.jsp">
+            <jsp:param name="active" value="withdraw"/>
+        </jsp:include>
+        <section class="mypage-content mypage-content--form" aria-labelledby="business-withdraw-title">
+            <div class="mypage-content__header"><h2 id="business-withdraw-title">회원 탈퇴</h2></div>
+            <div class="withdraw-card">
         <div class="withdraw-card__icon" aria-hidden="true">!</div>
-        <h1>회원 탈퇴</h1>
         <p>탈퇴 시 모든 데이터가 삭제되며 복구할 수 없습니다.</p>
 
         <c:if test="${not empty error}">
@@ -47,7 +53,9 @@
                 <button type="submit">탈퇴하기</button>
             </div>
         </form>
-    </section>
+            </div>
+        </section>
+    </div>
 </main>
 </body>
 </html>

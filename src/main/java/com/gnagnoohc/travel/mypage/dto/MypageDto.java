@@ -22,6 +22,7 @@ public class MypageDto {
 	private String phone;
 	private String gender;
 	private LocalDate birth;
+	private String address;
 
 	private String profileImgUrl;
 	private String signupType;

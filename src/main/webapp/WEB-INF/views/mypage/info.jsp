@@ -20,6 +20,18 @@
                 <div><dt>이름</dt><dd><c:out value="${member.name}" default="-" /></dd></div>
                 <div><dt>이메일</dt><dd><c:out value="${member.email}" default="-" /></dd></div>
                 <div><dt>연락처</dt><dd><c:out value="${member.phone}" default="-" /></dd></div>
+                <div><dt>생일</dt><dd><c:out value="${member.birth}" default="-" /></dd></div>
+                <div>
+                    <dt>성별</dt>
+                    <dd>
+                        <c:choose>
+                            <c:when test="${member.gender eq 'MALE'}">남성</c:when>
+                            <c:when test="${member.gender eq 'FEMALE'}">여성</c:when>
+                            <c:otherwise>미설정</c:otherwise>
+                        </c:choose>
+                    </dd>
+                </div>
+                <div><dt>주소</dt><dd><c:out value="${member.address}" default="-" /></dd></div>
                 <div><dt>가입일</dt><dd><c:out value="${member.createdDate}" default="-" /></dd></div>
             </dl>
             <div class="member-info-actions">

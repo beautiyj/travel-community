@@ -48,15 +48,15 @@ button, input, textarea { font: inherit; }
 
 /* 일반회원 마이페이지와 동일한 사업자 전용 레이아웃 보정 */
 .business-mypage .mypage-sidebar__profile {
-  background: var(--primary);
+  background: #fff;
 }
 .business-profile-type {
   width: fit-content;
   margin-top: 6px;
   padding: 3px 8px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, .18);
-  color: #fff !important;
+  background: var(--primary-soft);
+  color: var(--primary) !important;
   font-size: 11px !important;
   font-weight: 700;
 }
@@ -117,6 +117,22 @@ button, input, textarea { font: inherit; }
   gap: 10px;
   margin-top: 16px;
 }
+.business-profile-editor__controls input[type="file"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+.business-profile-editor__controls .mypage-primary-link {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
 .business-profile-editor {
   display: flex;
   align-items: center;
@@ -159,15 +175,22 @@ button, input, textarea { font: inherit; }
   font-size: 14px;
   font-weight: 700;
 }
-.business-member-form input {
+.business-member-form input,
+.business-member-form select {
   height: 48px;
   padding: 0 14px;
   border: 1px solid var(--biz-border);
   border-radius: 11px;
+  background: #fff;
 }
 .business-member-form input[readonly] {
   background: #f8fafc;
   color: var(--biz-muted);
+}
+.business-member-form label small {
+  color: var(--biz-muted);
+  font-size: 12px;
+  font-weight: 400;
 }
 .business-reapproval {
   margin-top: 22px;
@@ -266,6 +289,31 @@ button, input, textarea { font: inherit; }
   font-size: 12px;
 }
 .business-approval-form button { width: fit-content; border: 0; cursor: pointer; }
+.business-approval-cancel-form {
+  display: flex;
+  margin-top: 22px;
+  justify-content: flex-end;
+}
+.business-approval-cancel-button {
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--biz-danger);
+  font-weight: 700;
+  cursor: pointer;
+}
+.business-approval-cancel-button:hover {
+  border-color: #fca5a5;
+  background: #fef2f2;
+}
+.business-approval-cancel-confirm {
+  color: var(--biz-text);
+  font-size: 18px;
+  font-weight: 800;
+  text-align: center;
+}
 @media (max-width: 720px) {
   .business-place-gallery { grid-template-columns: 1fr 1fr; }
   .business-profile-editor { align-items: flex-start; flex-direction: column; }

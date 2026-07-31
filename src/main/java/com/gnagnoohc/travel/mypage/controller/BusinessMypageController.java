@@ -177,6 +177,24 @@ public class BusinessMypageController {
         return "redirect:/mypage/business-info/approval";
     }
 
+    @PostMapping("/approval/cancel")
+    public String cancelApproval(
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+        MypageDto member = getBusinessMember(session);
+        if (member == null) {
+            return redirectBySession(session);
+        }
+        try {
+            businessService.cancelPendingApplication(member.getMemberId());
+            redirectAttributes.addFlashAttribute(
+                    "message", "사업자 등록 신청을 취소했습니다.");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/mypage/business-info/approval";
+    }
+
     @GetMapping("/withdraw")
     public String withdrawForm(HttpSession session, Model model) {
         MypageDto member = getBusinessMember(session);

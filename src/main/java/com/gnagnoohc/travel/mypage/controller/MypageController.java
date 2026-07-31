@@ -72,9 +72,10 @@ public class MypageController {
 
     @GetMapping("/edit")
     public String editForm(Model model, HttpSession session) {
+        Long memberId = getMemberId(session);
 
         MypageDto member =
-                mypageService.getMemberInfo(getMemberId(session));
+                mypageService.getMemberInfo(memberId);
 
         System.out.println("member: " + member);
 
@@ -95,8 +96,6 @@ public class MypageController {
         member.setMemberId(memberId);
 
         try {
-            mypageService.verifyCurrentPassword(
-                    memberId, member.getCurrentPassword());
             mypageService.updateMember(member);
 
             if (profileImage != null && !profileImage.isEmpty()) {

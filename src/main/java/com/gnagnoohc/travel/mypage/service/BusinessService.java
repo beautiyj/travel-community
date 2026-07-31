@@ -12,5 +12,7 @@ public interface BusinessService {
     void submitApplication(
             Long memberId, BusinessApplicationDto application);
 
+    void cancelPendingApplication(Long memberId);
+
     List<BusinessPlaceDto> getPlaces(Long memberId);
 }

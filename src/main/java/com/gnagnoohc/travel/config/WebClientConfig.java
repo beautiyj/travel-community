@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.util.DefaultUriBuilderFactory;
@@ -43,8 +44,15 @@ public class WebClientConfig {
         // 공공데이터 API의 이미 인코딩된 서비스키가 double-encoding되어 깨지는 것을 방지하는 코드 추가 (기본제공 디코딩키, 인코딩키면 none처리)
         factory.setEncodingMode(DefaultUriBuilderFactory.EncodingMode.VALUES_ONLY);
 
+        // 0731 이미지필터링 과정에서 추가 - 공공데이터 응답 용량 제한(256KB) 해제를 위한 전략 설정 (16MB로 확장)
+        ExchangeStrategies strategies = ExchangeStrategies.builder()
+                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(16 * 1024 * 1024)) // 16MB
+                .build
+                ();
+
         return builder
             .uriBuilderFactory(factory)
+            .exchangeStrategies(strategies) //0731
             .build();
     }
 

@@ -7,13 +7,16 @@ import org.springframework.util.StringUtils;
 import java.util.List;
 import java.util.Set;
 
-// 공공데이터 필터링 처리/검증하는 로직. Converter로 보내기 전 블랙리스트/화이트리스트 1차 필터링 처리 필요 -> Helper & Converter에서 세부 2차 필터링 작업 진행.
-// TODO: contentTypeId 세부분류 필터링 1차 로직 완료, 테스트필요 (해시태그 필터링은 미완)
+// TODO: 0731 테스트로직 확인 완료, 블랙리스트 추가필요(의원,병원,축제,팝업,스토어,약국 등등 + 블랙리스트안먹히는문제) + 필터링필요: 기본적으로 공공데이터로 들어오는 데이터는 전부 MIN_PRICE NOT NULL 설정 필요
+// TODO: (최종필터링작업필요) 필터링 작업 진행 후, 지역-시군구 별로 랜덤 50-100개씩만 들여오는 최종 필터링 작업 처리할 것
 
 @Component
 public class TourValidator {
     // 차단할 블랙리스트 키워드 필터링
-    private static final List<String> BLACK_KEYWORDS = List.of("유흥주점", "단란주점", "클럽", "무인", "PC방", "자판기", "휴게소", "노래방", "카지노");
+    private static final List<String> BLACK_KEYWORDS = List.of(
+            "유흥주점", "단란주점", "클럽", "무인", "PC방", "자판기", "휴게소", "노래방", "노래바", "카지노",
+            "의원", "병원", "약국", "축제", "팝업", "스토어", "클리닉", "약방", "한의원", "치과", "페스타", "페스티벌"
+    );
 
     // 중분류(cat2) 단위로 전체 허용 - 이 중분류에 속한 소분류는 전부 통과
     private static final Set<String> ALLOWED_CAT2_FULL = Set.of(
@@ -40,16 +43,20 @@ public class TourValidator {
         // 기본 공통 필수값 체크 (대표 이미지 및 법정동 지역 코드 누락 방어용 로직)
         if (!StringUtils.hasText(item.getFirstimage()) || !StringUtils.hasText(item.getLDongRegnCd()) || !StringUtils.hasText(item.getLDongSignguCd())) { return false; }
 
+        // MIN_PRICE NOT NULL 검증 (기본적으로 공공데이터로 들어오는 데이터는 전부 MIN_PRICE 필수)
+        // if (item.getMinPrice() == null || item.getMinPrice() < 0) { return false; }
+
         String title = item.getTitle();
         String contentTypeId = item.getContenttypeid();
         String cat1 = item.getLclsSystm1();
         String cat2 = item.getLclsSystm2();
         String cat3 = item.getLclsSystm3();
 
-        // 타이틀 블랙리스트 키워드 필터링용 리스트 적용
+        // 타이틀 블랙리스트 키워드 필터링용 리스트 적용 (공백 제거 및 소문자 변환으로 비교 정확도 향상)
         if (StringUtils.hasText(title)) {
+            String cleanTitle = title.replaceAll("\\s+", "").toLowerCase();
             for (String keyword : BLACK_KEYWORDS) {
-                if (title.contains(keyword)) { return false; }
+                if (cleanTitle.contains(keyword.toLowerCase())) { return false; }
             }
         }
 

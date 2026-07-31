@@ -8,12 +8,9 @@ import lombok.NoArgsConstructor;
 @Data
 @Builder
 @NoArgsConstructor
-@AllArgsConstructor // 서비스코드용 전체 생성자
+@AllArgsConstructor
 public class RegionDTO {
     private Integer regionId;
     private String regionName;
     private Integer parentRegionId;
 }
-
-
-

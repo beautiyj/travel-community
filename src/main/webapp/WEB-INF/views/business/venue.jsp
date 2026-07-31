@@ -196,7 +196,7 @@
 </div>
 
 <c:if test="${(empty place && canRegister) || editing}">
-    <script src="/js/business-venue.js"></script>
+    <script src="/js/business/business-venue.js"></script>
 </c:if>
 
 </body>

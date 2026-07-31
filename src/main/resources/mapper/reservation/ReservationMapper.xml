@@ -192,4 +192,13 @@
         ORDER BY closed_date
     </select>
 
+    <!-- 맛집·관광지 정원 체크: 특정 날짜의 활성 예약 인원 합계 -->
+    <select id="sumHeadcountOnDate" resultType="int">
+        SELECT COALESCE(SUM(headcount), 0)
+        FROM RESERVATION
+        WHERE place_id = #{placeId}
+          AND visit_date = #{visitDate}
+          AND status IN ('PENDING', 'PAID', 'CONFIRMED')
+    </select>
+
 </mapper>

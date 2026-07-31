@@ -87,4 +87,7 @@ public interface ReservationMapper {
 
     /** 예약 캘린더용: 오늘 이후 날짜별 마감일(PLACE_CLOSED_DATE) 목록 */
     List<LocalDate> findClosedDates(@Param("placeId") Long placeId);
+
+    /** 맛집·관광지 정원 체크용: 특정 날짜의 활성(PENDING/PAID/CONFIRMED) 예약 인원 합계 */
+    int sumHeadcountOnDate(@Param("placeId") Long placeId, @Param("visitDate") LocalDate visitDate);
 }

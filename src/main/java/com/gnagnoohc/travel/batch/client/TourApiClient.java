@@ -121,8 +121,7 @@ public class TourApiClient {
      * contentTypeId 숙박에서만 유효
      * @param 법정동 시도/시군구 및 분류체계 대/중/소분류 조건 필터링 (옵션)
      */
-    // TODO: 숙박 정보 필터링 옵션 체크 필수 - 공공데이터 매뉴얼 폴더 내 코드파일
-    public String fetchSearchStay(String lDongRegnCd, String lDongSignguCd, 
+    public String fetchSearchStay(String lDongRegnCd, String lDongSignguCd,
                                 String lclsSystm1, String lclsSystm2, String lclsSystm3, String arrange) {
         try {
             return this.webClient.get()
@@ -178,7 +177,6 @@ public class TourApiClient {
      * @param contentId 콘텐츠 ID (필수)
      * @param contentTypeId 관광타입 ID (필수)
      */
-    // TODO: 필터링처리 옵션 체크
     public String fetchDetailIntro(String contentId, String contentTypeId) {
         try {
             return this.webClient.get()
@@ -207,7 +205,6 @@ public class TourApiClient {
      * @param contentId 콘텐츠 ID (필수)
      * @param contentTypeId 관광타입 ID (필수)
      */
-    // TODO: 필터링 처리 옵션 체크
     public String fetchDetailInfo(String contentId, String contentTypeId) {
         try {
             return this.webClient.get()
@@ -236,7 +233,6 @@ public class TourApiClient {
      * @param contentId 콘텐츠 ID (필수)
      * @param imageYN 이미지조회 구분 Y/N (옵션, Y=콘텐츠이미지조회 N="음식점"타입의음식메뉴이미지)
      */
-    // TODO: 필터링 처리 옵션 체크 & 사진 개수 필터링 재체크 필수
     public String fetchDetailImage(String contentId, String imageYN) {
         try {
             return this.webClient.get()

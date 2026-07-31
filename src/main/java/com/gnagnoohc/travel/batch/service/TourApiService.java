@@ -22,28 +22,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /*  TODO: 0729 공공데이터 로직 확인 완료, 수정필요한부분:
-1. TourValidator 처리완료
-
-2. 0730 헬퍼메소드 - processSinglePlace 처리완료
-
-3. 0730 TourValidator 테스트로직에서 확인해보기 3,3-1번. 숙박으로 지정해도 STAY가 아니라 TOUR로 들어오는 문제 확인
-    (테스트로직의 문제인지, 설정 문제인지)
-    3-1. 스테이 설정에서 협동조합 등의 숙박지역이 아닌 값까지 들어오는 처리 재확인 / 숙박 부분은 가격 재확인 후 필터링 처리 추가할 것
-
-4. 공통: HashtagGenerator 처리완료
     4-1. 해시 처리에서 관광지 1차 필터링 후, 무료해시가 많을 경우 무료해시 값은 N배수로 필터링 처리하여 수 조절할 것
-    4-2. HashtagGenerator 처리완료
-
-5. 금액 부분/요금설명 부분에서 NULL 많을 경우 필터링 처리해서 정보값 있는 데이터만 들여올 것
-
-6. 공공데이터 받아올 때, 데이터 오염으로 어려울 경우 각 지역군을 기준으로 1차 데이터 필터링 - 각 지역별로 일부 LIMIT걸어서 가져오기, 스케줄러로 관리 진행
-
+5.(0731진행중) 금액 부분/요금설명 부분에서 NULL 많을 경우 필터링 처리해서 정보값 있는 데이터만 들여올 것
+6.(0731최종진행용-예정) 공공데이터 받아올 때, 데이터 오염으로 어려울 경우 각 지역군을 기준으로 1차 데이터 필터링 - 각 지역별로 일부 LIMIT걸어서 가져오기, 스케줄러로 관리 진행
 7. 이미지 테이블 처리 후, 저작권 분류 타입 재확인 - 필터링 처리 여부 결정
 
-8.
-
 이후 테스트 시 데베 내의 데이터 삭제 후 페이징처리 진행되는지도 재확인 필요(투어는 확인, 현재 스테이/푸드 부분 확인 필요)
-0730 현재 YUN원격로직: 공공데이터 미완성 상태
+0731 현재 YUN원격로직: 공공데이터 미완성 상태
 
 */
 
@@ -85,51 +70,11 @@ public class TourApiService {
         log.info("[Batch Total] 전체 타깃 수집 프로세스 완료");
     }
 
-    // TODO: syncRegionData() 테스트로직 이후 최종 수정 예정, 주석코드 또한 테스트 이후 조정하여 삭제 예정
-    // // 법정동 코드 수집 및 REGION 적재 파이프라인
-    // @Transactional
-    // public void syncRegionData() {
-    //     log.info("[Batch] 법정동 코드 수집 시작");
-    //     try {
-    //         // 0728
-    //         String jsonResponse = tourApiClient.fetchLdongCode(null, "Y");
-    //         if (!StringUtils.hasText(jsonResponse)) return;
-    //         TourApiResponseDTO<TourLdongCodeDTO> response = objectMapper.readValue(
-    //                 jsonResponse, new TypeReference<TourApiResponseDTO<TourLdongCodeDTO>>() {}
-    //         );
-
-    //         if (response != null && response.getResponse() != null
-    //                 && response.getResponse().getBody() != null
-    //                 && response.getResponse().getBody().getItems() != null) {
-
-    //             List<TourLdongCodeDTO> items = response.getResponse().getBody().getItems().getItem();
-
-    //             // TODO: 디버깅용 임시 로그 - 원인 확인 후 삭제 필요
-    //             log.info("[Batch Debug] 수집된 items 개수: {}", items.size());
-    //             if (!items.isEmpty()) {
-    //                 log.info("[Batch Debug] 첫 번째 dto 전체 내용: {}", items.get(0).toString());
-    //             }
-
-
-    //             for (TourLdongCodeDTO dto : items) {
-    //                 RegionDTO regionDto = tourDataConverter.convertToRegionDTO(dto);
-    //                 if (regionDto != null) {
-    //                     tourMapper.upsertRegion(regionDto);
-    //                 }
-    //             }
-    //         }
-    //     } catch (Exception e) {
-    //         log.error("[Batch] 법정동 코드 수집 중 오류 발생", e);
-    //     }
-    //     log.info("[Batch] 법정동 코드 수집 완료");
-    // }
-
     // 법정동 코드 수집 및 REGION 적재 파이프라인
     @Transactional
     public void syncRegionData() {
         log.info("[Batch] 법정동 코드 수집 시작");
         try {
-            // 0728
             String jsonResponse = tourApiClient.fetchLdongCode(null, "Y");
             if (!StringUtils.hasText(jsonResponse)) return;
             TourApiResponseDTO<TourLdongCodeDTO> response = objectMapper.readValue(
@@ -143,8 +88,7 @@ public class TourApiService {
 
                 List<TourLdongCodeDTO> items = response.getResponse().getBody().getItems().getItem();
 
-                // TODO: 0729 FK 제약(FK_REGION_PARENT) 위반 문제 해결 -> 시/군/구(자식)가 시/도(부모)보다 먼저 upsert되며 발생
-                // [수정] 1단계: 269건 안의 시/도 코드(lDongRegnCd)를 중복 제거해서 먼저 부모 로우(parent_region_id=null)로 upsert
+                // 269건 안의 시/도 코드(lDongRegnCd)를 중복 제거해서 먼저 부모 로우(parent_region_id=null)로 upsert
                 // 이렇게 해야 2단계에서 시/군/구가 부모를 FK로 참조할 때 이미 부모가 테이블에 존재하는 상태가 됨
                 java.util.Map<String, String> parentRegionMap = new java.util.LinkedHashMap<>();
                 for (TourLdongCodeDTO dto : items) {
@@ -366,29 +310,46 @@ public class TourApiService {
                     .distinct() // 중복 URL 제거
                     .toList();
         }
-        // TODO: 0730 이미지 여러 장 적재 테스트 (이미지 1장의 경우 적재X 최소 2장 이상부터 적재, 여러 장의 경우 sortOrder 인덱싱처리 잘 되는지 테스트로직으로 확인 필수
         if (imageUrls.size() < 2) {
             log.info("[Batch Skip] 이미지가 1장뿐이거나 없어 수집 제외 - contentId: {}, title: {}",
                     syncItem.getContentid(), syncItem.getTitle());
             return; // 컷오프
         }
-
         // PlaceImage 판단 로직에서 썸네일(카드용) 이미지 먼저 계산 -> convertToPlaceDTO로 전달
         String thumbnailImage = tourDataConverter.resolveThumbnailImage(syncItem);
+
         // convertToPlaceDTO -> 서비스 PlaceDTO 변환 및 해시태그 생성
         PlaceDTO placeDto = tourDataConverter.convertToPlaceDTO(syncItem, tourItem, introDetail, infoDetail, thumbnailImage);
+
+        /* TODO: 0731 minPrice null이면 적재xx 필터링하되, useFeeInfo가 있으면서 minPrice가 숫자필터링되지 않고 null인 경우만 minPrice #가격변동 으로 일괄처리 변경할 것
+        (대신 placeType="food"인 경우, minprice=null이어도 허용하기) */
+        Integer minPrice = placeDto.getMinPrice();
+        String useFeeInfo = placeDto.getUseFeeInfo();
+        String placeType = placeDto.getPlaceType(); // tour, food, stay
+
+        boolean isFood = "food".equalsIgnoreCase(placeType);
+        boolean hasUseFeeInfo = StringUtils.hasText(useFeeInfo);
+
+        // 1) 음식점(food)이 아니고, 2) minPrice가 null이며, 3) useFeeInfo도 없는 경우 ➔ 컷오프 (적재 X)
+        if (!isFood && minPrice == null && !hasUseFeeInfo) {
+            log.info("[Batch Skip] 금액(minPrice) 및 요금설명(useFeeInfo) 정보가 없어 수집 제외 - contentId: {}, title: {}",
+                    syncItem.getContentid(), syncItem.getTitle());
+            return;
+        }
+
+        // 4) minPrice가 null이지만 useFeeInfo가 존재하여 살려두는 경우 ➔ minPrice는 null 유지하되 해시태그에 #가격변동 추가
+        if (minPrice == null && hasUseFeeInfo) {
+            String currentHashtags = placeDto.getHashtags();
+            if (!StringUtils.hasText(currentHashtags)) {
+                placeDto.setHashtags("#가격변동");
+            } else if (!currentHashtags.contains("#가격변동")) {
+                placeDto.setHashtags(currentHashtags + " #가격변동");
+            }
+        }
+        // 최종 검증을 통과한 알짜 데이터만 DB 적재
         tourMapper.upsertPlace(placeDto);
 
-//        // 대표 이미지가 있는 경우 PLACE_IMAGE 테이블 INSERT 적재 (원본 이미지 저장)
-//        if (StringUtils.hasText(syncItem.getFirstimage()) && placeDto.getPlaceId() != null) {
-//            PlaceImageDTO imageDto = tourDataConverter.convertToPlaceImageDTO(
-//                    placeDto.getPlaceId(), syncItem.getFirstimage(), 0
-//            );
-//            if (imageDto != null) {
-//                tourMapper.insertPlaceImage(imageDto);
-//            }
-//        }
-        // 0730 PLACE_IMAGE 테이블에 sortOrder 순번에 맞춰 다중 적재 (컨버터 복수형 호출 방식으로 연결)
+        // PLACE_IMAGE 테이블에 sortOrder 순번에 맞춰 다중 적재 (컨버터 복수형 호출 방식으로 연결)
         if (placeDto.getPlaceId() != null) {
             List<PlaceImageDTO> imageDtos = tourDataConverter.convertToPlaceImageDTOs(placeDto.getPlaceId(), imageUrls);
 

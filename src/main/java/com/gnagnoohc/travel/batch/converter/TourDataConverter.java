@@ -53,7 +53,6 @@ public class TourDataConverter {
                 .build();
     }
 
-    // TODO: 이후 useFeeInfo, minPrice 처리에서 0원 혹은 가격없음 -> TOUR 서비스단에서 무료 & 가격변동으로 텍스트 매핑처리
     // TourLclsSystmCodeDTO -> PlaceDTO 변환
     // 메타데이터인 법정동코드가 아닌, 실제정보가 필요한 동기화 API TourAreaBasedSyncListDTO를 플레이스에 넣어야 함
     // thumbnailImage를 5번째 파라미터로 받도록 변경 - PlaceImage 판단 로직(resolveThumbnailImage)에서 계산된 값을 전달받는 구조로 전환
@@ -77,11 +76,11 @@ public class TourDataConverter {
         // TODO: 부가정보컬럼 추가 시 - 0730 부가정보(주차, 휴무일, 영업시간 등) 정제 문장 추출
 //        String extraInfo = tourApiHelper.extractExtraInfo(introDetail, placeType);
 
-        // TODO: 0730 해시태그 파일 분리, 테스트로직에서 확인 필요
         // HashtagGenerator.java - cat1/cat2/cat3(대중소분류) 전달하도록 변경
         String hashtags = hashtagGenerator.generateHashtags(
                 tourItem, introDetail, placeType,
-                syncItem.getLclsSystm1(), syncItem.getLclsSystm2(), syncItem.getLclsSystm3()
+                syncItem.getLclsSystm1(), syncItem.getLclsSystm2(), syncItem.getLclsSystm3(),
+                minPrice, useFeeInfo
         );
 
         return PlaceDTO.builder()
@@ -129,7 +128,6 @@ public class TourDataConverter {
                 .distinct()
                 .toList();
 
-        // TODO: 0730 1장만 존재하는 가게 필터링 또는 최소 이미지 수 조건 적용 (예: 최소 2장 이상일 때만 서브 이미지 허용 등, 정책에 따른 방어), 이후테스트필수
         // 필요 시 아래 조건으로 최소 수량 제한 가능 (현재는 전체 유효 이미지 대상 순번 부여)
         List<PlaceImageDTO> imageDTOs = new ArrayList<>();
         for (int i = 0; i < distinctUrls.size(); i++) {
@@ -145,7 +143,7 @@ public class TourDataConverter {
     }
 
     // 카드형 썸네일 대표 이미지 결정: 목록 API의 썸네일(firstimage2) 우선, 없을 경우 원본(firstimage) Fallback 사용
-    // PlaceImage 판단 로직을 여기서 계산해서 convertToPlaceDTO 호출 시 파라미터로 전달하는 구조 (TODO 반영)
+    // PlaceImage 판단 로직을 여기서 계산해서 convertToPlaceDTO 호출 시 파라미터로 전달하는 구조
     public String resolveThumbnailImage(TourAreaBasedSyncListDTO syncItem) {
         return StringUtils.hasText(syncItem.getFirstimage2())
                 ? syncItem.getFirstimage2()

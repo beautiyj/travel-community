@@ -19,8 +19,8 @@ public class TourApiHelper {
     private final TourApiClient tourApiClient;
     private final ObjectMapper objectMapper;
 
-    // TODO: 이후 useFeeInfo, minPrice 처리에서 0원 혹은 가격없음 -> TOUR 서비스단에서 무료 & 가격변동으로 텍스트 매핑처리
-    // TODO: STAY/TOUR 일부는 금액 넘어옴 - 금액처리/무료/가격변동 처리, FOOD는 금액 없음 - 가격변동으로 처리 필요
+    // TODO: 0731 minPrice null이면 적재xx 필터링하되, useFeeInfo가 있으면서 minPrice가 숫자필터링되지 않고 null인 경우만 minPrice #가격변동 으로 일괄처리 변경할 것 (대신 placeType="food"인 경우, minprice=null이어도 허용하기
+
     public void enrichTourItemDetails(TourItemDTO masterItem) {
         String contentId = masterItem.getContentid();
         try {
@@ -90,7 +90,6 @@ public class TourApiHelper {
         }
     }
 
-    // TODO: 0730 대분류AC숙박-중분류AC05 관광코드 28 & 분류VE문화관광-중분류VE05-소분류VE050200리조트 관광코드 12만 STAY 예외처리 적용(최종 확인 필요)
     // contentTypeId 코드 형태 -> 문자열 형태 변환
     public String convertContentType(String contentTypeId, String lclsSystm2, String lclsSystm3) {
         if (contentTypeId == null) return "tour";

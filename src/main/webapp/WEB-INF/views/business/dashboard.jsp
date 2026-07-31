@@ -23,10 +23,10 @@
     </jsp:include>
 
     <div class="business-main">
-        <div class="business-topbar">
-            <h1 class="business-topbar__title">대시보드</h1>
-            <span class="business-topbar__date">${todayLabel}</span>
-        </div>
+        <jsp:include page="common/topbar.jsp">
+            <jsp:param name="title" value="대시보드" />
+            <jsp:param name="date" value="${todayLabel}" />
+        </jsp:include>
 
         <div class="business-content">
             <!-- KPI 카드 -->

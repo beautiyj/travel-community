@@ -46,13 +46,16 @@
                                     <jsp:param name="theme" value="primary" />
                                 </jsp:include>
                             </form>
-                            <%-- 거절 시 환불(PaymentService.cancel) 실행. businessReservationService.reject() 참고 --%>
-                            <form method="post" action="/business/reservations/${param.reservationId}/reject" class="business-inline-form">
-                                <jsp:include page="/WEB-INF/views/common/smallButton.jsp">
-                                    <jsp:param name="text" value="예약거절" />
-                                    <jsp:param name="theme" value="danger" />
-                                </jsp:include>
-                            </form>
+                            <%-- 거절은 사유 입력이 필요해 폼 즉시제출 대신 모달을 띄운다 (rejectReasonModal.jsp) --%>
+                            <jsp:include page="/WEB-INF/views/common/smallButton.jsp">
+                                <jsp:param name="text" value="예약거절" />
+                                <jsp:param name="theme" value="danger" />
+                                <jsp:param name="onclick" value="openModal('reject-modal-table-${param.reservationId}')" />
+                            </jsp:include>
+                            <jsp:include page="/WEB-INF/views/business/common/rejectReasonModal.jsp">
+                                <jsp:param name="modalId" value="reject-modal-table-${param.reservationId}" />
+                                <jsp:param name="reservationId" value="${param.reservationId}" />
+                            </jsp:include>
                         </c:when>
                         <c:otherwise>
                             <!-- 실제 예약확정 액션 연결은 예약 관리 탭 구현 시 진행 -->
@@ -111,13 +114,16 @@
                                     <jsp:param name="theme" value="primary" />
                                 </jsp:include>
                             </form>
-                            <%-- 거절 시 환불(PaymentService.cancel) 실행. businessReservationService.reject() 참고 --%>
-                            <form method="post" action="/business/reservations/${param.reservationId}/reject" class="business-inline-form">
-                                <jsp:include page="/WEB-INF/views/common/smallButton.jsp">
-                                    <jsp:param name="text" value="예약거절" />
-                                    <jsp:param name="theme" value="danger" />
-                                </jsp:include>
-                            </form>
+                            <%-- 거절은 사유 입력이 필요해 폼 즉시제출 대신 모달을 띄운다 (rejectReasonModal.jsp) --%>
+                            <jsp:include page="/WEB-INF/views/common/smallButton.jsp">
+                                <jsp:param name="text" value="예약거절" />
+                                <jsp:param name="theme" value="danger" />
+                                <jsp:param name="onclick" value="openModal('reject-modal-row-${param.reservationId}')" />
+                            </jsp:include>
+                            <jsp:include page="/WEB-INF/views/business/common/rejectReasonModal.jsp">
+                                <jsp:param name="modalId" value="reject-modal-row-${param.reservationId}" />
+                                <jsp:param name="reservationId" value="${param.reservationId}" />
+                            </jsp:include>
                         </c:when>
                         <c:otherwise>
                             <!-- 실제 예약확정 액션 연결은 예약 관리 탭 구현 시 진행 -->

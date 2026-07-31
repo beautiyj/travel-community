@@ -132,7 +132,7 @@ public class HashtagGenerator {
         addExtraIntroTags(tags, intro);
 
         // 0731 tour/stay/food에 관계없이 가공된 minPrice와 useFeeInfo를 기반으로 요금 태그 부여
-        addPriceHashtags(tags, minPrice, useFeeInfo);
+        addPriceHashtags(tags, minPrice, useFeeInfo, placeType);
 
         List<String> uniqueTags = tags.stream().filter(StringUtils::hasText).distinct().toList();
         // TODO: 4-2 해시태그 최소 3개 필터링 - 미달 시 처리 방침 확정 후 반영 예정
@@ -232,26 +232,25 @@ public class HashtagGenerator {
     }
 
     /**
-     * [0731 수정] 요금 관련 해시태그 자동 부여 (#무료, #가격변동 등)
-     * @param tags 해시태그 리스트
-     * @param minPrice 계산된 최저가 (null 가능)
-     * @param useFeeInfo 요금 안내 문구 텍스트 (null 가능)
-     * - minPrice가 null이면서 useFeeInfo가 존재하는 경우에만 '#가격변동' 태그 치환/부여
+     * [0731 수정] 요금 관련 해시태그 자동 부여
+     * - 음식점("food")이거나, minPrice가 null이면서 useFeeInfo가 존재하는 경우 '#가격변동' 부여
      */
-    private static void addPriceHashtags(List<String> tags, Integer minPrice, String useFeeInfo) {
-        // 1) minPrice가 0원인 명확한 무료이거나, 요금 문구에 "무료" 텍스트가 들어간 경우 -> #무료
+    private void addPriceHashtags(List<String> tags, Integer minPrice, String useFeeInfo, String placeType) {
+        // 1) minPrice가 0원이거나 요금 문구에 "무료" 단어가 포함된 경우 -> #무료
         if ((minPrice != null && minPrice == 0) || (StringUtils.hasText(useFeeInfo) && useFeeInfo.contains("무료"))) {
             if (!tags.contains("#무료")) {
                 tags.add("#무료");
             }
-        }
-        // 2) minPrice는 null이지만 요금 문구가 존재하는 경우 (변동 요금) -> #가격변동
-        else if (minPrice == null && StringUtils.hasText(useFeeInfo)) {
+        } 
+        // 2) [음식점(food) 예외 처리]
+        //    - placeType이 "food"여서 요금 정보가 아예 없는 경우
+        //    - 또는 일반 관광지/숙박 중 minPrice는 null이지만 useFeeInfo 문구가 존재하는 경우
+        //    -> 오직 '#가격변동' 태그 부여
+        else if ("food".equals(placeType) || (minPrice == null && StringUtils.hasText(useFeeInfo))) {
             if (!tags.contains("#가격변동")) {
                 tags.add("#가격변동");
             }
         }
     }
-
 
 }

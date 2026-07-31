@@ -207,6 +207,12 @@ public class TourApiService {
     // 0729 실제테스트처럼 int startPageNo 추가하여 테스트
     @Transactional
     public void syncTourDataForTest(String contentTypeId, int startPageNo, int limit) {
+        // 0731 수정: 요청 파라미터 5대 타깃(12, 14, 28, 32, 39) 검증 - 대상 아니면 API 호출조차 안 하고 즉시 중단
+        if (!List.of("12", "14", "28", "32", "39").contains(contentTypeId)) {
+            log.warn("[Batch Test Skip] 수집 대상이 아닌 contentTypeId({}) 요청입니다. 테스트를 즉시 중단합니다.", contentTypeId);
+            return;
+        }
+        
         log.info("[Batch Test] 공공데이터 소량 테스트 수집 시작 - contentTypeId: {}, limit: {}", contentTypeId, limit);
         int pageNo = startPageNo;
         boolean hasNext = true;
@@ -244,6 +250,12 @@ public class TourApiService {
                 if (syncList.isEmpty()) break;
 
                 for (TourAreaBasedSyncListDTO syncItem : syncList) {
+
+                    // 0731 테스트로직용 (Validator 검증)
+                    if (!tourValidator.isValid(syncItem)) {
+                        continue;
+                    }
+
                     if (!tourApiHelper.isValidItem(syncItem)) {
                         continue;
                     }
@@ -259,14 +271,12 @@ public class TourApiService {
                     }
                 }
 
-                // if (hasNext && syncList.size() < 500) {
-                //     hasNext = false;
-                // } else if (hasNext) {
-                //     pageNo++;
-                // }
                 log.info("[Batch Test Pagination] 현재 페이지({}) 처리 완료. 누적 성공 건수: {}", pageNo, processedCount);
 
-                if (hasNext) {
+                // 실제로직과 동일한 페이징 종료 조건 (API응답 데이터가 한 페이지 기본사이즈인 500개 미만이면 마지막 페이지임)
+                if (hasNext && syncList.size() < 500) {
+                    hasNext = false;
+                } else if (hasNext) {
                     pageNo++; // 다음 페이지로 전진
                 }
 

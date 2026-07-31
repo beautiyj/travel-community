@@ -40,6 +40,10 @@
         SELECT name FROM PLACE WHERE place_id = #{placeId}
     </select>
 
+    <select id="findMinPrice" resultType="int">
+        SELECT min_price FROM PLACE WHERE place_id = #{placeId}
+    </select>
+
     <select id="findById" resultType="com.gnagnoohc.travel.reservation.entity.Reservation">
         SELECT <include refid="reservationColumns"/>
         FROM RESERVATION r

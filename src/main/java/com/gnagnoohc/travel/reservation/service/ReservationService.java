@@ -20,9 +20,6 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ReservationService {
 
-    /** 임시 1인 단가. 숙박/맛집 파트의 가격 컬럼이 확정되면 그쪽 조회로 교체 */
-    public static final int TEMP_UNIT_PRICE = 10000;
-
     /** 만나서 결제(관광지·맛집)의 예약금 정액. TODO: place별 예약금 데이터가 생기면 조회로 교체 */
     public static final int RESERVE_DEPOSIT = 10000;
 
@@ -148,6 +145,16 @@ public class ReservationService {
         return reservationMapper.findPlaceName(placeId);
     }
 
+    /** 숙박 1인 단가 조회. PLACE.min_price를 읽기 전용으로 참조 */
+    @Transactional(readOnly = true)
+    public int getUnitPrice(Long placeId) {
+        Integer price = reservationMapper.findMinPrice(placeId);
+        if (price == null) {
+            throw new IllegalStateException("등록된 가격이 없는 장소입니다. placeId=" + placeId);
+        }
+        return price;
+    }
+
     @Transactional(readOnly = true)
     public Reservation getById(Long reservationId) {
         Reservation r = reservationMapper.findById(reservationId);
@@ -257,13 +264,12 @@ public class ReservationService {
     /**
      * 결제 금액 계산 (모든 결제수단이 이 값을 공통으로 사용).
      * - 관광지·맛집(만나서 결제): 예약금 정액 RESERVE_DEPOSIT (인원 무관)
-     * - 숙박: 박수 × 인원 × 단가
-     * TODO: 숙박/맛집 팀원의 place(가격) 테이블이 나오면 placeId로 단가·예약금 조회하도록 교체
+     * - 숙박: 박수 × 인원 × 단가(PLACE.min_price)
      */
     public int calculateAmount(Reservation r) {
         if (isPayOnSite(r.getPlaceType())) {
             return RESERVE_DEPOSIT;
         }
-        return nightsOf(r) * r.getHeadcount() * TEMP_UNIT_PRICE;
+        return nightsOf(r) * r.getHeadcount() * getUnitPrice(r.getPlaceId());
     }
 }

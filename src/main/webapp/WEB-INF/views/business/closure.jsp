@@ -36,6 +36,6 @@
 </div>
 
 <script src="/js/common.js"></script>
-<script src="/js/business-closure.js"></script>
+<script src="/js/business/business-closure.js"></script>
 </body>
 </html>

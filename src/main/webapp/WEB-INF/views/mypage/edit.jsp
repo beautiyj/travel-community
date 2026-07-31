@@ -15,14 +15,16 @@
 </head>
 <body>
 
-<main class="profile-edit-page">
-    <section class="profile-edit">
-        <a class="profile-edit__back" href="${cp}/mypage/info"
-           aria-label="회원정보 화면으로 돌아가기">
-            <span aria-hidden="true">‹</span> 회원정보
-        </a>
-
-        <h1 class="profile-edit__title">회원정보 수정</h1>
+<main class="mypage-page">
+    <h1 class="mypage-page__title">마이페이지</h1>
+    <div class="mypage-layout">
+        <jsp:include page="/WEB-INF/views/mypage/components/sidebar.jsp">
+            <jsp:param name="active" value="info" />
+        </jsp:include>
+        <section class="mypage-content mypage-content--form" aria-labelledby="profile-edit-title">
+        <div class="mypage-content__header">
+            <h2 id="profile-edit-title">회원정보 수정</h2>
+        </div>
 
         <c:if test="${not empty error}">
             <p class="profile-edit__message profile-edit__message--error">
@@ -30,23 +32,32 @@
             </p>
         </c:if>
 
-        <form class="profile-edit__form" action="${cp}/mypage/edit"
-              method="post" enctype="multipart/form-data">
+        <form class="profile-edit__form mypage-form-card" action="${cp}/mypage/edit"
+              method="post" enctype="multipart/form-data"
+              data-edit-confirm>
             <input type="hidden" name="memberId" value="<c:out value='${member.memberId}'/>">
             <input type="hidden" name="nickname" value="<c:out value='${member.nickname}'/>">
 
-            <div class="input-field">
-                <label for="profileImage">프로필 이미지</label>
-                <c:if test="${not empty member.profileImgUrl}">
-                    <img class="profile-edit__preview"
-                         src="<c:out value='${member.profileImgUrl}'/>"
-                         alt="현재 프로필 이미지">
-                </c:if>
-                <input id="profileImage" name="profileImage" type="file"
-                       accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
-                <small class="input-field__help">
-                    JPG, PNG, WEBP 파일을 최대 5MB까지 업로드할 수 있습니다.
-                </small>
+            <div class="profile-edit__profile-card">
+                <div class="profile-edit__profile-image">
+                    <c:choose>
+                        <c:when test="${not empty member.profileImgUrl}">
+                            <img src="${cp}<c:out value='${member.profileImgUrl}'/>"
+                                 alt="현재 프로필 이미지">
+                        </c:when>
+                        <c:otherwise><span>프로필</span></c:otherwise>
+                    </c:choose>
+                </div>
+                <div class="profile-edit__profile-controls">
+                    <input id="profileImage" name="profileImage" type="file"
+                           accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+                    <span id="profileImageName"
+                          class="profile-edit__file-name"
+                          aria-live="polite">선택된 파일 없음</span>
+                    <label class="profile-edit__profile-button"
+                           for="profileImage">파일 선택</label>
+                    <small>JPG, PNG, WEBP 형식, 최대 5MB</small>
+                </div>
             </div>
 
             <jsp:include page="/WEB-INF/views/mypage/components/readOnlyField.jsp">
@@ -80,32 +91,46 @@
                 <jsp:param name="required" value="true" />
             </jsp:include>
 
+            <jsp:include page="/WEB-INF/views/mypage/components/readOnlyField.jsp">
+                <jsp:param name="label" value="생일" />
+                <jsp:param name="id" value="birth" />
+                <jsp:param name="value" value="${member.birth}" />
+                <jsp:param name="helpText" value="생일은 수정할 수 없습니다." />
+            </jsp:include>
+
+            <div class="input-field">
+                <label for="gender">성별</label>
+                <select id="gender" name="gender">
+                    <option value="" ${empty member.gender ? 'selected' : ''}>선택 안 함</option>
+                    <option value="MALE" ${member.gender eq 'MALE' ? 'selected' : ''}>남성</option>
+                    <option value="FEMALE" ${member.gender eq 'FEMALE' ? 'selected' : ''}>여성</option>
+                </select>
+            </div>
+
             <jsp:include page="/WEB-INF/views/common/inputField.jsp">
-                <jsp:param name="label" value="현재 비밀번호" />
-                <jsp:param name="name" value="currentPassword" />
-                <jsp:param name="type" value="password" />
-                <jsp:param name="placeholder" value="회원정보 수정을 위해 입력해 주세요" />
-                <jsp:param name="required" value="true" />
+                <jsp:param name="label" value="주소" />
+                <jsp:param name="name" value="address" />
+                <jsp:param name="value" value="${member.address}" />
+                <jsp:param name="placeholder" value="주소를 입력해 주세요" />
+                <jsp:param name="maxlength" value="255" />
             </jsp:include>
 
             <div class="profile-edit__actions">
-                <jsp:include page="/WEB-INF/views/common/buttonComponent.jsp">
-                    <jsp:param name="text" value="취소" />
-                    <jsp:param name="width" value="100%" />
-                    <jsp:param name="color" value="var(--card)" />
-                    <jsp:param name="size" value="var(--text-sm)" />
-                    <jsp:param name="onclick" value="location.href='${cp}/mypage/info'; return false;" />
-                </jsp:include>
-
-                <jsp:include page="/WEB-INF/views/common/buttonComponent.jsp">
-                    <jsp:param name="text" value="저장" />
-                    <jsp:param name="width" value="100%" />
-                    <jsp:param name="size" value="var(--text-sm)" />
-                </jsp:include>
+                <a class="profile-edit__cancel" href="${cp}/mypage/info">취소</a>
+                <button class="profile-edit__submit" type="submit">저장</button>
             </div>
         </form>
-    </section>
+        </section>
+    </div>
 </main>
 
+<jsp:include page="/WEB-INF/views/mypage/components/editConfirmModal.jsp"/>
+
+<script>
+    document.getElementById("profileImage").addEventListener("change", function () {
+        document.getElementById("profileImageName").textContent =
+            this.files.length ? this.files[0].name : "선택된 파일 없음";
+    });
+</script>
 </body>
 </html>

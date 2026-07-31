@@ -35,8 +35,8 @@ import java.util.List;
 @Controller
 @RequiredArgsConstructor
 public class BusinessController {
-    // 예약은 결제 즉시 확정되고 관리 대상은 취소요청 뿐이다
-    private static final List<String> RESERVATION_STATUS_OPTIONS = List.of("전체", "취소요청", "확정", "완료", "취소");
+    // 사업자 조치가 필요한 상태(결제완료=확정/거절 대기, 취소요청)를 앞쪽에 두고 나머지는 예약 진행 순서대로 배치
+    private static final List<String> RESERVATION_STATUS_OPTIONS = List.of("전체", "결제완료", "취소요청", "확정", "완료", "취소");
     private static final List<String> REVIEW_SENTIMENT_OPTIONS = List.of("전체", "긍정", "중립", "부정");
 
     private final BusinessDashboardService businessDashboardService;
@@ -127,12 +127,8 @@ public class BusinessController {
     @PostMapping("/business/reservations/{reservationId}/confirm")
     public String confirmReservation(@PathVariable Long reservationId, HttpSession session, RedirectAttributes redirectAttributes) {
         Long memberId = currentBusinessMemberId(session);
-        try {
-            businessReservationService.confirm(reservationId, memberId);
-        } catch (IllegalStateException | IllegalArgumentException e) {
-            redirectAttributes.addFlashAttribute("reservationError", e.getMessage());
-        }
-        return "redirect:/business/reservations";
+        return runReservationAction(redirectAttributes,
+                () -> businessReservationService.confirm(reservationId, memberId));
     }
 
     //예약관리 : 결제완료(PAID) 예약 거절 → 환불 (reason은 사업자가 입력한 거절 사유, 비어있으면 서비스에서 기본 문구로 대체)
@@ -141,34 +137,41 @@ public class BusinessController {
                                      @RequestParam(required = false) String reason,
                                      HttpSession session, RedirectAttributes redirectAttributes) {
         Long memberId = currentBusinessMemberId(session);
-        try {
-            businessReservationService.reject(reservationId, memberId, reason);
-        } catch (IllegalStateException | IllegalArgumentException e) {
-            redirectAttributes.addFlashAttribute("reservationError", e.getMessage());
-        }
-        return "redirect:/business/reservations";
+        return runReservationAction(redirectAttributes,
+                () -> businessReservationService.reject(reservationId, memberId, reason));
     }
 
     //예약관리 : 취소 요청 승인 (환불 실행은 reservation 파트 PaymentService 호출)
     @PostMapping("/business/reservations/{reservationId}/cancel-approve")
     public String approveCancelReservation(@PathVariable Long reservationId, HttpSession session, RedirectAttributes redirectAttributes) {
         Long memberId = currentBusinessMemberId(session);
-        try {
-            businessReservationService.approveCancel(reservationId, memberId);
-        } catch (IllegalStateException | IllegalArgumentException e) {
-            redirectAttributes.addFlashAttribute("reservationError", e.getMessage());
-        }
-        return "redirect:/business/reservations";
+        return runReservationAction(redirectAttributes,
+                () -> businessReservationService.approveCancel(reservationId, memberId));
     }
 
     //예약관리 : 취소 요청 거절 (PAID 원복은 reservation 파트 ReservationService 호출)
     @PostMapping("/business/reservations/{reservationId}/cancel-reject")
     public String rejectCancelReservation(@PathVariable Long reservationId, HttpSession session, RedirectAttributes redirectAttributes) {
         Long memberId = currentBusinessMemberId(session);
+        return runReservationAction(redirectAttributes,
+                () -> businessReservationService.rejectCancel(reservationId, memberId));
+    }
+
+    /**
+     * 예약 관리 액션(승인/거절)의 공통 처리. 실패해도 흰 오류 페이지 대신 목록으로 돌아가 안내 배너를 띄운다.
+     * - 업무 규칙 위반(이미 처리된 예약 등)은 서비스가 던진 메시지를 그대로 보여준다.
+     * - PG 취소 API 실패·DB 오류 등은 사용자에게 보여줄 문구가 아니므로 일반 문구로 바꾸고 로그에 원인을 남긴다.
+     *   (이 catch가 없으면 RestClientException 계열이 그대로 500으로 노출된다)
+     * 미로그인/권한부족(BusinessAuthException)은 호출부에서 이미 처리되므로 여기로 오지 않는다.
+     */
+    private String runReservationAction(RedirectAttributes redirectAttributes, Runnable action) {
         try {
-            businessReservationService.rejectCancel(reservationId, memberId);
+            action.run();
         } catch (IllegalStateException | IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("reservationError", e.getMessage());
+        } catch (Exception e) {
+            log.error("예약 관리 처리 중 예기치 않은 오류가 발생했습니다.", e);
+            redirectAttributes.addFlashAttribute("reservationError", "처리 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
         }
         return "redirect:/business/reservations";
     }
@@ -177,6 +180,7 @@ public class BusinessController {
     private static String toReservationStatusName(String label) {
         if (label == null || "전체".equals(label)) return null;
         return switch (label) {
+            case "결제완료" -> ReservationStatus.PAID.name();
             case "취소요청" -> ReservationStatus.CANCEL_REQUESTED.name();
             case "확정" -> ReservationStatus.CONFIRMED.name();
             case "완료" -> ReservationStatus.COMPLETED.name();

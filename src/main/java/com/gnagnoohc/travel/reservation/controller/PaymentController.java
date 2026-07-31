@@ -103,9 +103,21 @@ public class PaymentController {
             return bridgeToFail(model, e.getMessage());
         }
 
-        KakaoApproveResponse approve = kakaoPayService.approve(tid, orderId, memberId, pgToken);
-        Payment payment = paymentService.saveSuccess(
-                reservationId, amount, approve.getTid(), orderId, Payment.TYPE_KAKAO);
+        KakaoApproveResponse approve;
+        try {
+            approve = kakaoPayService.approve(tid, orderId, memberId, pgToken);
+        } catch (Exception e) {
+            log.error("[카카오 approve 실패] tid={}, orderId={}", tid, orderId, e);
+            return bridgeToFail(model, "카카오페이 결제 승인에 실패했습니다.");
+        }
+
+        Payment payment;
+        try {
+            payment = paymentService.saveSuccess(
+                    reservationId, amount, approve.getTid(), orderId, Payment.TYPE_KAKAO);
+        } catch (IllegalStateException e) {
+            return bridgeToFail(model, e.getMessage());
+        }
 
         session.removeAttribute("KAKAO_TID");
         session.removeAttribute("KAKAO_ORDER_ID");

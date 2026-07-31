@@ -38,6 +38,7 @@
     </resultMap>
 
     <resultMap id="reservationStatusCountsResultMap" type="com.gnagnoohc.travel.business.dto.BusinessReservationStatusCountsDto">
+        <result property="paidCount"          column="paid_count"/>
         <result property="cancelRequestCount" column="cancel_request_count"/>
         <result property="confirmedCount"     column="confirmed_count"/>
         <result property="doneCount"          column="done_count"/>
@@ -164,6 +165,7 @@
     <!-- 예약 관리 화면 상태별 필터 탭에 표시할 개수 (취소요청/확정/완료/취소) -->
     <select id="selectReservationStatusCounts" resultMap="reservationStatusCountsResultMap">
         SELECT
+            COALESCE(SUM(CASE WHEN r.status = 'PAID' THEN 1 ELSE 0 END), 0) AS paid_count,
             COALESCE(SUM(CASE WHEN r.status = 'CANCEL_REQUESTED' THEN 1 ELSE 0 END), 0) AS cancel_request_count,
             COALESCE(SUM(CASE WHEN r.status = 'CONFIRMED' THEN 1 ELSE 0 END), 0) AS confirmed_count,
             COALESCE(SUM(CASE WHEN r.status = 'COMPLETED' THEN 1 ELSE 0 END), 0) AS done_count,
@@ -183,8 +185,9 @@
           AND p.member_id = #{bizMemberId}
     </select>
 
-    <!-- 예약 거절(환불) 대상 결제건. 소유자 확인 + DONE 상태 결제만 골라 하나 반환한다.
-         (재시도 등으로 같은 예약에 결제 이력이 여러 건 있어도 현재 유효한 결제 하나만 잡히도록) -->
+    <!-- 예약 거절(환불) 대상 결제건. 소유자 확인 + DONE 상태 결제만 골라 반환한다.
+         PAYMENT.reservation_id에 UNIQUE 제약이 있어 예약당 결제는 1건이지만,
+         취소된 결제만 남은 경우 결과가 없어야 하므로 payment_status 조건이 필요하다. -->
     <select id="selectDonePaymentId" resultType="long">
         SELECT pay.payment_id
         FROM RESERVATION r

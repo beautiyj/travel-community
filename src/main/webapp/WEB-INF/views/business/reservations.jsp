@@ -33,7 +33,7 @@
 
         <div class="business-content">
             <c:if test="${not empty reservationError}">
-                <div class="business-alert business-alert--error">${reservationError}</div>
+                <div class="business-alert business-alert--error"><c:out value="${reservationError}" /></div>
             </c:if>
 
             <div class="business-filter-row">
@@ -44,6 +44,7 @@
                         </c:if>
                     </c:url>
                     <c:choose>
+                        <c:when test="${s == '결제완료'}"><c:set var="filterCount" value="${statusCounts.paidCount}" /></c:when>
                         <c:when test="${s == '취소요청'}"><c:set var="filterCount" value="${statusCounts.cancelRequestCount}" /></c:when>
                         <c:when test="${s == '확정'}"><c:set var="filterCount" value="${statusCounts.confirmedCount}" /></c:when>
                         <c:when test="${s == '완료'}"><c:set var="filterCount" value="${statusCounts.doneCount}" /></c:when>

@@ -112,4 +112,31 @@
         WHERE place_id = #{placeId}
     </select>
 
+<!-- 5. 타입별 및 지역별 장소 목록 통합 조회 -->
+    <select id="selectPlaceList" resultType="com.gnagnoohc.travel.tour.model.PlaceDTO">
+        SELECT 
+            place_id AS placeId,
+            member_id AS memberId,
+            region_id AS regionId,
+            place_type AS placeType,
+            name,
+            description,
+            address,
+            mapx,
+            mapy,
+            is_closed AS isClosed,
+            created_at AS createdAt,
+            updated_at AS updatedAt,
+            first_image AS firstImage,
+            hashtags,
+            min_price AS minPrice,
+            use_fee_info AS useFeeInfo,
+            people_count AS peopleCount
+        FROM PLACE
+        WHERE place_type = #{placeType}
+        <if test="regionId != null">
+            AND region_id = #{regionId}
+        </if>
+        ORDER BY created_at DESC
+    </select>
 </mapper>

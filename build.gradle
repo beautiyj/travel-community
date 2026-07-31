@@ -24,6 +24,8 @@ sourceSets {
 			exclude 'com/gnagnoohc/travel/community/**'
 			exclude 'com/gnagnoohc/travel/reservation/**'
 			exclude 'com/gnagnoohc/travel/mypage/**'
+			exclude 'com/gnagnoohc/travel/batch/payment/**'
+			exclude 'com/gnagnoohc/travel/config/SecurityConfig.java'
 		}
 		resources {
 			// tour와 batch 관련 매퍼나 리소스를 제외한 나머지를 막거나 조정
@@ -75,8 +77,8 @@ dependencies {
 	providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'
 
 	// Security
-	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
-	implementation 'org.springframework.boot:spring-boot-starter-security'
+	// implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+	// implementation 'org.springframework.boot:spring-boot-starter-security'
 
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-web'

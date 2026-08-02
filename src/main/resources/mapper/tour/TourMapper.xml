@@ -112,31 +112,33 @@
         WHERE place_id = #{placeId}
     </select>
 
-<!-- 5. 타입별 및 지역별 장소 목록 통합 조회 -->
+<!-- 0802 조인 - 5. 타입별 및 지역별 장소 목록 통합 조회 -->
     <select id="selectPlaceList" resultType="com.gnagnoohc.travel.tour.model.PlaceDTO">
         SELECT 
-            place_id AS placeId,
-            member_id AS memberId,
-            region_id AS regionId,
-            place_type AS placeType,
-            name,
-            description,
-            address,
-            mapx,
-            mapy,
-            is_closed AS isClosed,
-            created_at AS createdAt,
-            updated_at AS updatedAt,
-            first_image AS firstImage,
-            hashtags,
-            min_price AS minPrice,
-            use_fee_info AS useFeeInfo,
-            people_count AS peopleCount
-        FROM PLACE
-        WHERE place_type = #{placeType}
+            p.place_id AS placeId,
+            p.member_id AS memberId,
+            p.region_id AS regionId,
+            p.place_type AS placeType,
+            p.name,
+            p.description,
+            p.address,
+            p.mapx,
+            p.mapy,
+            p.is_closed AS isClosed,
+            p.created_at AS createdAt,
+            p.updated_at AS updatedAt,
+            p.first_image AS firstImage,
+            p.hashtags,
+            p.min_price AS minPrice,
+            p.use_fee_info AS useFeeInfo,
+            p.people_count AS peopleCount,
+            r.region_name AS regionName
+        FROM PLACE p
+        LEFT JOIN REGION r ON p.region_id = r.region_id
+        WHERE p.place_type = #{placeType}
         <if test="regionId != null">
-            AND region_id = #{regionId}
+            AND p.region_id = #{regionId}
         </if>
-        ORDER BY created_at DESC
+        ORDER BY p.created_at DESC
     </select>
 </mapper>

@@ -74,7 +74,7 @@ public class TourDataConverter {
         Integer minPrice = tourApiHelper.parseMinPrice(useFeeInfo);
 
         // TODO: 부가정보컬럼 추가 시 - 0730 부가정보(주차, 휴무일, 영업시간 등) 정제 문장 추출
-//        String extraInfo = tourApiHelper.extractExtraInfo(introDetail, placeType);
+       String extraInfo = tourApiHelper.extractExtraInfo(introDetail, placeType);
 
         // HashtagGenerator.java - cat1/cat2/cat3(대중소분류) 전달하도록 변경
         String hashtags = hashtagGenerator.generateHashtags(

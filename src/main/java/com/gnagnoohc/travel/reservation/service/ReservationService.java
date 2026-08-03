@@ -23,10 +23,7 @@ public class ReservationService {
     /** 만나서 결제(관광지·맛집)의 예약금 정액. TODO: place별 예약금 데이터가 생기면 조회로 교체 */
     public static final int RESERVE_DEPOSIT = 10000;
 
-    /**
-     * 맛집·관광지 하루 정원(명). 캘린더에 "남은 자리" 표시 + create()에서 초과 시 예약 차단에 쓴다.
-     * TODO: 관리자 정원 설정이 생기면(장소별 값) 이 고정값 대신 그쪽 조회로 교체.
-     */
+    /** 맛집·관광지 하루 정원(명). 캘린더에 "남은 자리" 표시 + create()에서 초과 시 예약 차단에 쓴다. */
     public static final int DAILY_CAPACITY = 15;
 
     /**

@@ -99,7 +99,7 @@ public class TourDataConverter {
                 .firstImage(thumbnailImage) // 조인 없는 카드 리스트용 1차 썸네일 세팅
                 .hashtags(hashtags)
                 .peopleCount(1)
-//                .extraInfo(extraInfo) // TODO: 부가정보컬럼 추가 시 -  0730 extraInfo 추가 세팅
+                .extraInfo(extraInfo) // TODO: 부가정보컬럼 추가 시 -  0730 extraInfo 추가 세팅
                 .build();
     }
 

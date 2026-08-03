@@ -31,4 +31,7 @@ public class Reservation {
     // 취소 요청 시 기록 (관리자 검토용)
     private String cancelReason;
     private LocalDateTime cancelRequestedAt;
+
+    // 사업자가 결제완료(PAID) 예약을 거절할 때 기록
+    private String rejectReason;
 }

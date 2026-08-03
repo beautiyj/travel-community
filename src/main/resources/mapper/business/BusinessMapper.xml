@@ -186,20 +186,6 @@
           AND p.member_id = #{bizMemberId}
     </select>
 
-    <!-- 예약 거절(환불) 대상 결제건. 소유자 확인 + DONE 상태 결제만 골라 반환한다.
-         PAYMENT.reservation_id에 UNIQUE 제약이 있어 예약당 결제는 1건이지만,
-         취소된 결제만 남은 경우 결과가 없어야 하므로 payment_status 조건이 필요하다. -->
-    <select id="selectDonePaymentId" resultType="long">
-        SELECT pay.payment_id
-        FROM RESERVATION r
-        JOIN PLACE p ON p.place_id = r.place_id
-        JOIN PAYMENT pay ON pay.reservation_id = r.reservation_id
-        WHERE r.reservation_id = #{reservationId}
-          AND p.member_id = #{bizMemberId}
-          AND pay.payment_status = 'DONE'
-        LIMIT 1
-    </select>
-
     <!-- 즉시 예약마감 토글 -->
     <update id="updatePlaceClosed">
         UPDATE PLACE
@@ -312,7 +298,9 @@
           AND image_url = #{imageUrl}
     </delete>
 
-    <!-- 방문자 인증 후기목록. post(category='VERIFIED_REVIEW') + place_id로 식별-->
+    <!-- 방문자 인증 후기목록. post(category='방문자인증후기') + place_id로 식별.
+         PostCategory.VERIFIED_REVIEW의 실제 저장값(.value)이 "방문자인증후기"라 DB엔 이 한글 문자열로
+         들어있다 (community 도메인 쿼리들과 동일하게 맞춤 - 예전엔 enum 상수명 그대로 써서 항상 0건이었음) -->
     <!-- sentiment 필터 : REVIEW_ANALYSIS가 아직 없는(미분석) 후기는 필터 적용 시 제외된다.
          화면 진입 시 ReviewSentimentService가 먼저 미분석 후기를 분석해두므로 실제로는 거의 발생하지 않는다 -->
     <select id="selectReviewsByPlace" resultMap="reviewResultMap">
@@ -323,7 +311,7 @@
         JOIN member m ON m.member_id = p.member_id
         LEFT JOIN REVIEW_ANALYSIS ra ON ra.post_id = p.post_id
         WHERE p.place_id = #{placeId}
-          AND p.category = 'VERIFIED_REVIEW'
+          AND p.category = '방문자인증후기'
         <if test="sentiment != null">
             AND ra.sentiment = #{sentiment}
         </if>
@@ -336,7 +324,7 @@
         FROM post p
         LEFT JOIN REVIEW_ANALYSIS ra ON ra.post_id = p.post_id
         WHERE p.place_id = #{placeId}
-          AND p.category = 'VERIFIED_REVIEW'
+          AND p.category = '방문자인증후기'
           AND ra.post_id IS NULL
     </select>
 

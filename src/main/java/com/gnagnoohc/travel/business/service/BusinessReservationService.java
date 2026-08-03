@@ -3,8 +3,6 @@ package com.gnagnoohc.travel.business.service;
 import com.gnagnoohc.travel.business.dto.BusinessReservationDto;
 import com.gnagnoohc.travel.business.dto.BusinessReservationStatusCountsDto;
 import com.gnagnoohc.travel.business.mapper.BusinessMapper;
-import com.gnagnoohc.travel.reservation.entity.Reservation;
-import com.gnagnoohc.travel.reservation.entity.ReservationStatus;
 import com.gnagnoohc.travel.reservation.service.PaymentService;
 import com.gnagnoohc.travel.reservation.service.ReservationService;
 import lombok.RequiredArgsConstructor;
@@ -41,28 +39,14 @@ public class BusinessReservationService {
     }
 
     /**
-     * 결제완료(PAID) 예약 거절 → 환불 실행.
-     * reservation 파트의 PaymentService.cancel(paymentId, reason)은 Payment.status만 확인하고
-     * Reservation.status는 보지 않으므로, 확정/이용완료된 예약까지 환불되지 않도록
-     * PAID 검증을 여기서 직접 한다 (approve()가 승인 전에 하는 검증과 같은 역할).
-     * reason은 사업자가 입력한 거절 사유. 비어있으면 기본 문구로 대체한다.
+     * 결제완료(PAID) 예약 거절 → 환불 실행 + 거절 사유 기록 (PAID 검증·결제건 조회·환불·reject_reason
+     * 저장을 모두 reservation 파트 PaymentService.rejectPaid()가 처리한다).
+     * reason은 사업자가 입력한 거절 사유.
      */
     @Transactional
     public void reject(Long reservationId, Long bizMemberId, String reason) {
         requireOwner(reservationId, bizMemberId);
-
-        Reservation reservation = reservationService.getById(reservationId);
-        if (reservation.getStatus() != ReservationStatus.PAID) {
-            throw new IllegalStateException(
-                    "결제완료된 예약만 거절할 수 있습니다. 현재 상태: " + reservation.getStatus().getLabel());
-        }
-
-        Long paymentId = businessMapper.selectDonePaymentId(reservationId, bizMemberId);
-        if (paymentId == null) {
-            throw new IllegalStateException("환불할 결제완료 내역이 없습니다.");
-        }
-        String finalReason = (reason == null || reason.isBlank()) ? "사업자 거절" : reason.trim();
-        paymentService.cancel(paymentId, finalReason);
+        paymentService.rejectPaid(reservationId, reason);
     }
 
     /** 취소 요청 승인 → 카카오 환불 실행 + CANCELED 전환 (예약 파트 소유 로직, 여기서는 소유자 확인만 담당) */

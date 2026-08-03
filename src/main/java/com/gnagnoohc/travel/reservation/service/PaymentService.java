@@ -119,4 +119,22 @@ public class PaymentService {
         log.info("[취소 승인] reservationId={} → 환불 진행 (paymentId={})", reservationId, paid.getPaymentId());
         cancel(paid.getPaymentId(), "관리자 취소 승인");   // 환불 + 결제취소 + 예약취소
     }
+
+    /**
+     * 사업자: 결제완료(PAID) 예약 거절 → 환불 실행.
+     * PAID 검증·사유 저장은 reservationService.reject()가 먼저 처리한 뒤, 여기서 실제 환불(cancel)을 진행한다.
+     */
+    @Transactional
+    public void rejectPaid(Long reservationId, String reason) {
+        String finalReason = reservationService.reject(reservationId, reason);
+
+        List<Payment> payments = paymentMapper.findByReservationId(reservationId);
+        Payment paid = payments.stream()
+                .filter(p -> p.getPaymentStatus() == PaymentStatus.DONE)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("환불할 결제완료 내역이 없습니다. reservationId=" + reservationId));
+
+        log.info("[예약 거절] reservationId={} → 환불 진행 (paymentId={})", reservationId, paid.getPaymentId());
+        cancel(paid.getPaymentId(), finalReason);
+    }
 }

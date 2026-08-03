@@ -227,6 +227,22 @@ public class ReservationService {
     }
 
     /**
+     * 사업자: 결제완료(PAID) 예약 거절 — 사유 기록만 담당, 환불/상태전환은 PaymentService.rejectPaid가 이어서 처리.
+     * reason이 비어있으면 기본 문구로 대체하고 trim해서 저장한다(PaymentService가 PG 취소 사유로도 그대로 재사용하므로
+     * DB에 남는 값과 PG에 보내는 값이 항상 같도록 정규화는 여기서 한 번만 한다). 리턴값을 그 정규화된 사유로 준다.
+     */
+    @Transactional
+    public String reject(Long reservationId, String reason) {
+        Reservation r = getById(reservationId);
+        if (r.getStatus() != ReservationStatus.PAID) {
+            throw new IllegalStateException("결제완료된 예약만 거절할 수 있습니다. 현재 상태: " + r.getStatus().getLabel());
+        }
+        String finalReason = (reason == null || reason.isBlank()) ? "사업자 거절" : reason.trim();
+        reservationMapper.reject(reservationId, finalReason);
+        return finalReason;
+    }
+
+    /**
      * 취소 요청. 상태를 CANCEL_REQUESTED로 바꾸고 사유 기록. 환불은 관리자 승인 시 실행.
      * 본인 예약 + 결제완료(PAID)/예약확정(CONFIRMED) 상태에서만 가능.
      */

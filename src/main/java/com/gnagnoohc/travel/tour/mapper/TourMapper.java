@@ -29,4 +29,7 @@ public interface TourMapper {
 
     // 0731 타입별 및 지역별 장소 목록 통합 조회 (TourController의 getPlaceList 에러 해결용)
     List<PlaceDTO> selectPlaceList(@Param("placeType") String placeType, @Param("regionId") Integer regionId);
+
+    
+    List<PlaceImageDTO> getImagesByPlaceId(@Param("placeId") Long placeId);
 }

@@ -97,7 +97,7 @@
 
                     <c:if test="${not empty place.hashtags}">
                         <div class="hashtag-group">
-                            <c:forEach var="tag" items="${place.hashtags.split('[\s,]+')}">
+                            <c:forEach var="tag" items="${place.hashtags.split(',')}">
                                 <c:if test="${not empty tag}">
                                     <jsp:include page="/WEB-INF/views/common/tagButton.jsp">
                                         <jsp:param name="text" value="${tag}" />
@@ -120,62 +120,62 @@
                             <c:choose>
                                 <c:when test="${place.minPrice ne null and place.minPrice gt 0}">
                                     <fmt:formatNumber value="${place.minPrice}" pattern="#,###" />원 <span>/ 1회</span>
-                                </c:when>
-                                <c:otherwise>
-                                    가격 문의 <span>/ 정보 변동</span>
-                                </c:otherwise>
-                            </c:choose>
-                        </div>
+                                    </c:when>
+                                    <c:otherwise>
+                                        가격 문의 <span>/ 정보 변동</span>
+                                    </c:otherwise>
+                                </c:choose>
+                            </div>
 
-                        <div class="booking-features">
-                            <div class="feature-item">✔ 즉시 예약 확정</div>
-                            <div class="feature-item">🛡️ 안전 결제 보장</div>
-                        </div>
+                            <div class="booking-features">
+                                <div class="feature-item">✔ 즉시 예약 확정</div>
+                                <div class="feature-item">🛡️ 안전 결제 보장</div>
+                            </div>
 
-                        <!-- todo: 리다이렉션 추가 -->
-                        <div class="booking-action-group">
-                            <jsp:include page="/WEB-INF/views/common/buttonComponent.jsp">
-                                <jsp:param name="text" value="예약하기" />
-                                <jsp:param name="width" value="100%" />
-                                <jsp:param name="onclick" value="location.href='${pageContext.request.contextPath}/tour/booking?placeId=${place.placeId}'" />
-                            </jsp:include>
-
-                            <div class="booking-wish-box">
-                                <jsp:include page="/WEB-INF/views/common/wishButton.jsp">
-                                    <jsp:param name="placeId" value="${place.placeId}" />
-                                    <jsp:param name="isBookmarked" value="${isBookmarked}" />
+                            <!-- todo: 리다이렉션 추가 -->
+                            <div class="booking-action-group">
+                                <jsp:include page="/WEB-INF/views/common/buttonComponent.jsp">
+                                    <jsp:param name="text" value="예약하기" />
+                                    <jsp:param name="width" value="100%" />
+                                    <jsp:param name="onclick" value="location.href='${pageContext.request.contextPath}/tour/booking?placeId=${place.placeId}'" />
                                 </jsp:include>
-                                <span class="booking-wish-text">찜하기</span>
+
+                                <div class="booking-wish-box">
+                                    <jsp:include page="/WEB-INF/views/common/wishButton.jsp">
+                                        <jsp:param name="placeId" value="${place.placeId}" />
+                                        <jsp:param name="isBookmarked" value="${isBookmarked}" />
+                                    </jsp:include>
+                                    <span class="booking-wish-text">찜하기</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
+
+                <!-- 0803 부가정보(주차, 휴무일, 영업시간 등) 렌더링 -->
+                <c:if test="${not empty extraInfoLines}">
+                    <div class="extra-info">
+                        <h4>이용 안내</h4>
+                        <ul class="extra-info-list">
+                            <c:forEach var="line" items="${extraInfoLines}">
+                                <li>${line}</li>
+                            </c:forEach>
+                        </ul>
+                    </div>
+                </c:if>
+
+                <!-- 5. 여행 후기 코너 영역 -->
+                <div class="review-section">
+                    <div class="review-title">여행 후기 (0)</div>
+                    <div class="review-empty-box">
+                        아직 후기가 없습니다. 첫 번째 후기를 남겨보세요!
+                    </div>
+                </div>
             </div>
 
-            <!-- 0803 부가정보(주차, 휴무일, 영업시간 등) 렌더링 -->
-            <c:if test="${not empty place.extraInfo}">
-                <div class="extra-info">
-                    <h4>이용 안내</h4>
-                    <ul class="extra-info-list">
-                        <c:forEach var="line" items="${fn:split(place.extraInfo, '\n')}">
-                            <li>${line}</li>
-                        </c:forEach>
-                    </ul>
-                </div>
-            </c:if>
+            <!-- 6. 하단 푸터 컴포넌트 인클루드 -->
+            <jsp:include page="/WEB-INF/views/common/footer.jsp" />
 
-            <!-- 5. 여행 후기 코너 영역 -->
-            <div class="review-section">
-                <div class="review-title">여행 후기 (0)</div>
-                <div class="review-empty-box">
-                    아직 후기가 없습니다. 첫 번째 후기를 남겨보세요!
-                </div>
-            </div>
-        </div>
-
-        <!-- 6. 하단 푸터 컴포넌트 인클루드 -->
-        <jsp:include page="/WEB-INF/views/common/footer.jsp" />
-
-        <script src="${pageContext.request.contextPath}/js/common.js"></script>
-    </body>
-</html>
+            <script src="${pageContext.request.contextPath}/js/common.js"></script>
+        </body>
+    </html>

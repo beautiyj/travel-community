@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.gnagnoohc.travel.tour.model.PlaceDTO;
+import com.gnagnoohc.travel.tour.model.PlaceImageDTO;
 import com.gnagnoohc.travel.tour.service.TourService;
 
 import lombok.RequiredArgsConstructor;
@@ -24,12 +25,6 @@ public class TourController {
         // /WEB-INF/views/tour/test.jsp 파일과 매핑
         return "tour/test";
     }
-
-    // @GetMapping("/tour/detail")
-    // public String tourDetail() {
-    // // /WEB-INF/views/tour/detail.jsp 파일과 매핑
-    // return "tour/detail";
-    // }
 
     // 실제 데이터베이스 연동된 장소 목록 통합 조회 (tour, stay, food 공용)
     @GetMapping("/tour/list")
@@ -50,4 +45,19 @@ public class TourController {
         return "tour/list"; // 통합 뷰 파일 (/WEB-INF/views/tour/list.jsp)
     }
 
+    // 실제 데이터베이스 연동된 장소 상세 조회
+    @GetMapping("/tour/detail")
+    public String tourDetail(@RequestParam("placeId") Long placeId, Model model) {
+        PlaceDTO place = tourService.getPlaceDetail(placeId);
+        List<PlaceImageDTO> placeImages = tourService.getPlaceImages(placeId);
+
+        // 서비스에서 쪼갠 부가정보 리스트를 모델에 담아줍니다!
+        List<String> extraInfoLines = tourService.getExtraInfoLines(place.getExtraInfo());
+
+        model.addAttribute("place", place);
+        model.addAttribute("placeImages", placeImages);
+        model.addAttribute("extraInfoLines", extraInfoLines); // 👈 추가
+
+        return "tour/detail";
+    }
 }

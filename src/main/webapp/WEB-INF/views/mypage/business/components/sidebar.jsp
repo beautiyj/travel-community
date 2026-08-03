@@ -18,7 +18,6 @@
             </c:choose>
         </div>
         <strong><c:out value="${empty member.name ? '사업자 회원' : member.name}"/></strong>
-        <span class="business-profile-type">사업자 회원</span>
     </div>
     <nav class="mypage-sidebar__menu">
         <a class="${param.active eq 'info' ? 'is-active' : ''}" href="${cp}/mypage/business-info">

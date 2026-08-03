@@ -50,16 +50,6 @@ button, input, textarea { font: inherit; }
 .business-mypage .mypage-sidebar__profile {
   background: #fff;
 }
-.business-profile-type {
-  width: fit-content;
-  margin-top: 6px;
-  padding: 3px 8px;
-  border-radius: 999px;
-  background: var(--primary-soft);
-  color: var(--primary) !important;
-  font-size: 11px !important;
-  font-weight: 700;
-}
 .business-approval-badge {
   padding: 7px 12px;
   border-radius: 999px;

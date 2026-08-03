@@ -77,11 +77,22 @@
             parameterType="long"
             resultType="com.gnagnoohc.travel.mypage.dto.MypageDto">
 
-        select reservation_id, member_id, place_id, visitor_name,
-               phone, visit_date, headcount, status, created_at
-        from RESERVATION
-        where member_id = #{memberId}
-        order by created_at desc
+        select r.reservation_id,
+               r.member_id,
+               r.place_id,
+               p.name as place_name,
+               r.visitor_name,
+               r.phone,
+               r.visit_date,
+               r.headcount,
+               r.status,
+               r.created_at,
+               pay.amount
+        from RESERVATION r
+        left join PLACE p on p.place_id = r.place_id
+        left join PAYMENT pay on pay.reservation_id = r.reservation_id
+        where r.member_id = #{memberId}
+        order by r.created_at desc
 
     </select>
 
@@ -90,10 +101,15 @@
             parameterType="long"
             resultType="com.gnagnoohc.travel.mypage.dto.MypageDto">
 
-        select wishlist_id, member_id, place_id, created_at
-        from WISHLIST
-        where member_id = #{memberId}
-        order by created_at desc
+        select w.wishlist_id,
+               w.member_id,
+               w.place_id,
+               p.name as place_name,
+               w.created_at
+        from WISHLIST w
+        left join PLACE p on p.place_id = w.place_id
+        where w.member_id = #{memberId}
+        order by w.created_at desc
 
     </select>
 

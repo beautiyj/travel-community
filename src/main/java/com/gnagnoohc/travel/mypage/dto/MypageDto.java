@@ -47,10 +47,12 @@ public class MypageDto {
 
 	private Long reservationId;
 	private Long placeId;
+	private String placeName;
 	private String visitorName;
 	private LocalDate visitDate;
 	private Integer headcount;
 	private String status;
+	private Integer amount;
 	
 	private Long wishlistId;
 	

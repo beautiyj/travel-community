@@ -17,4 +17,5 @@ public class BusinessPlaceUpdateDto {
     private String address;
     private String description;
     private String firstImage;
+    private String hashtags;
 }

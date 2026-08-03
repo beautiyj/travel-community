@@ -1,7 +1,13 @@
 package com.gnagnoohc.travel.auth.controller;
 
-import java.util.Map;
-
+import com.gnagnoohc.travel.auth.dto.*;
+import com.gnagnoohc.travel.auth.exception.EmailVerificationException;
+import com.gnagnoohc.travel.auth.exception.SignupException;
+import com.gnagnoohc.travel.auth.service.AuthService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.PessimisticLockingFailureException;
@@ -10,25 +16,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
-import com.gnagnoohc.travel.auth.dto.LocalLoginResult;
-import com.gnagnoohc.travel.auth.dto.SignUpRequest;
-import com.gnagnoohc.travel.auth.dto.VerifiedPasswordReset;
-import com.gnagnoohc.travel.auth.dto.VerifiedSignupEmail;
-import com.gnagnoohc.travel.auth.exception.EmailVerificationException;
-import com.gnagnoohc.travel.auth.exception.SignupException;
-import com.gnagnoohc.travel.auth.service.AuthService;
-
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+import java.util.Map;
 
 @Controller
 @RequiredArgsConstructor
@@ -88,7 +78,20 @@ public class AuthController {
 
 		HttpSession loginSession = request.getSession(true);
 		// 다른 패키지와 JSP에서 loginMember DTO를 동일한 세션 키로 사용한다.
-		loginSession.setAttribute("loginMember", loginResult.loginMember());
+		LoginMemberDto loginMember = loginResult.loginMember();
+		loginSession.setAttribute("loginMember", loginMember);
+
+        // 사업자 회원은 로그인시 대쉬보드로 이동한다.
+        if (loginMember.getMemberType() == 2
+                && "BUSINESS".equals(loginMember.getMemberRole())) {
+            return "redirect:/business/dashboard";
+        }
+
+		// 직접 생성된 로컬 관리자 계정은 로그인 직후 관리자 대시보드로 이동한다.
+		if (loginMember.getMemberType() == 0
+				&& "ADMIN".equals(loginMember.getMemberRole())) {
+			return "redirect:/admin";
+		}
 		return "redirect:/";
 	}
 

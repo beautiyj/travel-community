@@ -23,6 +23,7 @@ public class BusinessPlaceRegisterDto {
 //    private BigDecimal mapx;
 //    private BigDecimal mapy;
     private String firstImage;
+    private String hashtags;
 
     // INSERT 시 MyBatis useGeneratedKeys로 채워 받는 값. 빌더 대상 아님.
     private Long placeId;

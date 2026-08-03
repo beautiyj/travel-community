@@ -122,9 +122,9 @@
 }
 
 .rsv-cal-day.is-in-range {
-    background: var(--primary-soft);
-    color: var(--primary);
-    border-color: transparent;
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
 }
 
 .rsv-cal-legend {

@@ -9,6 +9,9 @@ build/
 *.key
 **/application-secret.properties
 
+### Claude Code ###
+.claude/
+
 ### STS ###
 .apt_generated
 .classpath

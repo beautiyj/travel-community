@@ -17,9 +17,9 @@
     </jsp:include>
 
     <div class="business-main">
-        <div class="business-topbar">
-            <h1 class="business-topbar__title">마감 관리</h1>
-        </div>
+        <jsp:include page="common/topbar.jsp">
+            <jsp:param name="title" value="마감 관리" />
+        </jsp:include>
 
         <div class="business-content">
             <div class="business-closure-page">
@@ -36,6 +36,6 @@
 </div>
 
 <script src="/js/common.js"></script>
-<script src="/js/business-closure.js"></script>
+<script src="/js/business/business-closure.js"></script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <!DOCTYPE html>
 <html lang="ko">
@@ -61,9 +61,20 @@
                                     <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px;">
                                         <c:choose>
                                             <c:when test="${not empty placeList}">
+                                                <!-- 카드 전체를 감싸는 링크 태그 추가 -->
+                                                <a href="${pageContext.request.contextPath}/tour/detail?placeId=${place.placeId}" style="text-decoration: none; color: inherit; display: block;">
                                                 <c:forEach var="place" items="${placeList}">
-                                                    <c:set var="cardItem" value="${place}" scope="request" />
-                                                    <jsp:include page="/WEB-INF/views/common/cardComponent.jsp" />
+                                                    <jsp:include page="/WEB-INF/views/common/cardComponent.jsp">
+                                                        <jsp:param name="firstimage"   value="${place.firstImage}" />
+                                                        <jsp:param name="name"         value="${place.name}" />
+                                                        <jsp:param name="placeId"      value="${place.placeId}" />
+                                                        <jsp:param name="place_type"   value="${place.placeType}" />
+                                                        <jsp:param name="hashTags"     value="${place.hashtags}" />
+                                                        <jsp:param name="regionName"   value="${place.regionName}" />
+                                                        <jsp:param name="price"        value="${place.displayPrice}" />
+                                                        <%-- isBookmarked, rating, reviewCount는 별도 기능 붙기 전까지 카드 기본값 사용 --%>
+                                                    </jsp:include>
+                                                    </a>
                                                 </c:forEach>
                                             </c:when>
                                             <c:otherwise>

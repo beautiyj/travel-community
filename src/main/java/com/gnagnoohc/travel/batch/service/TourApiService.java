@@ -125,8 +125,7 @@ public class TourApiService {
         }
         log.info("[Batch] 법정동 코드 수집 완료");
     }
-
-    // 메인 파이프라인 - 공공데이터 장소 수집 및 PLACE, PLACE_IMAGE 적재
+// 메인 파이프라인 - 공공데이터 장소 수집 및 PLACE, PLACE_IMAGE 적재
     // 메인 최상위 파이프라인에선 크게 검증&스킵 처리 - 연쇄 수집&변환 처리(만들어진 컨버터) - 해당 컨버터에서 가공로직 담당하는 헬퍼로 최종 적재
     // 0729 운영용 메인 파이프라인 (시작할 pageNo를 외부에서 주입받을 수 있도록 구조 변경)
     @Transactional
@@ -137,6 +136,12 @@ public class TourApiService {
         // 고정값 1 대신 전달받은 시작 페이지 사용
         // int pageNo = 1;
         boolean hasNext = true;
+
+        // [주석 처리용: 지역별 수집 건수 제한을 위한 맵 초기화 (각 지역당 최대 10개 제한 테스트용)]
+        /*
+        java.util.Map<String, Integer> regionCountMap = new java.util.HashMap<>();
+        final int MAX_COUNT_PER_REGION = 10;
+        */
 
         while (hasNext) {
             try {
@@ -173,6 +178,18 @@ public class TourApiService {
 
                 // 수집 DTO -> 서비스 PlaceDTO 변환 및 DB 적재
                 for (TourAreaBasedSyncListDTO syncItem : syncList) {
+
+                    // --- [주석 처리용: 지역별 데이터 10개 제한 필터링 로직] ---
+                    /*
+                    String regionKey = syncItem.getLDongRegnCd() + (syncItem.getLDongSignguCd() != null ? syncItem.getLDongSignguCd() : "");
+                    int currentCount = regionCountMap.getOrDefault(regionKey, 0);
+                    
+                    if (currentCount >= MAX_COUNT_PER_REGION) {
+                        continue; // 해당 지역이 이미 10개를 채웠다면 스킵
+                    }
+                    */
+                    // -----------------------------------------------------------------
+
                     // 1차 필터링: Validator 검증 통과한 데이터만 살아남음
                     if (!tourValidator.isValid(syncItem)) {
                         continue;
@@ -183,6 +200,12 @@ public class TourApiService {
                     }
                     // 2) 단일 아이템 수집 및 DB 적재는 헬퍼 메서드로 위임하기
                     processSinglePlace(syncItem);
+
+                    // --- [주석 처리용: 카운터 증가 처리] ---
+                    /*
+                    regionCountMap.put(regionKey, currentCount + 1);
+                    */
+                    // -----------------------------------------------------------------
                 }
 
                 log.info("[Batch Pagination Debug] 현재 요청 pageNo: {}, 가져온 item 개수: {}", pageNo, syncList.size());
@@ -320,8 +343,8 @@ public class TourApiService {
                     .distinct() // 중복 URL 제거
                     .toList();
         }
-        if (imageUrls.size() < 2) {
-            log.info("[Batch Skip] 이미지가 1장뿐이거나 없어 수집 제외 - contentId: {}, title: {}",
+        if (imageUrls.size() < 5) {
+            log.info("[Batch Skip] 이미지가 5장 미만이거나 없어 수집 제외 - contentId: {}, title: {}",
                     syncItem.getContentid(), syncItem.getTitle());
             return; // 컷오프
         }

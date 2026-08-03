@@ -20,16 +20,10 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ReservationService {
 
-    /** 임시 1인 단가. 숙박/맛집 파트의 가격 컬럼이 확정되면 그쪽 조회로 교체 */
-    public static final int TEMP_UNIT_PRICE = 10000;
-
     /** 만나서 결제(관광지·맛집)의 예약금 정액. TODO: place별 예약금 데이터가 생기면 조회로 교체 */
     public static final int RESERVE_DEPOSIT = 10000;
 
-    /**
-     * 맛집·관광지 하루 정원(명). 캘린더에 "남은 자리" 표시 + create()에서 초과 시 예약 차단에 쓴다.
-     * TODO: 관리자 정원 설정이 생기면(장소별 값) 이 고정값 대신 그쪽 조회로 교체.
-     */
+    /** 맛집·관광지 하루 정원(명). 캘린더에 "남은 자리" 표시 + create()에서 초과 시 예약 차단에 쓴다. */
     public static final int DAILY_CAPACITY = 15;
 
     /**
@@ -148,6 +142,16 @@ public class ReservationService {
         return reservationMapper.findPlaceName(placeId);
     }
 
+    /** 숙박 1인 단가 조회. PLACE.min_price를 읽기 전용으로 참조 */
+    @Transactional(readOnly = true)
+    public int getUnitPrice(Long placeId) {
+        Integer price = reservationMapper.findMinPrice(placeId);
+        if (price == null) {
+            throw new IllegalStateException("등록된 가격이 없는 장소입니다. placeId=" + placeId);
+        }
+        return price;
+    }
+
     @Transactional(readOnly = true)
     public Reservation getById(Long reservationId) {
         Reservation r = reservationMapper.findById(reservationId);
@@ -220,6 +224,22 @@ public class ReservationService {
     }
 
     /**
+     * 사업자: 결제완료(PAID) 예약 거절 — 사유 기록만 담당, 환불/상태전환은 PaymentService.rejectPaid가 이어서 처리.
+     * reason이 비어있으면 기본 문구로 대체하고 trim해서 저장한다(PaymentService가 PG 취소 사유로도 그대로 재사용하므로
+     * DB에 남는 값과 PG에 보내는 값이 항상 같도록 정규화는 여기서 한 번만 한다). 리턴값을 그 정규화된 사유로 준다.
+     */
+    @Transactional
+    public String reject(Long reservationId, String reason) {
+        Reservation r = getById(reservationId);
+        if (r.getStatus() != ReservationStatus.PAID) {
+            throw new IllegalStateException("결제완료된 예약만 거절할 수 있습니다. 현재 상태: " + r.getStatus().getLabel());
+        }
+        String finalReason = (reason == null || reason.isBlank()) ? "사업자 거절" : reason.trim();
+        reservationMapper.reject(reservationId, finalReason);
+        return finalReason;
+    }
+
+    /**
      * 취소 요청. 상태를 CANCEL_REQUESTED로 바꾸고 사유 기록. 환불은 관리자 승인 시 실행.
      * 본인 예약 + 결제완료(PAID)/예약확정(CONFIRMED) 상태에서만 가능.
      */
@@ -257,13 +277,12 @@ public class ReservationService {
     /**
      * 결제 금액 계산 (모든 결제수단이 이 값을 공통으로 사용).
      * - 관광지·맛집(만나서 결제): 예약금 정액 RESERVE_DEPOSIT (인원 무관)
-     * - 숙박: 박수 × 인원 × 단가
-     * TODO: 숙박/맛집 팀원의 place(가격) 테이블이 나오면 placeId로 단가·예약금 조회하도록 교체
+     * - 숙박: 박수 × 인원 × 단가(PLACE.min_price)
      */
     public int calculateAmount(Reservation r) {
         if (isPayOnSite(r.getPlaceType())) {
             return RESERVE_DEPOSIT;
         }
-        return nightsOf(r) * r.getHeadcount() * TEMP_UNIT_PRICE;
+        return nightsOf(r) * r.getHeadcount() * getUnitPrice(r.getPlaceId());
     }
 }

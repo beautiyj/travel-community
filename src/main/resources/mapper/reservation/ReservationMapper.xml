@@ -20,7 +20,8 @@
         r.pg_tid               AS pgTid,
         r.created_at           AS createdAt,
         r.cancel_reason        AS cancelReason,
-        r.cancel_requested_at  AS cancelRequestedAt
+        r.cancel_requested_at  AS cancelRequestedAt,
+        r.reject_reason        AS rejectReason
     </sql>
 
     <insert id="insert" parameterType="com.gnagnoohc.travel.reservation.entity.Reservation"
@@ -38,6 +39,10 @@
 
     <select id="findPlaceName" resultType="string">
         SELECT name FROM PLACE WHERE place_id = #{placeId}
+    </select>
+
+    <select id="findMinPrice" resultType="int">
+        SELECT min_price FROM PLACE WHERE place_id = #{placeId}
     </select>
 
     <select id="findById" resultType="com.gnagnoohc.travel.reservation.entity.Reservation">
@@ -76,6 +81,13 @@
         SET status = 'PAID',
             cancel_reason = NULL,
             cancel_requested_at = NULL
+        WHERE reservation_id = #{reservationId}
+    </update>
+
+    <!-- 예약 거절: 사유만 기록 (환불·상태 전환은 PaymentService.rejectPaid가 이어서 처리) -->
+    <update id="reject">
+        UPDATE RESERVATION
+        SET reject_reason = #{reason}
         WHERE reservation_id = #{reservationId}
     </update>
 

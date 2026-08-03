@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -19,44 +20,48 @@ import lombok.RequiredArgsConstructor;
 public class TourController {
 
     private final TourService tourService;
-    
+
     @RequestMapping("/tour/test")
     public String tourList() {
-        // /WEB-INF/views/tour/test.jsp 파일과 매핑
         return "tour/test";
     }
 
-    // 실제 데이터베이스 연동된 장소 목록 통합 조회 (tour, stay, food 공용)
+    // 실제 데이터베이스 연동된 장소 목록 통합 조회
     @GetMapping("/tour/list")
     public String tourList(
-            @RequestParam(value = "placeType", defaultValue = "tour") String placeType,
+            @RequestParam(value = "placeType", required = false) String placeType,
             @RequestParam(value = "regionId", required = false) Integer regionId,
+            @RequestParam(value = "keyword", required = false) String keyword,
             @RequestParam(value = "page", defaultValue = "1") int page,
             Model model) {
 
-        // 1. 서비스 및 매퍼를 통해 실제 DB에서 조건별 장소 목록 조회
-        List<PlaceDTO> placeList = tourService.getPlaceList(placeType, regionId, page);
-        
-        // 2. 뷰(JSP) 단으로 데이터 및 필터 상태 전달
-        model.addAttribute("placeList", placeList);
-        model.addAttribute("selectedPlaceType", placeType); // stay, food, tour
-        model.addAttribute("selectedRegionId", regionId);
+        if (!StringUtils.hasText(placeType) || "all".equalsIgnoreCase(placeType)) {
+            placeType = null;
+        }
 
-        return "tour/list"; // 통합 뷰 파일 (/WEB-INF/views/tour/list.jsp)
+        List<PlaceDTO> placeList = tourService.getPlaceList(placeType, regionId, keyword, page);
+
+        model.addAttribute("placeList", placeList);
+        model.addAttribute("selectedPlaceType", placeType);
+        model.addAttribute("selectedRegionId", regionId);
+        model.addAttribute("keyword", keyword);
+
+        return "tour/list";
     }
 
-    // 실제 데이터베이스 연동된 장소 상세 조회
+    // 실제 데이터베이스 연동된 장소 상세 조회 (placeId: Integer로 수정)
     @GetMapping("/tour/detail")
-    public String tourDetail(@RequestParam("placeId") Long placeId, Model model) {
+    public String tourDetail(@RequestParam("placeId") Integer placeId, Model model) {
         PlaceDTO place = tourService.getPlaceDetail(placeId);
         List<PlaceImageDTO> placeImages = tourService.getPlaceImages(placeId);
 
-        // 서비스에서 쪼갠 부가정보 리스트를 모델에 담아줍니다!
-        List<String> extraInfoLines = tourService.getExtraInfoLines(place.getExtraInfo());
+        List<String> extraInfoLines = (place != null)
+                ? tourService.getExtraInfoLines(place.getExtraInfo())
+                : List.of();
 
         model.addAttribute("place", place);
         model.addAttribute("placeImages", placeImages);
-        model.addAttribute("extraInfoLines", extraInfoLines); // 👈 추가
+        model.addAttribute("extraInfoLines", extraInfoLines);
 
         return "tour/detail";
     }

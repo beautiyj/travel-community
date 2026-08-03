@@ -27,15 +27,21 @@
         <div>
             <h2 class="section-title">결제 수단</h2>
             <div class="method-grid">
-                <button type="button" class="method-btn active" data-method="kakao">카카오페이</button>
-                <button type="button" class="method-btn" data-method="toss">토스페이</button>
+                <button type="button" class="method-btn active" data-method="kakao">
+                    <img src="/images/reservation/kakaopay-small.png" alt="카카오페이" class="method-icon">
+                </button>
+                <button type="button" class="method-btn" data-method="toss">
+                    <img src="/images/reservation/toss-pay.svg" alt="토스페이" class="method-icon">
+                </button>
                 <button type="button" class="method-btn" data-method="bank">무통장입금</button>
-                <button type="button" class="method-btn" data-method="vcard">가상카드</button>
+                <button type="button" class="method-btn" data-method="vcard">카드결제</button>
             </div>
 
             <!-- 선택한 결제 수단 안내 패널 -->
             <div class="simple-pay-panel">
-                <div class="pay-logo kakao" id="payLogo">K</div>
+                <div class="pay-logo kakao has-icon" id="payLogo">
+                    <img src="/images/reservation/kakaopay-small.png" alt="카카오페이로 결제합니다">
+                </div>
                 <p class="pay-name" id="payName">카카오페이로 결제합니다</p>
                 <p class="pay-desc" id="payDesc">결제 버튼 클릭 시 결제창으로 이동합니다</p>
             </div>

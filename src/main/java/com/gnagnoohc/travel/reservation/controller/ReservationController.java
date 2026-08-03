@@ -47,8 +47,8 @@ public class ReservationController {
         model.addAttribute("placeId", placeId);
         model.addAttribute("placeType", placeType);
         model.addAttribute("placeName", reservationService.getPlaceName(placeId));
-        // TODO: 숙박/맛집 파트의 place 조회가 나오면 실제 단가·예약금으로 교체
-        model.addAttribute("price", ReservationService.TEMP_UNIT_PRICE);
+        // 숙박만 min_price를 조회 — 관광지/맛집은 min_price가 항상 null이라 그대로 부르면 예외남
+        model.addAttribute("price", ReservationService.isStay(placeType) ? reservationService.getUnitPrice(placeId) : 0);
         model.addAttribute("deposit", ReservationService.RESERVE_DEPOSIT);
         return "reservation/reservationForm";
     }
@@ -73,8 +73,9 @@ public class ReservationController {
         if (bindingResult.hasErrors()) {
             log.warn("[예약 생성 검증 실패] {}", bindingResult.getAllErrors());
             model.addAttribute("placeId", req.getPlaceId());
-            model.addAttribute("placeType", req.isFreeTest() ? "free" : reservationService.getPlaceType(req.getPlaceId()));
-            model.addAttribute("price", ReservationService.TEMP_UNIT_PRICE);
+            String placeType = req.isFreeTest() ? "free" : reservationService.getPlaceType(req.getPlaceId());
+            model.addAttribute("placeType", placeType);
+            model.addAttribute("price", ReservationService.isStay(placeType) ? reservationService.getUnitPrice(req.getPlaceId()) : 0);
             model.addAttribute("deposit", ReservationService.RESERVE_DEPOSIT);
             return "reservation/reservationForm";
         }

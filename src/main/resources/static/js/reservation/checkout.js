@@ -10,10 +10,10 @@ var popupOptions = "width=500,height=750,left=" + ((screen.width - 500) / 2)
 
 /* ── 결제 수단 선택 ── */
 var payInfo = {
-    kakao: { cls: "kakao", initial: "K", name: "카카오페이로 결제합니다",  desc: "결제 버튼 클릭 시 결제창으로 이동합니다" },
-    toss:  { cls: "toss",  initial: "T", name: "토스페이로 결제합니다",    desc: "결제 버튼 클릭 시 결제창으로 이동합니다" },
+    kakao: { cls: "kakao", icon: "/images/reservation/kakaopay-small.png", name: "카카오페이로 결제합니다",  desc: "결제 버튼 클릭 시 결제창으로 이동합니다" },
+    toss:  { cls: "toss",  icon: "/images/reservation/toss-pay.svg",       name: "토스페이로 결제합니다",    desc: "결제 버튼 클릭 시 결제창으로 이동합니다" },
     bank:  { cls: "bank",  initial: "무", name: "무통장입금으로 결제합니다", desc: "결제 버튼 클릭 시 가상계좌 안내 화면으로 이동합니다" },
-    vcard: { cls: "vcard", initial: "V", name: "가상카드로 결제합니다",    desc: "테스트 카드번호로 즉시 결제됩니다" }
+    vcard: { cls: "vcard", initial: "V", name: "카드결제로 결제합니다",    desc: "테스트 카드번호로 즉시 결제됩니다" }
 };
 
 document.querySelectorAll(".method-btn").forEach(function (btn) {
@@ -24,8 +24,12 @@ document.querySelectorAll(".method-btn").forEach(function (btn) {
 
         var info = payInfo[currentMethod];
         var logo = document.getElementById("payLogo");
-        logo.className = "pay-logo " + info.cls;
-        logo.textContent = info.initial;
+        logo.className = "pay-logo " + info.cls + (info.icon ? " has-icon" : "");
+        if (info.icon) {
+            logo.innerHTML = '<img src="' + info.icon + '" alt="' + info.name + '">';
+        } else {
+            logo.textContent = info.initial;
+        }
         document.getElementById("payName").textContent = info.name;
         document.getElementById("payDesc").textContent = info.desc;
         // 가상카드일 때만 카드번호 입력칸 노출
@@ -151,7 +155,7 @@ function payVcard() {
         })
         .catch(function (err) {
             lockButtons(false);
-            alert(err.message || "가상카드 결제에 실패했습니다.");
+            alert(err.message || "카드결제에 실패했습니다.");
         });
 }
 

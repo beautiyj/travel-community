@@ -97,7 +97,7 @@
 
         <%-- 성별은 세 항목 중 하나를 반드시 고르며 서버 검증 실패 시 선택값을 다시 표시한다. --%>
         <fieldset class="form-field" aria-describedby="genderError">
-            <legend>성별 <span class="optional-label">필수</span></legend>
+            <legend>성별</legend>
             <div class="choice-row">
                 <label>
                     <input type="radio" name="gender" value="MALE"

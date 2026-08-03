@@ -391,6 +391,7 @@ public class SocialAuthService {
         return new LoginMemberDto(
                 member.getMemberId(),
                 member.getNickname(),
+                member.getMemberType(),
                 member.getMemberRole());
     }
 

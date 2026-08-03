@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gnagnoohc.travel.admin.mapper.AdminBusinessApplicationMapper">
+
+	<sql id="applicationDetailColumns">
+		application.business_application_id AS businessApplicationId,
+		application.member_id AS memberId,
+		member_info.name AS name,
+		member_info.birth AS birth,
+		member_info.phone AS phone,
+		application.application_status AS applicationStatus,
+		application.rejection_reason AS rejectionReason,
+		application.applied_at AS appliedAt,
+		application.reviewed_at AS reviewedAt,
+		application.reviewed_by AS reviewedBy
+	</sql>
+
+	<!-- 세션이 남아 있어도 정지·탈퇴·권한 변경된 관리자는 관리자 기능을 사용할 수 없습니다. -->
+	<select id="countActiveAdmin" resultType="int">
+		select count(*)
+		from member
+		where member_id = #{adminMemberId}
+			and member_type = 0
+			and member_role = 'ADMIN'
+			and member_status = 'ACTIVE'
+			and deleted_at is null
+	</select>
+
+	<!-- 전체 테이블을 한 번만 읽어 대시보드의 상태별 신청 건수를 계산합니다. -->
+	<select id="findDashboardSummary"
+			resultType="com.gnagnoohc.travel.admin.dto.AdminDashboardSummaryDto">
+		select
+			count(*) AS totalCount,
+			coalesce(sum(
+				case when application_status = 'PENDING' then 1 else 0 end
+			), 0) AS pendingCount,
+			coalesce(sum(
+				case when application_status = 'APPROVED' then 1 else 0 end
+			), 0) AS approvedCount,
+			coalesce(sum(
+				case when application_status = 'REJECTED' then 1 else 0 end
+			), 0) AS rejectedCount
+		from business_application
+	</select>
+
+	<!-- 처리 대기는 오래 기다린 신청부터, 처리 완료 내역은 최신 신청부터 보여줍니다. -->
+	<select id="findAllApplications"
+			resultType="com.gnagnoohc.travel.admin.dto.AdminBusinessApplicationDto">
+		select
+			<include refid="applicationDetailColumns"/>
+		from business_application application
+		inner join member member_info
+			on member_info.member_id = application.member_id
+		order by
+			case when application.application_status = 'PENDING' then 0 else 1 end,
+			case when application.application_status = 'PENDING'
+				then application.applied_at end asc,
+			case when application.application_status = 'PENDING'
+				then application.business_application_id end asc,
+			case when application.application_status &lt;&gt; 'PENDING'
+				then application.applied_at end desc,
+			case when application.application_status &lt;&gt; 'PENDING'
+				then application.business_application_id end desc
+	</select>
+
+	<select id="findApplicationById"
+			resultType="com.gnagnoohc.travel.admin.dto.AdminBusinessApplicationDto">
+		select
+			<include refid="applicationDetailColumns"/>
+		from business_application application
+		inner join member member_info
+			on member_info.member_id = application.member_id
+		where application.business_application_id = #{applicationId}
+	</select>
+
+	<!-- 파일 키는 화면 DTO에 포함하지 않고 등록증 열람 요청에서만 조회합니다. -->
+	<select id="findBusinessRegistrationFileKey" resultType="string">
+		select business_registration_file_key
+		from business_application
+		where business_application_id = #{applicationId}
+	</select>
+
+	<!-- 심사 대상 신청 행만 잠가 두 관리자가 같은 신청을 동시에 처리하지 못하게 합니다. -->
+	<select id="findReviewTargetForUpdate"
+			resultType="com.gnagnoohc.travel.admin.dto.AdminBusinessApplicationDto">
+		select
+			business_application_id AS businessApplicationId,
+			member_id AS memberId,
+			application_status AS applicationStatus
+		from business_application
+		where business_application_id = #{applicationId}
+		for update
+	</select>
+
+	<update id="approveApplication">
+		update business_application
+		set application_status = 'APPROVED',
+			rejection_reason = null,
+			reviewed_at = now(),
+			reviewed_by = #{adminMemberId}
+		where business_application_id = #{applicationId}
+			and application_status = 'PENDING'
+	</update>
+
+	<update id="rejectApplication">
+		update business_application
+		set application_status = 'REJECTED',
+			rejection_reason = #{rejectionReason},
+			reviewed_at = now(),
+			reviewed_by = #{adminMemberId}
+		where business_application_id = #{applicationId}
+			and application_status = 'PENDING'
+	</update>
+
+	<!-- 승인 대상 회원이 활성 사업자 회원이며 아직 USER일 때만 권한을 부여합니다. -->
+	<update id="grantBusinessRole">
+		update member
+		set member_role = 'BUSINESS'
+		where member_id = #{memberId}
+			and member_type = 2
+			and member_role = 'USER'
+			and member_status = 'ACTIVE'
+			and deleted_at is null
+	</update>
+
+</mapper>

@@ -23,6 +23,9 @@ public interface ReservationMapper {
     /** 취소 요청 거절: 상태를 PAID로 원복하고 취소 요청 기록(사유·시각)도 함께 지움 */
     void rejectCancel(@Param("reservationId") Long reservationId);
 
+    /** 예약 거절(사업자, PAID 대상): 거절 사유 기록 */
+    void reject(@Param("reservationId") Long reservationId, @Param("reason") String reason);
+
     /** 관리자 목록용: 특정 상태의 예약 조회 (예: CANCEL_REQUESTED 건 모아보기) */
     List<Reservation> findByStatus(@Param("status") ReservationStatus status);
 

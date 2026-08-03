@@ -29,6 +29,9 @@ public interface ReservationMapper {
     /** 관리자 목록용: 특정 상태의 예약 조회 (예: CANCEL_REQUESTED 건 모아보기) */
     List<Reservation> findByStatus(@Param("status") ReservationStatus status);
 
+    /** 스케줄러용: 방문일이 지났는데 미승인(PAID) 상태로 남은 예약 ID 목록 */
+    List<Long> findExpiredUnapprovedPaidIds();
+
     /**
      * 슬롯 선점 체크: 같은 회원이 같은 장소·날짜에 가진 활성(PENDING/PAID) 예약 1건. 없으면 null.
      * PENDING이면 재사용(결제 이어가기), PAID면 중복 거부 판단에 쓴다.

@@ -13,6 +13,7 @@
 - address     : 주소 값 (등록은 미전달)
 - addressDetail : 상세주소 값 (등록은 미전달)
 - description : 소개 값 (등록은 미전달)
+- hashtags    : 해시태그 값, 콤마로 구분된 원문 그대로 (등록은 미전달)
 --%>
 <div class="business-form-group">
     <label class="business-form-label" for="${param.idPrefix}name">업소명</label>
@@ -83,4 +84,16 @@
 <div class="business-form-group">
     <label class="business-form-label" for="${param.idPrefix}description">소개</label>
     <textarea class="business-form-textarea" id="${param.idPrefix}description" name="description" rows="4">${param.description}</textarea>
+</div>
+
+<%-- 티스토리 태그 입력처럼 콤마/Enter를 누르면 칩으로 바뀐다 (business-venue.js). name="hashtags"인
+     hidden input이 실제 제출값(콤마로 합친 문자열)을 들고 있고, 보이는 text input은 입력용일 뿐이다 --%>
+<div class="business-form-group">
+    <label class="business-form-label" for="${param.idPrefix}hashtagInput">해시태그</label>
+    <div class="venue-tag-input">
+        <input type="hidden" name="hashtags" value="${param.hashtags}" />
+        <input class="venue-tag-input__field" type="text" id="${param.idPrefix}hashtagInput"
+              placeholder="#태그입력" />
+    </div>
+    <p class="business-price-hint">콤마(,)나 Enter를 누르면 태그로 등록됩니다.</p>
 </div>

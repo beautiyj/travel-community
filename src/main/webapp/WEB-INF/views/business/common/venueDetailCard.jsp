@@ -70,5 +70,11 @@
             <span class="venue-detail-row__label">소개</span>
             <span class="venue-detail-row__value">${placeDetail.description}</span>
         </div>
+        <c:if test="${not empty placeDetail.hashtags}">
+            <div class="venue-detail-row">
+                <span class="venue-detail-row__label">해시태그</span>
+                <span class="venue-detail-row__value"><c:forEach var="tag" items="${placeDetail.hashtags.split(',')}"><span class="venue-hashtag">${tag}</span></c:forEach></span>
+            </div>
+        </c:if>
     </div>
 </div>

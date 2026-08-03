@@ -726,6 +726,8 @@ body {
     border: none;
     border-radius: 8px;
     font-weight: 700;
+    font-size: 14px;
+    padding: 10px 16px;
     cursor: pointer;
 }
 .business-btn--sm {
@@ -755,6 +757,13 @@ body {
 .business-btn--outline:hover {
     background: #f0f9ff;
     color: var(--business-primary-dark);
+}
+
+/* 주소 검색 버튼 전용 사이즈. .business-btn--outline을 같이 쓰는 다른 버튼(마감 관리의 편집 취소 등)에는
+   영향 주지 않도록 .js-address-search에만 스코프해서 패딩/radius를 좁힌다 */
+.js-address-search {
+    border-radius: 6px;
+    padding: 7px 10px;
 }
 
 /* ── Filter row ── */
@@ -866,6 +875,21 @@ body {
     gap: 6px;
 }
 
+.business-form-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.business-form-row .business-form-input {
+    flex: 1;
+    min-width: 0;
+}
+
+.business-form-row .business-btn {
+    flex-shrink: 0;
+}
+
 .business-form-group--row {
     flex-direction: row;
     gap: 16px;
@@ -897,6 +921,55 @@ body {
 
 .business-form-textarea {
     resize: vertical;
+}
+
+/* 해시태그 칩 입력 (등록/수정 폼) */
+.venue-tag-input {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    padding: 8px 10px;
+    border: 1px solid var(--business-border);
+    border-radius: 8px;
+}
+
+.venue-tag-input:focus-within {
+    border-color: var(--business-primary);
+}
+
+.venue-tag-input__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 6px 4px 10px;
+    border-radius: 999px;
+    background: #f0f9ff;
+    color: var(--business-primary);
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.venue-tag-input__chip-remove {
+    border: none;
+    background: none;
+    padding: 0 2px;
+    color: inherit;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.venue-tag-input__field {
+    flex: 1;
+    min-width: 140px;
+    border: none;
+    outline: none;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--business-text);
 }
 
 /* 가격 설정 (숙박 업소 등록/수정 폼) */
@@ -1039,6 +1112,17 @@ body {
     font-size: 14px;
     font-weight: 600;
     white-space: pre-line;
+}
+
+.venue-hashtag {
+    display: inline-block;
+    margin: 0 6px 6px 0;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #f0f9ff;
+    color: var(--business-primary);
+    font-size: 13px;
+    font-weight: 600;
 }
 
 /* ── Photo edit grid (기존 사진 + 새 사진 카드를 함께 드래그로 순서 변경) ── */

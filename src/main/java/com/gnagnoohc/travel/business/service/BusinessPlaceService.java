@@ -18,9 +18,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -90,6 +92,7 @@ public class BusinessPlaceService {
 //                .mapx(null)
 //                .mapy(null)
                 .firstImage(savedUrls.get(0))
+                .hashtags(normalizeHashtags(form.getHashtags()))
                 .build();
 
         businessMapper.insertOwnerPlace(place);
@@ -174,6 +177,7 @@ public class BusinessPlaceService {
                 .address(form.getAddress())
                 .description(form.getDescription())
                 .firstImage(firstImage)
+                .hashtags(normalizeHashtags(form.getHashtags()))
                 .build();
 
         if (businessMapper.updatePlace(update) == 0) {
@@ -239,6 +243,18 @@ public class BusinessPlaceService {
     }
 
     private record PriceSetting(String priceType, Integer minPrice) {}
+
+    // 폼에서 콤마로 구분해 받은 해시태그를 빈 항목/앞뒤 공백 없이 정리한다.
+    private String normalizeHashtags(String rawHashtags) {
+        if (rawHashtags == null || rawHashtags.isBlank()) {
+            return null;
+        }
+        String joined = Arrays.stream(rawHashtags.split(","))
+                .map(String::trim)
+                .filter(tag -> !tag.isEmpty())
+                .collect(Collectors.joining(","));
+        return joined.isEmpty() ? null : joined;
+    }
 
     private String extractExtension(String originalFilename) {
         if (originalFilename == null) {

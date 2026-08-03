@@ -13,10 +13,10 @@ import lombok.Setter;
 public class BusinessPlaceFormDto {
     private String name;
     private String placeType;
-    // 가격은 숙박일 때만 폼에 노출되므로 두 값 모두 비어 있을 수 있다. 정리/검증은 서비스가 담당
     private String priceType;
     private Integer minPrice;
     private Long regionId;
     private String address;
     private String description;
+    private String hashtags;
 }

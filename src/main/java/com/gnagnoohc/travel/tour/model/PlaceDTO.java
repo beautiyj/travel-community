@@ -1,12 +1,12 @@
 package com.gnagnoohc.travel.tour.model;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -34,18 +34,30 @@ public class PlaceDTO {
 
     private String extraInfo;
     
-    // 0801
-    // 기존 필드들 아래에 추가
     private String regionName;   // REGION 테이블 join 전용 - DB PLACE 테이블엔 없는 조회 전용 필드
 
-    // 클래스 안에 메서드로 추가 (Lombok @Data가 자동 생성 안 해주는 커스텀 getter)
+    // 화면 표시용 요금 가공 Getter (DTO 전용)
     public String getDisplayPrice() {
-        if (minPrice != null) {
-            return minPrice + "원~";
-        } else if (useFeeInfo != null && !useFeeInfo.isBlank()) {
+        // 음식점(food)인 경우 "가격변동"
+        if ("food".equalsIgnoreCase(this.placeType)) { return "가격변동"; }
+
+        // minPrice가 0원인 경우 (무료 또는 파싱 불가능 문구)
+        if (minPrice != null && minPrice == 0) {
+            if (useFeeInfo != null && useFeeInfo.contains("무료")) { return "무료"; }
+            return "가격변동";
+        }
+
+        // 정상 최저가가 있는 경우
+        if (minPrice != null && minPrice > 0) {
+            return String.format("%,d원~", minPrice); // 콤마 포맷팅 (예: 10,000원~)
+        }
+
+        // 원문 텍스트 fallback 처리
+        if (useFeeInfo != null && !useFeeInfo.isBlank()) {
             return useFeeInfo;
         }
-        return "정보 없음";
+
+        return "가격 변동";
     }
 
 }

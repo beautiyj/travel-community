@@ -25,16 +25,13 @@ public class PlaceEntity {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    // TODO: 데베연결 후 플레이스테이블의 이미지로 썸네일이미지 들어오는지 - 이미지테이블엔 오리지널이미지 들어오는지 확인하기(확인후주석삭제)
+    // TODO: 0803기준 확인 완료, 썸네일이미지의 화질 저하로 오리지널이미지 변환 예정
     private String firstImage;     // first_image (VARCHAR 500, 대표 이미지 URL - 썸네일 설정)
-    private String hashtags;       // hashtags (VARCHAR 300, 가공 해시태그)
 
+    private String hashtags;       // hashtags (VARCHAR 300, 가공 해시태그)
     private Integer minPrice;      // 검색/필터링/정렬용 최저가 (숫자 연산용)
     private String useFeeInfo;     // 화면 표시용 요금 안내 원문 (음식점은 null 또는 대표메뉴 텍스트)
-
     private Integer peopleCount;   // 정원 / 기준 인원 수 컬럼
-
-// TODO: 0730 상세 화면용 부가정보(주차, 휴무일, 영업시간, 문의처 등 통합 정제 텍스트) 컬럼 추가할 경우, 더미데이터 로직 및 해시태그 로직 변동됨
    private String extraInfo;
 
     // 사업자 정보 수동 수정용 메서드
@@ -56,7 +53,7 @@ public class PlaceEntity {
     public static PlaceEntity createOwnerPlace(String placeType, Integer regionId, Integer memberId, 
                                                 String name, String description, String address, 
                                                 BigDecimal mapx, BigDecimal mapy, 
-                                                String firstImage, String hashtags, Integer peopleCount) {
+                                                String firstImage, String hashtags, Integer peopleCount, String extraInfo) {
         PlaceEntity place = new PlaceEntity();
 
         // TODO: 공공데이터의 contentId -> PlaceId설정이므로 비즈니스에선 중복 방지 난수/특수 대역 세팅하여 더미데이터 기입 필요
@@ -75,6 +72,7 @@ public class PlaceEntity {
         place.firstImage = firstImage;
         place.hashtags = hashtags;
         place.peopleCount = (peopleCount != null) ? peopleCount : 1; // 기본값 1 처리
+        place.extraInfo = extraInfo;                                 // 공공데이터 라벨링 포맷([주차] 가능 \n [휴무일] 연중무휴 ...)에 맞춰 문자열 저장
         place.createdAt = LocalDateTime.now();
         place.updatedAt = LocalDateTime.now();
         return place;

@@ -10,9 +10,11 @@ import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 
-// config: 필요한 로직 세팅(프로그램 시작 전 세팅 개념)
-// @Configuration: 스프링이 설정 파일로 인식, 내부의 @Bean들을 자동으로 등록
-// @Qualifier: 나중에 다른 외부 API를 쓰기 위해 WebClient를 하나 더 만들 경우 @Bean에 이름 붙여서 구분하기 (ex) @Qualifier("tourWebClient")
+/* WebClientConfig.java - WebClient 설정 클래스
+* config: 필요한 로직 세팅(프로그램 시작 전 세팅 개념)
+* @Configuration: 스프링이 설정 파일로 인식, 내부의 @Bean들을 자동으로 등록
+* @Qualifier: 나중에 다른 외부 API를 쓰기 위해 WebClient를 하나 더 만들 경우 @Bean에 이름 붙여서 구분하기 (ex) @Qualifier("tourWebClient")
+*/
 
 @Slf4j
 @Configuration
@@ -28,11 +30,6 @@ public class WebClientConfig {
     @Bean
     @Qualifier("tourWebClient")
     public WebClient tourWebClient(WebClient.Builder builder) {
-
-        // TODO: 확인 후 최종 제거 - 서버 기동 시 키가 잘 들어오는지 확인하기 위한 로그
-        log.info("Loaded Tour API ServiceKey: [{}]", serviceKey);
-        log.info("Loaded Tour API BaseUrl: [{}]", baseUrl);
-
         // 공통 파라미터 맵 구성 - 중복되는 공공데이터 api 공통 요소 기입
         DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory(baseUrl);
         
@@ -40,15 +37,15 @@ public class WebClientConfig {
         // 공공데이터 API의 이미 인코딩된 서비스키가 double-encoding되어 깨지는 것을 방지하는 코드 추가 (기본제공 디코딩키, 인코딩키면 none처리)
         factory.setEncodingMode(DefaultUriBuilderFactory.EncodingMode.VALUES_ONLY);
 
-        // 0731 이미지필터링 과정에서 추가 - 공공데이터 응답 용량 제한(256KB) 해제를 위한 전략 설정 (16MB로 확장)
+        // 공공데이터 응답 용량 제한(256KB) 해제를 위한 전략 설정 (16MB로 확장) - 이미지필터링 용도
         ExchangeStrategies strategies = ExchangeStrategies.builder()
-                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(16 * 1024 * 1024)) // 16MB
+                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(16 * 1024 * 1024))
                 .build
                 ();
 
         return builder
             .uriBuilderFactory(factory)
-            .exchangeStrategies(strategies) //0731
+            .exchangeStrategies(strategies)
             .build();
     }
 

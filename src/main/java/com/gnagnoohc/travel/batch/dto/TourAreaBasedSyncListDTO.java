@@ -35,7 +35,6 @@ public class TourAreaBasedSyncListDTO {
     private String zipcode;
     
     // 분류 및 법정동 코드
-    // 0729
     @JsonProperty("lDongRegnCd")
     private String lDongRegnCd;
 

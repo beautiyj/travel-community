@@ -5,10 +5,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
-// batch: 데이터 수집 로직
-// 중복되는 파라미터는 Config에서 생성한 빈 주입하는 방식으로 사용하려 했으나 공공데이터 응답의 명시적 선언이 응답파라미터에 무조건 필요한 관계로 baseurl만 config 설정.
-// 한국관광공사 TourAPI 엔드포인트를 호출하여 대용량 데이터를 받아오는 통신 컴포넌트: 공공데이터 서버 호출, JSON XML 데이터 받아오는 역할
-// XML -> JSON 변환은 주소 뒤에 필수 파라미터 세팅에 _type = "json" 꼭 추가해야 변환됨
+/* TourApiClient.java - 공공데이터 요청(통신)
+ * 공공데이터 관광정보 API 호출을 위한 WebClient 설정 및 호출 메서드 제공
+ * WebClient를 사용하여 비동기 방식으로 API 호출 및 응답 처리
+ * 중복되는 파라미터는 Config에서 생성한 빈 주입하는 방식으로 사용하려 했으나 공공데이터 응답의 명시적 선언이 응답파라미터에 무조건 필요한 관계로 baseurl만 config 설정.
+ * XML -> JSON 변환은 주소 뒤에 필수 파라미터 세팅에 _type = "json" 꼭 추가해야 변환됨
+
+ * batch: 데이터 수집 로직
+ */
 @Component
 public class TourApiClient {
 
@@ -19,7 +23,7 @@ public class TourApiClient {
         this.webClient = tourWebClient;
     }
 
-    // 테스트용 공공데이터 조회량 batchSize & defaultPage - 프로퍼티에서 수정 가능
+    // 공공데이터 조회량 batchSize & defaultPage - 프로퍼티에서 수정 가능
     @Value("${tour.api.batch-size}") private String batchSize;
     @Value("${tour.api.default-page}") private String defaultPage;
     @Value("${tour.api.service-key}") private String serviceKey;
@@ -119,7 +123,7 @@ public class TourApiClient {
     /**
      * 숙박정보조회 /searchStay2
      * contentTypeId 숙박에서만 유효
-     * @param 법정동 시도/시군구 및 분류체계 대/중/소분류 조건 필터링 (옵션)
+     * @param lDongRegnCd 법정동시도/시군구 및 분류체계 대/중/소분류 조건 필터링 (옵션)
      */
     public String fetchSearchStay(String lDongRegnCd, String lDongSignguCd,
                                 String lclsSystm1, String lclsSystm2, String lclsSystm3, String arrange) {

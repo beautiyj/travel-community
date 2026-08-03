@@ -231,3 +231,85 @@ document.addEventListener("DOMContentLoaded", function () {
 
     syncPriceGroup();
 });
+
+// ── 해시태그 입력 (등록/수정 폼 ) ──
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".venue-tag-input").forEach(function (wrap) {
+        var hidden = wrap.querySelector('input[type="hidden"]');
+        var field = wrap.querySelector(".venue-tag-input__field");
+        if (!hidden || !field) return;
+
+        var tags = (hidden.value || "").split(",")
+            .map(function (tag) { return tag.trim(); })
+            .filter(Boolean);
+
+        function render() {
+            wrap.querySelectorAll(".venue-tag-input__chip").forEach(function (chip) { chip.remove(); });
+            tags.forEach(function (tag) {
+                var chip = document.createElement("span");
+                chip.className = "venue-tag-input__chip";
+                chip.textContent = tag;
+
+                var removeBtn = document.createElement("button");
+                removeBtn.type = "button";
+                removeBtn.className = "venue-tag-input__chip-remove";
+                removeBtn.setAttribute("aria-label", tag + " 태그 삭제");
+                removeBtn.textContent = "×";
+                removeBtn.addEventListener("click", function () {
+                    tags = tags.filter(function (t) { return t !== tag; });
+                    render();
+                });
+                chip.appendChild(removeBtn);
+
+                wrap.insertBefore(chip, field);
+            });
+            hidden.value = tags.join(",");
+        }
+
+        function addTag(raw) {
+            var tag = raw.trim();
+            if (tag && tags.indexOf(tag) === -1) tags.push(tag);
+        }
+
+        //마지막 글자 중복입력 디버깅
+        var isComposing = false;
+        field.addEventListener("compositionstart", function () { isComposing = true; });
+        field.addEventListener("compositionend", function () { isComposing = false; });
+
+        // 콤마/Enter로 직접 입력한 경우: 글자가 필드에 남기 전에 막고 바로 칩으로 반영
+        field.addEventListener("keydown", function (e) {
+            if (isComposing || e.isComposing || e.keyCode === 229) return;
+            if (e.key === "," || e.key === "Enter") {
+                e.preventDefault();
+                addTag(field.value);
+                field.value = "";
+                render();
+            } else if (e.key === "Backspace" && !field.value && tags.length) {
+                tags.pop();
+                render();
+            }
+        });
+
+        field.addEventListener("input", function (e) {
+            if (e.isComposing) return;
+            if (field.value.indexOf(",") === -1) return;
+            var parts = field.value.split(",");
+            field.value = parts.pop();
+            parts.forEach(addTag);
+            render();
+        });
+
+        // 콤마/Enter 없이 텍스트만 남긴 채 제출해도 마지막 입력이 태그로 반영되게 한다
+        if (field.form) {
+            field.form.addEventListener("submit", function () {
+                if (field.value.trim()) {
+                    addTag(field.value);
+                    field.value = "";
+                }
+                hidden.value = tags.join(",");
+            });
+        }
+
+        render();
+    });
+});

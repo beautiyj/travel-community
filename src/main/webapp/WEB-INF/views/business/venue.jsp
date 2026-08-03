@@ -62,6 +62,7 @@
                                 <jsp:param name="minPrice" value="${placeDetail.minPrice}" />
                                 <jsp:param name="address" value="${placeDetail.address}" />
                                 <jsp:param name="description" value="${placeDetail.description}" />
+                                <jsp:param name="hashtags" value="${placeDetail.hashtags}" />
                             </jsp:include>
 
                             <jsp:include page="common/venuePhotoField.jsp">

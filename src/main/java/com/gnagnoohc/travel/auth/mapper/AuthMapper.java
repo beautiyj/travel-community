@@ -20,6 +20,10 @@ public interface AuthMapper {
 
 	int localMemberJoin(MemberLocalAuth memberLocalAuth);
 
+	int insertBusinessApplication(
+			@Param("memberId") int memberId,
+			@Param("fileKey") String fileKey);
+
 	// 로컬 로그인 및 계정 잠금
 	// 같은 계정의 로그인 요청이 동시에 처리되지 않도록 인증 행을 잠가 조회한다.
 	MemberLocalAuth findLocalLoginAuthForUpdate(@Param("username") String username);

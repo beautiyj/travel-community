@@ -59,6 +59,14 @@ public class TourApiHelper {
                     TourItemDTO petDetail = petResponse.getResponse().getBody().getItems().getItem().get(0);
                     masterItem.setAcmpyPsblCpam(petDetail.getAcmpyPsblCpam());
                     masterItem.setPetTursmInfo(petDetail.getPetTursmInfo());
+                    // 0803 추가: 나머지 반려동물 동반 필드도 복사 - extractExtraInfo에서 활용하기 위함
+                    masterItem.setAcmpyNeedMtr(petDetail.getAcmpyNeedMtr());
+                    masterItem.setEtcAcmpyInfo(petDetail.getEtcAcmpyInfo());
+                    masterItem.setAcmpyTypeCd(petDetail.getAcmpyTypeCd());
+                    masterItem.setRelaRntlPrdlst(petDetail.getRelaRntlPrdlst());
+                    masterItem.setRelaFrnshPrdlst(petDetail.getRelaFrnshPrdlst());
+                    masterItem.setRelaPosesFclty(petDetail.getRelaPosesFclty());
+                    masterItem.setRelaAcdntRiskMtr(petDetail.getRelaAcdntRiskMtr());
                 }
             }
         } catch (Exception e) {
@@ -274,6 +282,19 @@ public class TourApiHelper {
                 if (parking != null) infoParts.add("[주차] " + parking);
                 String info = cleanText.apply(introDetail.getInfocenterlodging());
                 if (info != null) infoParts.add("[문의] " + info);
+                // 0803 추가: 수용인원, 객실수, 객실유형, 식음료장, 부대시설, 예약안내
+                String accomCount = cleanText.apply(introDetail.getAccomcountlodging());
+                if (accomCount != null) infoParts.add("[수용인원] " + accomCount);
+                String roomCount = cleanText.apply(introDetail.getRoomcount());
+                if (roomCount != null) infoParts.add("[객실수] " + roomCount);
+                String roomType = cleanText.apply(introDetail.getRoomtype());
+                if (roomType != null) infoParts.add("[객실유형] " + roomType);
+                String foodPlace = cleanText.apply(introDetail.getFoodplace());
+                if (foodPlace != null) infoParts.add("[식음료장] " + foodPlace);
+                String subFacility = cleanText.apply(introDetail.getSubfacility());
+                if (subFacility != null) infoParts.add("[부대시설] " + subFacility);
+                String reservation = cleanText.apply(introDetail.getReservationlodging());
+                if (reservation != null) infoParts.add("[예약안내] " + reservation);
 
             } else if ("food".equals(placeType)) {
                 // [음식점 39] 영업시간, 쉬는날, 주차, 문의처
@@ -285,6 +306,25 @@ public class TourApiHelper {
                 if (parking != null) infoParts.add("[주차] " + parking);
                 String info = cleanText.apply(introDetail.getInfocenterfood());
                 if (info != null) infoParts.add("[문의] " + info);
+                // 0803 추가: 대표메뉴, 취급메뉴, 좌석수, 예약안내, 포장가능, 신용카드, 할인정보, 어린이놀이방, 개업일
+                String firstMenu = cleanText.apply(introDetail.getFirstmenu());
+                if (firstMenu != null) infoParts.add("[대표메뉴] " + firstMenu);
+                String treatMenu = cleanText.apply(introDetail.getTreatmenu());
+                if (treatMenu != null) infoParts.add("[취급메뉴] " + treatMenu);
+                String seat = cleanText.apply(introDetail.getSeat());
+                if (seat != null) infoParts.add("[좌석수] " + seat);
+                String reservationFood = cleanText.apply(introDetail.getReservationfood());
+                if (reservationFood != null) infoParts.add("[예약안내] " + reservationFood);
+                String packing = cleanText.apply(introDetail.getPacking());
+                if (packing != null) infoParts.add("[포장가능] " + packing);
+                String creditCardFood = cleanText.apply(introDetail.getChkcreditcardfood());
+                if (creditCardFood != null) infoParts.add("[신용카드] " + creditCardFood);
+                String discountFood = cleanText.apply(introDetail.getDiscountinfofood());
+                if (discountFood != null) infoParts.add("[할인정보] " + discountFood);
+                String kidsFacility = cleanText.apply(introDetail.getKidsfacility());
+                if (kidsFacility != null) infoParts.add("[어린이놀이방] " + kidsFacility);
+                String opendateFood = cleanText.apply(introDetail.getOpendatefood());
+                if (opendateFood != null) infoParts.add("[개업일] " + opendateFood);
 
             } else if ("tour".equals(placeType)) {
                 // [관광지/문화시설/레포츠 12, 14, 28] 쉬는날, 이용시간, 주차, 문의처
@@ -296,6 +336,32 @@ public class TourApiHelper {
                 if (parking != null) infoParts.add("[주차] " + parking);
                 String info = cleanText.apply(firstHasText(introDetail.getInfocenter(), introDetail.getInfocenterculture(), introDetail.getInfocenterleports()));
                 if (info != null) infoParts.add("[문의] " + info);
+                // 0803 추가: 수용인원, 유모차대여, 신용카드, 애완동물동반(공통) + 타입별 전용 필드(이용시기/개장일/개장기간/할인정보/관람소요시간/예약안내/규모)
+                String accomCount = cleanText.apply(firstHasText(introDetail.getAccomcount(), introDetail.getAccomcountculture(), introDetail.getAccomcountleports()));
+                if (accomCount != null) infoParts.add("[수용인원] " + accomCount);
+                String babyCarriage = cleanText.apply(firstHasText(introDetail.getChkbabycarriage(), introDetail.getChkbabycarriageculture(), introDetail.getChkbabycarriageleports()));
+                if (babyCarriage != null) infoParts.add("[유모차대여] " + babyCarriage);
+                String creditCard = cleanText.apply(firstHasText(introDetail.getChkcreditcard(), introDetail.getChkcreditcardculture(), introDetail.getChkcreditcardleports()));
+                if (creditCard != null) infoParts.add("[신용카드] " + creditCard);
+                String pet = cleanText.apply(firstHasText(introDetail.getChkpet(), introDetail.getChkpetculture(), introDetail.getChkpetleports()));
+                if (pet != null) infoParts.add("[애완동물동반] " + pet);
+                // [관광지 12 전용] 이용시기, 개장일
+                String useSeason = cleanText.apply(introDetail.getUseseason());
+                if (useSeason != null) infoParts.add("[이용시기] " + useSeason);
+                String openDate = cleanText.apply(introDetail.getOpendate());
+                if (openDate != null) infoParts.add("[개장일] " + openDate);
+                // [문화시설 14 전용] 할인정보, 관람소요시간
+                String discount = cleanText.apply(introDetail.getDiscountinfo());
+                if (discount != null) infoParts.add("[할인정보] " + discount);
+                String spendTime = cleanText.apply(introDetail.getSpendtime());
+                if (spendTime != null) infoParts.add("[관람소요시간] " + spendTime);
+                // [레포츠 28 전용] 개장기간, 예약안내, 규모
+                String openPeriod = cleanText.apply(introDetail.getOpenperiod());
+                if (openPeriod != null) infoParts.add("[개장기간] " + openPeriod);
+                String reservation = cleanText.apply(introDetail.getReservation());
+                if (reservation != null) infoParts.add("[예약안내] " + reservation);
+                String scale = cleanText.apply(introDetail.getScaleleports());
+                if (scale != null) infoParts.add("[규모] " + scale);
             }
         }
 
@@ -320,6 +386,17 @@ public class TourApiHelper {
             if (needMtr != null) infoParts.add("[동반시 필요사항] " + needMtr);
             String etcInfo = cleanText.apply(itemDTO.getEtcAcmpyInfo());
             if (etcInfo != null) infoParts.add("[기타 동반 정보] " + etcInfo);
+            // 0803 추가: 동반유형, 관련 렌탈 품목, 관련 비치 품목, 관련 구비 시설, 관련 사고 대비사항
+            String acmpyType = cleanText.apply(itemDTO.getAcmpyTypeCd());
+            if (acmpyType != null) infoParts.add("[동반유형] " + acmpyType);
+            String rentalPrdlst = cleanText.apply(itemDTO.getRelaRntlPrdlst());
+            if (rentalPrdlst != null) infoParts.add("[관련 렌탈 품목] " + rentalPrdlst);
+            String frnshPrdlst = cleanText.apply(itemDTO.getRelaFrnshPrdlst());
+            if (frnshPrdlst != null) infoParts.add("[관련 비치 품목] " + frnshPrdlst);
+            String posesFclty = cleanText.apply(itemDTO.getRelaPosesFclty());
+            if (posesFclty != null) infoParts.add("[관련 구비 시설] " + posesFclty);
+            String acdntRiskMtr = cleanText.apply(itemDTO.getRelaAcdntRiskMtr());
+            if (acdntRiskMtr != null) infoParts.add("[관련 사고 대비사항] " + acdntRiskMtr);
         }
 
         if (infoParts.isEmpty()) return null;

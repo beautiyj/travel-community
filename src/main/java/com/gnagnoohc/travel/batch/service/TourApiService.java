@@ -399,4 +399,21 @@ public class TourApiService {
         }
     }
 
+    // 장소 이미지 목록 조회 (대표 이미지와 중복되는 항목 자동 제거)
+    public List<PlaceImageDTO> getPlaceImages(Long placeId) {
+        // 1. 해당 장소 정보(대표 이미지 확인용)와 이미지 목록을 각각 가져옴
+        PlaceDTO place = tourMapper.selectPlaceById(placeId);
+        List<PlaceImageDTO> images = tourMapper.getImagesByPlaceId(placeId);
+        
+        if (images == null || images.isEmpty()) {
+            return images;
+        }
+        
+        // 2. 대표 이미지(firstImage)가 존재한다면, 추가 이미지 목록에서 URL이 같은 것과 서로 중복되는 항목 제거
+        return images.stream()
+                .filter(img -> place == null || place.getFirstImage() == null || !place.getFirstImage().equals(img.getImageUrl()))
+                .distinct() // 혹시 이미지 목록 자체에 똑같은 URL이 연속으로 들어있는 경우도 방지
+                .toList();
+    }
+
 }

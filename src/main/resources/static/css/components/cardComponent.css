@@ -67,9 +67,11 @@
 .card-row-center {
   align-self: stretch;
   display: flex;
+  flex-wrap: wrap; /* 0803 해시태그가 카드영역 넘치면 다음 줄로 엔터처리 */
   align-items: center;
   padding-top: 4px;
   gap: 4px;
+  overflow: hidden; /* 카드를 벗어나는 영역 차단 */
 }
 
 .card-row-between {

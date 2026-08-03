@@ -102,6 +102,8 @@ public class TourDataConverter {
                 .minPrice(minPrice)
                 .isClosed("0".equals(syncItem.getShowflag()))
                 .firstImage(thumbnailImage) // 조인 없는 카드 리스트용 1차 썸네일 세팅
+                // TODO: 0803 썸네일이미지 화질 저하 상태, 테스트 후 원본링크로 대체 로직 필요
+                // .firstImage(item.getOriginimgurl() != null ? item.getOriginimgurl() : thumbnailImage)
                 .hashtags(hashtags)
                 .peopleCount(1)
                 .extraInfo(extraInfo) // TODO: 부가정보컬럼 추가 시 -  0730 extraInfo 추가 세팅

@@ -258,29 +258,28 @@ public class TourApiClient {
     /**
      * 관광정보 동기화 목록 조회 /areaBasedSyncList2 - 배치 수집 전용 API (DB 최신상태 유지용 API)
      * 파라미터에 따라 제목순, 수정일순(최신순), 등록일순 정렬 검색 제공
-     * @param modifiedtime 콘텐츠변경일자 (옵션)
+     * @param contentTypeId 관광타입 ID (옵션) - 0803 수정: 기존 modifiedtime 자리에 잘못 바인딩되던 버그 수정
      * @param showflag 콘텐츠표출여부 1/0 (옵션, 1=표출 0=비표출)
      * 
      * 동기화 목록에서만 페이징 매개변수 처리
      */
-    public String fetchAreaBasedSyncList(int defaultPage, String modifiedtime, String showflag, String arrange) {
-        try {
-            return this.webClient.get()
-                .uri(uriBuilder -> uriBuilder
-                    .path("/areaBasedSyncList2")
-                    .queryParam("serviceKey", serviceKey)
-                    .queryParam("MobileOS", "ETC")
-                    .queryParam("MobileApp", "Travel")
-                    .queryParam("_type", "json")
-                    .queryParam("numOfRows", batchSize)
-                    .queryParam("pageNo", defaultPage)
-                    .queryParam("arrange", arrange)
-                    .queryParam("modifiedtime", modifiedtime)
-                    .queryParam("showflag", showflag)
-                    .build())
-                .retrieve()
-                .bodyToMono(String.class)
-                .block();
+    public String fetchAreaBasedSyncList(int defaultPage, String contentTypeId, String showflag, String arrange) {        try {
+        return this.webClient.get()
+            .uri(uriBuilder -> uriBuilder
+                .path("/areaBasedSyncList2")
+                .queryParam("serviceKey", serviceKey)
+                .queryParam("MobileOS", "ETC")
+                .queryParam("MobileApp", "Travel")
+                .queryParam("_type", "json")
+                .queryParam("numOfRows", batchSize)
+                .queryParam("pageNo", defaultPage)
+                .queryParam("arrange", arrange)
+                .queryParam("contentTypeId", contentTypeId)
+                .queryParam("showflag", showflag)
+                .build())
+            .retrieve()
+            .bodyToMono(String.class)
+            .block();
         } catch (Exception e) {
             throw new RuntimeException("fetchAreaBasedSyncList 에러: " + e.getMessage(), e);
         }

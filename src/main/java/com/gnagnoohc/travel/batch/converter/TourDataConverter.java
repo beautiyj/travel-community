@@ -73,8 +73,13 @@ public class TourDataConverter {
         // 헬퍼 메소드 parseMinPrice - extractFeeInfo에서 추출한 원문 텍스트를 전달하여 검색/정렬용 최저가 숫자(minPrice) 파싱
         Integer minPrice = tourApiHelper.parseMinPrice(useFeeInfo);
 
-        // TODO: 부가정보컬럼 추가 시 - 0730 부가정보(주차, 휴무일, 영업시간 등) 정제 문장 추출
-       String extraInfo = tourApiHelper.extractExtraInfo(introDetail, placeType);
+        // TODO: 부가정보컬럼 추가 - 부가정보(주차, 휴무일, 영업시간 등) infoDetail(단일 반복정보)을 List로 감싸고, tourItem(반려동물 동반 데이터 포함)을 itemDTO로 전달
+        String extraInfo = tourApiHelper.extractExtraInfo(
+                introDetail,
+                infoDetail != null ? List.of(infoDetail) : List.of(),
+                tourItem,
+                placeType
+        );
 
         // HashtagGenerator.java - cat1/cat2/cat3(대중소분류) 전달하도록 변경
         String hashtags = hashtagGenerator.generateHashtags(

@@ -14,8 +14,8 @@
     <title>예약하기</title>
     <link rel="stylesheet" href="/css/common.css">
     <link rel="stylesheet" href="/css/components/inputField.css">
-    <link rel="stylesheet" href="/css/reservation.css">
-    <link rel="stylesheet" href="/css/reservation-calendar.css">
+    <link rel="stylesheet" href="/css/reservation/reservation.css">
+    <link rel="stylesheet" href="/css/reservation/reservation-calendar.css">
 </head>
 <body>
 

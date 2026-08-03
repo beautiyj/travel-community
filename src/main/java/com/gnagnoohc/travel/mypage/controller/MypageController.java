@@ -1,6 +1,12 @@
 package com.gnagnoohc.travel.mypage.controller;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -139,18 +145,74 @@ public class MypageController {
     }
 
     @GetMapping("/reservation")
-    public String reservation(Model model, HttpSession session) {
+    public String reservation(
+            @RequestParam(name = "status", required = false) String status,
+            Model model,
+            HttpSession session) {
 
         Long memberId = getMemberId(session);
-        List<MypageDto> reservationList =
-                mypageService.getReservationList(memberId);
+        if (memberId == null) {
+            return "redirect:/auth/login";
+        }
 
-        System.out.println("reservationList: " + reservationList);
+        List<MypageDto> allReservations = mypageService.getReservationList(memberId);
+        String statusFilter = normalizeReservationStatus(status);
+        List<MypageDto> reservationList = allReservations.stream()
+                .filter(reservation -> statusFilter == null
+                        || matchesReservationStatus(reservation.getStatus(), statusFilter))
+                .toList();
 
+        model.addAttribute("reservationTabs", buildReservationTabs(allReservations));
+        model.addAttribute("statusFilter", statusFilter);
+        model.addAttribute("reservationTotalCount", reservationList.size());
+        model.addAttribute("todayLabel", LocalDate.now().format(
+                DateTimeFormatter.ofPattern("yyyy년 M월 d일 (E)", Locale.KOREAN)));
         model.addAttribute("reservationList", reservationList);
         model.addAttribute("member", mypageService.getMemberInfo(memberId));
 
         return "mypage/reservation";
+    }
+
+    private List<Map<String, Object>> buildReservationTabs(List<MypageDto> reservations) {
+        Map<String, String> filters = new LinkedHashMap<>();
+        filters.put("전체", null);
+        filters.put("결제완료", "PAID");
+        filters.put("취소요청", "CANCEL_REQUESTED");
+        filters.put("확정", "CONFIRMED");
+        filters.put("완료", "COMPLETED");
+        filters.put("취소", "CANCELED");
+
+        List<Map<String, Object>> tabs = new ArrayList<>();
+        filters.forEach((label, value) -> {
+            long count = value == null
+                    ? reservations.size()
+                    : reservations.stream()
+                            .filter(reservation -> matchesReservationStatus(reservation.getStatus(), value))
+                            .count();
+            Map<String, Object> tab = new LinkedHashMap<>();
+            tab.put("label", label);
+            tab.put("value", value);
+            tab.put("count", count);
+            tabs.add(tab);
+        });
+        return tabs;
+    }
+
+    private String normalizeReservationStatus(String status) {
+        if (status == null || status.isBlank()) {
+            return null;
+        }
+        return switch (status) {
+            case "PAID", "CANCEL_REQUESTED", "CONFIRMED", "COMPLETED", "CANCELED" -> status;
+            default -> null;
+        };
+    }
+
+    private boolean matchesReservationStatus(String actualStatus, String expectedStatus) {
+        if ("CANCELED".equals(expectedStatus)) {
+            return "CANCELED".equals(actualStatus) || "CANCELLED".equals(actualStatus);
+        }
+        return expectedStatus.equals(actualStatus);
     }
 
     @GetMapping("/wishlist")

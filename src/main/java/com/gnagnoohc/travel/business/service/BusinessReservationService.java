@@ -32,6 +32,23 @@ public class BusinessReservationService {
         return businessMapper.selectReservationStatusCounts(placeId, bizMemberId);
     }
 
+    /** 결제완료(PAID) 예약을 확정(CONFIRMED)으로 전환 (예약 파트 소유 로직, 여기서는 소유자 확인만 담당) */
+    public void confirm(Long reservationId, Long bizMemberId) {
+        requireOwner(reservationId, bizMemberId);
+        reservationService.approve(reservationId);
+    }
+
+    /**
+     * 결제완료(PAID) 예약 거절 → 환불 실행 + 거절 사유 기록 (PAID 검증·결제건 조회·환불·reject_reason
+     * 저장을 모두 reservation 파트 PaymentService.rejectPaid()가 처리한다).
+     * reason은 사업자가 입력한 거절 사유.
+     */
+    @Transactional
+    public void reject(Long reservationId, Long bizMemberId, String reason) {
+        requireOwner(reservationId, bizMemberId);
+        paymentService.rejectPaid(reservationId, reason);
+    }
+
     /** 취소 요청 승인 → 카카오 환불 실행 + CANCELED 전환 (예약 파트 소유 로직, 여기서는 소유자 확인만 담당) */
     public void approveCancel(Long reservationId, Long bizMemberId) {
         requireOwner(reservationId, bizMemberId);

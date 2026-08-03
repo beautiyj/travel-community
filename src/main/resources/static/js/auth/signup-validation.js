@@ -5,6 +5,9 @@
 (function exposeSignupValidation(global) {
 	"use strict";
 
+	const MAX_BUSINESS_REGISTRATION_FILE_SIZE = 5 * 1024 * 1024;
+	const BUSINESS_REGISTRATION_FILE_EXTENSION_PATTERN = /\.(jpe?g|png)$/i;
+
 	function result(valid, message) {
 		return {
 			valid,
@@ -100,6 +103,27 @@
 		return result(agreed === true, "개인정보 수집 및 이용에 동의해주세요.");
 	}
 
+	function validateBusinessRegistrationFile(memberType, file) {
+		// 일반회원 요청에 파일 필드가 조작되어 포함돼도 사업자 가입 검증 대상으로 취급하지 않는다.
+		if (Number(memberType) !== 2) {
+			return result(true, "");
+		}
+		if (!file) {
+			return result(false, "사업자등록증 파일을 첨부해주세요.");
+		}
+		if (typeof file.name !== "string"
+			|| !BUSINESS_REGISTRATION_FILE_EXTENSION_PATTERN.test(file.name)) {
+			return result(false, "사업자등록증은 JPG, JPEG, PNG 파일만 첨부할 수 있습니다.");
+		}
+		if (typeof file.size !== "number" || file.size <= 0) {
+			return result(false, "비어 있는 파일은 첨부할 수 없습니다.");
+		}
+		return result(
+			file.size <= MAX_BUSINESS_REGISTRATION_FILE_SIZE,
+			"사업자등록증 파일은 5MB 이하만 첨부할 수 있습니다."
+		);
+	}
+
 	function validateLoginIdForSignup(value, checkedLoginId) {
 		const formatValidation = validateLoginId(value);
 		if (!formatValidation.valid) {
@@ -139,9 +163,12 @@
 			birth: validateBirth(input.birth, today),
 			phone: validatePhone(input.phone),
 			gender: validateGender(input.gender),
-			privacyAgreed: validatePrivacyAgreement(input.privacyAgreed)
+			privacyAgreed: validatePrivacyAgreement(input.privacyAgreed),
+			businessRegistrationFile: validateBusinessRegistrationFile(
+				input.memberType,
+				input.businessRegistrationFile
+			)
 		};
-		// TODO: 사업자 승인 기능 추가 시 사업자등록증 상태를 values에 추가하고 여기서 함께 검증한다.
 		const errors = {};
 		let valid = true;
 
@@ -170,6 +197,7 @@
 		validatePhone,
 		validateGender,
 		validatePrivacyAgreement,
+		validateBusinessRegistrationFile,
 		validateSignup
 	});
 })(window);

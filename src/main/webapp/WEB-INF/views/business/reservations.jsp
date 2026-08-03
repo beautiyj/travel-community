@@ -9,6 +9,8 @@
     <link rel="stylesheet" href="/css/common.css">
     <link rel="stylesheet" href="/css/business.css">
     <link rel="stylesheet" href="/css/components/smallButton.css">
+    <link rel="stylesheet" href="/css/components/buttonComponent.css">
+    <link rel="stylesheet" href="/css/components/confirmModal.css">
 </head>
 <body>
 
@@ -18,36 +20,22 @@
     </jsp:include>
 
     <div class="business-main">
-        <div class="business-topbar">
-            <h1 class="business-topbar__title">예약 관리</h1>
-            <span class="business-topbar__date">
-                <svg class="business-topbar__date-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/>
-                    <path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-                ${todayLabel}
-            </span>
-        </div>
+        <jsp:include page="common/topbar.jsp">
+            <jsp:param name="title" value="예약 관리" />
+            <jsp:param name="date" value="${todayLabel}" />
+            <jsp:param name="dateIcon" value="true" />
+        </jsp:include>
 
         <div class="business-content">
-            <div class="business-filter-row">
-                <c:forEach var="s" items="${statusOptions}">
-                    <c:url value="/business/reservations" var="filterUrl">
-                        <c:if test="${s != '전체'}">
-                            <c:param name="status" value="${s}" />
-                        </c:if>
-                    </c:url>
-                    <c:choose>
-                        <c:when test="${s == '취소요청'}"><c:set var="filterCount" value="${statusCounts.cancelRequestCount}" /></c:when>
-                        <c:when test="${s == '확정'}"><c:set var="filterCount" value="${statusCounts.confirmedCount}" /></c:when>
-                        <c:when test="${s == '완료'}"><c:set var="filterCount" value="${statusCounts.doneCount}" /></c:when>
-                        <c:when test="${s == '취소'}"><c:set var="filterCount" value="${statusCounts.cancelledCount}" /></c:when>
-                        <c:otherwise><c:set var="filterCount" value="" /></c:otherwise>
-                    </c:choose>
-                    <a href="${filterUrl}" class="business-filter-btn${statusFilter == s ? ' is-active' : ''}">${s}<c:if test="${not empty filterCount}"> <span class="business-filter-btn__count">${filterCount}</span></c:if></a>
-                </c:forEach>
-                <span class="business-filter-row__total">총 ${reservations.size()}건</span>
-            </div>
+            <c:if test="${not empty reservationError}">
+                <div class="business-alert business-alert--error"><c:out value="${reservationError}" /></div>
+            </c:if>
+
+            <jsp:include page="common/filterTabs.jsp">
+                <jsp:param name="baseUrl" value="/business/reservations" />
+                <jsp:param name="paramName" value="status" />
+                <jsp:param name="totalCount" value="${reservations.size()}" />
+            </jsp:include>
 
             <div class="business-card">
                 <c:choose>
@@ -85,6 +73,9 @@
         </div>
     </div>
 </div>
+
+<script src="/js/common.js"></script>
+<script src="/js/business/business-reservations.js"></script>
 
 </body>
 </html>

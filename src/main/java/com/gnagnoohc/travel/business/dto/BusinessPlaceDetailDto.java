@@ -17,6 +17,7 @@ public class BusinessPlaceDetailDto {
     private String regionName;
     private String address;
     private String description;
+    private String hashtags;
     private boolean closed;
     private List<String> images;
 }

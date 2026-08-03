@@ -12,6 +12,8 @@ public class LoginMemberDto {
 
 	private int memberId;
 	private String nickname;
+	// 마이페이지에서 회원 유형을 구분할 수 있도록 DB의 member_type 값을 보관한다.
+	private int memberType;
 	// DB에서 조회한 member_role 문자열을 그대로 저장한다.
 	private String memberRole;
 }

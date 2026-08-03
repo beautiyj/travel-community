@@ -32,7 +32,7 @@
         <h1>${businessMember ? '사업자 회원가입' : '일반 회원가입'}</h1>
         <p>
             <c:choose>
-                <c:when test="${businessMember}">사업자 회원으로 가입하면 업소와 예약을 관리할 수 있습니다.</c:when>
+                <c:when test="${businessMember}">사업자 회원가입 후 관리자 승인을 받으면 업소와 예약을 관리할 수 있습니다.</c:when>
                 <c:otherwise>나만의 여행 기록을 시작해보세요.</c:otherwise>
             </c:choose>
         </p>
@@ -105,7 +105,23 @@
             <p id="verificationCodeError" class="field-error" aria-live="polite"></p>
         </div>
 
-        <%-- TODO 사업자 승인 기능을 추가할 때 사업자등록증 업로드 항목을 구현한다. --%>
+        <c:if test="${businessMember}">
+            <div class="form-field">
+                <label for="businessRegistrationFile">사업자등록증</label>
+                <input id="businessRegistrationFile" name="businessRegistrationFile" type="file"
+                       accept=".jpg,.jpeg,.png,image/jpeg,image/png" required hidden
+                       aria-describedby="businessRegistrationFileHelp businessRegistrationFileError">
+                <div class="input-action-row">
+                    <p id="businessRegistrationFileInfo" class="business-registration-file-info"
+                       role="status" aria-live="polite" aria-atomic="true">선택된 파일 없음</p>
+                    <button id="businessRegistrationFileButton" class="secondary-button" type="button"
+                            aria-label="사업자등록증 파일 선택"
+                            aria-describedby="businessRegistrationFileHelp businessRegistrationFileError">파일 선택</button>
+                </div>
+                <p id="businessRegistrationFileHelp" class="field-help">JPG, JPEG, PNG 형식, 최대 5MB</p>
+                <p id="businessRegistrationFileError" class="field-error" aria-live="polite"></p>
+            </div>
+        </c:if>
 
         <div class="form-field">
             <label for="nickname">닉네임</label>
@@ -133,7 +149,7 @@
         </div>
 
         <fieldset class="form-field" aria-describedby="genderError">
-            <legend>성별 <span class="optional-label">필수</span></legend>
+            <legend>성별</legend>
             <div class="choice-row">
                 <label><input type="radio" name="gender" value="MALE" required> 남성</label>
                 <label><input type="radio" name="gender" value="FEMALE" required> 여성</label>

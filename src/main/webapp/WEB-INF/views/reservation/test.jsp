@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>예약/결제 테스트</title>
-    <link rel="stylesheet" href="/css/reservation-test.css">
+    <link rel="stylesheet" href="/css/reservation/reservation-test.css">
 </head>
 <body>
 <div class="wrap">

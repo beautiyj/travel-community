@@ -353,6 +353,11 @@ public class TourApiService {
 
         // convertToPlaceDTO -> 서비스 PlaceDTO 변환 및 해시태그 생성
         PlaceDTO placeDto = tourDataConverter.convertToPlaceDTO(syncItem, tourItem, introDetail, infoDetail, thumbnailImage);
+        if (!tourValidator.isValidPrice(placeDto.getMinPrice(), placeDto.getPlaceType())) {
+            log.info("[Batch Skip] 가격 정보 없음 - contentId: {}, placeType: {}", syncItem.getContentid(), placeDto.getPlaceType());
+            return;
+            // processSinglePlace 메서드가 void면 return, for문 안이면 continue로
+        }
 
         /* TODO: 0731 minPrice null이면 적재xx 필터링하되, useFeeInfo가 있으면서 minPrice가 숫자필터링되지 않고 null인 경우만 minPrice #가격변동 으로 일괄처리 변경할 것
         (대신 placeType="food"인 경우, minprice=null이어도 허용하기) */

@@ -49,9 +49,6 @@ public class TourValidator {
         // 기본 공통 필수값 체크 (대표 이미지 및 법정동 지역 코드 누락 방어용 로직)
         if (!StringUtils.hasText(item.getFirstimage()) || !StringUtils.hasText(item.getLDongRegnCd()) || !StringUtils.hasText(item.getLDongSignguCd())) { return false; }
 
-        // MIN_PRICE NOT NULL 검증 (기본적으로 공공데이터로 들어오는 데이터는 전부 MIN_PRICE 필수)
-        // if (item.getMinPrice() == null || item.getMinPrice() < 0) { return false; }
-
         String title = item.getTitle();
         // 0731 수정: 상단에서 이미 선언된 contentTypeId 변수와 중복되므로 타입 선언(String) 제거
         contentTypeId = item.getContenttypeid();
@@ -95,4 +92,14 @@ public class TourValidator {
         if ("FD040300".equals(cat3) || "FD040500".equals(cat3)) { return false; }
         return true;
     }
+
+    // TODO: 0731 minPrice null이면 적재 제외 (단, placeType="food"는 예외 허용)
+    // PlaceDTO 생성(convertToPlaceDTO) 이후, DB 저장 직전 단계에서 호출되는 2차(post-convert) 검증 메서드
+    public boolean isValidPrice(Integer minPrice, String placeType) {
+        if ("food".equals(placeType)) {
+            return true; // 음식점은 가격 정보 미제공이 흔하므로 예외 허용
+        }
+        return minPrice != null && minPrice >= 0;
+    }
+
 }

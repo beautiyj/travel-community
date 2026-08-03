@@ -152,6 +152,18 @@
                 </div>
             </div>
 
+            <!-- 0803 부가정보(주차, 휴무일, 영업시간 등) 렌더링 -->
+            <c:if test="${not empty place.extraInfo}">
+                <div class="extra-info">
+                    <h4>이용 안내</h4>
+                    <ul class="extra-info-list">
+                        <c:forEach var="line" items="${fn:split(place.extraInfo, '\n')}">
+                            <li>${line}</li>
+                        </c:forEach>
+                    </ul>
+                </div>
+            </c:if>
+
             <!-- 5. 여행 후기 코너 영역 -->
             <div class="review-section">
                 <div class="review-title">여행 후기 (0)</div>

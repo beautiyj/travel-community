@@ -35,7 +35,7 @@ public class PlaceEntity {
     private Integer peopleCount;   // 정원 / 기준 인원 수 컬럼
 
 // TODO: 0730 상세 화면용 부가정보(주차, 휴무일, 영업시간, 문의처 등 통합 정제 텍스트) 컬럼 추가할 경우, 더미데이터 로직 및 해시태그 로직 변동됨
-//    private String extraInfo;
+   private String extraInfo;
 
     // 사업자 정보 수동 수정용 메서드
     public void updateBusinessInfo(String name, String description, String address, Integer peopleCount) {

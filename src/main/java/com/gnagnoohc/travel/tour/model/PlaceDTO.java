@@ -31,4 +31,21 @@ public class PlaceDTO {
     private Integer minPrice;       // 최저/대표 가격 (원)
     private String useFeeInfo;      // 요금 안내 원문 텍스트
     private Integer peopleCount;   // 정원 / 기준 인원 수 컬럼
+
+    private String extraInfo;
+    
+    // 0801
+    // 기존 필드들 아래에 추가
+    private String regionName;   // REGION 테이블 join 전용 - DB PLACE 테이블엔 없는 조회 전용 필드
+
+    // 클래스 안에 메서드로 추가 (Lombok @Data가 자동 생성 안 해주는 커스텀 getter)
+    public String getDisplayPrice() {
+        if (minPrice != null) {
+            return minPrice + "원~";
+        } else if (useFeeInfo != null && !useFeeInfo.isBlank()) {
+            return useFeeInfo;
+        }
+        return "정보 없음";
+    }
+
 }

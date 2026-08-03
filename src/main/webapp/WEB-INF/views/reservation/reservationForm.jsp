@@ -1,6 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <%-- tour(관광지)·food(맛집) = 만나서결제(예약금), 그 외(숙박 등) = 정가 --%>
 <c:set var="payOnSite" value="${placeType eq 'tour' or placeType eq 'food'}" />
 <%-- 숙박만 기간(체크인~체크아웃) 예약. 맛집/관광지·무료는 당일 방문 --%>
@@ -36,11 +37,11 @@
 
             <!-- ─── 왼쪽: 입력 폼 ─── -->
             <div>
-                <!-- TODO: 숙박/맛집 파트 완성 후 placeId로 조회한 장소 정보(이름/지역/사진/평점)로 교체 -->
+                <!-- TODO: 숙박/맛집 파트 완성 후 placeId로 조회한 장소 정보(지역/사진/평점)로 교체. 이름만 우선 반영 -->
                 <div class="place-card">
                     <div class="thumb">&#127756;</div>
                     <div>
-                        <p class="name">장소 #${placeId}</p>
+                        <p class="name">${fn:escapeXml(placeName)}</p>
                         <p class="desc">장소 정보 연동 예정</p>
                     </div>
                 </div>
@@ -117,7 +118,7 @@
             <!-- ─── 오른쪽: 예약 요약 ─── -->
             <div class="summary-card">
                 <h3>예약 요약</h3>
-                <div class="summary-row"><span class="label">숙소/장소</span><span class="value">장소 #${placeId}</span></div>
+                <div class="summary-row"><span class="label">숙소/장소</span><span class="value">${fn:escapeXml(placeName)}</span></div>
                 <div class="summary-row"><span class="label">${isStay ? '기간' : '날짜'}</span><span class="value" id="sumDate">&mdash;</span></div>
                 <c:if test="${isStay}">
                     <div class="summary-row"><span class="label">숙박</span><span class="value" id="sumNights">&mdash;</span></div>

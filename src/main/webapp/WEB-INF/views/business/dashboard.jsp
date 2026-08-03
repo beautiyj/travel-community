@@ -8,6 +8,10 @@
     <title>대시보드 - 관리자 - 갈래말래</title>
     <link rel="stylesheet" href="/css/common.css">
     <link rel="stylesheet" href="/css/business.css">
+    <%-- 오늘 예약 현황의 처리 버튼·거절 사유 모달용 (예약 관리 화면과 동일 구성) --%>
+    <link rel="stylesheet" href="/css/components/smallButton.css">
+    <link rel="stylesheet" href="/css/components/buttonComponent.css">
+    <link rel="stylesheet" href="/css/components/confirmModal.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/wordcloud@1.2.2/src/wordcloud2.js"></script>
 </head>
@@ -19,10 +23,10 @@
     </jsp:include>
 
     <div class="business-main">
-        <div class="business-topbar">
-            <h1 class="business-topbar__title">대시보드</h1>
-            <span class="business-topbar__date">${todayLabel}</span>
-        </div>
+        <jsp:include page="common/topbar.jsp">
+            <jsp:param name="title" value="대시보드" />
+            <jsp:param name="date" value="${todayLabel}" />
+        </jsp:include>
 
         <div class="business-content">
             <!-- KPI 카드 -->
@@ -98,6 +102,8 @@
                                     <jsp:param name="status" value="${r.status}" />
                                     <jsp:param name="statusLabel" value="${r.status.label}" />
                                     <jsp:param name="amount" value="${r.amount}" />
+                                    <jsp:param name="mode" value="actionable" />
+                                    <jsp:param name="reservationId" value="${r.reservationId}" />
                                 </jsp:include>
                             </c:forEach>
                         </div>
@@ -186,6 +192,10 @@
         });
     }
 </script>
+
+<%-- 오늘 예약 현황의 거절 사유 모달 열고닫기(common.js) + select/기타 입력 처리 --%>
+<script src="/js/common.js"></script>
+<script src="/js/business/business-reservations.js"></script>
 
 </body>
 </html>

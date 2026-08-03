@@ -27,10 +27,10 @@ public class ReservationService {
     public static final int RESERVE_DEPOSIT = 10000;
 
     /**
-     * 맛집·관광지 하루 정원(명). 지금은 캘린더에 "7/10" 남은 자리를 보여주는 표시용으로만 쓴다.
-     * 초과해도 예약은 막지 않는다(차단은 추후). TODO: 관리자 정원 설정이 생기면 그 값으로 교체.
+     * 맛집·관광지 하루 정원(명). 캘린더에 "남은 자리" 표시 + create()에서 초과 시 예약 차단에 쓴다.
+     * TODO: 관리자 정원 설정이 생기면(장소별 값) 이 고정값 대신 그쪽 조회로 교체.
      */
-    public static final int DAILY_CAPACITY = 10;
+    public static final int DAILY_CAPACITY = 15;
 
     /**
      * 만나서 결제(예약금만 선결제) 대상인지. tour(관광지)·food(맛집)만 예약금, 그 외(숙박 등)는 정가.
@@ -93,6 +93,20 @@ public class ReservationService {
             }
         }
 
+        // 관리자가 날짜별로 마감 지정한 날(PLACE_CLOSED_DATE)이 요청 기간에 포함되면 거부
+        LocalDate closedRangeTo = isStay(placeType) ? req.getCheckOutDate() : req.getVisitDate().plusDays(1);
+        if (reservationMapper.countClosedDatesInRange(req.getPlaceId(), req.getVisitDate(), closedRangeTo) > 0) {
+            throw new IllegalStateException("마감된 날짜가 포함되어 있습니다.");
+        }
+
+        // 맛집/관광지 하루 정원(DAILY_CAPACITY) 초과 시 거부. 숙박은 1팀 단독이라 위 overlap 체크로 이미 처리됨
+        if (isPayOnSite(placeType)) {
+            int already = reservationMapper.sumHeadcountOnDate(req.getPlaceId(), req.getVisitDate());
+            if (already + req.getHeadcount() > DAILY_CAPACITY) {
+                throw new IllegalStateException("정원이 초과되어 예약할 수 없습니다.");
+            }
+        }
+
         Reservation r = new Reservation();
         r.setMemberId(memberId);
         r.setPlaceId(req.getPlaceId());
@@ -110,6 +124,28 @@ public class ReservationService {
     @Transactional(readOnly = true)
     public String getPlaceType(Long placeId) {
         return reservationMapper.findPlaceType(placeId);
+    }
+
+    /**
+     * 결제 확정 직전 마지막 방어: 예약 생성(PENDING) 이후 결제 대기 중에 관리자가 마감시켰을 수 있으니
+     * PaymentService.saveSuccess()에서 PAID로 바꾸기 전에 다시 한 번 확인한다.
+     */
+    @Transactional(readOnly = true)
+    public void assertStillAvailable(Long reservationId) {
+        Reservation r = getById(reservationId);
+        if (Boolean.TRUE.equals(reservationMapper.findPlaceClosed(r.getPlaceId()))) {
+            throw new IllegalStateException("휴무 중인 장소입니다.");
+        }
+        LocalDate closedRangeTo = isStay(r.getPlaceType()) ? r.getCheckOutDate() : r.getVisitDate().plusDays(1);
+        if (reservationMapper.countClosedDatesInRange(r.getPlaceId(), r.getVisitDate(), closedRangeTo) > 0) {
+            throw new IllegalStateException("마감된 날짜가 포함되어 있습니다.");
+        }
+    }
+
+    /** PLACE.name 조회. 예약 폼 표시용 */
+    @Transactional(readOnly = true)
+    public String getPlaceName(Long placeId) {
+        return reservationMapper.findPlaceName(placeId);
     }
 
     @Transactional(readOnly = true)
@@ -149,6 +185,7 @@ public class ReservationService {
         Map<String, Object> result = new HashMap<>();
         result.put("booked", booked);
         result.put("closed", Boolean.TRUE.equals(reservationMapper.findPlaceClosed(placeId)));
+        result.put("closedDates", reservationMapper.findClosedDates(placeId));
         result.put("capacity", DAILY_CAPACITY);   // 맛집·관광지 캘린더의 남은 자리 표시용(차단 아님)
         return result;
     }

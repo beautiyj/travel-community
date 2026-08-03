@@ -13,6 +13,9 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
+/* TourDataConverter.java - 공공데이터 응답 데이터 -> 실제 데이터베이스의 테이블로 최종 변환하는 로직
+*
+* */
 @Component
 @RequiredArgsConstructor
 public class TourDataConverter {
@@ -25,7 +28,6 @@ public class TourDataConverter {
 
     // TourLdongCodeDTO -> RegionDTO 변환
     public RegionDTO convertToRegionDTO(TourLdongCodeDTO ldongCodeDTO) {
-        // 법정동코드는 무조건 Y 전체목록조회 로직으로 진행
         String regnCd = StringUtils.hasText(ldongCodeDTO.getLDongRegnCd()) ? ldongCodeDTO.getLDongRegnCd() : ldongCodeDTO.getCode();
         String signguCd = ldongCodeDTO.getLDongSignguCd();
 
@@ -40,8 +42,7 @@ public class TourDataConverter {
         if (StringUtils.hasText(ldongCodeDTO.getLDongSignguNm())) { rawName += " " + ldongCodeDTO.getLDongSignguNm(); }
 
         // 부모 ID(parentRegionId) 설정
-        // 자식 데이터(시군구 코드가 존재하거나, 코드가 5자리 이상)라면 앞 2자리(시도 코드)를 부모 ID로 지정
-        // 단독 시도 데이터라면 parentRegionId는 무조건 null
+        // 자식 데이터(시군구 코드가 존재하거나, 코드가 5자리 이상)라면 앞 2자리(시도 코드)를 부모 ID로 지정, 단독 시도 데이터라면 parentRegionId는 무조건 null
         Integer parentRegionId = null;
         if (StringUtils.hasText(signguCd) || rawCode.length() >= 5) { parentRegionId = Integer.parseInt(regnCd); }
         else { parentRegionId = null; }
@@ -55,13 +56,14 @@ public class TourDataConverter {
 
     // TourLclsSystmCodeDTO -> PlaceDTO 변환
     // 메타데이터인 법정동코드가 아닌, 실제정보가 필요한 동기화 API TourAreaBasedSyncListDTO를 플레이스에 넣어야 함
+    // TODO: 0803 썸네일 이미지의 경우 화질 확인 완료. 조정 필요함, 필터링작업 이후 수정 예정
     // thumbnailImage를 5번째 파라미터로 받도록 변경 - PlaceImage 판단 로직(resolveThumbnailImage)에서 계산된 값을 전달받는 구조로 전환
     public PlaceDTO convertToPlaceDTO(TourAreaBasedSyncListDTO syncItem, TourItemDTO tourItem, TourDetailIntroDTO introDetail, TourDetailInfoDTO infoDetail, String thumbnailImage) {
         // 공공데이터의 contentId -> Place테이블엔 pk로 기입, 더미데이터의 경우 난수처리하여 넣을 것.
         Integer placeId = Integer.parseInt(syncItem.getContentid());
         // 공통헬퍼 메소드 parseRegionId 사용하여 동기화 로직의 법정동 시도코드/시군구코드 처리
         Integer regionId = tourApiHelper.parseRegionId(syncItem.getLDongRegnCd(), syncItem.getLDongSignguCd());
-        // 플레이스 타입은 숫자로 들어오는 걸 convertContentType에서 tour/food/stay로 변환 처리 + 0730헬퍼의 예외처리용 파라미터 추가되면서 일부 수정적용
+        // 플레이스 타입은 숫자로 들어오는 걸 convertContentType에서 tour/food/stay로 변환 처리
         String placeType = tourApiHelper.convertContentType(syncItem.getContenttypeid(), syncItem.getLclsSystm2(), syncItem.getLclsSystm3());
         // 주소는 addr1 + addr2 합친 전체주소 하나로 처리
         String fullAddress = syncItem.getAddr1() +
@@ -72,8 +74,10 @@ public class TourDataConverter {
         String useFeeInfo = tourApiHelper.extractFeeInfo(introDetail, infoDetail, placeType);
         // 헬퍼 메소드 parseMinPrice - extractFeeInfo에서 추출한 원문 텍스트를 전달하여 검색/정렬용 최저가 숫자(minPrice) 파싱
         Integer minPrice = tourApiHelper.parseMinPrice(useFeeInfo);
+        // 음식점(food)이거나, 숫자로 파싱은 안 됐지만 요금안내 문구(useFeeInfo)가 존재하는 경우 minPrice를 0으로 세팅하여 DB에 적재되도록 보정
+        if (minPrice == null && ("food".equals(placeType) || StringUtils.hasText(useFeeInfo))) { minPrice = 0; }
 
-        // TODO: 부가정보컬럼 추가 - 부가정보(주차, 휴무일, 영업시간 등) infoDetail(단일 반복정보)을 List로 감싸고, tourItem(반려동물 동반 데이터 포함)을 itemDTO로 전달
+        // 부가정보(주차, 휴무일, 영업시간 등) infoDetail(단일 반복정보)을 List로 감싸고, tourItem(반려동물 동반 데이터 포함)을 itemDTO로 전달
         String extraInfo = tourApiHelper.extractExtraInfo(
                 introDetail,
                 infoDetail != null ? List.of(infoDetail) : List.of(),
@@ -81,11 +85,10 @@ public class TourDataConverter {
                 placeType
         );
 
-        // HashtagGenerator.java - cat1/cat2/cat3(대중소분류) 전달하도록 변경
+        // 해시태그 로직 HashtagGenerator.java - cat1/cat2/cat3(대중소분류) 전달
         String hashtags = hashtagGenerator.generateHashtags(
                 tourItem, introDetail, placeType,
-                syncItem.getLclsSystm1(), syncItem.getLclsSystm2(), syncItem.getLclsSystm3(),
-                minPrice, useFeeInfo
+                syncItem.getLclsSystm1(), syncItem.getLclsSystm2(), syncItem.getLclsSystm3()
         );
 
         return PlaceDTO.builder()
@@ -106,28 +109,13 @@ public class TourDataConverter {
                 // .firstImage(item.getOriginimgurl() != null ? item.getOriginimgurl() : thumbnailImage)
                 .hashtags(hashtags)
                 .peopleCount(1)
-                .extraInfo(extraInfo) // TODO: 부가정보컬럼 추가 시 -  0730 extraInfo 추가 세팅
+                .extraInfo(extraInfo)
                 .build();
     }
 
-    // TODO: footer에 TourDetailImageDTO - cpyrhtDivCd (저작권표기) 추가 필요 & 프론트에서 Type3의 경우 비율유지하며 적용 필요
-    // TourDetailImageDTO -> PlaceImageDTO 변환
-    // 대표 이미지 등록 시 sortOrder=0 지정, 상세/서브 이미지 등록 시 순번(sortOrder) 지정
-//    public PlaceImageDTO convertToPlaceImageDTO(Integer placeId, String imageUrl, int sortOrder) {
-//        if (!StringUtils.hasText(imageUrl) || placeId == null) {
-//            return null;
-//        }
-//        return PlaceImageDTO.builder()
-//                .placeId(placeId)
-//                .imageUrl(imageUrl)
-//                .sortOrder(sortOrder)
-//                .build();
-//    }
     // 플레이스 다중 이미지 변환 시 중복 URL 제거 및 sortOrder 인덱싱 처리 (최소 이미지 수 검증 포함)
     public List<PlaceImageDTO> convertToPlaceImageDTOs(Integer placeId, List<String> imageUrls) {
-        if (imageUrls == null || imageUrls.isEmpty() || placeId == null) {
-            return List.of();
-        }
+        if (imageUrls == null || imageUrls.isEmpty() || placeId == null) { return List.of(); }
 
         // 중복 이미지 제거 (Distinct) 및 유효한 이미지 URL만 필터링
         List<String> distinctUrls = imageUrls.stream()
@@ -135,20 +123,21 @@ public class TourDataConverter {
                 .distinct()
                 .toList();
 
-        // 필요 시 아래 조건으로 최소 수량 제한 가능 (현재는 전체 유효 이미지 대상 순번 부여)
+        // 전체 유효 이미지 대상 순번 부여
         List<PlaceImageDTO> imageDTOs = new ArrayList<>();
         for (int i = 0; i < distinctUrls.size(); i++) {
             imageDTOs.add(
                     PlaceImageDTO.builder()
                             .placeId(placeId)
                             .imageUrl(distinctUrls.get(i))
-                            .sortOrder(i) // 0번은 대표, 이후 1, 2, 3... 순차 인덱싱
+                            .sortOrder(i) // 0번은 대표, 이후 1, 2, 3... 순차 인덱싱 처리
                             .build()
             );
         }
         return imageDTOs;
     }
 
+    // TODO: 썸네일 관련
     // 카드형 썸네일 대표 이미지 결정: 목록 API의 썸네일(firstimage2) 우선, 없을 경우 원본(firstimage) Fallback 사용
     // PlaceImage 판단 로직을 여기서 계산해서 convertToPlaceDTO 호출 시 파라미터로 전달하는 구조
     public String resolveThumbnailImage(TourAreaBasedSyncListDTO syncItem) {

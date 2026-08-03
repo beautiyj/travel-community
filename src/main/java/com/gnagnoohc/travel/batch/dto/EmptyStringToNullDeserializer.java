@@ -1,7 +1,5 @@
 package com.gnagnoohc.travel.batch.dto;
 
-import java.io.IOException;
-
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.BeanProperty;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -9,11 +7,14 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.deser.ContextualDeserializer;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 
-// 0728 공공데이터 응답 특성상 결과 데이터가 없을 때 items 필드가 빈 문자열("")로 내려오는 경우가 있어
-// 그 경우에만 null로 안전하게 처리하고, 정상적인 객체(JSON)가 오면 원래대로 파싱을 이어가도록 하는 커스텀 디시리얼라이저
-// (기존 NullifyingDeserializer는 조건 없이 무조건 null 처리하는 버그가 있어 이걸로 대체함)
-// 0729 [수정] ContextualDeserializer 구현 추가 - 제네릭 필드(Items<T>)의 실제 타입을 Jackson이 알려주도록 하여
-// "정상 데이터가 왔을 때 타입을 몰라 NPE 나는" 문제 해결 (ctxt.getContextualType()이 null을 반환하던 문제)
+import java.io.IOException;
+
+/* EmptyStringToNullDeserializer.java
+* 공공데이터 응답 특성상 결과 데이터가 없을 때 items 필드가 빈 문자열("")로 내려오는 경우가 존재,
+* 방어로직이 필요한 경우에만 null로 안전하게 처리하고, 정상적인 객체(JSON)가 오면 원래대로 파싱을 이어가도록 하는 커스텀 디시리얼라이저
+
+* ContextualDeserializer - 제네릭 필드(Items<T>)의 실제 타입을 Jackson이 알려주도록 하여
+  정상 데이터가 왔을 때 타입을 몰라서 NPE 나는 문제 해결 (ctxt.getContextualType()이 null을 반환하던 문제) */
 public class EmptyStringToNullDeserializer extends StdDeserializer<Object> implements ContextualDeserializer {
 
     // 이 필드가 실제로 채워야 하는 타입 (예: Items<TourLdongCodeDTO>) - createContextual에서 채워짐

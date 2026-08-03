@@ -17,7 +17,7 @@ public class TourDetailIntroDTO {
     @NotBlank(message = "contentid: 콘텐츠ID는 필수 수집 항목입니다.") private String contentid;
     @NotBlank(message = "contenttypeid: 관광타입ID는 필수 수집 항목입니다.") private String contenttypeid;
 
-    // 옵션 0
+    // 옵션 0 (필수아님)
     // [관광지 - contentTypeId=12]
     private String accomcount;             // 수용인원
     private String chkbabycarriage;        // 유모차대여정보

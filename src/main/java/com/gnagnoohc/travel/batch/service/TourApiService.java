@@ -20,6 +20,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -257,15 +258,14 @@ public class TourApiService {
         }
         return rawValidList;
     }
-
     // TODO: 0804 무작위 샘플링 및 DB 적재 핵심 처리 메서드
-    // - contenttypeid가 아니라 placeType(tour/stay/food) 기준으로 그룹핑해야 타입별 최소 1개 보장이 실제로 성립함
-    //   (fetchAllTargetSyncList에서 5개 타입이 하나로 합쳐져 들어오는 구조로 변경되었기 때문)
-    // - 재실행/부분 재수집 시 지역당 총 10개를 넘지 않도록 기존 DB 적재 건수 확인 로직 추가
+    // - contenttypeid가 아니라 placeType(tour/stay/food) 기준으로 그룹핑하여 타입별 최소 1개 보장
+    // - 재실행/부분 재수집 시 지역당 총 10개를 넘지 않도록 기존 DB 적재 건수 확인
+    // - DB 실제 성공 건수만 정직하게 카운팅 및 타입별 분포 로그 추가
     private void processRandomSamplingAndSave(List<TourAreaBasedSyncListDTO> rawValidList) {
         if (rawValidList == null || rawValidList.isEmpty()) return;
 
-        // 법정동 시도/시군구 코드로 지역군 그룹핑 (269개 지역 기준)
+        // 1. 법정동 시도/시군구 코드로 지역군 그룹핑 (269개 지역 기준)
         Map<String, List<TourAreaBasedSyncListDTO>> regionGroupMap = rawValidList.stream()
                 .collect(Collectors.groupingBy(item ->
                         item.getLDongRegnCd() + (StringUtils.hasText(item.getLDongSignguCd()) ? item.getLDongSignguCd() : "")
@@ -291,23 +291,36 @@ public class TourApiService {
                 continue;
             }
 
-            // 가나다/순차 정렬 방지를 위해 해당 지역의 수집 목록을 무작위 셔플
-            Collections.shuffle(regionItems);
-            // placeType(tour/stay/food)별 그룹핑
-            Map<String, List<TourAreaBasedSyncListDTO>> typedMap = regionItems.stream()
-                    .collect(Collectors.groupingBy(item ->
-                            tourApiHelper.convertContentType(item.getContenttypeid(), item.getLclsSystm2(), item.getLclsSystm3())
-                    ));
+            // 2. placeType(tour/stay/food)별 그룹핑
+            Map<String, List<TourAreaBasedSyncListDTO>> typedMap = new HashMap<>();
+            for (TourAreaBasedSyncListDTO item : regionItems) {
+                String type = tourApiHelper.convertContentType(item.getContenttypeid(), item.getLclsSystm2(), item.getLclsSystm3());
+                typedMap.computeIfAbsent(type, k -> new ArrayList<>()).add(item);
+            }
+
+            // 💡 [원인 파악용 로그] 수집된 데이터 중 카테고리별 유효 개수를 미리 출력하여 확인
+            log.info("[Type Check] 지역코드 {} 유효 후보 분포 - tour: {}건, stay: {}건, food: {}건 (전체: {}건)",
+                    regionKey,
+                    typedMap.getOrDefault("tour", Collections.emptyList()).size(),
+                    typedMap.getOrDefault("stay", Collections.emptyList()).size(),
+                    typedMap.getOrDefault("food", Collections.emptyList()).size(),
+                    regionItems.size());
+
+            // 가나다/순차 정렬 방지를 위해 타입별 목록 각각 무작위 셔플
+            typedMap.values().forEach(Collections::shuffle);
+
             List<TourAreaBasedSyncListDTO> selectedList = new ArrayList<>();
 
-            // 관광지, 숙박, 맛집 타입별로 무작위 1개씩 우선 추출 (타입 비중 균형 보장)
-            for (List<TourAreaBasedSyncListDTO> typeList : typedMap.values()) {
-                if (!typeList.isEmpty()) {
-                    selectedList.add(typeList.remove(0)); // 셔플된 목록 중 첫 번째 무작위 추출
+            // 3. 관광지(tour), 숙박(stay), 맛집(food) 타입별로 무작위 1개씩 우선 추출 (타입 비중 균형 보장)
+            List<String> targetTypes = List.of("tour", "stay", "food");
+            for (String type : targetTypes) {
+                List<TourAreaBasedSyncListDTO> typeList = typedMap.get(type);
+                if (typeList != null && !typeList.isEmpty()) {
+                    selectedList.add(typeList.remove(0)); // 셔플된 목록 중 첫 번째 무작위 추출 후 제거
                 }
             }
 
-            // 남은 후보군을 다시 하나로 모아 셔플 후, 지역당 남은 슬롯만큼 보충
+            // 4. 남은 후보군을 다시 하나로 모아 셔플 후, 지역당 남은 슬롯만큼 보충
             List<TourAreaBasedSyncListDTO> remainList = typedMap.values().stream()
                     .flatMap(List::stream)
                     .collect(Collectors.toList());
@@ -318,13 +331,22 @@ public class TourApiService {
                 selectedList.add(remainList.get(i));
             }
 
-            // 무작위 선발 완료된 지역당 데이터를 연쇄 수집 및 DB(PLACE, PLACE_IMAGE) 적재
+            // 5. 무작위 선발 완료된 지역당 데이터를 연쇄 수집 및 DB(PLACE, PLACE_IMAGE) 적재
+            int actualSuccessCount = 0; // 💡 실제 DB 성공 건수 카운트
             for (TourAreaBasedSyncListDTO targetItem : selectedList) {
-                processSinglePlace(targetItem);
+                try {
+                    log.info("[PLACE SAVE CHECK] contentId: {}, title: {}", targetItem.getContentid(), targetItem.getTitle());
+                    processSinglePlace(targetItem); // 👈 기존 void 메서드 그대로 호출
+                    actualSuccessCount++;            // 👈 예외가 발생하지 않으면 저장 성공으로 처리
+                } catch (Exception e) {
+                    log.error("[Batch Error] 지역코드 {} placeId: {} DB 적재 오류: {}", 
+                            regionKey, targetItem.getContentid(), e.getMessage());
+                }
             }
 
-            log.info("[Batch Sampling] 지역코드 {}: 기존 {}건 + 신규 {}건 무작위 적재 완료 (후보 {}건 중 선별)",
-                    regionKey, existingCount, selectedList.size(), regionItems.size());
+            // 💡 정직한 실제 DB 성공 결과 출력
+            log.info("[Batch Sampling] 지역코드 {}: 기존 {}건 + 실제 저장 {}건 완료 (선발 시도: {}건 / 전체 유효 후보: {}건)",
+                    regionKey, existingCount, actualSuccessCount, selectedList.size(), regionItems.size());
         }
     }
 

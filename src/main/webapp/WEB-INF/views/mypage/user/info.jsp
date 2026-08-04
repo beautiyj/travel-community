@@ -31,7 +31,6 @@
                         </c:choose>
                     </dd>
                 </div>
-                <div><dt>주소</dt><dd><c:out value="${member.address}" default="-" /></dd></div>
                 <div><dt>가입일</dt><dd><c:out value="${member.createdDate}" default="-" /></dd></div>
             </dl>
             <div class="member-info-actions">

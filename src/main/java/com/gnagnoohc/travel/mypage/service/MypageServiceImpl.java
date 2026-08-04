@@ -41,18 +41,6 @@ public class MypageServiceImpl implements MypageService {
             throw new IllegalArgumentException("성별 선택값이 올바르지 않습니다.");
         }
 
-        String address = member.getAddress();
-        if (address == null || address.isBlank()) {
-            member.setAddress(null);
-        } else {
-            address = address.trim();
-            if (address.length() > 255) {
-                throw new IllegalArgumentException(
-                        "주소는 255자 이내로 입력해 주세요.");
-            }
-            member.setAddress(address);
-        }
-
     	return mypageRepository.updateMember(member);
     }
 

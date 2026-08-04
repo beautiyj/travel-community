@@ -86,6 +86,12 @@ public interface ReservationMapper {
     /** 숙박 1인 단가 조회. PLACE.min_price를 읽기 전용으로 참조 (price_type은 안 보고 값만 그대로 씀) */
     Integer findMinPrice(@Param("placeId") Long placeId);
 
+    /** 장소 대표 이미지 URL 조회. PLACE.first_image를 읽기 전용으로 참조 (예약 폼 카드 썸네일용) */
+    String findPlaceImage(@Param("placeId") Long placeId);
+
+    /** 장소 주소 조회. PLACE.address를 읽기 전용으로 참조 (예약 폼 카드 설명 라인용) */
+    String findPlaceAddress(@Param("placeId") Long placeId);
+
     /**
      * 날짜별 마감(PLACE_CLOSED_DATE) 겹침 체크: 요청 기간([fromDate, toDate))과 겹치는 마감일 수.
      * 0이면 마감일과 안 겹침. PLACE_CLOSED_DATE도 business 파트 테이블 — 읽기만 한다.

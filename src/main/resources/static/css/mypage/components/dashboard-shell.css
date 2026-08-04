@@ -1,0 +1,161 @@
+/* ============================================================
+   Dashboard-aligned shell
+   business/dashboard.jsp의 레이아웃과 시각 언어를 마이페이지에 적용한다.
+   ============================================================ */
+:root {
+  --background: #f8fafc;
+  --foreground: #1e293b;
+  --card: #ffffff;
+  --primary: #0284c7;
+  --primary-soft: rgba(2, 132, 199, .1);
+  --secondary: #f8fafc;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --border: #e2e8f0;
+  --danger: #ef4444;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+}
+
+.mypage-page {
+  width: 100%;
+  max-width: none;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+.mypage-page__title {
+  display: flex;
+  height: 64px;
+  margin: 0 0 0 224px;
+  padding: 0 32px;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  background: #fff;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.mypage-layout {
+  display: block;
+  padding: 0;
+}
+
+.mypage-sidebar {
+  position: fixed;
+  z-index: 20;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  width: 224px;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+  background: #fff;
+}
+
+.mypage-sidebar__brand {
+  display: flex;
+  height: 64px;
+  padding: 0 20px;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+  color: var(--primary);
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.mypage-sidebar__brand-badge {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 12px;
+}
+
+.mypage-sidebar__profile,
+.business-mypage .mypage-sidebar__profile {
+  display: grid;
+  min-height: 92px;
+  margin: 0;
+  padding: 16px 20px;
+  grid-template-columns: 36px minmax(0, 1fr);
+  align-content: center;
+  align-items: center;
+  gap: 2px 12px;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: #fff;
+  color: var(--foreground);
+}
+
+.mypage-sidebar__avatar {
+  width: 36px;
+  height: 36px;
+  margin: 0;
+  grid-row: 1;
+  border-radius: 12px;
+  background: #e0f2fe;
+  color: var(--primary);
+  font-size: 16px;
+}
+
+.mypage-sidebar__avatar svg { width: 18px; height: 18px; }
+.mypage-sidebar__profile strong { min-width: 0; font-size: 14px; }
+
+.mypage-sidebar__menu {
+  display: flex;
+  min-height: 0;
+  padding: 12px;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+}
+
+.mypage-sidebar__menu a {
+  min-height: 40px;
+  padding: 10px 12px;
+  gap: 8px;
+  border-radius: 12px;
+  color: var(--muted-foreground);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.mypage-sidebar__menu a:hover {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.mypage-sidebar__menu .is-active {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.mypage-sidebar__menu .mypage-sidebar__logout {
+  margin-top: auto;
+  background: #fff;
+  color: var(--danger);
+}
+
+.mypage-content {
+  width: auto;
+  max-width: none;
+  margin-left: 224px;
+  padding: 32px;
+}
+
+.mypage-content--wide { max-width: none; }
+.mypage-content--form { max-width: 840px; }
+

@@ -11,7 +11,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.gnagnoohc.travel.auth.dto.LoginMemberDto;
-import com.gnagnoohc.travel.mypage.dto.BusinessApplicationDto;
 import com.gnagnoohc.travel.mypage.service.BusinessDocumentStorage;
 import com.gnagnoohc.travel.mypage.service.BusinessMediaStorage;
 import com.gnagnoohc.travel.mypage.service.BusinessService;

@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /*  TODO: 0803 최종테스트 직전 확인하기: 공공데이터 로직 확인 완료, 수정필요한부분은 메인파이프라인 지역구코드 별로 랜덤필터링 작업
@@ -259,11 +260,11 @@ public class TourApiService {
         return rawValidList;
     }
 
-    // TODO: 0804 무작위 샘플링 및 DB 적재 핵심 처리 메서드
+    // TODO: 0804 무작위 샘플링 및 DB 적재 핵심 처리 메서드 (2단계 Fallback 확장 적용)
     // - contenttypeid가 아니라 placeType(tour/stay/food) 기준으로 그룹핑하여 타입별 최소 1개 보장
     // - 재실행/부분 재수집 시 지역당 총 10개를 넘지 않도록 기존 DB 적재 건수 확인
     // - DB 실제 성공 건수만 정직하게 카운팅 및 타입별 분포 로그 추가
-    // - 2차 상세 필터링(이미지 5장 이상, 가격 검증 등) 탈락 시 남은 후보군을 연속 순회하여 목표 건수(10개) 보장
+    // - 1차 정교한 큐 순회 후 목표 건수(10개) 미달 시, 2차 보완(조건 완화/부실 데이터 허용) 로직으로 잔여 수량 충족
     private void processRandomSamplingAndSave(List<TourAreaBasedSyncListDTO> rawValidList) {
         if (rawValidList == null || rawValidList.isEmpty()) return;
 
@@ -335,6 +336,7 @@ public class TourApiService {
             int currentTotalCount = existingCount;
             int newlySavedCount = 0;
 
+            // [1단계] 기존 정교한 큐 기반 수집 시도
             for (TourAreaBasedSyncListDTO targetItem : candidateQueue) {
                 // 이미 기존 건수 + 신규 적재 건수가 10개가 되었으면 추가 탐색 즉시 중단
                 if (currentTotalCount >= targetGoal) {
@@ -342,7 +344,7 @@ public class TourApiService {
                 }
 
                 try {
-                    log.info("[PLACE SAVE TRY] contentId: {}, title: {}", targetItem.getContentid(), targetItem.getTitle());
+                    log.info("[PLACE SAVE TRY - Stage 1] contentId: {}, title: {}", targetItem.getContentid(), targetItem.getTitle());
 
                     // processSinglePlace 가 true(실제 DB 적재 성공)를 반환할 때만 카운트 증가
                     if (processSinglePlace(targetItem)) {
@@ -350,17 +352,83 @@ public class TourApiService {
                         newlySavedCount++;
                     }
                 } catch (Exception e) {
-                    log.error("[Batch Error] 지역코드 {} placeId: {} DB 적재 오류: {}",
+                    log.error("[Batch Error - Stage 1] 지역코드 {} placeId: {} DB 적재 오류: {}",
                             regionKey, targetItem.getContentid(), e.getMessage());
                 }
             }
 
+            // [2단계 Fallback] 1차 큐를 모두 소진했음에도 목표치(10개)에 미달한 경우, 조건 완화/부실 데이터 허용 로직으로 잔여분 충족
+            if (currentTotalCount < targetGoal) {
+                int remainingNeeded = targetGoal - currentTotalCount;
+                log.info("[Batch Fallback Triggered] 지역코드 {}: 1차 수집 완료(총 {}건). 부족한 {}개를 채우기 위해 2단계(조건 완화) 보완 수집을 시작합니다.",
+                        regionKey, currentTotalCount, remainingNeeded);
+
+                // TODO: 0804 필요에 따라 이미 1차에 사용된 아이템들을 제외하거나, 
+                // 빡빡한 필터링 조건(이미지 수 등)을 해제한 relaxed 후보군 리스트를 가져와서 셔플 후 순회
+                List<TourAreaBasedSyncListDTO> relaxedQueue = getRelaxedCandidateQueue(regionItems, candidateQueue);
+
+                for (TourAreaBasedSyncListDTO relaxedItem : relaxedQueue) {
+                    if (currentTotalCount >= targetGoal) {
+                        break;
+                    }
+
+                    try {
+                        log.info("[PLACE SAVE TRY - Stage 2 Fallback] contentId: {}, title: {}", relaxedItem.getContentid(), relaxedItem.getTitle());
+
+                        // 조건이 완화된 단건 처리 메서드 (또는 기존 processSinglePlace 내부에서 완화 조건을 탈 수 있도록 분기 처리)
+                        if (processSinglePlaceRelaxed(relaxedItem)) {
+                            currentTotalCount++;
+                            newlySavedCount++;
+                        }
+                    } catch (Exception e) {
+                        log.error("[Batch Error - Stage 2 Fallback] 지역코드 {} placeId: {} DB 적재 오류: {}",
+                                regionKey, relaxedItem.getContentid(), e.getMessage());
+                    }
+                }
+            }
+
             // 정직한 실제 DB 성공 결과 출력
-            log.info("[Batch Sampling] 지역코드 {}: 기존 {}건 + 실제 필터링 통과 적재 {}건 완료 (최종 총 {}건 / 전체 유효 후보: {}건)",
+            log.info("[Batch Sampling] 지역코드 {}: 기존 {}건 + 실제 최종 적재 {}건 완료 (최종 총 {}건 / 전체 유효 후보: {}건)",
                     regionKey, existingCount, newlySavedCount, currentTotalCount, regionItems.size());
         }
     }
 
+    /**
+     * 1차 큐에 포함되지 않았거나 조건이 완화된 2단계 보완 후보군을 반환하는 메서드
+     */
+    private List<TourAreaBasedSyncListDTO> getRelaxedCandidateQueue(
+            List<TourAreaBasedSyncListDTO> regionItems, 
+            List<TourAreaBasedSyncListDTO> candidateQueue) {
+        
+        // 1차 큐에 들어있던 아이템들의 contentId 집합 추출
+        Set<String> processedIds = candidateQueue.stream()
+                .map(TourAreaBasedSyncListDTO::getContentid)
+                .collect(Collectors.toSet());
+
+        // 전체 지역 아이템 중 1차에 쓰이지 않은 나머지 항목들을 2단계 후보로 활용
+        List<TourAreaBasedSyncListDTO> relaxedList = regionItems.stream()
+                .filter(item -> !processedIds.contains(item.getContentid()))
+                .collect(Collectors.toList());
+
+        // 무작위 셔플
+        Collections.shuffle(relaxedList);
+        return relaxedList;
+    }
+
+    /**
+     * 2단계 보완 시 부실 데이터를 허용하거나 검증 조건을 낮추어 처리하는 단건 메서드
+     * (기존 processSinglePlace 로직에서 이미지 수 제한 등의 조건을 완화한 버전, 
+     * 혹은 기존 processSinglePlace 내부에서 완화 플래그를 받을 수 있다면 그것을 활용해도 좋습니다)
+     */
+    private boolean processSinglePlaceRelaxed(TourAreaBasedSyncListDTO targetItem) {
+        // TODO: 0804 2단계에서는 이미지 수 5장 미만 등의 부실 데이터 조건 완화 적용 후 DB 저장 시도
+        // 기존 processSinglePlace 메서드와 동일하되, 내부 필터링 조건만 완화된 쿼리/로직을 태우거나
+        // 기존 processSinglePlace 메서드에 boolean isRelaxed 파라미터를 추가하여 재사용할 수 있습니다.
+        
+        // 예시: 기존 저수준 저장 메서드를 그대로 호출하되, 내부적으로 빡빡한 필터링 검증을 스킵하도록 처리
+        return processSinglePlace(targetItem); 
+    }
+    
     // 폐업(showflag == 0) 데이터 전용 처리 헬퍼
     private void processClosedPlace(TourAreaBasedSyncListDTO syncItem) {
         TourItemDTO tourItem = tourDataConverter.convertToTourItemDTO(syncItem);

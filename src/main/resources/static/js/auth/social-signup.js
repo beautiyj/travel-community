@@ -33,6 +33,7 @@
 		birthInput.max = today;
 
 		checkNicknameButton.addEventListener("click", async () => {
+			// 입력 형식을 먼저 확인한 후 서버에 중복 여부를 묻고, 요청 동안 버튼을 잠근다.
 			clearNicknameMessage();
 			checkedNickname = "";
 
@@ -112,6 +113,8 @@
 		});
 
 		form.addEventListener("submit", (event) => {
+			// 화면 검증과 중복 확인 상태를 모두 통과한 경우에만 일반 form POST를 허용한다.
+			// 소셜 nonce, 개인정보 동의, 닉네임 유일성은 조작 가능한 브라우저 값에 의존하지 않고 서버가 재검증한다.
 			const nameValidation = window.SignupValidation.validateName(nameInput.value);
 			const validation = window.SignupValidation.validateNickname(nicknameInput.value);
 			const birthValidation = window.SignupValidation.validateBirth(

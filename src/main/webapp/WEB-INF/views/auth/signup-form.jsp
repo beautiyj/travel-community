@@ -7,11 +7,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${businessMember ? '사업자 회원가입' : '일반 회원가입'} | 갈래말래</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/auth/auth.css">
+    <script defer src="${pageContext.request.contextPath}/js/auth/auth-history-guard.js"></script>
     <%-- 회원가입 검증 모듈을 먼저 로드한 뒤 화면·API 로직을 실행한다. --%>
     <script defer src="${pageContext.request.contextPath}/js/auth/signup-validation.js"></script>
     <script defer src="${pageContext.request.contextPath}/js/auth/signup.js"></script>
 </head>
-<body class="auth-page auth-page--signup-form">
+<%-- 로그인한 사용자가 뒤로가기로 가입 폼을 다시 열면 세션 상태를 확인해 오래된 폼 노출을 막는다. --%>
+<body class="auth-page auth-page--signup-form"
+      data-session-status-url="${pageContext.request.contextPath}/auth/api/session-status">
 <main class="auth-card auth-card--signup-form">
     <a class="auth-brand" href="${pageContext.request.contextPath}/">갈래말래</a>
 
@@ -38,9 +41,15 @@
         </p>
     </header>
 
-    <%-- 배포 경로가 달라져도 회원가입 요청이 현재 애플리케이션으로 전달되게 한다. --%>
+    <%--
+      multipart POST는 회원 정보와 사업자등록증 파일을 함께 전달한다.
+      JavaScript 검증·중복 확인·이메일 인증 상태는 조작 가능하므로 서버가 모두 재검증하고,
+      아이디·닉네임·이메일의 최종 유일성은 DB 제약조건으로도 보장해야 한다.
+      현재 마크업에는 CSRF 토큰 출력이 없으므로 CSRF 보호 적용 시 서버 토큰 필드를 함께 렌더링해야 한다.
+    --%>
     <form id="signupForm" method="post" enctype="multipart/form-data" novalidate
           action="${pageContext.request.contextPath}/auth/membersignup">
+        <%-- memberType은 화면 분기용 서버 모델을 다시 전송하지만 hidden 값이므로 서버에서 허용 범위를 반드시 검증한다. --%>
         <input type="hidden" name="memberType" value="${memberType}">
 
         <div class="selected-member-type">
@@ -105,6 +114,7 @@
             <p id="verificationCodeError" class="field-error" aria-live="polite"></p>
         </div>
 
+        <%-- businessMember가 true일 때만 파일 입력을 렌더링한다. 파일 형식·크기·내용과 저장 권한은 서버가 재검증한다. --%>
         <c:if test="${businessMember}">
             <div class="form-field">
                 <label for="businessRegistrationFile">사업자등록증</label>

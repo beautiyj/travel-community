@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 /**
  * 소셜 인증은 끝났지만 우리 서비스의 추가 회원정보 입력이 끝나지 않은 가입 대기 상태다.
  * provider와 providerUserId는 브라우저에서 다시 받지 않고 서버 세션에만 저장한다.
+ * signupNonce는 전역 CSRF 보호가 없는 현재 가입 POST가 같은 세션 흐름에서 제출됐는지 확인한다.
  */
 public record PendingSocialSignup(
         String provider,

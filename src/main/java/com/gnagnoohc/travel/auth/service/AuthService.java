@@ -38,6 +38,14 @@ import com.gnagnoohc.travel.auth.model.MemberLocalAuth;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * 로컬 인증과 로컬 회원가입 유스케이스의 트랜잭션 경계를 담당한다.
+ * <p>
+ * 컨트롤러가 전달한 입력을 검증하고 MyBatis Mapper의 영향받은 행 수를 확인한다.
+ * {@code @Transactional}은 예외가 밖으로 전파될 때 DB 변경을 롤백하지만 동시 요청을
+ * 자동 직렬화하지는 않는다. 로그인 실패 횟수는 {@code SELECT ... FOR UPDATE}, 가입
+ * 중복은 DB UNIQUE 제약, 이메일 인증 재사용은 조건부 UPDATE가 최종적으로 막는다.
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -57,7 +65,12 @@ public class AuthService {
 	@Value("${file.upload-auth}")
 	private String businessRegistrationUploadPath;
 
-	// 로그인
+	/**
+	 * 활성 로컬 회원의 자격 증명을 확인하고 성공·불일치·잠금 중 하나를 반환한다.
+	 * 조회한 인증 행을 트랜잭션 종료까지 잠그므로 같은 아이디의 동시 실패 요청이
+	 * 실패 횟수를 덮어쓰지 않는다. 존재하지 않는 아이디와 비밀번호 오류는 같은 결과로
+	 * 반환해 계정 존재 여부가 노출되지 않게 한다.
+	 */
 	@Transactional
 	public LocalLoginResult authenticateLocal(String username, String rawPassword) {
 		if (username == null || username.isBlank()
@@ -146,7 +159,11 @@ public class AuthService {
 		}
 	}
 
-	// 회원가입
+	/**
+	 * 공통 회원, 로컬 인증, 선택적인 사업자 신청, 이메일 인증 소비를 하나의 DB 트랜잭션으로 저장한다.
+	 * 사업자등록증은 파일시스템 부작용이라 DB 트랜잭션에 포함되지 않으므로 예외와 최종 롤백 시
+	 * 별도로 삭제한다. 삭제도 실패하면 DB는 롤백되지만 고아 파일은 운영 정리 대상이 된다.
+	 */
 	@Transactional
 	public int memberSignUp(
 			SignUpRequest signUpRequest,

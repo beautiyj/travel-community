@@ -4,12 +4,12 @@
 <mapper namespace="com.gnagnoohc.travel.auth.mapper.AuthMapper">
 
 	<!-- 회원가입 -->
-	<!-- 아이디 중복 확인 -->
+	<!-- 아이디 중복 사전 확인은 사용자 안내용이며 동시 가입의 최종 보장은 DB UNIQUE 제약이다. -->
 	<select id="checkLoginId" parameterType="String" resultType="int">
 		select count(*) from member where login_id=#{loginId}
 	</select>
 
-	<!-- 닉네임 중복 확인 -->
+	<!-- 닉네임 중복 사전 확인은 사용자 안내용이며 동시 가입의 최종 보장은 DB UNIQUE 제약이다. -->
 	<select id="checkNickname" parameterType="String" resultType="int">
 		select count(*) from member where nickname=#{nickname}
 	</select>
@@ -186,7 +186,7 @@
 			and created_at &gt;= date_sub(now(), interval 1 day)
 	</select>
 
-	<!-- 인증번호 해시와 만료 시각 저장 -->
+	<!-- 인증번호 원문은 저장하지 않고 해시와 만료 시각만 저장해 DB 유출 시 즉시 재사용되는 위험을 줄인다. -->
 	<insert id="insertEmailVerification" parameterType="emailverification"
 		useGeneratedKeys="true" keyProperty="emailVerificationId"
 		keyColumn="email_verification_id">

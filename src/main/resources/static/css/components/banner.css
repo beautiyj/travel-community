@@ -85,6 +85,10 @@
   transform: translateY(-1px);
 }
 
+.banner-cta-wrap .btn-small-row:hover .btn-small-text {
+  color: var(--foreground);   /* 배경이 밝아지므로 글자도 어둡게 바꿔 대비 확보 */
+}
+
 .banner-cta-wrap .btn-small-row:focus-visible {
   outline: 2px solid var(--card);
   outline-offset: 3px;

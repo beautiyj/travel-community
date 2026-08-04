@@ -1,21 +1,23 @@
 package com.gnagnoohc.travel.batch.payment.adapter;
 
+import com.gnagnoohc.travel.reservation.dto.TossConfirmResponse;
 import com.gnagnoohc.travel.reservation.entity.Payment;
 import com.gnagnoohc.travel.reservation.entity.Reservation;
+import com.gnagnoohc.travel.reservation.service.TossPayService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 /**
- * 토스 결제 상태 조회 어댑터 — 현재는 스텁(항상 NOT_PAID, 아무 동작 안 함).
- *
- * ⚠️ 실구현 = lee 담당 (토스 API 연동부). 채워야 할 것:
- *   1) PaymentController.tossReady 에 markPaymentReady(reservationId, orderId, TYPE_TOSS, null) 한 줄 (order_id 저장)
- *   2) TossPayService.getOrder(orderId) 추가: GET /v1/payments/orders/{orderId}
- *   3) 아래 inquire()에서 status DONE→InquiryResult.paid(paymentKey),
- *      ABORTED/EXPIRED/CANCELED→InquiryResult.FAILED, 그 외→NOT_PAID
- * 그 전까지 토스 PENDING 건은 보정되지 않는다(안전한 무동작).
+ * 토스 결제 상태 조회 어댑터.
+ * 토스 주문조회(GET /v1/payments/orders/{orderId})는 orderId가 키라서, 예약에 저장해둔 order_id로 조회한다.
  */
+@Slf4j
 @Component
+@RequiredArgsConstructor
 public class TossInquiryAdapter implements PaymentInquiryAdapter {
+
+    private final TossPayService tossPayService;
 
     @Override
     public boolean supports(int paymentType) {
@@ -24,7 +26,26 @@ public class TossInquiryAdapter implements PaymentInquiryAdapter {
 
     @Override
     public InquiryResult inquire(Reservation r) {
-        // TODO(lee): 토스 주문조회 연동 (위 주석 참고)
-        return InquiryResult.NOT_PAID;
+        String orderId = r.getOrderId();
+        if (orderId == null) return InquiryResult.NOT_PAID;   // orderId 없으면 조회 불가
+
+        TossConfirmResponse res;
+        try {
+            res = tossPayService.getOrder(orderId);
+        } catch (Exception e) {
+            // 조회 자체가 실패(PG 오류/일시 장애 등)해도 다음 회차에 재확인하면 되므로 안전하게 넘어간다
+            log.warn("[토스 주문조회 실패] orderId={} : {}", orderId, e.getMessage());
+            return InquiryResult.NOT_PAID;
+        }
+
+        String status = res != null ? res.getStatus() : null;
+        if ("DONE".equals(status)) {
+            return InquiryResult.paid(res.getPaymentKey());
+        }
+        if ("CANCELED".equals(status) || "PARTIAL_CANCELED".equals(status)
+                || "ABORTED".equals(status) || "EXPIRED".equals(status)) {
+            return InquiryResult.FAILED;
+        }
+        return InquiryResult.NOT_PAID;   // READY / IN_PROGRESS / WAITING_FOR_DEPOSIT 등 아직 진행 중
     }
 }

@@ -1,22 +1,37 @@
 package com.gnagnoohc.travel.batch.helper;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gnagnoohc.travel.batch.client.TourApiClient;
-import com.gnagnoohc.travel.batch.dto.TourApiResponseDTO;
-import com.gnagnoohc.travel.batch.dto.TourAreaBasedSyncListDTO;
-import com.gnagnoohc.travel.batch.dto.TourDetailInfoDTO;
-import com.gnagnoohc.travel.batch.dto.TourDetailIntroDTO;
-import com.gnagnoohc.travel.batch.dto.TourItemDTO;
-
+import com.gnagnoohc.travel.batch.dto.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/* TourApiHelper.java - 공공데이터 API 연쇄 호출 및 데이터 원문 파싱/가공 전용 헬퍼
+ * - converter 변환 패키지에서 사용하기 위한 헬퍼 메소드 모음
+
+ * [주요 역할 및 담당 기능]
+ * 1. 연쇄 상세 API 호출 (Enrichment & Fetch)
+   - enrichTourItemDetails : 기본 정보 외 개요(overview), 전화번호, 반려동물 동반 상세정보 연쇄 수집
+   - fetchDetailIntro      : 소개정보 API (/detailIntro2) 호출 (운영시간, 휴무일, 주차, 이용요금 원문 등)
+   - fetchDetailInfo       : 반복정보 API (/detailInfo2) 호출 (숙박 객실 요금 등)
+   - fetchDetailImages     : 상세 이미지 API (/detailImage2) 호출 (갤러리용 서브 이미지 목록)
+
+ * 2. 데이터 전처리 및 파싱 (Parsing & Extraction)
+   - parseRegionId         : 법정동 시도/시군구 코드를 조합하여 DB PK용 region_id (Integer) 생성
+   - convertContentType    : 공공데이터 contentTypeId 및 예외 카테고리 코드를 서비스 placeType(tour/stay/food)으로 변환
+   - extractFeeInfo        : DTO 타입별 원문 요금 안내 텍스트(useFeeInfo) 추출
+   - parseMinPrice         : 요금 안내 원문 텍스트에서 숫자/최저가를 정규식으로 추출 (숫자 미존재 시 null 반환)
+   - extractExtraInfo      : 소개/반복/반려동물 정보를 단일 텍스트(개행 문자 \n 구분)로 가공하여 부가정보(extraInfo) 생성
+
+ * 3. 1차 검증 (Validation)
+   - isValidItem           : 필수 데이터(대표 이미지, 법정동 코드) 존재 여부 1차 검증
+ */
 
 @Slf4j
 @Component
@@ -25,12 +40,9 @@ public class TourApiHelper {
     private final TourApiClient tourApiClient;
     private final ObjectMapper objectMapper;
 
-    // TODO: 이후 useFeeInfo, minPrice 처리에서 0원 혹은 가격없음 -> TOUR 서비스단에서 무료 & 가격변동으로 텍스트 매핑처리
-    // TODO: STAY/TOUR 일부는 금액 넘어옴 - 금액처리/무료/가격변동 처리, FOOD는 금액 없음 - 가격변동으로 처리 필요
     public void enrichTourItemDetails(TourItemDTO masterItem) {
         String contentId = masterItem.getContentid();
         try {
-            // detailCommon2 호출
             String commonJson = tourApiClient.fetchDetailCommon(contentId);
             if (StringUtils.hasText(commonJson)) {
                 TourApiResponseDTO<TourItemDTO> commonResponse = objectMapper.readValue(
@@ -50,7 +62,6 @@ public class TourApiHelper {
                 }
             }
 
-            // detailPetTour2 호출
             String petJson = tourApiClient.fetchDetailPetTour(contentId);
             if (StringUtils.hasText(petJson)) {
                 TourApiResponseDTO<TourItemDTO> petResponse = objectMapper.readValue(
@@ -65,6 +76,13 @@ public class TourApiHelper {
                     TourItemDTO petDetail = petResponse.getResponse().getBody().getItems().getItem().get(0);
                     masterItem.setAcmpyPsblCpam(petDetail.getAcmpyPsblCpam());
                     masterItem.setPetTursmInfo(petDetail.getPetTursmInfo());
+                    masterItem.setAcmpyNeedMtr(petDetail.getAcmpyNeedMtr());
+                    masterItem.setEtcAcmpyInfo(petDetail.getEtcAcmpyInfo());
+                    masterItem.setAcmpyTypeCd(petDetail.getAcmpyTypeCd());
+                    masterItem.setRelaRntlPrdlst(petDetail.getRelaRntlPrdlst());
+                    masterItem.setRelaFrnshPrdlst(petDetail.getRelaFrnshPrdlst());
+                    masterItem.setRelaPosesFclty(petDetail.getRelaPosesFclty());
+                    masterItem.setRelaAcdntRiskMtr(petDetail.getRelaAcdntRiskMtr());
                 }
             }
         } catch (Exception e) {
@@ -72,14 +90,12 @@ public class TourApiHelper {
         }
     }
 
-    // TODO: 0728 18:00 테스트로직 이후 헬퍼 메소드 수정 - 법정동 조회 로직 Y/N 선택 방향 및 배치 서비스단에서 변환 처리 일괄로
-
     /* 공통 헬퍼 메소드 - 법정동 시도/시군구 코드를 조합하여 DB의 region_id(Long PK)를 생성
      - 법정동코드조회 TourLdongCodeDTO 메타데이터와 실제 동기화 로직의 areaBasedSyncList2 필드 공통 헬퍼용 메소드
      - regnCd 시도코드 signguCd 시군구코드
      - 공공데이터에서 넘겨받은 코드값이 null/공백인 경우 해당 데이터 적재 안하고 스킵
-     - Y(전체목록조회) 및 N(단일조회) 응답 스펙을 모두 안전하게 분기 처리하기 위한 전처리 작업
-     - 예: 시도코드("11") + 시군구코드("110") -> "11110" -> Long 11110L 변환
+     - Y(전체목록조회) 및 N(단일조회) 응답 스펙을 모두 안전하게 분기 처리하기 위한 전처리 작업 (실사용은 Y만 사용하나, 이후 유지보수성을 위해 유지)
+     - 예: 시도코드("11") + 시군구코드("110") -> "11110" -> Integer형 11110L 변환
      */
     public Integer parseRegionId(String regnCd, String signguCd) {
         // 시도 코드가 없는 경우 유효하지 않은 데이터로 판단하여 null 반환
@@ -99,13 +115,16 @@ public class TourApiHelper {
     }
 
     // contentTypeId 코드 형태 -> 문자열 형태 변환
-    public String convertContentType(String contentTypeId) {
+    public String convertContentType(String contentTypeId, String lclsSystm2, String lclsSystm3) {
         if (contentTypeId == null) return "tour";
+        if ("AC05".equals(lclsSystm2)) { return "stay"; }
+        if ("VE050200".equals(lclsSystm3)) { return "stay"; }
+
         return switch (contentTypeId) {
             case "32"             -> "stay";
             case "39"             -> "food";
-            case "12", "14", "28" -> "tour"; // 관광지(12), 문화시설(14), 레포츠(28)
-            default               -> "tour"; // contentTypeId 선별 처리작업은 완료했지만 예외 방어용 기본값 설정해두기
+            case "12", "14", "28" -> "tour";
+            default               -> "tour";
         };
     }
 
@@ -211,17 +230,186 @@ public class TourApiHelper {
         return null;
     }
 
-    /* 헬퍼 메소드 isValidItem - 수집 대상 유효성 검증 (대표 이미지 필수 존재 여부 체크)
-       대표 이미지가 없으면 아예 적재x 이미지 존재 여부만 검증 -> 이후 PlaceImage테이블에 적용 필요
-     */
-    public boolean isValidItem(TourAreaBasedSyncListDTO syncItem) {
-        if (syncItem == null) return false;
-
-        if (!StringUtils.hasText(syncItem.getFirstimage())) {
-            log.info("[Batch Skip] 대표 이미지가 없어 수집 제외 - contentId: {}, title: {}",
-                    syncItem.getContentid(), syncItem.getTitle());
-            return false;
+    // 헬퍼 메서드 - processSinglePlace 사용 용도의 이미지 정보(/detailImage2) 조회
+    public List<TourDetailImageDTO> fetchDetailImages(String contentId) {
+        try {
+            // imageYN="Y"를 인자로 전달하여 해당 장소의 원본 및 썸네일 이미지 목록 조회
+            String imageJson = tourApiClient.fetchDetailImage(contentId, "Y");
+            if (StringUtils.hasText(imageJson)) {
+                TourApiResponseDTO<TourDetailImageDTO> imageResponse = objectMapper.readValue(
+                        imageJson, new TypeReference<TourApiResponseDTO<TourDetailImageDTO>>() {}
+                );
+                if (imageResponse != null && imageResponse.getResponse() != null
+                        && imageResponse.getResponse().getBody() != null
+                        && imageResponse.getResponse().getBody().getItems() != null
+                        && !imageResponse.getResponse().getBody().getItems().getItem().isEmpty()) {
+                    return imageResponse.getResponse().getBody().getItems().getItem();
+                }
+            }
+        } catch (Exception e) {
+            log.warn("[Batch] detailImage2 호출 실패 - contentId: {}", contentId);
         }
+        return List.of();
+    }
+
+    /* 헬퍼 메소드 isValidItem - 수집 대상 유효성 검증 (대표 이미지 필수 존재 여부 체크)
+       대표 이미지가 없으면 아예 적재x 이미지 존재 여부만 검증 등 부실데이터 검증 */
+    public boolean isValidItem(TourAreaBasedSyncListDTO item) {
+        if (!StringUtils.hasText(item.getFirstimage())) { return false; }
+        if (!StringUtils.hasText(item.getLDongRegnCd()) || !StringUtils.hasText(item.getLDongSignguCd())) { return false; }
         return true;
     }
+    /* 부가정보(휴무일, 영업시간, 주차, 문의처 등) 컬럼 추가 시 - 정제 헬퍼 메소드
+       - 각 콘텐츠 타입 별 라벨링 예시는 notion - pdf 참고
+       - 타입별(tour, stay, food)로 제공되는 필드가 다르므로 분기하여 단일 문장으로 가공
+       - HTML 태그 제거 및 공백 정돈 처리 적용
+       - TourDetailInfoDTO(반복정보 리스트) / TourItemDTO(반려동물 동반 데이터) 통합
+       - 각 항목은 프론트 <ul><li> 목록 렌더링을 위해 개행(\n)으로 구분 */
+    public String extractExtraInfo(TourDetailIntroDTO introDetail,
+                                   List<TourDetailInfoDTO> infoList,
+                                   TourItemDTO itemDTO,
+                                   String placeType) {
+        List<String> infoParts = new ArrayList<>();
+
+        // HTML 태그 제거 및 공백 정리용 내부 람다 함수
+        java.util.function.Function<String, String> cleanText = text ->
+                StringUtils.hasText(text) ? text.replaceAll("<[^>]*>", " ").replaceAll("\\s+", " ").trim() : null;
+
+        // TourDetailIntroDTO - 소개정보(타입별 분기)
+        if (introDetail != null) {
+            if ("stay".equals(placeType)) {
+                // [숙박 32]
+                String checkin = cleanText.apply(introDetail.getCheckintime());
+                String checkout = cleanText.apply(introDetail.getCheckouttime());
+                if (checkin != null || checkout != null) {
+                    infoParts.add("[입/퇴실] " + (checkin != null ? checkin : "") + (checkout != null ? " / " + checkout : ""));
+                }
+                String parking = cleanText.apply(introDetail.getParkinglodging());
+                if (parking != null) infoParts.add("[주차] " + parking);
+                String info = cleanText.apply(introDetail.getInfocenterlodging());
+                if (info != null) infoParts.add("[문의] " + info);
+                String accomCount = cleanText.apply(introDetail.getAccomcountlodging());
+                if (accomCount != null) infoParts.add("[수용인원] " + accomCount);
+                String roomCount = cleanText.apply(introDetail.getRoomcount());
+                if (roomCount != null) infoParts.add("[객실수] " + roomCount);
+                String roomType = cleanText.apply(introDetail.getRoomtype());
+                if (roomType != null) infoParts.add("[객실유형] " + roomType);
+                String foodPlace = cleanText.apply(introDetail.getFoodplace());
+                if (foodPlace != null) infoParts.add("[식음료장] " + foodPlace);
+                String subFacility = cleanText.apply(introDetail.getSubfacility());
+                if (subFacility != null) infoParts.add("[부대시설] " + subFacility);
+                String reservation = cleanText.apply(introDetail.getReservationlodging());
+                if (reservation != null) infoParts.add("[예약안내] " + reservation);
+
+            } else if ("food".equals(placeType)) {
+                // [음식점 39]
+                String opentime = cleanText.apply(introDetail.getOpentimefood());
+                if (opentime != null) infoParts.add("[영업시간] " + opentime);
+                String rest = cleanText.apply(introDetail.getRestdatefood());
+                if (rest != null) infoParts.add("[휴무일] " + rest);
+                String parking = cleanText.apply(introDetail.getParkingfood());
+                if (parking != null) infoParts.add("[주차] " + parking);
+                String info = cleanText.apply(introDetail.getInfocenterfood());
+                if (info != null) infoParts.add("[문의] " + info);
+                String firstMenu = cleanText.apply(introDetail.getFirstmenu());
+                if (firstMenu != null) infoParts.add("[대표메뉴] " + firstMenu);
+                String treatMenu = cleanText.apply(introDetail.getTreatmenu());
+                if (treatMenu != null) infoParts.add("[취급메뉴] " + treatMenu);
+                String seat = cleanText.apply(introDetail.getSeat());
+                if (seat != null) infoParts.add("[좌석수] " + seat);
+                String reservationFood = cleanText.apply(introDetail.getReservationfood());
+                if (reservationFood != null) infoParts.add("[예약안내] " + reservationFood);
+                String packing = cleanText.apply(introDetail.getPacking());
+                if (packing != null) infoParts.add("[포장가능] " + packing);
+                String creditCardFood = cleanText.apply(introDetail.getChkcreditcardfood());
+                if (creditCardFood != null) infoParts.add("[신용카드] " + creditCardFood);
+                String discountFood = cleanText.apply(introDetail.getDiscountinfofood());
+                if (discountFood != null) infoParts.add("[할인정보] " + discountFood);
+                String kidsFacility = cleanText.apply(introDetail.getKidsfacility());
+                if (kidsFacility != null) infoParts.add("[어린이놀이방] " + kidsFacility);
+                String opendateFood = cleanText.apply(introDetail.getOpendatefood());
+                if (opendateFood != null) infoParts.add("[개업일] " + opendateFood);
+
+            } else if ("tour".equals(placeType)) {
+                // [관광지/문화시설/레포츠 12, 14, 28]
+                String rest = cleanText.apply(firstHasText(introDetail.getRestdate(), introDetail.getRestdateculture(), introDetail.getRestdateleports()));
+                if (rest != null) infoParts.add("[휴무일] " + rest);
+                String usetime = cleanText.apply(firstHasText(introDetail.getUsetime(), introDetail.getUsetimeculture(), introDetail.getUsetimeleports()));
+                if (usetime != null) infoParts.add("[이용시간] " + usetime);
+                String parking = cleanText.apply(firstHasText(introDetail.getParking(), introDetail.getParkingculture(), introDetail.getParkingleports()));
+                if (parking != null) infoParts.add("[주차] " + parking);
+                String info = cleanText.apply(firstHasText(introDetail.getInfocenter(), introDetail.getInfocenterculture(), introDetail.getInfocenterleports()));
+                if (info != null) infoParts.add("[문의] " + info);
+                String accomCount = cleanText.apply(firstHasText(introDetail.getAccomcount(), introDetail.getAccomcountculture(), introDetail.getAccomcountleports()));
+                if (accomCount != null) infoParts.add("[수용인원] " + accomCount);
+                String babyCarriage = cleanText.apply(firstHasText(introDetail.getChkbabycarriage(), introDetail.getChkbabycarriageculture(), introDetail.getChkbabycarriageleports()));
+                if (babyCarriage != null) infoParts.add("[유모차대여] " + babyCarriage);
+                String creditCard = cleanText.apply(firstHasText(introDetail.getChkcreditcard(), introDetail.getChkcreditcardculture(), introDetail.getChkcreditcardleports()));
+                if (creditCard != null) infoParts.add("[신용카드] " + creditCard);
+                String pet = cleanText.apply(firstHasText(introDetail.getChkpet(), introDetail.getChkpetculture(), introDetail.getChkpetleports()));
+                if (pet != null) infoParts.add("[애완동물동반] " + pet);
+                // [관광지 12 전용] 이용시기, 개장일
+                String useSeason = cleanText.apply(introDetail.getUseseason());
+                if (useSeason != null) infoParts.add("[이용시기] " + useSeason);
+                String openDate = cleanText.apply(introDetail.getOpendate());
+                if (openDate != null) infoParts.add("[개장일] " + openDate);
+                // [문화시설 14 전용] 할인정보, 관람소요시간
+                String discount = cleanText.apply(introDetail.getDiscountinfo());
+                if (discount != null) infoParts.add("[할인정보] " + discount);
+                String spendTime = cleanText.apply(introDetail.getSpendtime());
+                if (spendTime != null) infoParts.add("[관람소요시간] " + spendTime);
+                // [레포츠 28 전용] 개장기간, 예약안내, 규모
+                String openPeriod = cleanText.apply(introDetail.getOpenperiod());
+                if (openPeriod != null) infoParts.add("[개장기간] " + openPeriod);
+                String reservation = cleanText.apply(introDetail.getReservation());
+                if (reservation != null) infoParts.add("[예약안내] " + reservation);
+                String scale = cleanText.apply(introDetail.getScaleleports());
+                if (scale != null) infoParts.add("[규모] " + scale);
+            }
+        }
+
+        // TourDetailInfoDTO - 반복정보(infoname/infotext 쌍) 리스트
+        if (infoList != null) {
+            for (TourDetailInfoDTO info : infoList) {
+                String name = cleanText.apply(info.getInfoname());
+                String text = cleanText.apply(info.getInfotext());
+                if (name != null && text != null) {
+                    infoParts.add("[" + name + "] " + text);
+                }
+            }
+        }
+
+        // TourItemDTO - 반려동물 동반 데이터
+        if (itemDTO != null) {
+            String acmpy = cleanText.apply(itemDTO.getAcmpyPsblCpam());
+            if (acmpy != null) infoParts.add("[동반가능동물] " + acmpy);
+            String petInfo = cleanText.apply(itemDTO.getPetTursmInfo());
+            if (petInfo != null) infoParts.add("[반려동물 관광정보] " + petInfo);
+            String needMtr = cleanText.apply(itemDTO.getAcmpyNeedMtr());
+            if (needMtr != null) infoParts.add("[동반시 필요사항] " + needMtr);
+            String etcInfo = cleanText.apply(itemDTO.getEtcAcmpyInfo());
+            if (etcInfo != null) infoParts.add("[기타 동반 정보] " + etcInfo);
+            String acmpyType = cleanText.apply(itemDTO.getAcmpyTypeCd());
+            if (acmpyType != null) infoParts.add("[동반유형] " + acmpyType);
+            String rentalPrdlst = cleanText.apply(itemDTO.getRelaRntlPrdlst());
+            if (rentalPrdlst != null) infoParts.add("[관련 렌탈 품목] " + rentalPrdlst);
+            String frnshPrdlst = cleanText.apply(itemDTO.getRelaFrnshPrdlst());
+            if (frnshPrdlst != null) infoParts.add("[관련 비치 품목] " + frnshPrdlst);
+            String posesFclty = cleanText.apply(itemDTO.getRelaPosesFclty());
+            if (posesFclty != null) infoParts.add("[관련 구비 시설] " + posesFclty);
+            String acdntRiskMtr = cleanText.apply(itemDTO.getRelaAcdntRiskMtr());
+            if (acdntRiskMtr != null) infoParts.add("[관련 사고 대비사항] " + acdntRiskMtr);
+        }
+        if (infoParts.isEmpty()) return null;
+        return String.join("\n", infoParts);
+    }
+
+    // 우선순위에 따라 유효한 첫 번째 문자열 반환 헬퍼
+    private String firstHasText(String... values) {
+        for (String val : values) {
+            if (StringUtils.hasText(val)) return val;
+        }
+        return null;
+    }
+
 }

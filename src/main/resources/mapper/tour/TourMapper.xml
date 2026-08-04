@@ -5,7 +5,7 @@
 
     <!-- 1. REGION 테이블 UPSERT -->
     <insert id="upsertRegion" parameterType="com.gnagnoohc.travel.tour.model.RegionDTO">
-        INSERT INTO region (
+        INSERT INTO REGION (
             region_id,
             region_name,
             parent_region_id
@@ -21,7 +21,7 @@
 
     <!-- 2. PLACE 테이블 UPSERT -->
     <insert id="upsertPlace" parameterType="com.gnagnoohc.travel.tour.model.PlaceDTO">
-        INSERT INTO place (
+        INSERT INTO PLACE (
             place_id,
             member_id,
             region_id,
@@ -38,7 +38,8 @@
             hashtags,
             min_price,
             use_fee_info,
-            people_count
+            people_count,
+            extra_info
         ) VALUES (
             #{placeId},
             #{memberId},
@@ -56,7 +57,8 @@
             #{hashtags},
             #{minPrice},
             #{useFeeInfo},
-            #{peopleCount}
+            #{peopleCount},
+            #{extraInfo}
         )
         ON DUPLICATE KEY UPDATE
             region_id = VALUES(region_id),
@@ -72,12 +74,13 @@
             hashtags = VALUES(hashtags),
             min_price = VALUES(min_price),
             use_fee_info = VALUES(use_fee_info),
-            people_count = VALUES(people_count);
+            people_count = VALUES(people_count),
+            extra_info = VALUES(extra_info);
     </insert>
 
     <!-- 3. PLACE_IMAGE 테이블 INSERT -->
     <insert id="insertPlaceImage" parameterType="com.gnagnoohc.travel.tour.model.PlaceImageDTO">
-        INSERT INTO place_image (
+        INSERT INTO PLACE_IMAGE (
             place_id,
             image_url,
             sort_order
@@ -107,9 +110,76 @@
             hashtags,
             min_price AS minPrice,
             use_fee_info AS useFeeInfo,
-            people_count AS peopleCount
-        FROM place
+            people_count AS peopleCount,
+            extra_info AS extraInfo
+        FROM PLACE
         WHERE place_id = #{placeId}
     </select>
 
+<!-- 0802 조인 - 5. 타입별 및 지역별 장소 목록 통합 조회 -->
+    <select id="selectPlaceList" resultType="com.gnagnoohc.travel.tour.model.PlaceDTO">
+        SELECT 
+            p.place_id AS placeId,
+            p.member_id AS memberId,
+            p.region_id AS regionId,
+            p.place_type AS placeType,
+            p.name,
+            p.description,
+            p.address,
+            p.mapx,
+            p.mapy,
+            p.is_closed AS isClosed,
+            p.created_at AS createdAt,
+            p.updated_at AS updatedAt,
+            p.first_image AS firstImage,
+            p.hashtags,
+            p.min_price AS minPrice,
+            p.use_fee_info AS useFeeInfo,
+            p.people_count AS peopleCount,
+            p.extra_info AS extraInfo,
+            r.region_name AS regionName
+        FROM PLACE p
+        LEFT JOIN REGION r ON p.region_id = r.region_id
+        WHERE p.is_closed = 0
+
+        <!-- 0803 추가예정 ; 타입별 필터링 (제목순/금액최저가순.최고가순 정렬/지역순(혹은지역옵션쿼리..형태...)/리뷰순 등 -->
+        <!-- placeType이 넘어온 경우만 해당 타입 필터링 (null/빈값 시 전체 통합 검색) -->
+        <if test="placeType != null and placeType != ''">
+            AND p.place_type = #{placeType}
+        </if>
+
+        <!-- 지역 필터 조건 -->
+        <if test="regionId != null">
+            AND (p.region_id = #{regionId} OR r.parent_region_id = #{regionId})
+        </if>
+
+        <!-- 통합 키워드 검색 (장소명, 주소, 해시태그 부분/전체 일치) -->
+        <if test="keyword != null and keyword != ''">
+            AND (
+            p.name LIKE CONCAT('%', #{keyword}, '%')
+            OR p.address LIKE CONCAT('%', #{keyword}, '%')
+            OR p.hashtags LIKE CONCAT('%', #{keyword}, '%')
+            )
+        </if>
+        ORDER BY p.created_at DESC
+    </select>
+
+    <!-- 0803 6. 특정 장소의 추가 이미지 목록 조회 -->
+    <select id="getImagesByPlaceId" resultType="com.gnagnoohc.travel.tour.model.PlaceImageDTO">
+        SELECT 
+            image_id AS imageId,
+            place_id AS placeId,
+            image_url AS imageUrl,
+            sort_order AS sortOrder
+        FROM PLACE_IMAGE
+        WHERE place_id = #{placeId}
+        ORDER BY sort_order ASC
+    </select>
+
+    <!-- 0804 7. 특정 지역의 현재 적재된 PLACE 건수 조회 (지역별 무작위 샘플링 쿼터 체크용) -->
+    <select id="selectPlaceCountByRegion" resultType="int">
+        SELECT COUNT(*)
+        FROM PLACE
+        WHERE region_id = #{regionId}
+    </select>
 </mapper>

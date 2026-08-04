@@ -34,6 +34,7 @@
 .place-card .thumb {
     width: 80px; height: 56px; border-radius: var(--radius-md); background: var(--accent);
     display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0;
+    object-fit: cover;
 }
 .place-card .name { font-weight: var(--font-weight-bold); }
 .place-card .desc { font-size: var(--text-sm); color: var(--muted-foreground); }

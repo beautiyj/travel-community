@@ -47,6 +47,8 @@ public class ReservationController {
         model.addAttribute("placeId", placeId);
         model.addAttribute("placeType", placeType);
         model.addAttribute("placeName", reservationService.getPlaceName(placeId));
+        model.addAttribute("placeImage", reservationService.getPlaceImage(placeId));
+        model.addAttribute("placeAddress", reservationService.getPlaceAddress(placeId));
         // 숙박만 min_price를 조회 — 관광지/맛집은 min_price가 항상 null이라 그대로 부르면 예외남
         model.addAttribute("price", ReservationService.isStay(placeType) ? reservationService.getUnitPrice(placeId) : 0);
         model.addAttribute("deposit", ReservationService.RESERVE_DEPOSIT);
@@ -75,6 +77,9 @@ public class ReservationController {
             model.addAttribute("placeId", req.getPlaceId());
             String placeType = req.isFreeTest() ? "free" : reservationService.getPlaceType(req.getPlaceId());
             model.addAttribute("placeType", placeType);
+            model.addAttribute("placeName", reservationService.getPlaceName(req.getPlaceId()));
+            model.addAttribute("placeImage", reservationService.getPlaceImage(req.getPlaceId()));
+            model.addAttribute("placeAddress", reservationService.getPlaceAddress(req.getPlaceId()));
             model.addAttribute("price", ReservationService.isStay(placeType) ? reservationService.getUnitPrice(req.getPlaceId()) : 0);
             model.addAttribute("deposit", ReservationService.RESERVE_DEPOSIT);
             return "reservation/reservationForm";

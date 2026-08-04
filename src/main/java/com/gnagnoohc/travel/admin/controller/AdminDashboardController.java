@@ -1,0 +1,43 @@
+package com.gnagnoohc.travel.admin.controller;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.server.ResponseStatusException;
+
+import com.gnagnoohc.travel.admin.service.AdminBusinessApplicationService;
+import com.gnagnoohc.travel.auth.dto.LoginMemberDto;
+
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
+
+/**
+ * 관리자 첫 화면에 사업자 신청 상태별 집계를 제공한다.
+ * 세션 확인은 컨트롤러에서, 정지·탈퇴·권한 변경까지 반영한 최종 인가는 서비스에서 수행한다.
+ */
+@Controller
+@RequiredArgsConstructor
+@RequestMapping("/admin")
+public class AdminDashboardController {
+
+	private final AdminBusinessApplicationService service;
+
+	@GetMapping
+	public String dashboard(HttpServletRequest request, Model model) {
+		LoginMemberDto admin = AdminSessionSupport.requireAdmin(request);
+		try {
+			model.addAttribute(
+					"summary",
+					service.getDashboardSummary(admin.getMemberId()));
+		} catch (SecurityException e) {
+			// 세션이 관리자여도 DB에서 정지·탈퇴 또는 권한 변경된 경우 접근을 거부한다.
+			throw new ResponseStatusException(
+					HttpStatus.FORBIDDEN,
+					"현재 사용자는 관리자 기능을 사용할 수 없습니다.",
+					e);
+		}
+		return "admin/dashboard";
+	}
+}

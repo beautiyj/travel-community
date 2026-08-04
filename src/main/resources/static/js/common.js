@@ -37,12 +37,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     document.addEventListener("click", function (event) {
-        
-        // 셀렉터블 버튼 감지 (.btn-selectable)
-        const button = event.target.closest(".btn-selectable");
-        if (button) {
-            button.classList.toggle("is-active");
-        }
 
         // 셀렉터블 역할 카드 감지 ([class^='sel-card-col-'])
         const roleCard = event.target.closest("[class^='sel-card-col-']");

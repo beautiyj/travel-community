@@ -17,7 +17,10 @@
         <p>입력하신 정보로 조회한 결과입니다.</p>
     </header>
 
-    <%-- 아이디 조회 로직은 모델의 loginId 속성에 조회된 아이디를 담아 전달한다. --%>
+    <%--
+      아이디 조회 로직은 모델의 loginId 속성에 조회된 아이디를 담아 전달한다.
+      값이 없으면 실패 화면으로 분기하며, 성공 값은 c:out으로 HTML 이스케이프해 출력한다.
+    --%>
     <c:choose>
         <c:when test="${not empty loginId}">
             <div class="form-alert form-alert--success" role="status">

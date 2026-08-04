@@ -20,6 +20,7 @@
         </p>
     </header>
 
+    <%-- 제공자명·이메일·마스킹 아이디는 소셜 콜백을 검증한 서버가 모델로 전달하며 c:out으로 출력한다. --%>
     <section class="social-account-summary social-link-account-summary"
              aria-label="연동할 기존 계정 안내">
         <dl class="social-link-account-details">
@@ -35,16 +36,22 @@
         <p>본인의 계정이 맞다면 아래에서 아이디와 비밀번호를 다시 확인해 주세요.</p>
     </section>
 
+    <%-- 연동 실패 시 서버 오류와 입력 DTO를 다시 표시하되 비밀번호 값은 재출력하지 않는다. --%>
     <c:if test="${not empty socialLinkError}">
         <div class="form-alert form-alert--error" role="alert">
             <c:out value="${socialLinkError}" />
         </div>
     </c:if>
 
+    <%--
+      기존 자격증명과 명시적 동의를 POST하고, 서버가 기존 계정 소유권·세션의 소셜 인증·연동 가능 여부를 함께 확인한다.
+      현재 마크업에는 CSRF 토큰 출력이 없으므로 CSRF 보호 적용 시 서버 토큰 필드를 함께 렌더링해야 한다.
+    --%>
     <form class="social-link-form"
           action="${pageContext.request.contextPath}/auth/social/link"
           method="post"
           novalidate>
+        <%-- linkNonce는 연동 흐름의 일회성과 세션 결속을 검증하는 값이며 사용자 식별자나 일반 CSRF 토큰이 아니다. --%>
         <input type="hidden" name="linkNonce"
                value="<c:out value='${socialLinkNonce}' />">
 
@@ -110,6 +117,7 @@
         <p>
             연동하지 않으면 현재 소셜 인증 정보를 폐기하고 기존 로그인 화면으로 이동합니다.
         </p>
+        <%-- 취소도 서버의 임시 소셜 인증 상태를 폐기하는 상태 변경이므로 GET 링크가 아닌 POST를 사용한다. --%>
         <form action="${pageContext.request.contextPath}/auth/social/link/cancel"
               method="post">
             <input type="hidden" name="linkNonce"

@@ -20,17 +20,11 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ReservationService {
 
-    /** 임시 1인 단가. 숙박/맛집 파트의 가격 컬럼이 확정되면 그쪽 조회로 교체 */
-    public static final int TEMP_UNIT_PRICE = 10000;
-
     /** 만나서 결제(관광지·맛집)의 예약금 정액. TODO: place별 예약금 데이터가 생기면 조회로 교체 */
     public static final int RESERVE_DEPOSIT = 10000;
 
-    /**
-     * 맛집·관광지 하루 정원(명). 지금은 캘린더에 "7/10" 남은 자리를 보여주는 표시용으로만 쓴다.
-     * 초과해도 예약은 막지 않는다(차단은 추후). TODO: 관리자 정원 설정이 생기면 그 값으로 교체.
-     */
-    public static final int DAILY_CAPACITY = 10;
+    /** 맛집·관광지 하루 정원(명). 캘린더에 "남은 자리" 표시 + create()에서 초과 시 예약 차단에 쓴다. */
+    public static final int DAILY_CAPACITY = 15;
 
     /**
      * 만나서 결제(예약금만 선결제) 대상인지. tour(관광지)·food(맛집)만 예약금, 그 외(숙박 등)는 정가.
@@ -60,7 +54,7 @@ public class ReservationService {
     @Transactional
     public Long create(Integer memberId, ReservationCreateRequest req) {
         // 사업자가 휴무로 설정한 장소는 예약 자체를 막는다 (PLACE.is_closed 읽기 전용 참조)
-        if (Boolean.TRUE.equals(reservationMapper.findPlaceClosed(req.getPlaceId()))) {
+        if (Integer.valueOf(1).equals(reservationMapper.findPlaceClosed(req.getPlaceId()))) {
             throw new IllegalStateException("휴무 중인 장소입니다.");
         }
 
@@ -93,6 +87,20 @@ public class ReservationService {
             }
         }
 
+        // 관리자가 날짜별로 마감 지정한 날(PLACE_CLOSED_DATE)이 요청 기간에 포함되면 거부
+        LocalDate closedRangeTo = isStay(placeType) ? req.getCheckOutDate() : req.getVisitDate().plusDays(1);
+        if (reservationMapper.countClosedDatesInRange(req.getPlaceId(), req.getVisitDate(), closedRangeTo) > 0) {
+            throw new IllegalStateException("마감된 날짜가 포함되어 있습니다.");
+        }
+
+        // 맛집/관광지 하루 정원(DAILY_CAPACITY) 초과 시 거부. 숙박은 1팀 단독이라 위 overlap 체크로 이미 처리됨
+        if (isPayOnSite(placeType)) {
+            int already = reservationMapper.sumHeadcountOnDate(req.getPlaceId(), req.getVisitDate());
+            if (already + req.getHeadcount() > DAILY_CAPACITY) {
+                throw new IllegalStateException("정원이 초과되어 예약할 수 없습니다.");
+            }
+        }
+
         Reservation r = new Reservation();
         r.setMemberId(memberId);
         r.setPlaceId(req.getPlaceId());
@@ -110,6 +118,38 @@ public class ReservationService {
     @Transactional(readOnly = true)
     public String getPlaceType(Long placeId) {
         return reservationMapper.findPlaceType(placeId);
+    }
+
+    /**
+     * 결제 확정 직전 마지막 방어: 예약 생성(PENDING) 이후 결제 대기 중에 관리자가 마감시켰을 수 있으니
+     * PaymentService.saveSuccess()에서 PAID로 바꾸기 전에 다시 한 번 확인한다.
+     */
+    @Transactional(readOnly = true)
+    public void assertStillAvailable(Long reservationId) {
+        Reservation r = getById(reservationId);
+        if (Integer.valueOf(1).equals(reservationMapper.findPlaceClosed(r.getPlaceId()))) {
+            throw new IllegalStateException("휴무 중인 장소입니다.");
+        }
+        LocalDate closedRangeTo = isStay(r.getPlaceType()) ? r.getCheckOutDate() : r.getVisitDate().plusDays(1);
+        if (reservationMapper.countClosedDatesInRange(r.getPlaceId(), r.getVisitDate(), closedRangeTo) > 0) {
+            throw new IllegalStateException("마감된 날짜가 포함되어 있습니다.");
+        }
+    }
+
+    /** PLACE.name 조회. 예약 폼 표시용 */
+    @Transactional(readOnly = true)
+    public String getPlaceName(Long placeId) {
+        return reservationMapper.findPlaceName(placeId);
+    }
+
+    /** 숙박 1인 단가 조회. PLACE.min_price를 읽기 전용으로 참조 */
+    @Transactional(readOnly = true)
+    public int getUnitPrice(Long placeId) {
+        Integer price = reservationMapper.findMinPrice(placeId);
+        if (price == null) {
+            throw new IllegalStateException("등록된 가격이 없는 장소입니다. placeId=" + placeId);
+        }
+        return price;
     }
 
     @Transactional(readOnly = true)
@@ -148,7 +188,8 @@ public class ReservationService {
         }
         Map<String, Object> result = new HashMap<>();
         result.put("booked", booked);
-        result.put("closed", Boolean.TRUE.equals(reservationMapper.findPlaceClosed(placeId)));
+        result.put("closed", Integer.valueOf(1).equals(reservationMapper.findPlaceClosed(placeId)));
+        result.put("closedDates", reservationMapper.findClosedDates(placeId));
         result.put("capacity", DAILY_CAPACITY);   // 맛집·관광지 캘린더의 남은 자리 표시용(차단 아님)
         return result;
     }
@@ -180,6 +221,22 @@ public class ReservationService {
             throw new IllegalStateException("결제완료된 예약만 승인할 수 있습니다. 현재 상태: " + r.getStatus().getLabel());
         }
         reservationMapper.updateStatus(reservationId, ReservationStatus.CONFIRMED);
+    }
+
+    /**
+     * 사업자: 결제완료(PAID) 예약 거절 — 사유 기록만 담당, 환불/상태전환은 PaymentService.rejectPaid가 이어서 처리.
+     * reason이 비어있으면 기본 문구로 대체하고 trim해서 저장한다(PaymentService가 PG 취소 사유로도 그대로 재사용하므로
+     * DB에 남는 값과 PG에 보내는 값이 항상 같도록 정규화는 여기서 한 번만 한다). 리턴값을 그 정규화된 사유로 준다.
+     */
+    @Transactional
+    public String reject(Long reservationId, String reason) {
+        Reservation r = getById(reservationId);
+        if (r.getStatus() != ReservationStatus.PAID) {
+            throw new IllegalStateException("결제완료된 예약만 거절할 수 있습니다. 현재 상태: " + r.getStatus().getLabel());
+        }
+        String finalReason = (reason == null || reason.isBlank()) ? "사업자 거절" : reason.trim();
+        reservationMapper.reject(reservationId, finalReason);
+        return finalReason;
     }
 
     /**
@@ -220,13 +277,12 @@ public class ReservationService {
     /**
      * 결제 금액 계산 (모든 결제수단이 이 값을 공통으로 사용).
      * - 관광지·맛집(만나서 결제): 예약금 정액 RESERVE_DEPOSIT (인원 무관)
-     * - 숙박: 박수 × 인원 × 단가
-     * TODO: 숙박/맛집 팀원의 place(가격) 테이블이 나오면 placeId로 단가·예약금 조회하도록 교체
+     * - 숙박: 박수 × 인원 × 단가(PLACE.min_price)
      */
     public int calculateAmount(Reservation r) {
         if (isPayOnSite(r.getPlaceType())) {
             return RESERVE_DEPOSIT;
         }
-        return nightsOf(r) * r.getHeadcount() * TEMP_UNIT_PRICE;
+        return nightsOf(r) * r.getHeadcount() * getUnitPrice(r.getPlaceId());
     }
 }

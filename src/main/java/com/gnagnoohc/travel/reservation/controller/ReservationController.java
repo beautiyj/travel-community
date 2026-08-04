@@ -46,8 +46,9 @@ public class ReservationController {
         String placeType = freeTest ? "free" : reservationService.getPlaceType(placeId);
         model.addAttribute("placeId", placeId);
         model.addAttribute("placeType", placeType);
-        // TODO: 숙박/맛집 파트의 place 조회가 나오면 실제 단가·예약금으로 교체
-        model.addAttribute("price", ReservationService.TEMP_UNIT_PRICE);
+        model.addAttribute("placeName", reservationService.getPlaceName(placeId));
+        // 숙박만 min_price를 조회 — 관광지/맛집은 min_price가 항상 null이라 그대로 부르면 예외남
+        model.addAttribute("price", ReservationService.isStay(placeType) ? reservationService.getUnitPrice(placeId) : 0);
         model.addAttribute("deposit", ReservationService.RESERVE_DEPOSIT);
         return "reservation/reservationForm";
     }
@@ -72,14 +73,18 @@ public class ReservationController {
         if (bindingResult.hasErrors()) {
             log.warn("[예약 생성 검증 실패] {}", bindingResult.getAllErrors());
             model.addAttribute("placeId", req.getPlaceId());
-            model.addAttribute("placeType", req.isFreeTest() ? "free" : reservationService.getPlaceType(req.getPlaceId()));
-            model.addAttribute("price", ReservationService.TEMP_UNIT_PRICE);
+            String placeType = req.isFreeTest() ? "free" : reservationService.getPlaceType(req.getPlaceId());
+            model.addAttribute("placeType", placeType);
+            model.addAttribute("price", ReservationService.isStay(placeType) ? reservationService.getUnitPrice(req.getPlaceId()) : 0);
             model.addAttribute("deposit", ReservationService.RESERVE_DEPOSIT);
             return "reservation/reservationForm";
         }
         // 로그인 세션의 회원 식별. 로그인이 "loginMember"(LoginMemberDto)로 저장하므로 그 memberId를 사용
         LoginMemberDto loginMember = (LoginMemberDto) session.getAttribute("loginMember");
-        Integer memberId = (loginMember != null) ? loginMember.getMemberId() : 1;   // 미로그인 시 개발용 임시값
+        if (loginMember == null) {
+            return "redirect:/auth/login";
+        }
+        Integer memberId = loginMember.getMemberId();
         log.info("[예약 생성 요청] memberId={}, {}", memberId, req);
         Long reservationId = reservationService.create(memberId, req);
         log.info("[예약 생성 완료] reservationId={}", reservationId);
@@ -108,7 +113,10 @@ public class ReservationController {
                                              @RequestParam(value = "reason", required = false) String reason,
                                              HttpSession session) {
         LoginMemberDto loginMember = (LoginMemberDto) session.getAttribute("loginMember");
-        Integer memberId = (loginMember != null) ? loginMember.getMemberId() : 1;   // 미로그인 시 개발용 임시값
+        if (loginMember == null) {
+            throw new IllegalStateException("로그인이 필요합니다.");
+        }
+        Integer memberId = loginMember.getMemberId();
 
         reservationService.requestCancel(reservationId, memberId, reason);
         log.info("[취소 요청] reservationId={}, memberId={}, reason={}", reservationId, memberId, reason);

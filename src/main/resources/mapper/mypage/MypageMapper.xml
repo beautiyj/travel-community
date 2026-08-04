@@ -87,9 +87,9 @@
                r.status,
                r.created_at,
                pay.amount
-        from RESERVATION r
-        left join PLACE p on p.place_id = r.place_id
-        left join PAYMENT pay on pay.reservation_id = r.reservation_id
+        from reservation r
+        left join place p on p.place_id = r.place_id
+        left join payment pay on pay.reservation_id = r.reservation_id
         where r.member_id = #{memberId}
         order by r.created_at desc
 
@@ -105,8 +105,8 @@
                w.place_id,
                p.name as place_name,
                w.created_at
-        from WISHLIST w
-        left join PLACE p on p.place_id = w.place_id
+        from wishlist w
+        left join place p on p.place_id = w.place_id
         where w.member_id = #{memberId}
         order by w.created_at desc
 
@@ -130,7 +130,7 @@
             parameterType="map">
 
         delete
-        from WISHLIST
+        from wishlist
         where wishlist_id = #{wishlistId}
           and member_id = #{memberId}
 
@@ -138,7 +138,7 @@
 
     <select id="countWishlist" parameterType="map" resultType="int">
         select count(*)
-        from WISHLIST
+        from wishlist
         where member_id = #{memberId}
           and place_id = #{placeId}
     </select>
@@ -157,13 +157,13 @@
     </select>
 
     <insert id="addWishlist" parameterType="map">
-        insert into WISHLIST (member_id, place_id, created_at)
+        insert into wishlist (member_id, place_id, created_at)
         values (#{memberId}, #{placeId}, now())
     </insert>
 
     <delete id="deleteWishlistByPlace" parameterType="map">
         delete
-        from WISHLIST
+        from wishlist
         where member_id = #{memberId}
           and place_id = #{placeId}
     </delete>
@@ -172,7 +172,7 @@
     <update id="cancelReservation"
             parameterType="long">
 
-        update RESERVATION
+        update reservation
         set
             status = 'CANCELLED',
             cancel_requested_at = now()
@@ -187,7 +187,7 @@
 
         select reservation_id, member_id, place_id, visitor_name,
                phone, visit_date, headcount, status, created_at
-        from RESERVATION
+        from reservation
         where member_id = #{memberId}
           and status = 'PENDING'
         order by created_at desc
@@ -201,7 +201,7 @@
 
         select reservation_id, member_id, place_id, visitor_name,
                phone, visit_date, headcount, status, created_at
-        from RESERVATION
+        from reservation
         where member_id = #{memberId}
           and status = 'PAID'
         order by created_at desc

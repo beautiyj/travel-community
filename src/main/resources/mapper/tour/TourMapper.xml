@@ -175,4 +175,11 @@
         WHERE place_id = #{placeId}
         ORDER BY sort_order ASC
     </select>
+
+    <!-- 0804 7. 특정 지역의 현재 적재된 PLACE 건수 조회 (지역별 무작위 샘플링 쿼터 체크용) -->
+    <select id="selectPlaceCountByRegion" resultType="int">
+        SELECT COUNT(*)
+        FROM PLACE
+        WHERE region_id = #{regionId}
+    </select>
 </mapper>

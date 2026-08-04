@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /*  TODO: 0803 최종테스트 직전 확인하기: 공공데이터 로직 확인 완료, 수정필요한부분은 메인파이프라인 지역구코드 별로 랜덤필터링 작업
-    (0731최종진행용-예정) 공공데이터 받아올 때, 데이터 오염으로 어려울 경우 각 지역군을 기준으로 1차 데이터 필터링 - 각 지역별로 일부 LIMIT걸어서 가져오기, 스케줄러로 관리 진행
 */
 
 /* batch 패키지 역할
@@ -59,10 +58,15 @@ public class TourApiService {
     );
 
     // contentTypeId 5가지 선별하여 데이터 가져오기 : 타깃 타입별로 순회하며 수집 배치 실행, 타입별로 pageNo=1부터 페이징 돌리는 메인 파이프라인 호출하기
+    // TODO: 샘플링테스트 확인 - 0804 수정: 타입별로 각각 syncTourData를 호출해 그때그때 샘플링/적재하던 기존 방식 변경
+    // "타입별 최소 1개 + 지역당 총 10개" 보장이 실제로 성립하지 않아(각 호출엔 타입이 1개뿐이라 그룹핑 무의미),
+    // 5개 타입을 모두 모아 후보 리스트를 합친 뒤 지역별 샘플링을 단 한 번만 수행하도록 변경
     public void fetchAllTargetSyncList() {
+        List<TourAreaBasedSyncListDTO> allValidList = new ArrayList<>();
         for (String contentTypeId : TARGET_CONTENT_TYPES) {
-            syncTourData(contentTypeId, 1);
+            allValidList.addAll(collectValidItems(contentTypeId, 1));
         }
+        processRandomSamplingAndSave(allValidList);
     }
 
     // 법정동 코드 수집 및 REGION 적재 파이프라인 (코드는 전체 목록 조회 Y 옵션으로 진행)
@@ -116,8 +120,17 @@ public class TourApiService {
     // 메인 파이프라인 - 공공데이터 장소 수집 및 PLACE, PLACE_IMAGE 적재(시작할 pageNo를 외부에서 주입받을 수 있는 구조)
     // 메인 최상위 파이프라인에선 크게 검증&스킵 처리 - 연쇄 수집&변환 처리(만들어진 컨버터) - 해당 컨버터에서 가공로직 담당하는 헬퍼로 최종 적재
     // 검증된 알짜 데이터를 모아 지역별 무작위 샘플링(최대 10개, 타입별 최소 1개 보장) 후 DB 적재
+    // 단일 contentTypeId 단독 실행(테스트/부분 재수집용)에 한해서는 그 타입 내에서만 샘플링 진행
+    // (5개 타입을 합쳐서 정식으로 돌릴 땐 fetchAllTargetSyncList를 사용할 것)
     @Transactional
     public void syncTourData(String contentTypeId, int startPageNo) {
+        List<TourAreaBasedSyncListDTO> rawValidList = collectValidItems(contentTypeId, startPageNo);
+        processRandomSamplingAndSave(rawValidList);
+    }
+
+    // TODO: 샘플링테스트 전 최종수정 - 0804 페이징 순회 + 1차 검증(Validator/isValidItem)까지만 수행하고, 즉시 적재하지 않고 후보 리스트로 반환
+    // fetchAllTargetSyncList에서 5개 타입을 전부 모아 지역별 샘플링을 한 번에 하기 위해 syncTourData에서 분리함
+    private List<TourAreaBasedSyncListDTO> collectValidItems(String contentTypeId, int startPageNo) {
         int pageNo = startPageNo;
         boolean hasNext = true;
 
@@ -185,11 +198,70 @@ public class TourApiService {
                 hasNext = false;
             }
         }
-        // 필터링 후 모인 전체 데이터를 지역별로 그룹핑 ➔ 랜덤 셔플 ➔ 타입별 최소 1개 선점 ➔ 최대 10개 추출 후 DB 저장
-        processRandomSamplingAndSave(rawValidList);
+        return rawValidList;
     }
 
-    // TODO: 0804 샘플링 로직 완료 - 무작위 샘플링 및 DB 적재 핵심 처리 메서드
+    // TODO: 테스트용: (혹은빠른검증용)특정 지역(들)만 대상으로 지역기반 목록조회(/areaBasedList2)를 사용해 빠르게 검증용 소규모 테스트 수행
+    // collectValidItems(전국 페이징 순회)는 특정 지역 몇 개만 테스트하기엔 비효율적이라 별도 경로로 분리함
+    // TourApiClient.fetchAreaBasedList가 lDongRegnCd/lDongSignguCd로 직접 필터링하므로 지역 단위 호출이 가능함
+    public void syncTourDataForRegions(List<Integer> regionIds) {
+        List<TourAreaBasedSyncListDTO> rawValidList = new ArrayList<>();
+
+        for (Integer regionId : regionIds) {
+            String regionIdStr = String.valueOf(regionId);
+            // regionId는 시도코드(2자리)+시군구코드 결합값이므로 분리 (parseRegionId의 역연산)
+            if (regionIdStr.length() < 3) {
+                log.warn("[Batch Region Test] 시도 단독 코드는 대상 아님 - regionId: {}", regionId);
+                continue;
+            }
+            String regnCd = regionIdStr.substring(0, 2);
+            String signguCd = regionIdStr.substring(2);
+
+            for (String contentTypeId : TARGET_CONTENT_TYPES) {
+                rawValidList.addAll(collectValidItemsForRegion(regnCd, signguCd, contentTypeId));
+            }
+        }
+        // 지정 지역만 담긴 리스트를 그대로 기존 샘플링 로직에 전달 (내부에서 지역별로 다시 그룹핑되므로 재사용 가능)
+        processRandomSamplingAndSave(rawValidList);
+    }
+    //TODO: 테스트용: (혹은빠른검증용) 지역기반 목록조회(/areaBasedList2)로 특정 지역+타입 조합의 1차 검증 통과 항목만 수집
+    // 페이징 없이 1회 호출 (지역 단위라 데이터량이 적음), arrange="Q"로 대표이미지 보장된 항목만 응답받음
+    private List<TourAreaBasedSyncListDTO> collectValidItemsForRegion(String regnCd, String signguCd, String contentTypeId) {
+        List<TourAreaBasedSyncListDTO> rawValidList = new ArrayList<>();
+        try {
+            String jsonResponse = tourApiClient.fetchAreaBasedList(regnCd, signguCd, contentTypeId, "Q");
+            if (!StringUtils.hasText(jsonResponse)) return rawValidList;
+
+            TourApiResponseDTO<TourAreaBasedSyncListDTO> response = objectMapper.readValue(
+                    jsonResponse, new TypeReference<TourApiResponseDTO<TourAreaBasedSyncListDTO>>() { }
+            );
+            if (response == null || response.getResponse() == null
+                    || response.getResponse().getBody() == null
+                    || response.getResponse().getBody().getItems() == null
+                    || response.getResponse().getBody().getItems().getItem() == null) {
+                return rawValidList;
+            }
+
+            List<TourAreaBasedSyncListDTO> syncList = response.getResponse().getBody().getItems().getItem();
+            for (TourAreaBasedSyncListDTO syncItem : syncList) {
+                if (!tourValidator.isValid(syncItem)) { continue; }
+                if (!tourApiHelper.isValidItem(syncItem)) { continue; }
+                if ("0".equals(syncItem.getShowflag())) {
+                    processClosedPlace(syncItem);
+                    continue;
+                }
+                rawValidList.add(syncItem);
+            }
+        } catch (Exception e) {
+            log.warn("[Batch Region Test] regnCd:{} signguCd:{} contentTypeId:{} 조회 중 오류: {}", regnCd, signguCd, contentTypeId, e.getMessage());
+        }
+        return rawValidList;
+    }
+
+    // TODO: 0804 무작위 샘플링 및 DB 적재 핵심 처리 메서드
+    // - contenttypeid가 아니라 placeType(tour/stay/food) 기준으로 그룹핑해야 타입별 최소 1개 보장이 실제로 성립함
+    //   (fetchAllTargetSyncList에서 5개 타입이 하나로 합쳐져 들어오는 구조로 변경되었기 때문)
+    // - 재실행/부분 재수집 시 지역당 총 10개를 넘지 않도록 기존 DB 적재 건수 확인 로직 추가
     private void processRandomSamplingAndSave(List<TourAreaBasedSyncListDTO> rawValidList) {
         if (rawValidList == null || rawValidList.isEmpty()) return;
 
@@ -200,12 +272,32 @@ public class TourApiService {
                 ));
 
         for (Map.Entry<String, List<TourAreaBasedSyncListDTO>> entry : regionGroupMap.entrySet()) {
+            String regionKey = entry.getKey();
             List<TourAreaBasedSyncListDTO> regionItems = entry.getValue();
+
+            // regionId(Integer) 파싱 - DB 기존 건수 조회 및 PlaceDTO 매핑 시 사용하는 동일한 PK 체계
+            Integer regionId;
+            try {
+                regionId = Integer.parseInt(regionKey);
+            } catch (NumberFormatException e) {
+                log.warn("[Batch Sampling] 지역코드 파싱 실패 - regionKey: {}", regionKey);
+                continue;
+            }
+
+            // 이미 목표 수량(10개)을 채운 지역이면 스킵 - 여러 타입/재실행 시 중복 초과 적재 방지
+            int existingCount = tourMapper.selectPlaceCountByRegion(regionId);
+            if (existingCount >= 10) {
+                log.info("[Batch Sampling Skip] 지역코드 {}: 이미 목표 수량 충족 - 현재 {}건", regionKey, existingCount);
+                continue;
+            }
+
             // 가나다/순차 정렬 방지를 위해 해당 지역의 수집 목록을 무작위 셔플
             Collections.shuffle(regionItems);
-            // 타입(contentTypeId)별 그룹핑
+            // placeType(tour/stay/food)별 그룹핑
             Map<String, List<TourAreaBasedSyncListDTO>> typedMap = regionItems.stream()
-                    .collect(Collectors.groupingBy(TourAreaBasedSyncListDTO::getContenttypeid));
+                    .collect(Collectors.groupingBy(item ->
+                            tourApiHelper.convertContentType(item.getContenttypeid(), item.getLclsSystm2(), item.getLclsSystm3())
+                    ));
             List<TourAreaBasedSyncListDTO> selectedList = new ArrayList<>();
 
             // 관광지, 숙박, 맛집 타입별로 무작위 1개씩 우선 추출 (타입 비중 균형 보장)
@@ -215,23 +307,24 @@ public class TourApiService {
                 }
             }
 
-            // 남은 후보군을 다시 하나로 모아 셔플 후, 지역당 최대 10개가 채워질 때까지 보충
+            // 남은 후보군을 다시 하나로 모아 셔플 후, 지역당 남은 슬롯만큼 보충
             List<TourAreaBasedSyncListDTO> remainList = typedMap.values().stream()
                     .flatMap(List::stream)
                     .collect(Collectors.toList());
             Collections.shuffle(remainList);
 
-            int needed = 10 - selectedList.size();
+            int needed = 10 - existingCount - selectedList.size();
             for (int i = 0; i < Math.min(needed, remainList.size()); i++) {
                 selectedList.add(remainList.get(i));
             }
 
-            // 무작위 선발 완료된 지역당 최대 10개 데이터를 연쇄 수집 및 DB(PLACE, PLACE_IMAGE) 적재
+            // 무작위 선발 완료된 지역당 데이터를 연쇄 수집 및 DB(PLACE, PLACE_IMAGE) 적재
             for (TourAreaBasedSyncListDTO targetItem : selectedList) {
                 processSinglePlace(targetItem);
             }
 
-            log.info("[Batch Sampling] 지역코드 {}: 총 {}개 장소 무작위 적재 완료", entry.getKey(), selectedList.size());
+            log.info("[Batch Sampling] 지역코드 {}: 기존 {}건 + 신규 {}건 무작위 적재 완료 (후보 {}건 중 선별)",
+                    regionKey, existingCount, selectedList.size(), regionItems.size());
         }
     }
 
@@ -278,8 +371,8 @@ public class TourApiService {
         // convertToPlaceDTO -> 서비스 PlaceDTO 변환 및 해시태그 생성
         PlaceDTO placeDto = tourDataConverter.convertToPlaceDTO(syncItem, tourItem, introDetail, infoDetail, thumbnailImage);
         // 2차 부실 가격 검증: useFeeInfo도 넘겨주어, minPrice가 null이어도 요금안내 문구가 있으면 통과시킴
-        if (!tourValidator.isValidPrice(placeDto.getMinPrice(), placeDto.getUseFeeInfo(), placeDto.getPlaceType())) { return; }
-
+        // TourValidator.isValidPrice(minPrice, placeType, useFeeInfo) 순서에 맞게 인자 순서 조정
+        if (!tourValidator.isValidPrice(placeDto.getMinPrice(), placeDto.getPlaceType(), placeDto.getUseFeeInfo())) { return; }
         // 최종 검증을 통과한 알짜 데이터만 DB 적재
         tourMapper.upsertPlace(placeDto);
 

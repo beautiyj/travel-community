@@ -28,7 +28,7 @@
         </div>
         <div class="business-sidebar__status">
             <c:choose>
-                <c:when test="${isClosed}">
+                <c:when test="${isClosed == 1}">
                     <span class="business-status-dot business-status-dot--closed"></span>
                     <span class="business-status-label business-status-label--closed">예약 마감</span>
                 </c:when>

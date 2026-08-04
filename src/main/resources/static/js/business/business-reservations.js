@@ -4,6 +4,10 @@
    예약 거절 모달(rejectReasonModal.jsp)의 select→"기타" 직접입력 토글과
    최종 사유 값을 hidden input에 조립하는 로직을 담당한다.
    (reservation/success.jsp의 취소요청 모달과 동일한 UX 패턴)
+
+   취소 요청 모달(cancelRequestModal.jsp)의 "승인/거절 선택" ↔ "거절 사유 입력"
+   패널 전환도 여기서 담당한다. 사유 입력 자체(select→기타 토글, hidden 조립)는
+   위 [data-reject-form] 핸들러가 이 모달의 폼도 그대로 처리해준다(선택자가 동일).
    ========================================================= */
 
 /** RESERVATION.reject_reason 컬럼 길이(VARCHAR(100))에 맞춘 제한 */
@@ -40,3 +44,23 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 });
+
+/** 취소 요청 모달 내부의 "승인/거절 선택" ↔ "거절 사유 입력" 패널 전환 */
+function setCancelRejectPanel(overlay, showReject) {
+    var actions = overlay.querySelector('[data-cancel-actions]');
+    var panel = overlay.querySelector('[data-cancel-reject-panel]');
+    if (actions) actions.style.display = showReject ? 'none' : 'flex';
+    if (panel) panel.style.display = showReject ? 'block' : 'none';
+}
+
+/** 모달 안의 버튼(el)에서 호출 : el이 속한 모달을 찾아 패널을 전환한다 */
+function toggleCancelRejectPanel(el, showReject) {
+    var overlay = el.closest('.modal-overlay');
+    if (overlay) setCancelRejectPanel(overlay, showReject);
+}
+
+/** "요청보기" 트리거에서 openModal과 함께 호출 : 이전에 거절 패널을 보고 있었어도 항상 1단계부터 보이게 초기화 */
+function resetCancelRequestModal(modalId) {
+    var overlay = document.getElementById(modalId);
+    if (overlay) setCancelRejectPanel(overlay, false);
+}

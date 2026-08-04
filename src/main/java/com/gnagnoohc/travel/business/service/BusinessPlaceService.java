@@ -88,6 +88,7 @@ public class BusinessPlaceService {
                 .memberId(bizMemberId)
                 .name(form.getName())
                 .description(form.getDescription())
+                .extraInfo(resolveExtraInfo(form))
                 .address(form.getAddress())
 //                .mapx(null)
 //                .mapy(null)
@@ -106,6 +107,12 @@ public class BusinessPlaceService {
     public BusinessPlaceDetailDto findDetail(Long bizMemberId) {
         BusinessPlaceDetailDto detail = businessMapper.selectPlaceDetailByMember(bizMemberId);
         detail.setImages(businessMapper.selectPlaceImages(detail.getPlaceId()));
+        // 읽기뷰는 목록으로, 수정 폼은 입력칸 기존값으로 쓰기 위해 "[라벨] 값" 덩어리를 미리 풀어둔다
+        detail.setExtraInfoMap(BusinessExtraInfoCatalog.parse(detail.getExtraInfo()));
+        // "기본주소,상세주소"로 저장된 한 컬럼을 수정 폼의 두 입력칸에 맞게 분리한다
+        String[] addressParts = detail.getAddress() == null ? new String[0] : detail.getAddress().split(",", 2);
+        detail.setAddress(addressParts.length > 0 ? addressParts[0] : "");
+        detail.setAddressDetail(addressParts.length > 1 ? addressParts[1] : "");
         return detail;
     }
 
@@ -121,6 +128,7 @@ public class BusinessPlaceService {
 
         // 사진을 지우고 다시 넣기 전에 먼저 검증해야 실패 시 기존 사진이 날아가지 않는다
         PriceSetting price = resolvePrice(form);
+        String extraInfo = resolveExtraInfo(form);
 
         List<String> currentImages = businessMapper.selectPlaceImages(placeId);
         Set<String> currentImageSet = Set.copyOf(currentImages);
@@ -176,6 +184,7 @@ public class BusinessPlaceService {
 //                .regionId(form.getRegionId())
                 .address(form.getAddress())
                 .description(form.getDescription())
+                .extraInfo(extraInfo)
                 .firstImage(firstImage)
                 .hashtags(normalizeHashtags(form.getHashtags()))
                 .build();
@@ -243,6 +252,19 @@ public class BusinessPlaceService {
     }
 
     private record PriceSetting(String priceType, Integer minPrice) {}
+
+    /**
+     * 부가정보 입력칸(라벨/값 병렬 리스트)을 extra_info에 저장할 한 덩어리로 조립한다.
+     * 값이 빈 항목은 빠지고, 하나도 입력하지 않았으면 null(컬럼 비움)이다.
+     *
+     * 라벨은 폼의 hidden input으로 오므로 조작될 수 있다. 공공데이터와 표기가 어긋난 라벨이 저장되면
+     * 같은 유형의 장소가 화면에서 다르게 보이므로, 업종별 허용 라벨 목록으로 서버에서 다시 확인한다.
+     * (가격 처리 resolvePrice와 같은 이유의 서버측 최종 방어선)
+     */
+    private String resolveExtraInfo(BusinessPlaceFormDto form) {
+        return BusinessExtraInfoCatalog.assemble(
+                form.getPlaceType(), form.getExtraLabels(), form.getExtraValues());
+    }
 
     // 폼에서 콤마로 구분해 받은 해시태그를 빈 항목/앞뒤 공백 없이 정리한다.
     private String normalizeHashtags(String rawHashtags) {

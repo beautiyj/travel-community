@@ -23,7 +23,7 @@ public class BusinessReservationApiController {
     @PatchMapping("/place/closed")
     public ResponseEntity<Void> setPlaceClosed(
             @RequestParam Long placeId,
-            @RequestParam boolean isClosed,
+            @RequestParam Integer isClosed,
             HttpSession session
     ) {
         Long bizMemberId = BusinessSessionSupport.requireBusinessMemberId(session);

@@ -67,7 +67,7 @@ public class BusinessReservationService {
         }
     }
 
-    public void setPlaceClosed(Long placeId, Long bizMemberId, boolean isClosed) {
+    public void setPlaceClosed(Long placeId, Long bizMemberId, Integer isClosed) {
         int updated = businessMapper.updatePlaceClosed(placeId, bizMemberId, isClosed);
         if (updated == 0) {
             throw new IllegalArgumentException("해당 업소가 없거나 처리 권한이 없습니다.");

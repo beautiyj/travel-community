@@ -171,11 +171,9 @@ document.addEventListener("DOMContentLoaded", function () {
             }).open();
         });
 
-        // 수정 폼은 서버에서 합쳐진 주소 한 덩어리를 address에 채워 내려주므로 상세주소는 비어 있다.
-        // 이 상태로 제출하면 상세주소를 덧붙이지 않고 기존 주소가 그대로 유지된다.
-
         // 주소 미입력 시 제출 막기 (readonly input은 required 검증 대상에서 제외되므로 직접 체크)
-        // + 제출 직전 상세주소를 address 값에 합쳐서 하나의 필드로 전송
+        // 제출 직전 상세주소를 address 값에 콤마로 합쳐서 하나의 필드로 전송
+        // BusinessPlaceService.findDetail이 콤마 기준으로 다시 분리
         if (btn.form) {
             btn.form.addEventListener("submit", function (e) {
                 if (!addressInput.value) {
@@ -185,7 +183,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     return;
                 }
                 if (detailInput.value) {
-                    addressInput.value = addressInput.value + " " + detailInput.value;
+                    addressInput.value = addressInput.value + "," + detailInput.value;
                 }
             });
         }
@@ -230,6 +228,118 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     syncPriceGroup();
+});
+
+// ── 부가정보 입력 (등록/수정 폼 공용) ──
+// 2단계 선택이다.
+//   1) 업종(placeType)을 고르면 그 업종의 항목 칩 묶음만 열고 나머지는 닫는다.
+//   2) 칩을 고르면 그 항목의 입력칸이 아래에 나타난다.
+//
+// 입력칸은 JSP에서 disabled로 그려져 있고 칩을 골라야 활성화된다. disabled 필드는 전송 대상에서
+// 빠지므로 고르지 않은 항목·선택하지 않은 업종의 항목은 서버로 가지 않는다.
+// (라벨 hidden과 값 text가 짝을 이뤄 제출되는 구조라, 둘을 항상 같이 켜고 꺼야 짝이 어긋나지 않는다.
+//  그래서 아래에서 행 안의 input을 통째로 켜고 끈다)
+//
+// 칩을 다시 눌러 뺐을 때 입력값을 지우지는 않는다. 실수로 뺐다가 다시 고르면 쓰던 값이 그대로 남아 있고,
+// 뺀 상태로 저장하면 disabled라 전송되지 않으므로 결과적으로 삭제된다.
+//
+// 반려동물 동반 정보는 업종과 무관한 공통 묶음이라 체크박스로 따로 여닫는다.
+// 수정 화면 진입 시 이미 저장된 값이 있는 항목은 칩이 켜진 채로 열어둔다.
+document.addEventListener("DOMContentLoaded", function () {
+    var typeGroups = Array.from(document.querySelectorAll(".js-extra-group"));
+    var petGroup = document.querySelector(".js-extra-pet-group");
+    var petToggle = document.querySelector(".js-extra-pet-toggle");
+    if (!typeGroups.length && !petGroup) return;
+
+    var placeTypeSelect = document.querySelector('select[name="placeType"]');
+    var allGroups = typeGroups.concat(petGroup ? [petGroup] : []);
+
+    function rowOf(chip) {
+        return document.getElementById(chip.dataset.target);
+    }
+
+    // 묶음 하나를 현재 상태(업종 선택 + 칩 선택)에 맞춰 다시 그린다.
+    // groupActive가 false면 칩이 켜져 있어도 입력칸은 전송 대상에서 빠진다.
+    function syncGroup(group, groupActive) {
+        group.classList.toggle("is-hidden", !groupActive);
+
+        var chips = Array.from(group.querySelectorAll(".js-extra-chip"));
+        var pickedCount = 0;
+
+        chips.forEach(function (chip) {
+            // 칩의 체크박스는 CSS로 숨겨져 있어서, 선택 표시는 라벨의 is-picked 클래스로 준다
+            var chipLabel = chip.closest(".venue-extra-chip");
+            if (chipLabel) chipLabel.classList.toggle("is-picked", chip.checked);
+
+            var row = rowOf(chip);
+            if (!row) return;
+            if (chip.checked) pickedCount++;
+
+            row.classList.toggle("is-hidden", !chip.checked);
+            row.querySelectorAll("input").forEach(function (input) {
+                input.disabled = !(groupActive && chip.checked);
+            });
+        });
+
+        var empty = group.querySelector(".js-extra-empty");
+        if (empty) empty.classList.toggle("is-hidden", pickedCount > 0);
+    }
+
+    function syncAll() {
+        var selectedType = placeTypeSelect ? placeTypeSelect.value : null;
+        typeGroups.forEach(function (group) {
+            syncGroup(group, group.dataset.placeType === selectedType);
+        });
+        if (petGroup) {
+            syncGroup(petGroup, !!(petToggle && petToggle.checked));
+        }
+    }
+
+    // 칩 토글 (묶음 구분 없이 위임 처리)
+    allGroups.forEach(function (group) {
+        group.addEventListener("change", function (e) {
+            var chip = e.target.closest(".js-extra-chip");
+            if (!chip) return;
+            syncAll();
+            // 방금 켠 항목은 바로 입력할 수 있게 커서를 옮겨준다
+            var row = rowOf(chip);
+            if (chip.checked && row) {
+                var field = row.querySelector('input[name="extraValues"]');
+                if (field) field.focus();
+            }
+        });
+
+        // 입력칸 우측 × 버튼은 해당 칩을 끄는 것과 같다
+        group.addEventListener("click", function (e) {
+            var removeBtn = e.target.closest(".js-extra-row-remove");
+            if (!removeBtn) return;
+            var row = removeBtn.closest(".venue-extra-row");
+            if (!row) return;
+            var chip = group.querySelector('.js-extra-chip[data-target="' + row.id + '"]');
+            if (chip) chip.checked = false;
+            syncAll();
+        });
+    });
+
+    if (placeTypeSelect) placeTypeSelect.addEventListener("change", syncAll);
+    if (petToggle) petToggle.addEventListener("change", syncAll);
+
+    // 수정 화면 진입: 이미 저장된 값이 있는 항목의 칩을 켜둔다.
+    // (같은 라벨이 여러 업종에 있어도 각 묶음이 자기 입력칸만 보므로 업종별로 알아서 맞는 것만 켜진다)
+    allGroups.forEach(function (group) {
+        group.querySelectorAll(".js-extra-chip").forEach(function (chip) {
+            var row = rowOf(chip);
+            if (!row) return;
+            var field = row.querySelector('input[name="extraValues"]');
+            if (field && field.value.trim() !== "") chip.checked = true;
+        });
+    });
+    if (petGroup && petToggle) {
+        petToggle.checked = Array.from(petGroup.querySelectorAll(".js-extra-chip"))
+            .some(function (chip) { return chip.checked; });
+    }
+
+    syncAll();
 });
 
 // ── 해시태그 입력 (등록/수정 폼 ) ──

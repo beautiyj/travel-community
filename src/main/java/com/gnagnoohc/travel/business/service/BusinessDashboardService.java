@@ -48,7 +48,7 @@ public class BusinessDashboardService {
                 .placeId(overview.getPlaceId())
                 .placeName(overview.getPlaceName())
                 .ownerName(overview.getOwnerName())
-                .isClosed(overview.isClosed())
+                .closed(overview.getClosed())
                 .pendingCount(counts.getPendingCount())
                 .cancelRequestCount(counts.getCancelRequestCount())
                 .firstImage(overview.getFirstImage())

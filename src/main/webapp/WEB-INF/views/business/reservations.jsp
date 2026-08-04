@@ -50,7 +50,8 @@
                                 <div class="business-reservation-table__cell">방문일</div>
                                 <div class="business-reservation-table__cell">인원</div>
                                 <div class="business-reservation-table__cell">금액</div>
-                                <div class="business-reservation-table__cell business-reservation-table__cell--action">상태 / 처리</div>
+                                <div class="business-reservation-table__cell">상태</div>
+                                <div class="business-reservation-table__cell business-reservation-table__cell--action"></div>
                             </div>
                             <c:forEach var="r" items="${reservations}">
                                 <jsp:include page="common/reservationRow.jsp">
@@ -64,6 +65,8 @@
                                     <jsp:param name="amount" value="${r.amount}" />
                                     <jsp:param name="mode" value="actionable" />
                                     <jsp:param name="reservationId" value="${r.reservationId}" />
+                                    <jsp:param name="cancelReason" value="${r.cancelReason}" />
+                                    <jsp:param name="cancelRequestedAt" value="${r.cancelRequestedAt}" />
                                 </jsp:include>
                             </c:forEach>
                         </div>

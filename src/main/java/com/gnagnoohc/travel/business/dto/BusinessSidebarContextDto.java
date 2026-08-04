@@ -11,7 +11,7 @@ public class BusinessSidebarContextDto {
     private Long placeId;
     private String placeName;
     private String ownerName;
-    private boolean isClosed;
+    private Integer closed;
     private Integer pendingCount;
     private Integer cancelRequestCount;
     private String firstImage;

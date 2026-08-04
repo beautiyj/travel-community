@@ -1,5 +1,9 @@
 package com.gnagnoohc.travel.tour.controller;
 
+import com.gnagnoohc.travel.tour.model.PlaceDTO;
+import com.gnagnoohc.travel.tour.model.PlaceImageDTO;
+import com.gnagnoohc.travel.tour.service.TourService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
@@ -7,11 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.gnagnoohc.travel.tour.model.PlaceDTO;
-import com.gnagnoohc.travel.tour.model.PlaceImageDTO;
-import com.gnagnoohc.travel.tour.service.TourService;
-
-import lombok.RequiredArgsConstructor;
+import java.util.List;
 
 @Controller
 @RequiredArgsConstructor

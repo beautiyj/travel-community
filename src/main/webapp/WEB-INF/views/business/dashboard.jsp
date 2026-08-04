@@ -104,6 +104,8 @@
                                     <jsp:param name="amount" value="${r.amount}" />
                                     <jsp:param name="mode" value="actionable" />
                                     <jsp:param name="reservationId" value="${r.reservationId}" />
+                                    <jsp:param name="cancelReason" value="${r.cancelReason}" />
+                                    <jsp:param name="cancelRequestedAt" value="${r.cancelRequestedAt}" />
                                 </jsp:include>
                             </c:forEach>
                         </div>

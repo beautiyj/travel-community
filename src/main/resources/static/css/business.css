@@ -385,6 +385,40 @@ body {
     border-color: var(--business-primary);
 }
 
+/* ── 취소 요청 확인/처리 (cancelRequestModal.jsp) ── */
+.business-modal-cancel-reason {
+    background: var(--muted);
+    color: var(--foreground);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    white-space: pre-wrap;
+}
+
+.business-cancel-actions {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.business-cancel-request-modal {
+    position: relative;
+}
+
+.business-modal-close-x {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 22px;
+    line-height: 1;
+    color: var(--muted-foreground);
+    padding: 4px;
+}
+
 /* ── Closure (즉시 예약 마감 토글) ── */
 .business-closure-page {
     max-width: 520px;
@@ -815,7 +849,7 @@ body {
 
 .business-reservation-table__row {
     display: grid;
-    grid-template-columns: 1.3fr 1.3fr 1fr 0.6fr 1fr 1.8fr;
+    grid-template-columns: 1.3fr 1.3fr 1fr 0.6fr 1fr 0.8fr 1.4fr;
     align-items: center;
     gap: 12px;
     padding: 14px 16px;

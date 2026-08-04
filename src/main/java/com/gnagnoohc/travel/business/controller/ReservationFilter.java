@@ -12,12 +12,12 @@ import java.util.function.Function;
  * 예약 관리 화면의 상태 필터 탭 정의.
  * 탭 순서·화면 라벨·조회에 쓸 상태값·탭에 표시할 건수를 한 곳에서 함께 정의해,
  * 라벨이 바뀌거나 상태가 늘어도 이 파일만 고치면 되게 한다.
- * 사업자 조치가 필요한 상태(결제완료=확정/거절 대기, 취소요청)를 앞쪽에 두고 나머지는 예약 진행 순서대로 배치.
+ * 사업자 조치가 필요한 상태(예약요청=확정/거절 대기, 취소요청)를 앞쪽에 두고 나머지는 예약 진행 순서대로 배치.
  */
 enum ReservationFilter {
 
     ALL("전체", null, counts -> null),
-    PAID("결제완료", ReservationStatus.PAID, BusinessReservationStatusCountsDto::getPaidCount),
+    PAID("예약요청", ReservationStatus.PAID, BusinessReservationStatusCountsDto::getPaidCount),
     CANCEL_REQUESTED("취소요청", ReservationStatus.CANCEL_REQUESTED, BusinessReservationStatusCountsDto::getCancelRequestCount),
     CONFIRMED("확정", ReservationStatus.CONFIRMED, BusinessReservationStatusCountsDto::getConfirmedCount),
     COMPLETED("완료", ReservationStatus.COMPLETED, BusinessReservationStatusCountsDto::getDoneCount),

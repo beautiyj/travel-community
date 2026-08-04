@@ -1,44 +1,41 @@
 package com.gnagnoohc.travel.batch.controller;
 
-import com.gnagnoohc.travel.batch.client.TourApiClient;
 import com.gnagnoohc.travel.batch.service.TourApiService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-// TODO: 테스트 완료 후 반드시 삭제 또는 관리자 인증 처리 필요 (운영 배포 전 제거 대상)
-@Slf4j
+import java.util.List;
+
 @RestController
+@RequestMapping("/test/batch")
 @RequiredArgsConstructor
 public class TourBatchTestController {
+
     private final TourApiService tourApiService;
-    private final TourApiClient tourApiClient;
 
-    // 테스트 - 공공데이터 원본(raw) 응답을 가공 없이 그대로 확인
-    // TourApiClient를 서비스 거치지 않고 직접 호출 -> contentId, firstimage, firstimage2 등 원본 필드 확인용
-    @GetMapping("/test/batch/raw")
-    public String testRawResponse(@RequestParam String contentTypeId,
-                                  @RequestParam(defaultValue = "1") int pageNo) {
-        return tourApiClient.fetchAreaBasedSyncList(pageNo, contentTypeId, null, null);
+    /**
+     * 공공데이터의 전국 시도/시군구 코드를 수집하여 DB REGION 테이블에 적재
+     * 포스트맨 요청: POST http://localhost:9999/test/batch/init-regions
+     */
+    @PostMapping("/init-regions")
+    public String initRegionData() {
+        // 실제 서비스에 있는 REGION 수집/적재 메서드 호출
+        tourApiService.syncRegionData(); 
+        return "DB REGION 테이블에 실제 지역 코드 1차 적재 완료!";
     }
 
-    // 법정동 코드 수집만 단독 테스트
-    @PostMapping("/test/batch/region")
-    public String testRegionSync() {
-        tourApiService.syncRegionData();
-        return "REGION 동기화 완료 - 로그 확인";
+    /**
+     * [2단계 - 장소 수집 테스트]
+     * DB REGION 테이블에 적재된 region_id를 기반으로 특정 지역 장소(PLACE) 샘플 수집 진행
+     * 포스트맨 요청: POST http://localhost:9999/test/batch/region-sample?regionIds=12790
+     */
+    @PostMapping("/region-sample")
+    public String testRegionSample(@RequestParam List<Integer> regionIds) {
+        // 실제 서비스에 있는 장소 수집/배치 메서드 호출
+        tourApiService.syncTourDataForRegions(regionIds); 
+        return "[2단계 완료] 지정 지역 장소 데이터 수집 완료 - regionIds: " + regionIds;
     }
-
-    // 특정 contentTypeId 소량(limit) 테스트 - 기본값 10건
-    // syncTourData -> syncTourDataForTest 호출로 변경, limit 파라미터 추가 (기본 10건)
-    @PostMapping("/test/batch/place")
-    public String testPlaceSync(@RequestParam String contentTypeId,
-                                @RequestParam(defaultValue = "10") int limit) {
-        tourApiService.syncTourDataForTest(contentTypeId, limit);
-        return "PLACE 소량 테스트 완료 (contentTypeId=" + contentTypeId + ", limit=" + limit + ") - 로그 확인";
-    }
-
 }

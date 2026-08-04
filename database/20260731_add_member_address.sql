@@ -1,2 +1,0 @@
-ALTER TABLE member
-    ADD COLUMN address VARCHAR(255) NULL AFTER birth;

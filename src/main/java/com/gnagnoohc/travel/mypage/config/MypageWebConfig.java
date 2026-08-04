@@ -8,10 +8,13 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class MypageWebConfig implements WebMvcConfigurer {
 
     private final MypageAccessInterceptor mypageAccessInterceptor;
+    private final BusinessLoginRedirectInterceptor businessLoginRedirectInterceptor;
 
     public MypageWebConfig(
-            MypageAccessInterceptor mypageAccessInterceptor) {
+            MypageAccessInterceptor mypageAccessInterceptor,
+            BusinessLoginRedirectInterceptor businessLoginRedirectInterceptor) {
         this.mypageAccessInterceptor = mypageAccessInterceptor;
+        this.businessLoginRedirectInterceptor = businessLoginRedirectInterceptor;
     }
 
     @Override
@@ -24,5 +27,8 @@ public class MypageWebConfig implements WebMvcConfigurer {
                         "/mypage/payment",
                         "/mypage/withdraw",
                         "/mypage/wishlist");
+
+        registry.addInterceptor(businessLoginRedirectInterceptor)
+                .addPathPatterns("/auth/login");
     }
 }

@@ -17,6 +17,7 @@ public class BusinessPlaceDetailDto {
     private Long regionId;
     private String regionName;
     private String address;
+    private String addressDetail;
     private String description;
     private String hashtags;
     private Integer closed;

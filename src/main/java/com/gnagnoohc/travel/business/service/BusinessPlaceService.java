@@ -109,6 +109,10 @@ public class BusinessPlaceService {
         detail.setImages(businessMapper.selectPlaceImages(detail.getPlaceId()));
         // 읽기뷰는 목록으로, 수정 폼은 입력칸 기존값으로 쓰기 위해 "[라벨] 값" 덩어리를 미리 풀어둔다
         detail.setExtraInfoMap(BusinessExtraInfoCatalog.parse(detail.getExtraInfo()));
+        // "기본주소,상세주소"로 저장된 한 컬럼을 수정 폼의 두 입력칸에 맞게 분리한다
+        String[] addressParts = detail.getAddress() == null ? new String[0] : detail.getAddress().split(",", 2);
+        detail.setAddress(addressParts.length > 0 ? addressParts[0] : "");
+        detail.setAddressDetail(addressParts.length > 1 ? addressParts[1] : "");
         return detail;
     }
 

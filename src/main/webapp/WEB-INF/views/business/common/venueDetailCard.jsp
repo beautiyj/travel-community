@@ -64,7 +64,7 @@
         </c:if>
         <div class="venue-detail-row">
             <span class="venue-detail-row__label">주소</span>
-            <span class="venue-detail-row__value">${placeDetail.address}</span>
+            <span class="venue-detail-row__value">${placeDetail.address}<c:if test="${not empty placeDetail.addressDetail}"> ${placeDetail.addressDetail}</c:if></span>
         </div>
         <div class="venue-detail-row">
             <span class="venue-detail-row__label">소개</span>

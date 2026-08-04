@@ -70,6 +70,22 @@
             <span class="venue-detail-row__label">소개</span>
             <span class="venue-detail-row__value">${placeDetail.description}</span>
         </div>
+        <%-- 부가정보는 "[라벨] 값" 줄들을 서비스에서 "라벨 -> 값"으로 풀어둔 것(extraInfoMap)을 저장 순서대로
+             목록으로 보여준다. 공공데이터로 들어온 장소의 상세 화면과 같은 방식이다. --%>
+        <c:if test="${not empty placeDetail.extraInfoMap}">
+            <div class="venue-detail-row">
+                <span class="venue-detail-row__label">부가정보</span>
+                <%-- 목록 마크업의 개행이 그대로 빈 줄이 되지 않도록 pre-line을 끄는 --list 변형을 쓴다
+                     (파일 상단의 categoryLabel 주석과 같은 이유) --%>
+                <span class="venue-detail-row__value venue-detail-row__value--list">
+                    <ul class="venue-extra-list">
+                        <c:forEach var="entry" items="${placeDetail.extraInfoMap}">
+                            <li><span class="venue-extra-list__label">${entry.key}</span>${entry.value}</li>
+                        </c:forEach>
+                    </ul>
+                </span>
+            </div>
+        </c:if>
         <c:if test="${not empty placeDetail.hashtags}">
             <div class="venue-detail-row">
                 <span class="venue-detail-row__label">해시태그</span>

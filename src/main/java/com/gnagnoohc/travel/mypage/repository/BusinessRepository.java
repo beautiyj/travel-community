@@ -16,5 +16,4 @@ public interface BusinessRepository {
 
     int deletePendingApplication(Long memberId);
 
-    List<BusinessPlaceDto> findPlacesByMemberId(Long memberId);
 }

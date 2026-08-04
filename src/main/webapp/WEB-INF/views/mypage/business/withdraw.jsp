@@ -3,7 +3,7 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <jsp:include page="/WEB-INF/views/mypage/components/pageHead.jsp">
+    <jsp:include page="/WEB-INF/views/mypage/common/pageHead.jsp">
         <jsp:param name="title" value="사업자 회원 탈퇴"/>
     </jsp:include>
 </head>

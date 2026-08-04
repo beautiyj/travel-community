@@ -3,7 +3,7 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <jsp:include page="/WEB-INF/views/mypage/components/pageHead.jsp"><jsp:param name="title" value="사업자 기본 정보"/></jsp:include>
+    <jsp:include page="/WEB-INF/views/mypage/common/pageHead.jsp"><jsp:param name="title" value="사업자 기본 정보"/></jsp:include>
 </head>
 <body class="business-mypage">
 <main class="mypage-page">
@@ -42,6 +42,8 @@
                    href="${pageContext.request.contextPath}/mypage/business-info/edit">수정하기</a>
                 <a class="mypage-secondary-link"
                    href="${pageContext.request.contextPath}/mypage/business-info/password">비밀번호 변경</a>
+                <a class="member-withdraw-link"
+                   href="${pageContext.request.contextPath}/mypage/business-info/withdraw">회원탈퇴</a>
             </div>
         </section>
     </div>

@@ -15,9 +15,9 @@ import java.util.List;
 public class BusinessPlaceFormDto {
     private String name;
     private String placeType;
-    private String priceType;
+    // 가격 선택 ("FIXED"/"FREE"). DB에는 저장하지 않고 minPrice를 확정하는 용도로만 쓴다
+    private String priceMode;
     private Integer minPrice;
-    private Long regionId;
     private String address;
     private String description;
     private String hashtags;

@@ -179,8 +179,8 @@ public class MypageController {
         filters.put("예약대기", "PENDING");
         filters.put("결제완료", "PAID");
         filters.put("취소요청", "CANCEL_REQUESTED");
-        filters.put("확정", "CONFIRMED");
-        filters.put("완료", "COMPLETED");
+        filters.put("예약 확정", "CONFIRMED");
+        filters.put("이용 완료", "COMPLETED");
         filters.put("취소", "CANCELED");
 
         List<Map<String, Object>> tabs = new ArrayList<>();

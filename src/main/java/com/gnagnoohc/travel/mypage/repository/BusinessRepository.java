@@ -5,7 +5,6 @@ import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 
 import com.gnagnoohc.travel.mypage.dto.BusinessApplicationDto;
-import com.gnagnoohc.travel.mypage.dto.BusinessPlaceDto;
 
 @Mapper
 public interface BusinessRepository {

@@ -2,6 +2,7 @@ package com.gnagnoohc.travel.auth.controller;
 
 import java.util.Map;
 
+import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,6 +20,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * 가입·비밀번호 재설정 화면이 호출하는 인증 보조 API다.
+ * <p>
+ * JSON 응답 조립과 세션 증표 저장만 담당한다. 발송 제한, 인증번호 해시 비교,
+ * 만료·재사용 검사는 {@link EmailVerificationService}가 DB 상태를 기준으로 처리한다.
+ * 따라서 브라우저가 보내는 "인증 완료" 값은 신뢰하지 않는다.
+ */
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/auth/api")
@@ -26,6 +34,19 @@ public class AuthApiController {
 
 	private final AuthService service;
 	private final EmailVerificationService emailVerificationService;
+
+	/**
+	 * 브라우저 뒤로 가기로 복원된 인증 화면이 현재 로그인 상태를 다시 확인할 때 사용한다.
+	 * 조회만으로 새 세션을 만들지 않으며 회원 역할이나 개인정보는 응답에 노출하지 않는다.
+	 */
+	@GetMapping("/session-status")
+	public ResponseEntity<Map<String, Object>> sessionStatus(HttpServletRequest request) {
+		boolean authenticated = AuthController.resolveAuthenticatedRedirect(
+				request.getSession(false)) != null;
+		return ResponseEntity.ok()
+				.cacheControl(CacheControl.noStore())
+				.body(Map.of("authenticated", authenticated));
+	}
 
 	// 회원가입 입력값 중복 확인
 	@GetMapping("/check-login-id")

@@ -9,8 +9,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
 /**
- * admin 컨트롤러가 공통으로 사용하는 로그인 세션 관리자 검사입니다.
- * 세션 검사는 빠른 접근 차단용이며, 실제 관리자 상태는 서비스에서 DB로 다시 확인합니다.
+ * admin 컨트롤러가 공통으로 사용하는 로그인 세션 관리자 검사다.
+ * 세션 검사는 빠른 접근 차단용이며, 실제 관리자 상태는 서비스에서 DB로 다시 확인한다.
  */
 final class AdminSessionSupport {
 

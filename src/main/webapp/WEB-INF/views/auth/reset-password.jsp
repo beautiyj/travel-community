@@ -18,11 +18,16 @@
         <p>영문과 숫자를 포함해 8~20자로 설정해주세요.</p>
     </header>
 
+    <%-- 서버가 인증 세션 또는 비밀번호 정책을 거부하면 모델의 오류를 표시하고 같은 화면을 유지한다. --%>
     <c:if test="${not empty resetPasswordError}">
         <div class="form-alert form-alert--error" role="alert">${resetPasswordError}</div>
     </c:if>
 
-    <%-- 변경 대상 회원은 클라이언트 입력값이 아니라 이메일 인증 후 서버 세션에 저장한 정보로 결정한다. --%>
+    <%--
+      변경 대상 회원은 클라이언트 입력값이 아니라 이메일 인증 후 서버 세션에 저장한 정보로 결정한다.
+      reset-password.js의 형식 검사는 입력 편의용이므로 서버는 인증 만료·일회 사용과 비밀번호 정책을 다시 검증해야 한다.
+      현재 마크업에는 CSRF 토큰 출력이 없으므로 CSRF 보호 적용 시 서버 토큰 필드를 함께 렌더링해야 한다.
+    --%>
     <form id="resetPasswordForm" action="${pageContext.request.contextPath}/auth/reset-password" method="post" novalidate>
         <div class="form-field">
             <label for="newPassword">새 비밀번호</label>

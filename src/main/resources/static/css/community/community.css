@@ -46,12 +46,6 @@
 .tabs .btn-selectable-text {
   font-size: var(--text-sm);
 }
-.tab {
-  background: #fff; border: 1px solid var(--border);
-  border-radius: 9999px; padding: 7px 17px;
-  font-size: 14px; font-weight: bold; color: var(--muted-foreground); cursor: pointer;
-}
-.tab.active { background: var(--primary); border-color: var(--primary); color: #fff; }
 
 /* ---------- Post table ---------- */
 .table { background: #fff; border: 1px solid var(--border); border-radius: 16px; margin-top: 24px; overflow: hidden; }

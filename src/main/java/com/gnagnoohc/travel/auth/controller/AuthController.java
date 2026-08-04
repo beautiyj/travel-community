@@ -20,6 +20,14 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+/**
+ * 로컬 로그인·회원가입·계정 찾기 화면의 HTTP 흐름을 연결한다.
+ * <p>
+ * 이 클래스는 요청값과 세션을 다루고 반환할 뷰/리다이렉트를 정한다. 비밀번호 검증,
+ * 이메일 인증의 유효성 확인, 회원 저장처럼 데이터 상태를 바꾸는 규칙은
+ * {@link AuthService}에 맡긴다. Spring MVC는 매핑, DTO 바인딩과 Bean Validation을
+ * 수행하지만, 로그인 세션을 언제 만들고 폐기할지는 컨트롤러가 직접 책임진다.
+ */
 @Controller
 @RequiredArgsConstructor
 @RequestMapping("/auth")
@@ -31,10 +39,18 @@ public class AuthController {
 
 	// 로그인
 	@GetMapping("/login")
-	public String loginPage() {
+	public String loginPage(HttpServletRequest request) {
+		String authenticatedRedirect = resolveAuthenticatedRedirect(request.getSession(false));
+		if (authenticatedRedirect != null) {
+			return authenticatedRedirect;
+		}
 		return "auth/login";
 	}
 
+	/**
+	 * 입력값 형식 확인 → 서비스의 DB 인증 → 기존 세션 폐기 → 새 로그인 세션 생성 순서로 처리한다.
+	 * 서비스가 실패 횟수나 잠금 상태를 변경하므로 인증 호출 자체는 트랜잭션 안에서 실행된다.
+	 */
 	@PostMapping("/login")
 	public String login(@RequestParam(value = "username", required = false) String username,
 			@RequestParam(value = "password", required = false) String password, HttpServletRequest request,
@@ -107,25 +123,62 @@ public class AuthController {
 
 	// 회원가입 화면
 	@GetMapping("/signup")
-	public String signupPage() {
+	public String signupPage(HttpServletRequest request) {
+		String authenticatedRedirect = resolveAuthenticatedRedirect(request.getSession(false));
+		if (authenticatedRedirect != null) {
+			return authenticatedRedirect;
+		}
 		return "auth/signup";
 	}
 
 	@GetMapping("/signup/user")
-	public String userSignupPage(Model model) {
+	public String userSignupPage(HttpServletRequest request, Model model) {
+		String authenticatedRedirect = resolveAuthenticatedRedirect(request.getSession(false));
+		if (authenticatedRedirect != null) {
+			return authenticatedRedirect;
+		}
 		model.addAttribute("memberType", 1);
 		model.addAttribute("businessMember", false);
 		return "auth/signup-form";
 	}
 
 	@GetMapping("/signup/business")
-	public String businessSignupPage(Model model) {
+	public String businessSignupPage(HttpServletRequest request, Model model) {
+		String authenticatedRedirect = resolveAuthenticatedRedirect(request.getSession(false));
+		if (authenticatedRedirect != null) {
+			return authenticatedRedirect;
+		}
 		model.addAttribute("memberType", 2);
 		model.addAttribute("businessMember", true);
 		return "auth/signup-form";
 	}
 
-	// 회원가입 처리
+	/**
+	 * 로그인·회원가입 화면에 공통으로 적용할 역할별 이동 경로를 결정한다.
+	 * 세션 속성의 타입과 역할을 모두 확인해 잘못된 세션 값은 로그인 상태로 인정하지 않는다.
+	 */
+	static String resolveAuthenticatedRedirect(HttpSession session) {
+		if (session == null
+				|| !(session.getAttribute("loginMember") instanceof LoginMemberDto loginMember)) {
+			return null;
+		}
+
+		String memberRole = loginMember.getMemberRole();
+		if (memberRole == null) {
+			return null;
+		}
+		return switch (memberRole) {
+			case "USER" -> "redirect:/";
+			case "BUSINESS" -> "redirect:/business/dashboard";
+			case "ADMIN" -> "redirect:/admin";
+			default -> null;
+		};
+	}
+
+	/**
+	 * 화면 입력과 세션의 이메일 인증 증표를 서비스에 함께 전달한다.
+	 * 세션 증표만으로 가입을 허용하지 않으며 서비스가 잠긴 DB 인증 행을 다시 확인하고 소비한다.
+	 */
 	@PostMapping("/membersignup")
 	@ResponseBody
 	public ResponseEntity<Map<String, Object>> memberSignup(@Valid @ModelAttribute SignUpRequest signUpRequest,
@@ -190,7 +243,11 @@ public class AuthController {
 
 	// 회원가입 완료
 	@GetMapping("/signupresult")
-	public String signUpResult() {
+	public String signUpResult(HttpServletRequest request) {
+		String authenticatedRedirect = resolveAuthenticatedRedirect(request.getSession(false));
+		if (authenticatedRedirect != null) {
+			return authenticatedRedirect;
+		}
 		return "auth/signupresult";
 	}
 
@@ -239,7 +296,10 @@ public class AuthController {
 		return "auth/reset-password";
 	}
 
-	// 새 비밀번호는 서버에서 다시 검증하고 세션·DB 인증 결과를 함께 확인해 변경한다.
+	/**
+	 * 새 비밀번호 형식을 다시 검사한 뒤 세션 증표와 DB 인증 행을 함께 사용해 비밀번호를 변경한다.
+	 * 서비스 트랜잭션에서 인증 결과 소비와 비밀번호 변경 중 하나라도 실패하면 둘 다 롤백된다.
+	 */
 	@PostMapping("/reset-password")
 	public String resetPassword(
 			@RequestParam(value = "newPassword", required = false) String newPassword,

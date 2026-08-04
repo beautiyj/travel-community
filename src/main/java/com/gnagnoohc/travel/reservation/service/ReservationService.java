@@ -142,6 +142,18 @@ public class ReservationService {
         return reservationMapper.findPlaceName(placeId);
     }
 
+    /** PLACE.first_image 조회. 예약 폼 카드 썸네일 표시용 (다운로드된 이미지가 없으면 null) */
+    @Transactional(readOnly = true)
+    public String getPlaceImage(Long placeId) {
+        return reservationMapper.findPlaceImage(placeId);
+    }
+
+    /** PLACE.address 조회. 예약 폼 카드 설명 라인 표시용 */
+    @Transactional(readOnly = true)
+    public String getPlaceAddress(Long placeId) {
+        return reservationMapper.findPlaceAddress(placeId);
+    }
+
     /** 숙박 1인 단가 조회. PLACE.min_price를 읽기 전용으로 참조 */
     @Transactional(readOnly = true)
     public int getUnitPrice(Long placeId) {

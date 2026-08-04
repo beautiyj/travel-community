@@ -21,7 +21,7 @@ public class PlaceEntity {
     private String address;        // address (addr1+addr2)
     private BigDecimal mapx;       // mapx (DECIMAL 12,9, 경도)
     private BigDecimal mapy;       // mapy (DECIMAL 12,9, 위도)
-    private boolean isClosed;      // BOOLEAN, 1:문닫음, 0:영업중
+    private Integer isClosed;      // Int형, 1:문닫음, 0:영업중
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -44,7 +44,7 @@ public class PlaceEntity {
     }
 
     // 휴,폐업 상태 전환용 메서드
-    public void changeOperatingStatus(boolean isClosed) {
+    public void changeOperatingStatus(Integer isClosed) {
         this.isClosed = isClosed;
         this.updatedAt = LocalDateTime.now();
     }
@@ -68,7 +68,7 @@ public class PlaceEntity {
         place.address = address;
         place.mapx = mapx;
         place.mapy = mapy;
-        place.isClosed = false;
+        place.isClosed = 0;
         place.firstImage = firstImage;
         place.hashtags = hashtags;
         place.peopleCount = (peopleCount != null) ? peopleCount : 1; // 기본값 1 처리

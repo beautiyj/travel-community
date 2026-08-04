@@ -76,7 +76,8 @@ public class TourDataConverter {
         Integer minPrice = tourApiHelper.parseMinPrice(useFeeInfo);
         // 음식점(food)이거나, 숫자로 파싱은 안 됐지만 요금안내 문구(useFeeInfo)가 존재하는 경우 minPrice를 0으로 세팅하여 DB에 적재되도록 보정
         if (minPrice == null && ("food".equals(placeType) || StringUtils.hasText(useFeeInfo))) { minPrice = 0; }
-
+        // 공공데이터에서 넘어오는 String형 showflag -> 래퍼클래스 Integer형 변환, 0이면 문닫음(1), 아니면 영업중(0)
+        int isClosedValue = "0".equals(syncItem.getShowflag()) ? 1 : 0;
         // 부가정보(주차, 휴무일, 영업시간 등) infoDetail(단일 반복정보)을 List로 감싸고, tourItem(반려동물 동반 데이터 포함)을 itemDTO로 전달
         String extraInfo = tourApiHelper.extractExtraInfo(
                 introDetail,
@@ -103,7 +104,7 @@ public class TourDataConverter {
                 .mapy(mapy)
                 .useFeeInfo(useFeeInfo)
                 .minPrice(minPrice)
-                .isClosed("0".equals(syncItem.getShowflag()))
+                .isClosed(isClosedValue)
                 .firstImage(thumbnailImage) // 조인 없는 카드 리스트용 1차 썸네일 세팅
                 // TODO: 0803 썸네일이미지 화질 저하 상태, 테스트 후 원본링크로 대체 로직 필요
                 // .firstImage(item.getOriginimgurl() != null ? item.getOriginimgurl() : thumbnailImage)
@@ -137,13 +138,13 @@ public class TourDataConverter {
         return imageDTOs;
     }
 
-    // TODO: 썸네일 관련
-    // 카드형 썸네일 대표 이미지 결정: 목록 API의 썸네일(firstimage2) 우선, 없을 경우 원본(firstimage) Fallback 사용
+    // TODO: 0804 썸네일->원본으로 받아오는 로직 변경, 적용되는 거 테스트 확인 필요
     // PlaceImage 판단 로직을 여기서 계산해서 convertToPlaceDTO 호출 시 파라미터로 전달하는 구조
     public String resolveThumbnailImage(TourAreaBasedSyncListDTO syncItem) {
-        return StringUtils.hasText(syncItem.getFirstimage2())
-                ? syncItem.getFirstimage2()
-                : syncItem.getFirstimage();
+        if (StringUtils.hasText(syncItem.getFirstimage())) {
+            return syncItem.getFirstimage();
+        }
+        return syncItem.getFirstimage2();
     }
 
     // TourAreaBasedSyncListDTO 동기화 목록에서 가져온 장소 하나의 기본 정보를

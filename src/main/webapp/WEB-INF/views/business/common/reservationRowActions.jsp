@@ -35,13 +35,13 @@
     <c:if test="${param.status == 'CANCEL_REQUESTED'}">
         <form method="post" action="/business/reservations/${param.reservationId}/cancel-approve" class="business-inline-form">
             <jsp:include page="/WEB-INF/views/common/smallButton.jsp">
-                <jsp:param name="text" value="취소 승인" />
+                <jsp:param name="text" value="취소승인" />
                 <jsp:param name="theme" value="primary" />
             </jsp:include>
         </form>
         <form method="post" action="/business/reservations/${param.reservationId}/cancel-reject" class="business-inline-form">
             <jsp:include page="/WEB-INF/views/common/smallButton.jsp">
-                <jsp:param name="text" value="취소 거절" />
+                <jsp:param name="text" value="취소거절" />
                 <jsp:param name="theme" value="danger" />
             </jsp:include>
         </form>

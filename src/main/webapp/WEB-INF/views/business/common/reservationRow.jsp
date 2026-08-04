@@ -12,7 +12,7 @@
 - amount     : 결제 금액
 - visitDate  : 방문일자 (예약 관리 목록에서 사용, 대시보드는 미전달)
 - mode       : 'actionable'이면 상태별 처리 버튼을 렌더한다.
-               PAID -> 예약확정/예약거절, CANCEL_REQUESTED -> 취소 승인/취소 거절.
+               PAID -> 예약확정/예약거절, CANCEL_REQUESTED -> 취소승인/취소거절.
                미전달 시 버튼 없이 상태 뱃지만 보여준다(동작하지 않는 버튼을 노출하지 않기 위함).
 - reservationId : mode가 'actionable'일 때 필수 (memberId는 서버가 세션에서 파생)
 - layout     : 'table'이면 예약 관리 목록의 표 형태(예약자/연락처/방문일/인원/금액/상태 칼럼)로 렌더링.

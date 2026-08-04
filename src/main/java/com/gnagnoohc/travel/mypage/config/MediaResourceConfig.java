@@ -17,7 +17,7 @@ public class MediaResourceConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/uploads/media/**")
+        registry.addResourceHandler("/uploads/mypage/**")
                 .addResourceLocations(
                         mediaStorage.getRootDirectory().toUri().toString());
     }

@@ -12,11 +12,13 @@
 - amount     : 결제 금액
 - visitDate  : 방문일자 (예약 관리 목록에서 사용, 대시보드는 미전달)
 - mode       : 'actionable'이면 상태별 처리 버튼을 렌더한다.
-               PAID -> 예약확정/예약거절, CANCEL_REQUESTED -> 취소 승인/취소 거절.
+               PAID -> 예약확정/예약거절, CANCEL_REQUESTED -> 취소승인/취소거절.
                미전달 시 버튼 없이 상태 뱃지만 보여준다(동작하지 않는 버튼을 노출하지 않기 위함).
 - reservationId : mode가 'actionable'일 때 필수 (memberId는 서버가 세션에서 파생)
 - layout     : 'table'이면 예약 관리 목록의 표 형태(예약자/연락처/방문일/인원/금액/상태 칼럼)로 렌더링.
                그 외(미전달)에는 대시보드용 한 줄 요약 형태로 렌더링
+- cancelReason, cancelRequestedAt : CANCEL_REQUESTED 상태일 때 고객이 남긴 취소 사유/요청 시각.
+               "상세보기" 버튼으로 여는 취소 요청 모달에 쓰인다 (cancelRequestModal.jsp)
 
 ※ 처리 버튼은 어느 화면에서 눌러도 처리 후 예약 관리 목록(/business/reservations)으로 이동한다.
    실패 안내 배너가 그 화면에 있어서, 결과를 항상 같은 자리에서 확인할 수 있게 맞춘 것이다.
@@ -32,6 +34,7 @@
 
 <%-- 모달 id는 한 화면에 표/요약 두 레이아웃이 함께 놓여도 겹치지 않도록 레이아웃별 접두어를 붙인다 --%>
 <c:set var="rejectModalId" value="reject-modal-${param.layout == 'table' ? 'table' : 'row'}-${param.reservationId}"/>
+<c:set var="cancelRequestModalId" value="cancel-request-modal-${param.layout == 'table' ? 'table' : 'row'}-${param.reservationId}"/>
 
 <c:choose>
     <c:when test="${param.layout == 'table'}">
@@ -43,13 +46,18 @@
             <div class="business-reservation-table__cell business-reservation-table__cell--amount">
                 <c:if test="${not empty param.amount}"><fmt:formatNumber value="${param.amount}" type="number" groupingUsed="true"/>원</c:if>
             </div>
-            <div class="business-reservation-table__cell business-reservation-table__cell--action">
+            <div class="business-reservation-table__cell">
                 <span class="business-badge-status business-badge-status--${statusClass}">${statusText}</span>
+            </div>
+            <div class="business-reservation-table__cell business-reservation-table__cell--action">
                 <jsp:include page="reservationRowActions.jsp">
                     <jsp:param name="status" value="${param.status}" />
                     <jsp:param name="actionable" value="${actionable}" />
                     <jsp:param name="reservationId" value="${param.reservationId}" />
                     <jsp:param name="rejectModalId" value="${rejectModalId}" />
+                    <jsp:param name="cancelReason" value="${param.cancelReason}" />
+                    <jsp:param name="cancelRequestedAt" value="${param.cancelRequestedAt}" />
+                    <jsp:param name="cancelRequestModalId" value="${cancelRequestModalId}" />
                 </jsp:include>
             </div>
         </div>
@@ -70,6 +78,9 @@
                     <jsp:param name="actionable" value="${actionable}" />
                     <jsp:param name="reservationId" value="${param.reservationId}" />
                     <jsp:param name="rejectModalId" value="${rejectModalId}" />
+                    <jsp:param name="cancelReason" value="${param.cancelReason}" />
+                    <jsp:param name="cancelRequestedAt" value="${param.cancelRequestedAt}" />
+                    <jsp:param name="cancelRequestModalId" value="${cancelRequestModalId}" />
                 </jsp:include>
             </div>
         </div>

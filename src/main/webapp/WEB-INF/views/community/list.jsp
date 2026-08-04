@@ -47,6 +47,7 @@
           <jsp:param name="text"     value="${label}" />
           <jsp:param name="isActive" value="${isActive}" />
           <jsp:param name="onclick"  value="location.href='${cp}/community/list?category=${c}&q=${param.q}'" />
+          <jsp:param name="group"    value="categoryTabs" />
         </jsp:include>
       </c:forEach>
     </div>
@@ -138,6 +139,5 @@
 <script src="${cp}/js/common.js"></script>
 <script src="${cp}/js/common/highlightKeyword.js"></script>
 <script src="${cp}/js/community/postSearchHighlight.js"></script>
-<script src="${cp}/js/community/categoryTabFix.js"></script>
 </body>
 </html>

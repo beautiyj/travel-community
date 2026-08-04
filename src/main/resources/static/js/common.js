@@ -26,7 +26,17 @@ document.addEventListener("DOMContentLoaded", function () {
         // 셀렉터블 버튼 감지 (.btn-selectable)
         const button = event.target.closest(".btn-selectable");
         if (button) {
-            button.classList.toggle("is-active");
+            const selectGroup = button.getAttribute("data-select-group");
+            if (selectGroup) {
+                // 같은 그룹에 묶여 있는 버튼들을 전부 불러와 초기화 (라디오 버튼 스위칭 메커니즘)
+                const siblingButtons = document.querySelectorAll(`.btn-selectable[data-select-group="${selectGroup}"]`);
+                siblingButtons.forEach(sibling => {
+                    sibling.classList.remove("is-active");
+                });
+                button.classList.add("is-active");
+            } else {
+                button.classList.toggle("is-active");
+            }
         }
 
         // 셀렉터블 역할 카드 감지 ([class^='sel-card-col-'])

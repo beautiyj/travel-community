@@ -15,10 +15,15 @@ param.isActive가 'true'이면 활성화 스타일 클래스('is-active')를 최
 param.theme이 'danger'로 들어오면 theme-danger가 적용 그 외 기본값 theme-primary
 --%>
 <c:set var="themeClass" value="${param.theme eq 'danger' ? 'theme-danger' : 'theme-primary'}" />
+<%--
+그룹 지정 (선택) - 같은 그룹명을 가진 버튼들은 common.js에서 단일 선택(라디오 버튼 방식)으로 동작함
+param.group이 비어있으면 data-select-group 속성 자체를 렌더링하지 않음 (기존 단독 토글 동작 유지)
+--%>
 
 <button class="btn-selectable ${themeClass} ${activeClass}"
 style="<c:if test="${not empty param.width}">width: ${param.width};</c:if> ${param.style}"
-<c:if test="${not empty btnOnClick}">onclick="${btnOnClick}"</c:if>>
+<c:if test="${not empty btnOnClick}">onclick="${btnOnClick}"</c:if>
+<c:if test="${not empty param.group}">data-select-group="${param.group}"</c:if>>
 	<span class="btn-selectable-text">
 		${btnText}
 	</span>

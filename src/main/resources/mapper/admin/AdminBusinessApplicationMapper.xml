@@ -17,7 +17,7 @@
 		application.reviewed_by AS reviewedBy
 	</sql>
 
-	<!-- 세션이 남아 있어도 정지·탈퇴·권한 변경된 관리자는 관리자 기능을 사용할 수 없습니다. -->
+	<!-- 세션이 남아 있어도 정지·탈퇴·권한 변경된 관리자는 관리자 기능을 사용할 수 없다. -->
 	<select id="countActiveAdmin" resultType="int">
 		select count(*)
 		from member
@@ -28,7 +28,7 @@
 			and deleted_at is null
 	</select>
 
-	<!-- 전체 테이블을 한 번만 읽어 대시보드의 상태별 신청 건수를 계산합니다. -->
+	<!-- 전체 테이블을 한 번만 읽어 대시보드의 상태별 신청 건수를 계산한다. -->
 	<select id="findDashboardSummary"
 			resultType="com.gnagnoohc.travel.admin.dto.AdminDashboardSummaryDto">
 		select
@@ -45,24 +45,22 @@
 		from business_application
 	</select>
 
-	<!-- 처리 대기는 오래 기다린 신청부터, 처리 완료 내역은 최신 신청부터 보여줍니다. -->
-	<select id="findAllApplications"
+	<!-- ALL은 조건 없이, 상태 탭은 서버 WHERE 조건으로 조회한다. -->
+	<select id="findApplications"
 			resultType="com.gnagnoohc.travel.admin.dto.AdminBusinessApplicationDto">
 		select
 			<include refid="applicationDetailColumns"/>
 		from business_application application
 		inner join member member_info
 			on member_info.member_id = application.member_id
+		<where>
+			<if test="applicationStatus != null">
+				application.application_status = #{applicationStatus}
+			</if>
+		</where>
 		order by
-			case when application.application_status = 'PENDING' then 0 else 1 end,
-			case when application.application_status = 'PENDING'
-				then application.applied_at end asc,
-			case when application.application_status = 'PENDING'
-				then application.business_application_id end asc,
-			case when application.application_status &lt;&gt; 'PENDING'
-				then application.applied_at end desc,
-			case when application.application_status &lt;&gt; 'PENDING'
-				then application.business_application_id end desc
+			application.applied_at desc,
+			application.business_application_id desc
 	</select>
 
 	<select id="findApplicationById"
@@ -75,14 +73,17 @@
 		where application.business_application_id = #{applicationId}
 	</select>
 
-	<!-- 파일 키는 화면 DTO에 포함하지 않고 등록증 열람 요청에서만 조회합니다. -->
+	<!-- 파일 키는 화면 DTO에 포함하지 않고 등록증 열람 요청에서만 조회한다. -->
 	<select id="findBusinessRegistrationFileKey" resultType="string">
 		select business_registration_file_key
 		from business_application
 		where business_application_id = #{applicationId}
 	</select>
 
-	<!-- 심사 대상 신청 행만 잠가 두 관리자가 같은 신청을 동시에 처리하지 못하게 합니다. -->
+	<!--
+		심사 대상 신청 행만 잠가 두 관리자가 같은 신청을 동시에 처리하지 못하게 한다.
+		FOR UPDATE는 반드시 서비스의 @Transactional 안에서 실행되어야 하며 커밋/롤백까지 유지된다.
+	-->
 	<select id="findReviewTargetForUpdate"
 			resultType="com.gnagnoohc.travel.admin.dto.AdminBusinessApplicationDto">
 		select
@@ -94,6 +95,7 @@
 		for update
 	</select>
 
+	<!-- WHERE의 PENDING 조건은 잠금 외에도 상태 전이의 마지막 방어선이며, 서비스가 영향 행 수 1을 확인한다. -->
 	<update id="approveApplication">
 		update business_application
 		set application_status = 'APPROVED',
@@ -104,6 +106,7 @@
 			and application_status = 'PENDING'
 	</update>
 
+	<!-- 반려는 신청 상태만 바꾸며 회원 역할은 USER로 유지한다. -->
 	<update id="rejectApplication">
 		update business_application
 		set application_status = 'REJECTED',
@@ -114,7 +117,7 @@
 			and application_status = 'PENDING'
 	</update>
 
-	<!-- 승인 대상 회원이 활성 사업자 회원이며 아직 USER일 때만 권한을 부여합니다. -->
+	<!-- 승인 대상 회원이 활성 사업자 회원이며 아직 USER일 때만 권한을 부여한다. -->
 	<update id="grantBusinessRole">
 		update member
 		set member_role = 'BUSINESS'

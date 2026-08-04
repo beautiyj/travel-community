@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * 관리자 대시보드에 표시할 사업자 인증 신청 상태별 건수입니다.
+ * 관리자 대시보드에 표시할 사업자 인증 신청 상태별 건수다.
  */
 @Getter
 @Setter

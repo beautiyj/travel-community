@@ -20,6 +20,14 @@ import jakarta.mail.internet.AddressException;
 import jakarta.mail.internet.InternetAddress;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * 이메일 인증번호의 발송, 검증, 사용 가능 상태를 관리한다.
+ * <p>
+ * 원문 인증번호는 메일로만 보내고 DB에는 비밀번호 인코더로 만든 해시를 저장한다.
+ * 세션의 {@code VerifiedSignupEmail}/{@code VerifiedPasswordReset}은 인증 행을 가리키는
+ * 임시 증표일 뿐 권한 자체가 아니다. 회원가입·비밀번호 변경 직전에 DB 행을 다시 잠가
+ * 최신 발송 여부, 만료, 소비 여부를 검증해야 실제 작업에 사용할 수 있다.
+ */
 @Service
 @RequiredArgsConstructor
 public class EmailVerificationService {
@@ -43,7 +51,11 @@ public class EmailVerificationService {
 	private final PasswordEncoder passwordEncoder;
 	private final SecureRandom secureRandom = new SecureRandom();
 
-	// 인증번호 발송
+	/**
+	 * 가입용 인증번호를 저장하고 메일로 발송한다.
+	 * DB INSERT 후 SMTP 발송이 실패하면 런타임 예외가 전파되어 INSERT는 롤백된다.
+	 * 반대로 메일 서버가 실제 발송한 뒤 응답 과정에서 실패하는 것은 DB와 원자적으로 묶을 수 없다.
+	 */
 	@Transactional
 	public void sendSignupVerificationCode(String rawEmail, String rawRequestIp) {
 		String email = normalizeAndValidateEmail(rawEmail);
@@ -51,7 +63,10 @@ public class EmailVerificationService {
 		sendVerificationCode(email, SIGNUP_PURPOSE, null, requestIp);
 	}
 
-	// 인증번호 검증
+	/**
+	 * 최신 가입용 인증 행을 잠근 뒤 시도 횟수를 증가시키고 해시를 비교한다.
+	 * 오답은 예외가 아니라 {@code null}을 반환하므로 시도 횟수 증가가 커밋된다.
+	 */
 	@Transactional
 	public VerifiedSignupEmail verifySignupCode(String rawEmail, String rawCode) {
 		String email = normalizeAndValidateEmail(rawEmail);

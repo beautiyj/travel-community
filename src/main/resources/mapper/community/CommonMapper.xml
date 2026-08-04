@@ -18,16 +18,15 @@
 		limit #{fetchSize} offset #{offset}
 	</select>
 
-	<!-- 장소 태그: 방문자인증후기용 - 로그인 회원의 확정(결제완료) 예약 장소만 이름으로 검색
-	     TODO: '결제완료' 판정 로직은 마이페이지 담당자가 구현 중이라 아직 없음.
-	           완성 전까지는 reservation.status = 'PAID' 를 확정 기준으로 임시 사용한 것이므로,
-	           마이페이지 결제완료 로직이 확정되면 그 기준(상태값)으로 반드시 교체할 것. -->
+	<!-- 장소 태그: 방문자인증후기용 - 로그인 회원의 이용완료(COMPLETED) 예약 장소만 이름으로 검색
+	     ※ 방문일이 지나면 마이페이지 스케줄러(ReservationMapper.completeVisited)가
+	        CONFIRMED → COMPLETED로 전환함. 결제만 하고 아직 다녀오지 않은 예약은 제외. -->
 	<select id="searchConfirmedPlaces" resultType="com.gnagnoohc.travel.community.dto.PlaceTagDto">
 		select distinct p.place_id as placeId, p.name as name, p.place_type as placeType
 		from reservation r
 		join place p on p.place_id = r.place_id
 		where r.member_id = #{memberId}
-		  and r.status = 'PAID'
+		  and r.status = 'COMPLETED'
 		  and p.name like concat('%', #{keyword}, '%')
 		order by p.name asc
 		limit #{fetchSize} offset #{offset}

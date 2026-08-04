@@ -5,30 +5,27 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
-// batch: 데이터 수집 로직
-// 중복되는 파라미터는 Config에서 생성한 빈 주입하는 방식으로 사용!
+/* TourApiClient.java - 공공데이터 요청(통신)
+ * 공공데이터 관광정보 API 호출을 위한 WebClient 설정 및 호출 메서드 제공
+ * WebClient를 사용하여 비동기 방식으로 API 호출 및 응답 처리
+ * 중복되는 파라미터는 Config에서 생성한 빈 주입하는 방식으로 사용하려 했으나 공공데이터 응답의 명시적 선언이 응답파라미터에 무조건 필요한 관계로 baseurl만 config 설정.
+ * XML -> JSON 변환은 주소 뒤에 필수 파라미터 세팅에 _type = "json" 꼭 추가해야 변환됨
 
-// 한국관광공사 TourAPI 엔드포인트를 호출하여 대용량 데이터를 받아오는 통신 컴포넌트
-// 공공데이터 서버 호출, JSON XML 데이터 받아오기
-// XML -> JSON 변환은 주소 뒤에 필수 파라미터 세팅에 _type = "json" 꼭 추가해야 변환됨
-
+ * batch: 데이터 수집 로직
+ */
 @Component
 public class TourApiClient {
 
     private final WebClient webClient;
 
-    // config의 @Bean 주입 - 공통적으로 적용되는 api키, url 엔드포인트를 포함하여 중복파라미터 생략 가능
+    // config의 @Bean 주입 - 공통적으로 적용되는 url 엔드포인트 생략
     public TourApiClient(@Qualifier("tourWebClient") WebClient tourWebClient) {
         this.webClient = tourWebClient;
     }
 
-    // 테스트용 공공데이터 조회량 - 500/1페이지
+    // 공공데이터 조회량 batchSize & defaultPage - 프로퍼티에서 수정 가능
     @Value("${tour.api.batch-size}") private String batchSize;
     @Value("${tour.api.default-page}") private String defaultPage;
-
-
-    // TODO: 0728 CONFIG 파라미터 -> 명시선언으로 변경, 이후 자잘 주석은 삭제할 것
-    // 0728 🔥 401 에러 방지를 위해 서비스키를 필수로 주입받아 각 쿼리스트링에 명시
     @Value("${tour.api.service-key}") private String serviceKey;
 
     /**
@@ -57,7 +54,7 @@ public class TourApiClient {
                     .queryParam("radius", radius)
                     .build())
                 .retrieve()                                // 공공데이터 서버가 응답한 결과 추출
-                .bodyToMono(String.class)    // 받아온 JSON 데이터 전체를 String 변환
+                .bodyToMono(String.class)                  // 받아온 JSON 데이터 전체를 String 변환
                 .block();                                  // 동기식 배치를 위해 block() 처리하여 대기
         } catch (Exception e) {
             // 에러 로그는 나중에 batch_execution_log 테이블에 기록할 수 있도록 예외를 던지거나 기록 조치
@@ -126,9 +123,9 @@ public class TourApiClient {
     /**
      * 숙박정보조회 /searchStay2
      * contentTypeId 숙박에서만 유효
-     * @param 법정동 시도/시군구 및 분류체계 대/중/소분류 조건 필터링 (옵션)
+     * @param lDongRegnCd 법정동시도/시군구 및 분류체계 대/중/소분류 조건 필터링 (옵션)
      */
-    public String fetchSearchStay(String lDongRegnCd, String lDongSignguCd, 
+    public String fetchSearchStay(String lDongRegnCd, String lDongSignguCd,
                                 String lclsSystm1, String lclsSystm2, String lclsSystm3, String arrange) {
         try {
             return this.webClient.get()
@@ -193,6 +190,8 @@ public class TourApiClient {
                     .queryParam("MobileOS", "ETC")
                     .queryParam("MobileApp", "Travel")
                     .queryParam("_type", "json")
+                    .queryParam("numOfRows", batchSize)
+                    .queryParam("pageNo", defaultPage)
                     .queryParam("contentId", contentId)
                     .queryParam("contentTypeId", contentTypeId)
                     .build())
@@ -219,6 +218,8 @@ public class TourApiClient {
                     .queryParam("MobileOS", "ETC")
                     .queryParam("MobileApp", "Travel")
                     .queryParam("_type", "json")
+                    .queryParam("numOfRows", batchSize)
+                    .queryParam("pageNo", defaultPage)
                     .queryParam("contentId", contentId)
                     .queryParam("contentTypeId", contentTypeId)
                     .build())
@@ -245,6 +246,8 @@ public class TourApiClient {
                     .queryParam("MobileOS", "ETC")
                     .queryParam("MobileApp", "Travel")
                     .queryParam("_type", "json")
+                    .queryParam("numOfRows", batchSize)
+                    .queryParam("pageNo", defaultPage)
                     .queryParam("contentId", contentId)
                     .queryParam("imageYN", imageYN)
                     .build())
@@ -259,28 +262,28 @@ public class TourApiClient {
     /**
      * 관광정보 동기화 목록 조회 /areaBasedSyncList2 - 배치 수집 전용 API (DB 최신상태 유지용 API)
      * 파라미터에 따라 제목순, 수정일순(최신순), 등록일순 정렬 검색 제공
-     * @param modifiedtime 콘텐츠변경일자 (옵션)
+     * @param contentTypeId 관광타입 ID (옵션) - 0803 수정: 기존 modifiedtime 자리에 잘못 바인딩되던 버그 수정
      * @param showflag 콘텐츠표출여부 1/0 (옵션, 1=표출 0=비표출)
      * 
      * 동기화 목록에서만 페이징 매개변수 처리
      */
-    public String fetchAreaBasedSyncList(int pageNo, String modifiedtime, String showflag, String arrange) {
-        try {
-            return this.webClient.get()
-                .uri(uriBuilder -> uriBuilder
-                    .path("/areaBasedSyncList2")
-                    .queryParam("serviceKey", serviceKey) // 인증키 필수
-                    .queryParam("MobileOS", "ETC")        // OS 구분 필수 명시
-                    .queryParam("MobileApp", "Travel")    // 앱 이름 필수 명시
-                    .queryParam("_type", "json")          // JSON 강제 변환                    .queryParam("numOfRows", batchSize)
-                    .queryParam("pageNo", pageNo)
-                    .queryParam("arrange", arrange)
-                    .queryParam("modifiedtime", modifiedtime)
-                    .queryParam("showflag", showflag)
-                    .build())
-                .retrieve()
-                .bodyToMono(String.class)
-                .block();
+    public String fetchAreaBasedSyncList(int defaultPage, String contentTypeId, String showflag, String arrange) {        try {
+        return this.webClient.get()
+            .uri(uriBuilder -> uriBuilder
+                .path("/areaBasedSyncList2")
+                .queryParam("serviceKey", serviceKey)
+                .queryParam("MobileOS", "ETC")
+                .queryParam("MobileApp", "Travel")
+                .queryParam("_type", "json")
+                .queryParam("numOfRows", batchSize)
+                .queryParam("pageNo", defaultPage)
+                .queryParam("arrange", arrange)
+                .queryParam("contentTypeId", contentTypeId)
+                .queryParam("showflag", showflag)
+                .build())
+            .retrieve()
+            .bodyToMono(String.class)
+            .block();
         } catch (Exception e) {
             throw new RuntimeException("fetchAreaBasedSyncList 에러: " + e.getMessage(), e);
         }
@@ -326,8 +329,8 @@ public class TourApiClient {
                     .queryParam("MobileOS", "ETC")
                     .queryParam("MobileApp", "Travel")
                     .queryParam("_type", "json")
-                    //                     // .queryParam("numOfRows", batchSize)
-                    // .queryParam("pageNo", defaultPage)
+                    .queryParam("numOfRows", batchSize)
+                    .queryParam("pageNo", defaultPage)
                     .queryParam("lDongRegnCd", lDongRegnCd)
                     .queryParam("lDongListYn", lDongListYn)
                     .build())

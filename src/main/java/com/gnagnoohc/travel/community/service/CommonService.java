@@ -27,7 +27,7 @@ public class CommonService {
 		return toPageResult(rows);
 	}
 
-	// 장소 태그: 방문자인증후기용 - 로그인 회원의 확정(결제완료) 예약 장소만 검색 - CommunityController에서 사용
+	// 장소 태그: 방문자인증후기용 - 로그인 회원의 이용완료(COMPLETED) 예약 장소만 검색 - CommunityController에서 사용
 	public Map<String, Object> searchConfirmedPlaces(int memberId, String keyword, int page) {
 		int offset = page * PLACE_SEARCH_PAGE_SIZE;
 		List<PlaceTagDto> rows = dao.searchConfirmedPlaces(memberId, keyword, offset, PLACE_SEARCH_PAGE_SIZE + 1);

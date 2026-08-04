@@ -1,3 +1,4 @@
+/* 관리자 화면에서 공유하는 상태색·표면색 토큰이다. 상태 뱃지와 버튼이 같은 의미의 색을 재사용한다. */
 :root {
     --admin-primary: #0284c7;
     --admin-primary-dark: #0369a1;
@@ -26,12 +27,18 @@ body {
     font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
 }
 
+/* BFCache 복원 중에는 이전 심사 상태가 보이지 않도록, 새 목록을 받기 전 화면을 숨긴다. */
+html.admin-bfcache-refreshing body {
+    visibility: hidden;
+}
+
 /* 사업자 대시보드와 같은 224px 사이드바 및 64px 상단바 구조 */
 .admin-layout {
     display: flex;
     min-height: 100vh;
 }
 
+/* 데스크톱에서는 사이드바를 고정하고, 본문은 같은 너비만큼 여백을 확보한다. */
 .admin-sidebar {
     position: fixed;
     inset: 0 auto 0 0;
@@ -175,6 +182,7 @@ body {
     letter-spacing: 0.04em;
 }
 
+/* 관리자 각 화면은 같은 세로 간격을 공유하고 상세·목록 화면만 읽기 폭을 좁힌다. */
 .admin-content {
     display: flex;
     width: 100%;
@@ -185,6 +193,11 @@ body {
 }
 
 .admin-content--detail {
+    max-width: 1120px;
+}
+
+/* 사업자 인증 목록만 대시보드보다 좁은 읽기 폭을 사용한다. */
+.admin-content--business-applications {
     max-width: 1120px;
 }
 
@@ -208,6 +221,25 @@ body {
     line-height: 1.6;
 }
 
+/* 기존 관리자 버튼 스타일을 재사용해 상태 필터의 활성 항목만 명확히 구분한다. */
+.admin-filter-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.admin-filter-tabs__link {
+    padding: 7px 12px;
+}
+
+.admin-filter-tabs__link.is-active,
+.admin-filter-tabs__link.is-active:hover,
+.admin-filter-tabs__link.is-active:focus-visible {
+    background: var(--admin-primary);
+    border-color: var(--admin-primary);
+    color: #fff;
+}
+
 .admin-detail-heading__title-row {
     display: flex;
     align-items: center;
@@ -227,6 +259,7 @@ body {
     color: var(--admin-primary);
 }
 
+/* PRG 처리 결과와 서버 오류처럼 화면 전체에 해당하는 메시지를 상태별로 표시한다. */
 .admin-alert {
     padding: 13px 16px;
     border: 1px solid;
@@ -247,6 +280,7 @@ body {
     color: var(--admin-danger);
 }
 
+/* 대시보드·목록·상세 정보를 같은 표면과 헤더 구조로 묶는 공통 카드다. */
 .admin-card {
     overflow: hidden;
     padding: 24px;
@@ -286,7 +320,7 @@ body {
     color: var(--admin-primary);
 }
 
-/* 관리자 홈에는 현재 구현된 사업자 인증 신청 집계와 진입점만 제공합니다. */
+/* 관리자 홈에는 현재 구현된 사업자 인증 신청 집계와 진입점만 제공한다. */
 .admin-dashboard-kpi-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -342,7 +376,7 @@ body {
     flex-shrink: 0;
 }
 
-/* 목록은 화면 읽기 도구가 열 구조를 이해할 수 있도록 실제 table 요소를 사용합니다. */
+/* 목록은 화면 읽기 도구가 열 구조를 이해할 수 있도록 실제 table 요소를 사용한다. */
 .admin-table-wrap {
     overflow-x: auto;
 }
@@ -390,9 +424,57 @@ body {
 }
 
 .admin-table__action {
-    text-align: right !important;
+    /* 마지막 열 안에서 버튼을 좌측에 배치해 상태 뱃지와의 불필요한 거리를 줄인다. */
+    padding-left: 12px !important;
+    text-align: left !important;
 }
 
+/* 상태 뱃지의 좌측 기준선은 유지하고, 제목은 58px 뱃지의 중앙에 맞춥니다. */
+.admin-table th:nth-child(5),
+.admin-table td:nth-child(5) {
+    padding-left: 12px;
+    text-align: left;
+}
+
+.admin-table th:nth-child(5) {
+    /* '상태' 글자 폭과 58px 뱃지 폭의 차이 절반만큼 들여 중앙을 일치시킵니다. */
+    text-indent: 16px;
+}
+
+/* 상세 보기 버튼의 테두리·크기를 재사용해 목록 하단 조작부도 같은 화면 톤으로 맞춥니다. */
+.admin-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    /* 기존 24px 간격에서 약 32px 당긴 값으로, 카드와 페이지 버튼 간 거리를 줄인다. */
+    margin-top: -8px;
+}
+
+.admin-pagination__button {
+    min-width: 32px;
+    padding: 6px 9px;
+}
+
+.admin-pagination__button--direction {
+    font-size: 15px;
+    line-height: 1;
+}
+
+.admin-pagination__button.is-active {
+    background: var(--admin-primary);
+    border-color: var(--admin-primary);
+    color: #fff;
+}
+
+.admin-pagination__button.is-active:hover,
+.admin-pagination__button.is-active:focus-visible {
+    background: var(--admin-primary-dark);
+    border-color: var(--admin-primary-dark);
+}
+
+/* 신청 상태를 표·상세 어디서든 같은 크기와 색상 의미로 표시하는 뱃지다. */
 .admin-status {
     display: inline-flex;
     align-items: center;
@@ -422,6 +504,7 @@ body {
     color: var(--admin-danger);
 }
 
+/* 링크와 button 요소가 같은 관리자 작업 컨트롤 모양을 공유하도록 만든 기본 버튼이다. */
 .admin-btn {
     display: inline-flex;
     min-height: 36px;
@@ -483,6 +566,14 @@ body {
     background: var(--admin-danger-dark);
 }
 
+.admin-review-actions .admin-btn:disabled,
+.admin-review-actions .admin-btn:disabled:hover,
+.admin-review-actions .admin-btn:disabled:focus-visible {
+    background: #94a3b8;
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
 .admin-btn--block {
     width: 100%;
 }
@@ -504,6 +595,7 @@ body {
     font-size: 13px;
 }
 
+/* 상세 정보는 용어(dt)와 값(dd)의 대응을 유지하면서 두 열 카드 형태로 배치한다. */
 .admin-info-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -543,6 +635,7 @@ body {
     overflow-wrap: anywhere;
 }
 
+/* 등록증 원본 비율을 유지하되 큰 이미지는 카드 안의 제한된 높이에서 확인하도록 한다. */
 .admin-document {
     display: flex;
     min-height: 420px;
@@ -568,6 +661,40 @@ body {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px;
+}
+
+/* 반려 사유를 먼저 표시하고, 승인·반려 버튼은 그 아래 같은 행에 배치한다. */
+.admin-review-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px 16px;
+}
+
+.admin-review-actions > .admin-review-form:first-child {
+    grid-column: 1;
+    grid-row: 4;
+}
+
+.admin-review-actions > .admin-review-form:last-child {
+    /* 폼의 요청 범위는 유지하면서 자식 요소를 바깥 Grid에 직접 배치한다. */
+    display: contents;
+}
+
+.admin-review-actions > .admin-review-form:last-child .admin-btn {
+    grid-column: 2;
+    grid-row: 4;
+}
+
+.admin-review-actions > .admin-review-form:last-child .admin-form-label,
+.admin-review-actions > .admin-review-form:last-child .admin-form-textarea,
+.admin-review-actions > .admin-review-form:last-child .admin-form-help-row {
+    grid-column: 1 / -1;
+}
+
+.admin-review-actions > .admin-review-form:last-child .admin-form-label {
+    margin-top: 4px;
+    /* 기존 13px 라벨 크기에 2pt를 더한다. */
+    font-size: calc(13px + 2pt);
 }
 
 .admin-review-panel {
@@ -687,7 +814,7 @@ body {
     }
 }
 
-/* 작은 화면에서는 사이드바를 상단 메뉴로 바꾸고 표는 수평 스크롤로 확인합니다. */
+/* 작은 화면에서는 사이드바를 상단 메뉴로 바꾸고 표는 수평 스크롤로 확인한다. */
 @media (max-width: 768px) {
     .admin-layout {
         display: block;
@@ -753,6 +880,11 @@ body {
         margin-bottom: 16px;
     }
 
+    .admin-pagination {
+        /* 모바일의 18px 콘텐츠 간격까지만 상쇄해 카드와 버튼이 겹치지 않게 한다. */
+        margin-top: -18px;
+    }
+
     .admin-table {
         min-width: 760px;
     }
@@ -760,6 +892,23 @@ body {
     .admin-info-grid,
     .admin-review-grid {
         grid-template-columns: 1fr;
+    }
+
+    .admin-review-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-review-actions > .admin-review-form:first-child,
+    .admin-review-actions > .admin-review-form:last-child .admin-btn {
+        grid-column: 1;
+    }
+
+    .admin-review-actions > .admin-review-form:first-child {
+        grid-row: 4;
+    }
+
+    .admin-review-actions > .admin-review-form:last-child .admin-btn {
+        grid-row: 5;
     }
 
     .admin-info-item,

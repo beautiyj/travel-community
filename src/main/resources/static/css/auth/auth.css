@@ -1,3 +1,4 @@
+/* 인증 화면 전체에서 공유하는 기본 글꼴·전경색·배경색이다. 페이지별 테마는 아래 한정 선택자에서 덮어쓴다. */
 :root {
     color: #1f2937;
     font-family: Arial, "Noto Sans KR", sans-serif;
@@ -17,6 +18,7 @@ input {
     font: inherit;
 }
 
+/* 모든 인증 화면의 바깥 정렬과 공통 카드 컨테이너다. */
 .auth-page {
     display: flex;
     min-height: 100vh;
@@ -66,6 +68,7 @@ input {
     margin: 0;
 }
 
+/* 라벨·입력·도움말·검증 메시지를 세로로 묶는 공통 폼 단위다. */
 .form-field {
     margin: 0 0 20px;
     padding: 0;
@@ -98,6 +101,7 @@ input {
     outline: 3px solid rgba(12, 166, 120, 0.14);
 }
 
+/* 입력 옆에 중복 확인·인증번호 발송·비밀번호 보기 같은 보조 동작을 배치한다. */
 .input-action-row,
 .password-field {
     display: flex;
@@ -109,6 +113,7 @@ input {
     flex: 1;
 }
 
+/* 숨긴 파일 입력 대신 선택 파일명과 크기를 노출하는 읽기 전용 표시 영역이다. */
 .business-registration-file-info {
     display: flex;
     min-width: 0;
@@ -123,6 +128,7 @@ input {
     overflow-wrap: anywhere;
 }
 
+/* 라디오·체크박스 선택지를 한 줄에 배치하고 좁은 화면에서는 자연스럽게 줄바꿈한다. */
 .choice-row {
     display: flex;
     flex-wrap: wrap;
@@ -142,6 +148,7 @@ input {
     border-radius: 8px;
 }
 
+/* 제출·보조 요청·텍스트 동작이 같은 포인터 피드백을 공유하고 역할별 색상은 아래에서 구분한다. */
 .primary-button,
 .secondary-button,
 .text-button {
@@ -178,6 +185,7 @@ input {
     background: transparent;
 }
 
+/* 비동기 검증 결과가 바뀌어도 폼 높이가 흔들리지 않도록 오류·성공 영역의 최소 높이를 유지한다. */
 .field-error {
     min-height: 18px;
     margin: 6px 0 0;
@@ -185,7 +193,7 @@ input {
     font-size: 13px;
 }
 
-/* [수정] 중복 확인/이메일 인증 성공 안내를 오류 태그와 분리해 초록색으로 표시한다. */
+/* 중복 확인·이메일 인증의 성공 안내를 오류 태그와 분리해 상태별 색상을 유지한다. */
 .field-success {
 	min-height: 18px;
 	margin: 6px 0 0;
@@ -198,6 +206,7 @@ input {
     font-size: 13px;
 }
 
+/* 필수 동의 항목을 일반 입력과 시각적으로 구분하는 공통 컨테이너다. */
 .agreement-box {
     margin-bottom: 20px;
     padding: 16px;
@@ -205,6 +214,7 @@ input {
     background: #f3f7f6;
 }
 
+/* 서버 처리 결과와 폼 전체 오류처럼 특정 입력 하나에 속하지 않는 메시지 영역이다. */
 .form-alert {
     margin-bottom: 18px;
     padding: 12px 14px;
@@ -243,7 +253,7 @@ input {
     text-decoration: none;
 }
 
-/* [추가] 공통 컴포넌트 적용 전 로그인·회원가입 화면에서 사용하는 소셜 버튼 스타일이다. */
+/* 로그인·회원가입 화면에서 공유하는 소셜 제공자 버튼 구조다. */
 .social-login-section {
     display: grid;
     gap: 10px;

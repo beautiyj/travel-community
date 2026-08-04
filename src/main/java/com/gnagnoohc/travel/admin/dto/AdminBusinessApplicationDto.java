@@ -8,8 +8,8 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * 관리자 사업자 인증 신청 목록과 상세 화면에서 사용하는 조회 DTO입니다.
- * 심사 잠금 조회에서는 신청 ID, 회원 ID, 상태 값만 채워서 사용합니다.
+ * 관리자 사업자 인증 신청 목록과 상세 화면에서 사용하는 조회 DTO다.
+ * 심사 잠금 조회에서는 신청 ID, 회원 ID, 상태 값만 채워서 사용한다.
  */
 @Getter
 @Setter

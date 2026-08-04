@@ -35,6 +35,11 @@ import lombok.RequiredArgsConstructor;
 /**
  * Spring OAuth2 Client가 검증한 사용자를 서비스의 세션 로그인 또는 추가 가입으로 연결한다.
  * 외부 제공자별 응답 차이는 이 클래스에서 공통 프로필로 변환하고 회원 처리는 서비스에 맡긴다.
+ * <p>
+ * Spring Security가 callback의 OAuth 요청과 state를 검증한 다음 이 핸들러를 호출한다.
+ * 핸들러는 서비스 고유의 LOGIN/SIGNUP 의도를 한 번만 소비하고, 성공 후 Spring Security의
+ * 임시 인증·authorized client를 제거한다. 애플리케이션의 최종 로그인 기준은
+ * {@code loginMember} 세션 하나이며 OAuth 액세스 토큰을 로그인 세션으로 유지하지 않는다.
  */
 @Component
 @RequiredArgsConstructor
@@ -67,6 +72,7 @@ public class SocialOAuth2LoginHandler
             HttpServletRequest request,
             HttpServletResponse response,
             Authentication authentication) throws IOException {
+        // 예외가 발생해도 안전한 기본 목적지로 이동하며 토큰이나 제공자 응답 원문은 노출하지 않는다.
         String redirectPath = "/auth/login?socialError=true";
         OAuth2AuthenticationToken oauthToken = null;
         LoginMemberDto completedLogin = null;

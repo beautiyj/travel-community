@@ -61,6 +61,7 @@
                                 <jsp:param name="priceType" value="${placeDetail.priceType}" />
                                 <jsp:param name="minPrice" value="${placeDetail.minPrice}" />
                                 <jsp:param name="address" value="${placeDetail.address}" />
+                                <jsp:param name="addressDetail" value="${placeDetail.addressDetail}" />
                                 <jsp:param name="description" value="${placeDetail.description}" />
                                 <jsp:param name="hashtags" value="${placeDetail.hashtags}" />
                             </jsp:include>

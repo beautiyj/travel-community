@@ -49,7 +49,7 @@ public interface BusinessMapper {
     int updatePlaceClosed(
             @Param("placeId") Long placeId,
             @Param("bizMemberId") Long bizMemberId,
-            @Param("isClosed") boolean isClosed
+            @Param("isClosed") Integer isClosed
     );
 
     // ── 날짜별 예약 마감 (PLACE_CLOSED_DATE) ──

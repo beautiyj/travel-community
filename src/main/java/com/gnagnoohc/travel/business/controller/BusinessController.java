@@ -9,6 +9,7 @@ import com.gnagnoohc.travel.business.exception.BusinessAuthException;
 import com.gnagnoohc.travel.business.exception.NoPlaceRegisteredException;
 import com.gnagnoohc.travel.business.sentiment.KeywordCount;
 import com.gnagnoohc.travel.business.service.BusinessDashboardService;
+import com.gnagnoohc.travel.business.service.BusinessExtraInfoCatalog;
 import com.gnagnoohc.travel.business.service.BusinessPlaceService;
 import com.gnagnoohc.travel.business.service.BusinessReservationService;
 import com.gnagnoohc.travel.business.service.BusinessReviewService;
@@ -116,6 +117,7 @@ public class BusinessController {
         Long memberId = BusinessSessionSupport.requireBusinessMemberId(session);
         BusinessPlaceOverviewDto overview = businessPlaceService.findOverview(memberId);
         model.addAttribute("place", overview);
+        addExtraInfoOptions(model);
 
         // 아직 업소를 등록하지 않았으면 사이드바에 채울 값 자체가 없으므로 등록 화면 분기만 준비한다
         if (overview == null) {
@@ -221,10 +223,20 @@ public class BusinessController {
         model.addAttribute("placeId", ctx.getPlaceId());
         model.addAttribute("bizName", ctx.getPlaceName());
         model.addAttribute("ownerName", ctx.getOwnerName());
-        model.addAttribute("isClosed", ctx.isClosed());
+        model.addAttribute("isClosed", ctx.getClosed());
         model.addAttribute("bizFirstImage", ctx.getFirstImage());
         model.addAttribute("pendingCount", ctx.getPendingCount());
         model.addAttribute("cancelRequestCount", ctx.getCancelRequestCount());
+    }
+
+    /**
+     * 업소 등록/수정 폼(venueFormFields.jsp)의 부가정보 항목 목록.
+     * 업종을 바꾸면 화면에서 바로 해당 목록으로 갈아끼워야 해서(business-venue.js) 세 업종을 모두 내려준다.
+     * 반려동물 동반 정보는 업종과 무관한 공통 섹션이라 따로 내려준다.
+     */
+    private void addExtraInfoOptions(Model model) {
+        model.addAttribute("extraSectionsByType", BusinessExtraInfoCatalog.sectionsByPlaceType());
+        model.addAttribute("petExtraOptions", BusinessExtraInfoCatalog.petOptions());
     }
 
     // 필터 탭(common/filterTabs.jsp) 표시값. tabs는 "라벨 -> 건수" 순서가 유지된 맵

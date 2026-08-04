@@ -25,6 +25,7 @@ sourceSets {
 			exclude 'com/gnagnoohc/travel/reservation/**'
 			exclude 'com/gnagnoohc/travel/mypage/**'
 			exclude 'com/gnagnoohc/travel/batch/payment/**'
+			exclude 'com/gnagnoohc/travel/admin/**'
 			exclude 'com/gnagnoohc/travel/config/SecurityConfig.java'
 		}
 		resources {
@@ -34,6 +35,7 @@ sourceSets {
 			exclude 'mapper/community/**'
 			exclude 'mapper/reservation/**'
 			exclude 'mapper/mypage/**'
+			exclude 'mapper/admin/**'
 		}
 	}
 }

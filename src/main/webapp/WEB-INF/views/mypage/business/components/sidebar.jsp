@@ -10,7 +10,13 @@
         <div class="mypage-sidebar__avatar">
             <c:choose>
                 <c:when test="${not empty member.profileImgUrl}">
-                    <img src="${cp}<c:out value='${member.profileImgUrl}'/>" alt="프로필 이미지">
+                    <img src="${cp}<c:out value='${member.profileImgUrl}'/>"
+                         alt="회원 프로필 사진"
+                         onerror="this.hidden=true; this.nextElementSibling.hidden=false;">
+                    <svg class="mypage-sidebar__avatar-fallback"
+                         viewBox="0 0 24 24" aria-hidden="true" hidden>
+                        <path d="M20 21a8 8 0 0 0-16 0M12 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/>
+                    </svg>
                 </c:when>
                 <c:otherwise>
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21a8 8 0 0 0-16 0M12 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/></svg>
@@ -31,10 +37,6 @@
         <a class="${param.active eq 'places' ? 'is-active' : ''}" href="${cp}/business/dashboard">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6M8 10h.01M16 10h.01"/></svg>
             <span>나의 사업장 관리</span>
-        </a>
-        <a class="${param.active eq 'withdraw' ? 'is-active' : ''}" href="${cp}/mypage/business-info/withdraw">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m-9 0 1 13h10l1-13M10 11v5m4-5v5"/></svg>
-            <span>회원 탈퇴</span>
         </a>
         <a class="mypage-sidebar__logout" href="${cp}/mypage/logout">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l5-5-5-5m5 5H3m10 8h6a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-6"/></svg>

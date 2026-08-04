@@ -3,7 +3,7 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <jsp:include page="/WEB-INF/views/mypage/components/pageHead.jsp"><jsp:param name="title" value="사업자 회원정보 수정"/></jsp:include>
+    <jsp:include page="/WEB-INF/views/mypage/common/pageHead.jsp"><jsp:param name="title" value="사업자 회원정보 수정"/></jsp:include>
 </head>
 <body class="business-mypage">
 <main class="mypage-page">
@@ -105,7 +105,7 @@
         </section>
     </div>
 </main>
-<jsp:include page="/WEB-INF/views/mypage/components/editConfirmModal.jsp"/>
+<jsp:include page="/WEB-INF/views/mypage/common/editConfirmModal.jsp"/>
 <script>
     document.getElementById("businessProfileImage").addEventListener("change", function () {
         document.getElementById("businessProfileImageName").textContent =

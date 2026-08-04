@@ -171,11 +171,9 @@ document.addEventListener("DOMContentLoaded", function () {
             }).open();
         });
 
-        // 수정 폼은 서버에서 합쳐진 주소 한 덩어리를 address에 채워 내려주므로 상세주소는 비어 있다.
-        // 이 상태로 제출하면 상세주소를 덧붙이지 않고 기존 주소가 그대로 유지된다.
-
         // 주소 미입력 시 제출 막기 (readonly input은 required 검증 대상에서 제외되므로 직접 체크)
-        // + 제출 직전 상세주소를 address 값에 합쳐서 하나의 필드로 전송
+        // 제출 직전 상세주소를 address 값에 콤마로 합쳐서 하나의 필드로 전송
+        // BusinessPlaceService.findDetail이 콤마 기준으로 다시 분리
         if (btn.form) {
             btn.form.addEventListener("submit", function (e) {
                 if (!addressInput.value) {
@@ -185,7 +183,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     return;
                 }
                 if (detailInput.value) {
-                    addressInput.value = addressInput.value + " " + detailInput.value;
+                    addressInput.value = addressInput.value + "," + detailInput.value;
                 }
             });
         }

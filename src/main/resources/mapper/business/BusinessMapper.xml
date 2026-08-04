@@ -71,6 +71,7 @@
         <result property="regionName" column="region_name"/>
         <result property="address"    column="address"/>
         <result property="description" column="description"/>
+        <result property="extraInfo"  column="extra_info"/>
         <result property="hashtags"   column="hashtags"/>
         <result property="closed"     column="is_closed"/>
     </resultMap>
@@ -245,10 +246,10 @@
             useGeneratedKeys="true" keyProperty="placeId" keyColumn="place_id">
         INSERT INTO PLACE (
             place_type, price_type, min_price, <!-- region_id, --> member_id,
-            name, description, address, <!-- mapx, mapy, --> first_image, hashtags
+            name, description, extra_info, address, <!-- mapx, mapy, --> first_image, hashtags
         ) VALUES (
             #{placeType}, #{priceType}, #{minPrice}, <!-- #{regionId}, --> #{memberId},
-            #{name}, #{description}, #{address}, <!-- #{mapx}, #{mapy}, --> #{firstImage}, #{hashtags}
+            #{name}, #{description}, #{extraInfo}, #{address}, <!-- #{mapx}, #{mapy}, --> #{firstImage}, #{hashtags}
         )
     </insert>
 
@@ -260,7 +261,7 @@
     <!-- 업소정보 수정 폼 진입 시 기존 값 채우기용. 지역명까지 같이 조회 -->
     <select id="selectPlaceDetailByMember" resultMap="placeDetailResultMap">
         SELECT p.place_id, p.name, p.place_type, p.price_type, p.min_price,
-               p.region_id, r.region_name, p.address, p.description, p.hashtags, p.is_closed
+               p.region_id, r.region_name, p.address, p.description, p.extra_info, p.hashtags, p.is_closed
         FROM PLACE p
         LEFT JOIN REGION r ON r.region_id = p.region_id
         WHERE p.member_id = #{bizMemberId}
@@ -285,6 +286,7 @@
             <!-- region_id = #{regionId}, -->
             address = #{address},
             description = #{description},
+            extra_info = #{extraInfo},
             first_image = #{firstImage},
             hashtags = #{hashtags}
         WHERE place_id = #{placeId}

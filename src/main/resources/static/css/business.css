@@ -1018,8 +1018,181 @@ body {
 }
 
 .business-price-input.is-hidden,
-.business-form-group.is-hidden {
+.business-form-group.is-hidden,
+.venue-extra-group.is-hidden,
+.venue-extra-row.is-hidden,
+.venue-extra-empty.is-hidden {
     display: none;
+}
+
+/* ── 부가정보 입력 (업종별 항목 + 반려동물 공통 항목) ──
+   위쪽 picker에서 칩으로 항목을 고르면 아래 rows에 해당 입력칸이 나타난다 */
+.venue-extra-group {
+    margin-top: 12px;
+    padding: 16px;
+    border: 1px solid var(--business-border);
+    border-radius: 10px;
+    background: #fafbfc;
+}
+
+.venue-extra-picker__section + .venue-extra-picker__section {
+    margin-top: 12px;
+}
+
+/* 관광지 세부유형(관광지/문화시설/레포츠) 소제목 */
+.venue-extra-picker__title {
+    margin: 0 0 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--business-muted);
+}
+
+.venue-extra-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.venue-extra-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border: 1px solid var(--business-border);
+    border-radius: 999px;
+    background: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--business-muted);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+/* 체크 상태는 칩 모양으로만 보여주고 실제 체크박스는 숨긴다 */
+.venue-extra-chip input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.venue-extra-chip span::before {
+    content: "+ ";
+    font-weight: 700;
+}
+
+.venue-extra-chip:hover {
+    border-color: var(--business-primary);
+    color: var(--business-primary);
+}
+
+/* 선택 상태는 business-venue.js가 붙이는 is-picked로 표시한다
+   (:has() 대신 클래스를 쓰는 이유는 칩 표시가 브라우저의 :has() 지원 여부에 좌우되지 않게 하기 위함) */
+.venue-extra-chip.is-picked {
+    border-color: var(--business-primary);
+    background: #f0f9ff;
+    color: var(--business-primary);
+}
+
+.venue-extra-chip.is-picked span::before {
+    content: "✓ ";
+}
+
+/* 키보드 포커스가 칩에 왔을 때도 보이게 (체크박스 자체는 숨겨져 있다) */
+.venue-extra-chip:focus-within {
+    outline: 2px solid var(--business-primary);
+    outline-offset: 2px;
+}
+
+.venue-extra-empty {
+    margin: 12px 0 0;
+    font-size: 12px;
+    color: var(--business-muted);
+}
+
+/* 고르지 않은 행은 display:none이라 아무것도 안 골랐을 때는 높이가 0이 된다 */
+.venue-extra-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.venue-extra-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.venue-extra-row__label {
+    width: 112px;
+    flex-shrink: 0;
+    padding-top: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--business-muted);
+}
+
+.venue-extra-row__field {
+    flex: 1;
+    min-width: 0;
+}
+
+.venue-extra-row__desc {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--business-muted);
+}
+
+.venue-extra-row__remove {
+    flex-shrink: 0;
+    margin-top: 6px;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--business-muted);
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.venue-extra-row__remove:hover {
+    background: #f1f5f9;
+    color: var(--business-text);
+}
+
+/* 반려동물 동반 정보 섹션을 여는 체크박스 */
+.venue-extra-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* ── 부가정보 읽기 뷰 목록 ── */
+.venue-detail-row__value--list {
+    white-space: normal;
+}
+
+.venue-extra-list {
+    margin: 0;
+    padding-left: 18px;
+}
+
+.venue-extra-list li {
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+
+.venue-extra-list__label {
+    margin-right: 6px;
+    font-weight: 700;
+    color: var(--business-muted);
 }
 
 .business-form-actions {

@@ -140,9 +140,26 @@
             r.region_name AS regionName
         FROM PLACE p
         LEFT JOIN REGION r ON p.region_id = r.region_id
-        WHERE p.place_type = #{placeType}
+        WHERE p.is_closed = 0
+
+        <!-- 0803 추가예정 ; 타입별 필터링 (제목순/금액최저가순.최고가순 정렬/지역순(혹은지역옵션쿼리..형태...)/리뷰순 등 -->
+        <!-- placeType이 넘어온 경우만 해당 타입 필터링 (null/빈값 시 전체 통합 검색) -->
+        <if test="placeType != null and placeType != ''">
+            AND p.place_type = #{placeType}
+        </if>
+
+        <!-- 지역 필터 조건 -->
         <if test="regionId != null">
-            AND p.region_id = #{regionId}
+            AND (p.region_id = #{regionId} OR r.parent_region_id = #{regionId})
+        </if>
+
+        <!-- 통합 키워드 검색 (장소명, 주소, 해시태그 부분/전체 일치) -->
+        <if test="keyword != null and keyword != ''">
+            AND (
+            p.name LIKE CONCAT('%', #{keyword}, '%')
+            OR p.address LIKE CONCAT('%', #{keyword}, '%')
+            OR p.hashtags LIKE CONCAT('%', #{keyword}, '%')
+            )
         </if>
         ORDER BY p.created_at DESC
     </select>

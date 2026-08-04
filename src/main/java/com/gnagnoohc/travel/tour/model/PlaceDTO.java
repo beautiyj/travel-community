@@ -22,7 +22,7 @@ public class PlaceDTO {
     private String address;
     private BigDecimal mapx;
     private BigDecimal mapy;
-    private boolean isClosed;
+    private Integer isClosed;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     

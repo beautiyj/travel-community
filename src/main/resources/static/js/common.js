@@ -20,7 +20,22 @@ function toggleWishLocal(buttonElement) {
 
 /* 셀렉터블 컴포넌트 인터랙션 핸들러 */
 document.addEventListener("DOMContentLoaded", function () {
-    
+
+    // 카드 내 위시버튼 클릭 시 상세 페이지 이동 차단 및 토스트 팝업 실행
+    const wishButtons = document.querySelectorAll(".place-card-link .btn-wish-trigger, .place-card-link [data-wish-btn], .place-card-link .btn-wish");
+
+    wishButtons.forEach(btn => {
+        btn.addEventListener("click", function (e) {
+            e.preventDefault();   // 부모 <a> 태그의 이동 막기
+            e.stopPropagation();  // 이벤트 전파 차단
+
+            const isActive = this.getAttribute('data-active') === 'true';
+
+            toggleWishLocal(this);     // 기존 하트 아이콘 반전 함수
+            showWishToast(!isActive);  // 토스트 팝업 출력
+        });
+    });
+
     document.addEventListener("click", function (event) {
         
         // 셀렉터블 버튼 감지 (.btn-selectable)
@@ -53,6 +68,30 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 });
+
+// 카드컴포넌트의 위시버튼 - 신규 토스트 알림 제어 함수 추가
+let toastTimeout;
+function showWishToast(isAdded) {
+    const toast = document.getElementById("wishToast");
+    const toastMsg = document.getElementById("wishToastMsg");
+
+    if (!toast) return;
+
+    if (isAdded) {
+        toastMsg.textContent = "찜 목록에 추가되었습니다.";
+    } else {
+        toastMsg.textContent = "찜 목록에서 삭제되었습니다.";
+    }
+
+    toast.style.display = "flex";
+    setTimeout(() => { toast.classList.add("show"); }, 10);
+
+    clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => {
+        toast.classList.remove("show");
+        setTimeout(() => { toast.style.display = "none"; }, 300);
+    }, 3000);
+}
 
 /* ============================================================
    공통 모달 (confirmModal.jsp) 열기/닫기

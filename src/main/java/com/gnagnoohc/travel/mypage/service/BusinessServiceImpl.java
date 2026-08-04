@@ -6,7 +6,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.gnagnoohc.travel.mypage.dto.BusinessApplicationDto;
-import com.gnagnoohc.travel.mypage.dto.BusinessPlaceDto;
 import com.gnagnoohc.travel.mypage.repository.BusinessRepository;
 
 @Service

@@ -14,6 +14,8 @@
         <result property="placeName"     column="place_name"/>
         <result property="amount"        column="amount"/>
         <result property="paymentStatus" column="payment_status"/>
+        <result property="cancelReason"      column="cancel_reason"/>
+        <result property="cancelRequestedAt" column="cancel_requested_at"/>
     </resultMap>
 
     <resultMap id="placeOverviewResultMap" type="com.gnagnoohc.travel.business.dto.BusinessPlaceOverviewDto">
@@ -95,6 +97,8 @@
             r.headcount,
             r.status,
             r.created_at,
+            r.cancel_reason,
+            r.cancel_requested_at,
             p.name AS place_name,
             pay.amount,
             pay.payment_status
@@ -150,6 +154,8 @@
             r.headcount,
             r.status,
             r.created_at,
+            r.cancel_reason,
+            r.cancel_requested_at,
             p.name AS place_name,
             pay.amount,
             pay.payment_status

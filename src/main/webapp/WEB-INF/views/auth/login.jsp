@@ -7,9 +7,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>로그인 | 갈래말래</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/auth/auth.css?v=naver-20260729-7">
+    <script defer src="${pageContext.request.contextPath}/js/auth/auth-history-guard.js"></script>
     <script defer src="${pageContext.request.contextPath}/js/auth/login.js"></script>
 </head>
-<body class="auth-page auth-page--login">
+<%-- auth-history-guard.js가 뒤로가기 복원 시 이 URL로 현재 세션의 로그인 여부를 다시 확인한다. --%>
+<body class="auth-page auth-page--login"
+      data-session-status-url="${pageContext.request.contextPath}/auth/api/session-status">
 <main class="auth-card auth-card--small auth-card--login">
     <a class="auth-brand" href="${pageContext.request.contextPath}/">갈래말래</a>
 
@@ -43,6 +46,7 @@
         </div>
     </c:if>
 
+    <%-- 아래 쿼리 파라미터는 인증 처리 후 서버가 redirect할 때 붙이는 화면 상태이며, 인증 판단 근거로 사용하지 않는다. --%>
     <c:choose>
         <c:when test="${param.socialNotLinked != null}">
             <div class="form-alert form-alert--error" role="alert">
@@ -61,7 +65,12 @@
         </c:when>
     </c:choose>
 
-    <%-- 로그인 폼을 소셜 로그인 영역보다 먼저 배치해 일반 로그인 흐름을 우선한다. --%>
+    <%--
+      일반 로그인은 아이디·비밀번호를 POST로 전달한다. JavaScript는 빈 값만 안내하며
+      자격증명 일치, 계정 상태, 실패 횟수와 잠금 처리는 서버가 최종 결정한다.
+      세션 쿠키 인증만으로 CSRF가 방어되지는 않는다. 현재 마크업에는 CSRF 토큰 출력이 없으므로
+      보안 설정에서 CSRF 보호를 활성화할 때는 서버가 발급한 토큰을 이 폼에 포함해야 한다.
+    --%>
     <form id="loginForm" class="login-form" action="${pageContext.request.contextPath}/auth/login" method="post" novalidate>
         <div class="form-field">
             <label for="username">아이디</label>

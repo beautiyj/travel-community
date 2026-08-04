@@ -13,7 +13,12 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 /**
- * 애플리케이션이 시작한 소셜 인증 흐름과 Spring Security의 OAuth state를 결합한다.
+ * 소셜 인증 시작 의도와 Spring Security가 생성한 OAuth 요청/state를 같은 세션 흐름으로 묶는다.
+ * <p>
+ * Spring Security의 기본 저장소는 OAuth 요청과 state 저장·복원을 담당한다. 이 래퍼는 그 전에
+ * 우리 서비스가 만든 flow ID, LOGIN/SIGNUP 의도, 제공자가 모두 일치하는지 추가로 검사한다.
+ * 따라서 다른 탭의 오래된 시작 요청이나 공격자가 만든 callback이 현재 가입/로그인 의도를
+ * 소비하지 못한다. 실제 callback state의 최종 소비 검사는 로그인 성공 핸들러와 함께 이뤄진다.
  */
 public class SocialOAuth2AuthorizationRequestRepository
         implements AuthorizationRequestRepository<OAuth2AuthorizationRequest> {
@@ -52,6 +57,8 @@ public class SocialOAuth2AuthorizationRequestRepository
             return;
         }
 
+        // /oauth2/authorization/{provider} 진입 시 Spring Security가 만든 state를
+        // 컨트롤러가 먼저 세션에 기록한 동일 flow에만 연결한다.
         String requestFlowId = nonBlank(request.getParameter("flow"));
         String requestRegistrationId = registrationIdFrom(request);
         synchronized (session) {
@@ -83,6 +90,8 @@ public class SocialOAuth2AuthorizationRequestRepository
             return null;
         }
 
+        // 기본 저장소에 삭제를 위임하기 전에 callback state와 저장 state를 비교한다.
+        // 불일치하면 null을 반환하여 Spring Security 인증 자체가 성공하지 못하게 한다.
         String callbackState = exactNonBlank(request.getParameter("state"));
         synchronized (session) {
             OAuth2AuthorizationRequest storedRequest =

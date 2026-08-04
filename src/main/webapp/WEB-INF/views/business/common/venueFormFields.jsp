@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
 <%--
 업소 등록/수정 폼 공통 입력 필드 (업소명 / 업종 / 주소 / 소개)
@@ -13,6 +14,7 @@
 - address     : 주소 값 (등록은 미전달)
 - addressDetail : 상세주소 값 (등록은 미전달)
 - description : 소개 값 (등록은 미전달)
+- hashtags    : 해시태그 값, 콤마로 구분된 원문 그대로 (등록은 미전달)
 --%>
 <div class="business-form-group">
     <label class="business-form-label" for="${param.idPrefix}name">업소명</label>
@@ -83,4 +85,136 @@
 <div class="business-form-group">
     <label class="business-form-label" for="${param.idPrefix}description">소개</label>
     <textarea class="business-form-textarea" id="${param.idPrefix}description" name="description" rows="4">${param.description}</textarea>
+</div>
+
+<%--
+부가정보 (PLACE.extra_info)
+
+2단계로 입력받는다.
+ 1) 업종(위의 placeType select)을 고르면 그 업종의 항목 칩 목록으로 갈아끼워진다.
+ 2) 칩을 고르면 그 항목의 입력칸만 아래에 나타난다. (business-venue.js)
+
+세 업종 목록을 모두 그려두고 JS가 선택된 업종 것만 남긴다. 입력칸은 기본이 disabled이고
+칩을 골라야 활성화된다. disabled 필드는 전송 대상에서 제외되므로
+ - 고르지 않은 항목, 선택하지 않은 업종의 항목은 아예 서버로 가지 않고
+ - JS가 동작하지 않는 환경에서도 엉뚱한 값이 저장되지 않는다.
+
+각 줄은 "라벨 hidden + 값 text" 한 쌍으로 제출되고, 서버(BusinessExtraInfoCatalog.assemble)가
+"[라벨] 값"을 줄바꿈으로 이어붙여 한 컬럼에 저장한다.
+
+라벨 문구는 공공데이터 배치(TourApiHelper)와 표기를 맞춘 값이라 화면에서 임의로 바꾸지 않는다.
+목록 자체는 컨트롤러가 BusinessExtraInfoCatalog에서 내려준다.
+--%>
+<c:set var="extraMap" value="${placeDetail.extraInfoMap}" />
+
+<div class="business-form-group">
+    <label class="business-form-label">부가정보</label>
+    <p class="business-price-hint">
+        업장에 해당하는 항목을 골라 입력하세요. 입력한 항목만 저장되고, 업소 상세 화면에 목록으로 표시됩니다.
+    </p>
+
+    <%-- id에 라벨을 쓸 수 없어("입/퇴실", "반려동물 관광정보"처럼 공백·슬래시가 들어간다) 순번으로 만든다.
+         칩과 입력칸을 같은 순번 규칙으로 그려서 data-target으로 짝지운다. --%>
+    <c:forEach var="typeEntry" items="${extraSectionsByType}">
+        <div class="venue-extra-group js-extra-group is-hidden" data-place-type="${typeEntry.key}">
+
+            <div class="venue-extra-picker">
+                <c:forEach var="section" items="${typeEntry.value}" varStatus="sec">
+                    <div class="venue-extra-picker__section">
+                        <%-- 관광지만 세부유형(관광지/문화시설/레포츠) 소제목이 붙는다 --%>
+                        <c:if test="${not empty section.title}">
+                            <p class="venue-extra-picker__title">${section.title}</p>
+                        </c:if>
+                        <div class="venue-extra-chips">
+                            <c:forEach var="opt" items="${section.options}" varStatus="row">
+                                <label class="venue-extra-chip" title="${opt.description}">
+                                    <input type="checkbox" class="js-extra-chip"
+                                           data-target="${param.idPrefix}extra-${typeEntry.key}-${sec.index}-${row.index}" />
+                                    <span>${opt.label}</span>
+                                </label>
+                            </c:forEach>
+                        </div>
+                    </div>
+                </c:forEach>
+            </div>
+
+            <p class="venue-extra-empty js-extra-empty">위에서 항목을 고르면 입력칸이 나타납니다.</p>
+
+            <div class="venue-extra-rows">
+                <c:forEach var="section" items="${typeEntry.value}" varStatus="sec">
+                    <c:forEach var="opt" items="${section.options}" varStatus="row">
+                        <c:set var="rowId" value="${param.idPrefix}extra-${typeEntry.key}-${sec.index}-${row.index}" />
+                        <div class="venue-extra-row is-hidden" id="${rowId}">
+                            <label class="venue-extra-row__label" for="${rowId}-value">${opt.label}</label>
+                            <div class="venue-extra-row__field">
+                                <input type="hidden" name="extraLabels" value="${opt.label}" disabled />
+                                <input class="business-form-input" type="text" id="${rowId}-value" name="extraValues"
+                                       value="${fn:escapeXml(extraMap[opt.label])}"
+                                       placeholder="예) ${opt.sample}" disabled />
+                                <span class="venue-extra-row__desc">${opt.description}</span>
+                            </div>
+                            <button type="button" class="venue-extra-row__remove js-extra-row-remove"
+                                    aria-label="${opt.label} 항목 빼기">×</button>
+                        </div>
+                    </c:forEach>
+                </c:forEach>
+            </div>
+        </div>
+    </c:forEach>
+</div>
+
+<%-- 반려동물 동반 정보는 업종과 무관한 공통 항목이라 별도 섹션으로 분리하고, 체크했을 때만 연다.
+     (관광지의 [애완동물동반] 항목은 동반 가능 여부만 적는 자리라 업종별 목록에 그대로 둔다) --%>
+<div class="business-form-group">
+    <label class="venue-extra-toggle">
+        <input type="checkbox" id="${param.idPrefix}petToggle" class="js-extra-pet-toggle" />
+        <span>반려동물 동반 가능</span>
+    </label>
+    <p class="business-price-hint">체크하면 반려동물 동반 관련 안내를 추가로 입력할 수 있습니다.</p>
+
+    <div class="venue-extra-group js-extra-pet-group is-hidden">
+        <div class="venue-extra-picker">
+            <div class="venue-extra-chips">
+                <c:forEach var="opt" items="${petExtraOptions}" varStatus="row">
+                    <label class="venue-extra-chip" title="${opt.description}">
+                        <input type="checkbox" class="js-extra-chip"
+                               data-target="${param.idPrefix}extra-pet-${row.index}" />
+                        <span>${opt.label}</span>
+                    </label>
+                </c:forEach>
+            </div>
+        </div>
+
+        <p class="venue-extra-empty js-extra-empty">위에서 항목을 고르면 입력칸이 나타납니다.</p>
+
+        <div class="venue-extra-rows">
+            <c:forEach var="opt" items="${petExtraOptions}" varStatus="row">
+                <c:set var="rowId" value="${param.idPrefix}extra-pet-${row.index}" />
+                <div class="venue-extra-row is-hidden" id="${rowId}">
+                    <label class="venue-extra-row__label" for="${rowId}-value">${opt.label}</label>
+                    <div class="venue-extra-row__field">
+                        <input type="hidden" name="extraLabels" value="${opt.label}" disabled />
+                        <input class="business-form-input" type="text" id="${rowId}-value" name="extraValues"
+                               value="${fn:escapeXml(extraMap[opt.label])}"
+                               placeholder="예) ${opt.sample}" disabled />
+                        <span class="venue-extra-row__desc">${opt.description}</span>
+                    </div>
+                    <button type="button" class="venue-extra-row__remove js-extra-row-remove"
+                            aria-label="${opt.label} 항목 빼기">×</button>
+                </div>
+            </c:forEach>
+        </div>
+    </div>
+</div>
+
+<%-- 티스토리 태그 입력처럼 콤마/Enter를 누르면 칩으로 바뀐다 (business-venue.js). name="hashtags"인
+     hidden input이 실제 제출값(콤마로 합친 문자열)을 들고 있고, 보이는 text input은 입력용일 뿐이다 --%>
+<div class="business-form-group">
+    <label class="business-form-label" for="${param.idPrefix}hashtagInput">해시태그</label>
+    <div class="venue-tag-input">
+        <input type="hidden" name="hashtags" value="${param.hashtags}" />
+        <input class="venue-tag-input__field" type="text" id="${param.idPrefix}hashtagInput"
+              placeholder="#태그입력" />
+    </div>
+    <p class="business-price-hint">콤마(,)나 Enter를 누르면 태그로 등록됩니다.</p>
 </div>

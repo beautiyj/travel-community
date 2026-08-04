@@ -75,7 +75,7 @@ public interface ReservationMapper {
      * 마감(휴무) 여부 조회. PLACE는 사업자(business) 파트 테이블 — 여기서는 읽기만 한다.
      * 사업자가 /business/closure에서 껐다 켰다 하는 그 값(is_closed)을 그대로 참조.
      */
-    Boolean findPlaceClosed(@Param("placeId") Long placeId);
+    Integer findPlaceClosed(@Param("placeId") Long placeId);
 
     /** 장소 타입(tour/food/stay) 조회. PLACE.place_type을 읽기 전용으로 참조 */
     String findPlaceType(@Param("placeId") Long placeId);

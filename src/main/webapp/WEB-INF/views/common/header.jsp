@@ -14,14 +14,15 @@
             <span class="name">갈래말래</span>
         </a>
 
-        <%--TODO: tour 도메인 확정시 링크 수정 --%>
+        <%--TODO: 0803 tour 도메인 링크 추가 완료 --%>
         <nav class="nav">
-            <a href="${cp}/tour/list">숙박</a>
-            <a href="${cp}/tour/list">맛집</a>
-            <a href="${cp}/tour/list">여행지</a>
+            <a href="${cp}/tour/list?placeType=stay">숙박</a>
+            <a href="${cp}/tour/list?placeType=food">맛집</a>
+            <a href="${cp}/tour/list?placeType=tour">여행지</a>
             <a href="${cp}/community/list">커뮤니티</a>
         </nav>
 
+        <%-- TODO: 0803 헤더의 드롭다운셀렉터 삭제하기, 메인의 서치바 내부로 드롭다운 넣어서 메인, list 페이지 사용 예정 --%>
         <div class="header-actions">
             <jsp:include page="/WEB-INF/views/common/dropdownSelector.jsp">
                 <jsp:param name="dropdownId" value="header_region" />

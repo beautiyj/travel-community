@@ -1,24 +1,26 @@
 package com.gnagnoohc.travel.batch.converter;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
-
 import com.gnagnoohc.travel.batch.dto.*;
 import com.gnagnoohc.travel.batch.helper.TourApiHelper;
 import com.gnagnoohc.travel.tour.model.PlaceDTO;
 import com.gnagnoohc.travel.tour.model.PlaceImageDTO;
 import com.gnagnoohc.travel.tour.model.RegionDTO;
-
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+
+/* TourDataConverter.java - 공공데이터 응답 데이터 -> 실제 데이터베이스의 테이블로 최종 변환하는 로직
+*
+* */
 @Component
 @RequiredArgsConstructor
 public class TourDataConverter {
     private final TourApiHelper tourApiHelper;
+    private final HashtagGenerator hashtagGenerator;
 
     // TODO: 2개의 시스템 유령 계정(각각 1개싹 지정) & 그 외 NNNN개 소유 유령계정 1개. 총 2~3개의 유령계정 설정
     // 공공데이터 전용 가상 비즈니스 회원 PK (시스템 유령계정)
@@ -26,28 +28,25 @@ public class TourDataConverter {
 
     // TourLdongCodeDTO -> RegionDTO 변환
     public RegionDTO convertToRegionDTO(TourLdongCodeDTO ldongCodeDTO) {
-        // 공통 헬퍼 parseRegionId를 통해 regionId(Long) 추출 (Y/N 응답 필드 분기 처리)
-        // regnCd는 y일 때 lDongRegnCd 시도코드 n일때 일반 code (시군구코드는 자동으로 y일 때만 들어오는 응답)
         String regnCd = StringUtils.hasText(ldongCodeDTO.getLDongRegnCd()) ? ldongCodeDTO.getLDongRegnCd() : ldongCodeDTO.getCode();
         String signguCd = ldongCodeDTO.getLDongSignguCd();
 
-        Integer regionId = tourApiHelper.parseRegionId(regnCd, signguCd);
-        if (regionId == null) return null;
+        // regionId 생성 (시도코드 + 시군구코드 결합 또는 시도코드 단독)
+        String rawCode = regnCd + (StringUtils.hasText(signguCd) ? signguCd : "");
+        Integer regionId = null;
+        try { regionId = Integer.parseInt(rawCode); }
+        catch (NumberFormatException e) { return null; }
 
-        // 법정동 명칭 시도명/시군구명 - 법정동 명칭은 "서울시종로구"가 아닌 "서울시 종로구"와 같이 공백(띄어쓰기)을 포함하도록 가공 처리
-        // 법정동 명칭은 동기화 로직에 없고 메타데이터인 법정동 목록 조회에만 존재
-        // rawName는 y일 때 lDongSignguCd 시도코드 n일때 일반 name (시군구명칭은 자동으로 y일 때만 들어오는 응답)
+        // 지역 명칭 가공 처리 (시도명 + 시군구명)
         String rawName = StringUtils.hasText(ldongCodeDTO.getLDongRegnNm()) ? ldongCodeDTO.getLDongRegnNm() : ldongCodeDTO.getName();
         if (StringUtils.hasText(ldongCodeDTO.getLDongSignguNm())) { rawName += " " + ldongCodeDTO.getLDongSignguNm(); }
 
-        /* 상위 지역(시/도)과 하위 지역(시/군/구)의 계층 구조(부모-자식 관계) 설정
-        코드 길이가 5자리 이상(시/군/구 데이터)일 때만 부모 ID 파싱하기
-        - 2자리(시/도 단독, 예: "11" 서울): 최상위 지역이므로 부모가 없음 -> parentRegionId = null
-        - 5자리 이상(시/군/구 결합, 예: "11110" 종로구): 앞 2자리("11")를 추출하여 부모 시/도 PK 세팅 -> parentRegionId = 11L */
-        String rawCodeStr = regionId.toString();
-        Integer parentRegionId = (rawCodeStr.length() >= 5) ? Integer.parseInt(rawCodeStr.substring(0, 2)) : null;
+        // 부모 ID(parentRegionId) 설정
+        // 자식 데이터(시군구 코드가 존재하거나, 코드가 5자리 이상)라면 앞 2자리(시도 코드)를 부모 ID로 지정, 단독 시도 데이터라면 parentRegionId는 무조건 null
+        Integer parentRegionId = null;
+        if (StringUtils.hasText(signguCd) || rawCode.length() >= 5) { parentRegionId = Integer.parseInt(regnCd); }
+        else { parentRegionId = null; }
 
-        // 최종 RegionDTO 빌드 및 적재
         return RegionDTO.builder()
                 .regionId(regionId)
                 .regionName(rawName)
@@ -55,9 +54,9 @@ public class TourDataConverter {
                 .build();
     }
 
-    // TODO: 이후 useFeeInfo, minPrice 처리에서 0원 혹은 가격없음 -> TOUR 서비스단에서 무료 & 가격변동으로 텍스트 매핑처리
     // TourLclsSystmCodeDTO -> PlaceDTO 변환
     // 메타데이터인 법정동코드가 아닌, 실제정보가 필요한 동기화 API TourAreaBasedSyncListDTO를 플레이스에 넣어야 함
+    // TODO: 0803 썸네일 이미지의 경우 화질 확인 완료. 조정 필요함, 필터링작업 이후 수정 예정
     // thumbnailImage를 5번째 파라미터로 받도록 변경 - PlaceImage 판단 로직(resolveThumbnailImage)에서 계산된 값을 전달받는 구조로 전환
     public PlaceDTO convertToPlaceDTO(TourAreaBasedSyncListDTO syncItem, TourItemDTO tourItem, TourDetailIntroDTO introDetail, TourDetailInfoDTO infoDetail, String thumbnailImage) {
         // 공공데이터의 contentId -> Place테이블엔 pk로 기입, 더미데이터의 경우 난수처리하여 넣을 것.
@@ -65,7 +64,7 @@ public class TourDataConverter {
         // 공통헬퍼 메소드 parseRegionId 사용하여 동기화 로직의 법정동 시도코드/시군구코드 처리
         Integer regionId = tourApiHelper.parseRegionId(syncItem.getLDongRegnCd(), syncItem.getLDongSignguCd());
         // 플레이스 타입은 숫자로 들어오는 걸 convertContentType에서 tour/food/stay로 변환 처리
-        String placeType = tourApiHelper.convertContentType(syncItem.getContenttypeid());
+        String placeType = tourApiHelper.convertContentType(syncItem.getContenttypeid(), syncItem.getLclsSystm2(), syncItem.getLclsSystm3());
         // 주소는 addr1 + addr2 합친 전체주소 하나로 처리
         String fullAddress = syncItem.getAddr1() +
                 (StringUtils.hasText(syncItem.getAddr2()) ? " " + syncItem.getAddr2() : "");
@@ -75,8 +74,23 @@ public class TourDataConverter {
         String useFeeInfo = tourApiHelper.extractFeeInfo(introDetail, infoDetail, placeType);
         // 헬퍼 메소드 parseMinPrice - extractFeeInfo에서 추출한 원문 텍스트를 전달하여 검색/정렬용 최저가 숫자(minPrice) 파싱
         Integer minPrice = tourApiHelper.parseMinPrice(useFeeInfo);
-        // 해시태그는 generateHashtags에서 처리 (TourItemDTO + TourDetailIntroDTO 조합으로 해시태그 생성)
-        String hashtags = generateHashtags(tourItem, introDetail, placeType);
+        // 음식점(food)이거나, 숫자로 파싱은 안 됐지만 요금안내 문구(useFeeInfo)가 존재하는 경우 minPrice를 0으로 세팅하여 DB에 적재되도록 보정
+        if (minPrice == null && ("food".equals(placeType) || StringUtils.hasText(useFeeInfo))) { minPrice = 0; }
+        // 공공데이터에서 넘어오는 String형 showflag -> 래퍼클래스 Integer형 변환, 0이면 문닫음(1), 아니면 영업중(0)
+        int isClosedValue = "0".equals(syncItem.getShowflag()) ? 1 : 0;
+        // 부가정보(주차, 휴무일, 영업시간 등) infoDetail(단일 반복정보)을 List로 감싸고, tourItem(반려동물 동반 데이터 포함)을 itemDTO로 전달
+        String extraInfo = tourApiHelper.extractExtraInfo(
+                introDetail,
+                infoDetail != null ? List.of(infoDetail) : List.of(),
+                tourItem,
+                placeType
+        );
+
+        // 해시태그 로직 HashtagGenerator.java - cat1/cat2/cat3(대중소분류) 전달
+        String hashtags = hashtagGenerator.generateHashtags(
+                tourItem, introDetail, placeType,
+                syncItem.getLclsSystm1(), syncItem.getLclsSystm2(), syncItem.getLclsSystm3()
+        );
 
         return PlaceDTO.builder()
                 .placeId(placeId)
@@ -90,32 +104,47 @@ public class TourDataConverter {
                 .mapy(mapy)
                 .useFeeInfo(useFeeInfo)
                 .minPrice(minPrice)
-                .isClosed("0".equals(syncItem.getShowflag()))
+                .isClosed(isClosedValue)
                 .firstImage(thumbnailImage) // 조인 없는 카드 리스트용 1차 썸네일 세팅
+                // TODO: 0803 썸네일이미지 화질 저하 상태, 테스트 후 원본링크로 대체 로직 필요
+                // .firstImage(item.getOriginimgurl() != null ? item.getOriginimgurl() : thumbnailImage)
                 .hashtags(hashtags)
+                .peopleCount(1)
+                .extraInfo(extraInfo)
                 .build();
     }
 
-    // TODO: footer에 TourDetailImageDTO - cpyrhtDivCd (저작권표기) 추가 필요 & 프론트에서 Type3의 경우 비율유지하며 적용 필요
-    // TourDetailImageDTO -> PlaceImageDTO 변환
-    // 대표 이미지 등록 시 sortOrder=0 지정, 상세/서브 이미지 등록 시 순번(sortOrder) 지정
-    public PlaceImageDTO convertToPlaceImageDTO(Integer placeId, String imageUrl, int sortOrder) {
-        if (!StringUtils.hasText(imageUrl) || placeId == null) {
-            return null;
+    // 플레이스 다중 이미지 변환 시 중복 URL 제거 및 sortOrder 인덱싱 처리 (최소 이미지 수 검증 포함)
+    public List<PlaceImageDTO> convertToPlaceImageDTOs(Integer placeId, List<String> imageUrls) {
+        if (imageUrls == null || imageUrls.isEmpty() || placeId == null) { return List.of(); }
+
+        // 중복 이미지 제거 (Distinct) 및 유효한 이미지 URL만 필터링
+        List<String> distinctUrls = imageUrls.stream()
+                .filter(StringUtils::hasText)
+                .distinct()
+                .toList();
+
+        // 전체 유효 이미지 대상 순번 부여
+        List<PlaceImageDTO> imageDTOs = new ArrayList<>();
+        for (int i = 0; i < distinctUrls.size(); i++) {
+            imageDTOs.add(
+                    PlaceImageDTO.builder()
+                            .placeId(placeId)
+                            .imageUrl(distinctUrls.get(i))
+                            .sortOrder(i) // 0번은 대표, 이후 1, 2, 3... 순차 인덱싱 처리
+                            .build()
+            );
         }
-        return PlaceImageDTO.builder()
-                .placeId(placeId)
-                .imageUrl(imageUrl)
-                .sortOrder(sortOrder)
-                .build();
+        return imageDTOs;
     }
 
-    // 카드형 썸네일 대표 이미지 결정: 목록 API의 썸네일(firstimage2) 우선, 없을 경우 원본(firstimage) Fallback 사용
-    // PlaceImage 판단 로직을 여기서 계산해서 convertToPlaceDTO 호출 시 파라미터로 전달하는 구조 (TODO 반영)
+    // TODO: 0804 썸네일->원본으로 받아오는 로직 변경, 적용되는 거 테스트 확인 필요
+    // PlaceImage 판단 로직을 여기서 계산해서 convertToPlaceDTO 호출 시 파라미터로 전달하는 구조
     public String resolveThumbnailImage(TourAreaBasedSyncListDTO syncItem) {
-        return StringUtils.hasText(syncItem.getFirstimage2())
-                ? syncItem.getFirstimage2()
-                : syncItem.getFirstimage();
+        if (StringUtils.hasText(syncItem.getFirstimage())) {
+            return syncItem.getFirstimage();
+        }
+        return syncItem.getFirstimage2();
     }
 
     // TourAreaBasedSyncListDTO 동기화 목록에서 가져온 장소 하나의 기본 정보를
@@ -151,66 +180,4 @@ public class TourDataConverter {
         return item;
     }
 
-    // generateHashtags 생성 헬퍼 메소드 - TourItemDTO + TourDetailIntroDTO 기반 동적 해시태그 생성
-    private String generateHashtags(TourItemDTO item, TourDetailIntroDTO intro, String placeType) {
-        List<String> tags = new ArrayList<>();
-        if (StringUtils.hasText(placeType)) tags.add("#" + placeType);
-
-        if (intro != null) {
-            if ("tour".equals(placeType)) {
-                parseTourHashtags(intro, tags);
-            } else if ("stay".equals(placeType)) {
-                parseStayHashtags(intro, tags);
-            } else if ("food".equals(placeType)) {
-                parseFoodHashtags(intro, tags);
-            }
-        } else if ("tour".equals(placeType)) {
-            tags.add("#무료");
-        }
-
-        if (StringUtils.hasText(item.getAcmpyPsblCpam()) || StringUtils.hasText(item.getPetTursmInfo())) {
-            tags.add("#반려동물동반");
-        }
-
-        List<String> uniqueTags = tags.stream().filter(StringUtils::hasText).distinct().toList();
-        return String.join(",", uniqueTags);
-    }
-
-    private void parseTourHashtags(TourDetailIntroDTO intro, List<String> tags) {
-        String useFee = intro.getUsefee();
-        if (StringUtils.hasText(useFee)) {
-            String cleanFee = useFee.replaceAll("<[^>]*>", "").trim();
-            if (cleanFee.contains("무료") || cleanFee.contains("없음") || "0".equals(cleanFee)) {
-                tags.add("#무료");
-            } else {
-                String shortFee = cleanFee.length() > 10 ? cleanFee.substring(0, 10) : cleanFee;
-                tags.add("#" + shortFee.replaceAll(" ", ""));
-            }
-        } else {
-            tags.add("#무료");
-        }
-    }
-
-    private void parseStayHashtags(TourDetailIntroDTO intro, List<String> tags) {
-        if (StringUtils.hasText(intro.getRoomtype())) {
-            tags.add("#" + intro.getRoomtype().replaceAll(" ", ""));
-        }
-        if (StringUtils.hasText(intro.getRoomcount())) {
-            tags.add("#객실" + intro.getRoomcount() + "개");
-        }
-    }
-
-    private void parseFoodHashtags(TourDetailIntroDTO intro, List<String> tags) {
-        String menu = StringUtils.hasText(intro.getFirstmenu()) ? intro.getFirstmenu() : intro.getTreatmenu();
-        if (StringUtils.hasText(menu)) {
-            String cleanMenu = menu.replaceAll("<[^>]*>", "").trim();
-            String[] menuArray = cleanMenu.split("[,/\\n]");
-            for (int i = 0; i < Math.min(menuArray.length, 2); i++) {
-                String singleMenu = menuArray[i].trim().replaceAll(" ", "");
-                if (StringUtils.hasText(singleMenu) && singleMenu.length() <= 12) {
-                    tags.add("#" + singleMenu);
-                }
-            }
-        }
-    }
 }

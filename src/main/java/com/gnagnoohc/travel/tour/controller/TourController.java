@@ -2,42 +2,65 @@ package com.gnagnoohc.travel.tour.controller;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.gnagnoohc.travel.tour.model.PlaceDTO;
+import com.gnagnoohc.travel.tour.model.PlaceImageDTO;
+import com.gnagnoohc.travel.tour.service.TourService;
+
+import lombok.RequiredArgsConstructor;
+
 @Controller
+@RequiredArgsConstructor
 public class TourController {
+
+    private final TourService tourService;
 
     @RequestMapping("/tour/test")
     public String tourList() {
-        // /WEB-INF/views/tour/test.jsp 파일과 매핑
         return "tour/test";
     }
 
-    // @GetMapping("/tour/detail")
-    // public String tourDetail() {
-    // // /WEB-INF/views/tour/detail.jsp 파일과 매핑
-    // return "tour/detail";
-    // }
-
-    // TODO: 미완성, 테스트용로직연결만 생성. 이후 수정필요. 필요 폼: 전체데이터목록창/클릭시넘어가는상세창 2개만.
-    @GetMapping("tour/list")
+    // 실제 데이터베이스 연동된 장소 목록 통합 조회
+    @GetMapping("/tour/list")
     public String tourList(
-            @RequestParam(value = "placeType", defaultValue = "tour") String placeType,
+            @RequestParam(value = "placeType", required = false) String placeType,
             @RequestParam(value = "regionId", required = false) Integer regionId,
+            @RequestParam(value = "keyword", required = false) String keyword,
             @RequestParam(value = "page", defaultValue = "1") int page,
             Model model) {
 
-        // 1. 조건별 및 가상 비즈니스 계정 상위 노출 적용된 장소 목록 조회
-//        List<PlaceDTO> placeList = tourService.getPlaceList(placeType, regionId, page);
+        if (!StringUtils.hasText(placeType) || "all".equalsIgnoreCase(placeType)) {
+            placeType = null;
+        }
 
-        // 2. 뷰(JSP) 단으로 데이터 넘기기
-//        model.addAttribute("placeList", placeList);
-        model.addAttribute("selectedPlaceType", placeType); // stay, food, tour
+        List<PlaceDTO> placeList = tourService.getPlaceList(placeType, regionId, keyword, page);
+
+        model.addAttribute("placeList", placeList);
+        model.addAttribute("selectedPlaceType", placeType);
         model.addAttribute("selectedRegionId", regionId);
+        model.addAttribute("keyword", keyword);
 
-        return "tour/list"; // -> 하나의 통합 뷰 파일(/WEB-INF/views/tour/list.jsp)로 리턴!
+        return "tour/list";
     }
 
+    // 실제 데이터베이스 연동된 장소 상세 조회 (placeId: Integer로 수정)
+    @GetMapping("/tour/detail")
+    public String tourDetail(@RequestParam("placeId") Integer placeId, Model model) {
+        PlaceDTO place = tourService.getPlaceDetail(placeId);
+        List<PlaceImageDTO> placeImages = tourService.getPlaceImages(placeId);
+
+        List<String> extraInfoLines = (place != null)
+                ? tourService.getExtraInfoLines(place.getExtraInfo())
+                : List.of();
+
+        model.addAttribute("place", place);
+        model.addAttribute("placeImages", placeImages);
+        model.addAttribute("extraInfoLines", extraInfoLines);
+
+        return "tour/detail";
+    }
 }

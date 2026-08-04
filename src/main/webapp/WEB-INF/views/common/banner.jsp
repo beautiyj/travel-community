@@ -15,54 +15,73 @@
 
   ※ 실제 데이터를 붙일 때는 이 c:set 을 지우고
      아래 c:forEach 를 items="${bannerList}" 로 바꾸면 됩니다.
+
+
+0804 메인용 더미데이터 / 실제사용 동적데이터 조정
+  - placeImages 가 있으면 실제 DB 데이터로 간주하고 placeImages 반복
+  - placeImages 가 없으면 기존 더미데이터를 사용
 --%>
-<c:set var="testSlides" value="
-https://picsum.photos/id/1036/1600/500^/tour/list?area=부산^stay^해변 여행^부산 해운대 패키지~2인 특별 혜택^숙박 + 레스토랑 결합 시 10% 추가 할인^패키지 보기|
-https://picsum.photos/id/1015/1600/500^/tour/list?area=경주^tour^^천년 고도 경주~가을 야경 투어^첨성대·동궁과 월지 야간 개장 중^일정 보러 가기|
-https://picsum.photos/id/292/1600/500^/tour/list?area=제주^food^^제주 미식 로드~현지인 추천 코스^흑돼지부터 해물뚝배기까지 한 번에^맛집 보기|
-https://picsum.photos/id/1039/1600/500^/community/list^^추천^여행자들의 이야기^다녀온 후기와 동행 모집을 한곳에서^커뮤니티 가기
-" />
 
 <div id="${bannerId}" class="banner" data-banner>
 
-  <%-- 슬라이드 트랙: JS 가 --banner-index 를 바꾸면 옆으로 밀림 --%>
+  <%-- 슬라이드 트랙: JS가 --banner-index를 제어함 --%>
   <div class="banner-track" data-banner-track>
-    <c:forEach var="row" items="${fn:split(testSlides, '|')}">
-      <c:set var="col" value="${fn:split(row, '^')}" />
-
-      <div class="banner-slide">
-        <img class="banner-bg" src="${fn:trim(col[0])}" alt="">
-
-        <div class="banner-caption">
-          <%-- 태그 컴포넌트 재사용 --%>
-          <jsp:include page="tagButton.jsp">
-            <jsp:param name="place_type" value="${fn:trim(col[2])}" />
-            <jsp:param name="text"       value="${fn:trim(col[3])}" />
-          </jsp:include>
-
-          <%-- 제목: ~ 를 줄바꿈으로 --%>
-          <h2 class="banner-title">
-            <c:forEach var="line" items="${fn:split(col[4], '~')}" varStatus="ls">
-              ${fn:trim(line)}<c:if test="${not ls.last}"><br></c:if>
-            </c:forEach>
-          </h2>
-
-          <p class="banner-desc">${fn:trim(col[5])}</p>
-
-          <%-- CTA 버튼: smallButton 재사용 (흰 배경으로 보이도록 banner.css 에서 override) --%>
-          <div class="banner-cta-wrap">
-            <jsp:include page="smallButton.jsp">
-              <jsp:param name="text"    value="${fn:trim(col[6])}" />
-              <jsp:param name="onclick" value="location.href='${cp}${fn:trim(col[1])}'" />
-            </jsp:include>
+    
+    <c:choose>
+      <%-- 1. 상세 페이지 등에서 실제 DB 데이터(placeImages)를 넘겨준 경우 --%>
+      <c:when test="${not empty placeImages}">
+        <c:forEach var="img" items="${placeImages}">
+          <div class="banner-slide">
+            <img class="banner-bg" src="${img.imageUrl}" alt="${place.name}">
+            <%-- 💡 상세 페이지 배너에서는 텍스트 캡션을 완전히 제거하여 원본 사진만 깔끔하게 노출 --%>
           </div>
-        </div>
-      </div>
-    </c:forEach>
+        </c:forEach>
+      </c:when>
+
+      <%-- 2. 데이터가 없을 때는 기존 메인 페이지용 테스트(더미) 데이터 사용 --%>
+      <c:otherwise>
+        <c:set var="testSlides" value="
+        https://picsum.photos/id/1036/1600/500^/tour/list?area=부산^stay^해변 여행^부산 해운대 패키지~2인 특별 혜택^숙박 + 레스토랑 결합 시 10% 추가 할인^패키지 보기|
+        https://picsum.photos/id/1015/1600/500^/tour/list?area=경주^tour^^천년 고도 경주~가을 야경 투어^첨성대·동궁과 월지 야간 개장 중^일정 보러 가기|
+        https://picsum.photos/id/292/1600/500^/tour/list?area=제주^food^^제주 미식 로드~현지인 추천 코스^흑돼지부터 해물뚝배기까지 한 번에^맛집 보기|
+        https://picsum.photos/id/1039/1600/500^/community/list^^추천^여행자들의 이야기^다녀온 후기와 동행 모집을 한곳에서^커뮤니티 가기
+        " />
+
+        <c:forEach var="row" items="${fn:split(testSlides, '|')}">
+          <c:set var="col" value="${fn:split(row, '^')}" />
+
+          <div class="banner-slide">
+            <img class="banner-bg" src="${fn:trim(col[0])}" alt="">
+
+            <div class="banner-caption">
+              <jsp:include page="tagButton.jsp">
+                <jsp:param name="place_type" value="${fn:trim(col[2])}" />
+                <jsp:param name="text"       value="${fn:trim(col[3])}" />
+              </jsp:include>
+
+              <h2 class="banner-title">
+                <c:forEach var="line" items="${fn:split(col[4], '~')}" varStatus="ls">
+                  ${fn:trim(line)}<c:if test="${not ls.last}"><br></c:if>
+                </c:forEach>
+              </h2>
+
+              <p class="banner-desc">${fn:trim(col[5])}</p>
+
+              <div class="banner-cta-wrap">
+                <jsp:include page="smallButton.jsp">
+                  <jsp:param name="text"    value="${fn:trim(col[6])}" />
+                  <jsp:param name="onclick" value="location.href='${cp}${fn:trim(col[1])}'" />
+                </jsp:include>
+              </div>
+            </div>
+          </div>
+        </c:forEach>
+      </c:otherwise>
+    </c:choose>
+
   </div>
 
-  <%-- 좌우 꺽쇠: wishButton 의 원형 버튼(.btn-wish-trigger, 48x48 흰 원)을 재사용하고
-       아이콘만 하트 대신 화살표 SVG 로 교체. 위치(prev/next)만 banner.css 에서 따로 지정 --%>
+  <%-- 좌우 꺽쇠 버튼 --%>
   <button type="button" class="btn-wish-trigger banner-arrow-prev"
           data-banner-prev aria-label="이전 배너">
     <svg class="banner-chevron" viewBox="0 0 24 24" aria-hidden="true">
@@ -77,14 +96,28 @@ https://picsum.photos/id/1039/1600/500^/community/list^^추천^여행자들의 �
     </svg>
   </button>
 
-  <%-- 인디케이터: 클릭하면 해당 슬라이드로 이동 --%>
+  <%-- 인디케이터 닷 --%>
   <div class="banner-dots" data-banner-dots>
-    <c:forEach var="row" items="${fn:split(testSlides, '|')}" varStatus="st">
-      <button type="button"
-              class="banner-dot ${st.first ? 'is-active' : ''}"
-              data-banner-dot="${st.index}"
-              aria-label="${st.count}번째 배너로 이동"></button>
-    </c:forEach>
+    <c:choose>
+      <%-- 1. 실제 DB 데이터(placeImages)가 있을 때 개수만큼 인디케이터 닷 생성 --%>
+      <c:when test="${not empty placeImages}">
+        <c:forEach var="img" items="${placeImages}" varStatus="st">
+          <button type="button"
+                  class="banner-dot ${st.first ? 'is-active' : ''}"
+                  data-banner-dot="${st.index}"
+                  aria-label="${st.count}번째 사진으로 이동"></button>
+        </c:forEach>
+      </c:when>
+      <%-- 2. 더미 데이터 사용 시 기존 방식대로 인디케이터 닷 생성 --%>
+      <c:otherwise>
+        <c:forEach var="row" items="${fn:split(testSlides, '|')}" varStatus="st">
+          <button type="button"
+                  class="banner-dot ${st.first ? 'is-active' : ''}"
+                  data-banner-dot="${st.index}"
+                  aria-label="${st.count}번째 배너로 이동"></button>
+        </c:forEach>
+      </c:otherwise>
+    </c:choose>
   </div>
 
 </div>

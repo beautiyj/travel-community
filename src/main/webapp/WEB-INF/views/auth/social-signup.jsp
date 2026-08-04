@@ -7,11 +7,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>소셜 회원가입 | 갈래말래</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/auth/auth.css">
+    <script defer src="${pageContext.request.contextPath}/js/auth/auth-history-guard.js"></script>
     <%-- 로컬 가입과 같은 입력 검증 규칙을 재사용하고, 로컬 폼 전용 signup.js는 불러오지 않는다. --%>
     <script defer src="${pageContext.request.contextPath}/js/auth/signup-validation.js"></script>
     <script defer src="${pageContext.request.contextPath}/js/auth/social-signup.js"></script>
 </head>
-<body class="auth-page auth-page--social-signup">
+<%-- 로그인 이후 뒤로가기로 소셜 가입 폼이 복원되면 현재 세션 상태를 다시 확인한다. --%>
+<body class="auth-page auth-page--social-signup"
+      data-session-status-url="${pageContext.request.contextPath}/auth/api/session-status">
 <main class="auth-card auth-card--small auth-card--social-signup">
     <a class="auth-brand" href="${pageContext.request.contextPath}/">갈래말래</a>
 
@@ -34,17 +37,25 @@
         </div>
     </section>
 
+    <%-- 서버 검증 실패 시 안전하게 가공된 공통 오류와 입력 DTO의 값을 다시 렌더링한다. --%>
     <c:if test="${not empty socialSignupError}">
         <div class="form-alert form-alert--error" role="alert">
             <c:out value="${socialSignupError}" />
         </div>
     </c:if>
 
+    <%--
+      소셜 프로필만으로 가입을 확정하지 않고 필수 서비스 정보를 POST한다.
+      현재 마크업에는 CSRF 토큰 출력이 없으므로 CSRF 보호 적용 시 서버 토큰 필드를 함께 렌더링해야 한다.
+    --%>
     <form id="socialSignupForm"
           action="${pageContext.request.contextPath}/auth/social/signup"
           method="post"
           novalidate>
-        <%-- 소셜 인증을 시작한 같은 세션의 가입 요청인지 서버에서 확인한다. --%>
+        <%--
+          nonce는 소셜 인증을 시작한 같은 세션의 가입 요청인지 확인하고 재사용을 막기 위한 값이다.
+          일반적인 CSRF 토큰을 자동으로 대체하는 값으로 간주하지 않는다.
+        --%>
         <input type="hidden" name="signupNonce"
                value="<c:out value='${socialSignupNonce}' />">
 
@@ -97,7 +108,7 @@
 
         <%-- 성별은 세 항목 중 하나를 반드시 고르며 서버 검증 실패 시 선택값을 다시 표시한다. --%>
         <fieldset class="form-field" aria-describedby="genderError">
-            <legend>성별 <span class="optional-label">필수</span></legend>
+            <legend>성별</legend>
             <div class="choice-row">
                 <label>
                     <input type="radio" name="gender" value="MALE"

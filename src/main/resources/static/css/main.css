@@ -1,0 +1,255 @@
+/* main/index.jsp 전용 스타일. 공용 컴포넌트(searchbar/banner/cardComponent/selectableButton 등)의
+   기본 CSS는 건드리지 않고, 이 페이지 안에서만 필요한 오버라이드를 스코프를 좁혀 덧붙인다. */
+
+/* ── 공통 섹션 레이아웃 ── */
+.main-container {
+  max-width: 1101px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
+.main-section {
+  margin-bottom: 48px;
+}
+
+.main-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.main-section-title {
+  font-size: var(--text-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--foreground);
+}
+
+.main-section-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--primary);
+}
+
+.main-section-more:hover {
+  text-decoration: underline;
+}
+
+/* ── 검색 히어로 ── */
+.main-hero {
+  background: linear-gradient(to bottom, var(--secondary), var(--background));
+  padding: 64px 32px 40px;
+  text-align: center;
+}
+
+.main-hero-inner {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.main-hero-eyebrow {
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.2em;
+  color: var(--primary);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.main-hero-title {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--foreground);
+  line-height: 1.3;
+  margin-bottom: 8px;
+}
+
+.main-hero-subtitle {
+  font-size: var(--text-base);
+  color: var(--muted-foreground);
+  margin-bottom: 32px;
+}
+
+.main-hero-search {
+  display: flex;
+  justify-content: center;
+}
+
+.main-hero-search .search-row-view {
+  width: 100%;
+  max-width: 600px;
+}
+
+.main-hero-search .search-input {
+  width: auto;
+}
+
+.main-hero-pills {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+/* selectableButton 기본 패딩(14px 32px)은 이 페이지의 작은 지역 칩에는 과해서 축소 */
+.main-hero-pills .btn-selectable {
+  padding: 8px 18px;
+  background-color: var(--card);
+}
+
+.main-hero-pills .btn-selectable-text {
+  font-size: var(--text-xs);
+}
+
+/* ── 인기 여행지 캐러셀 ── */
+.destination-carousel {
+  position: relative;
+  overflow: hidden;
+}
+
+.destination-track {
+  display: flex;
+  gap: 16px;
+  transform: translateX(calc(var(--destination-index, 0) * -296px));
+  transition: transform 400ms ease;
+}
+
+.destination-slide {
+  position: relative;
+  flex: 0 0 280px;
+  height: 180px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.destination-slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 500ms ease;
+}
+
+.destination-slide:hover img {
+  transform: scale(1.05);
+}
+
+.destination-slide::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(15, 23, 42, 0.75), transparent 60%);
+}
+
+.destination-caption {
+  position: absolute;
+  left: 16px;
+  bottom: 14px;
+  z-index: 1;
+  color: var(--card);
+}
+
+.destination-region {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-bold);
+  color: #7dd3fc;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+
+.destination-title {
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-bold);
+  line-height: 1.3;
+}
+
+/* 화살표는 wishButton의 원형 버튼(.btn-wish-trigger)을 재사용하고 크기만 축소 */
+.destination-controls {
+  display: flex;
+  gap: 6px;
+}
+
+.destination-controls .btn-wish-trigger {
+  width: 32px;
+  height: 32px;
+  box-shadow: none;
+  border: 1px solid var(--border);
+}
+
+/* wishButton.css의 기본 hover(scale(1.05))는 찜하기 버튼용 인터랙션이라
+   방향 전환용 화살표에는 어울리지 않아 여기서만 끈다 */
+.destination-controls .btn-wish-trigger:hover {
+  transform: none;
+  background: var(--muted);
+}
+
+.destination-chevron {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: var(--foreground);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ── 숙박/맛집/관광지 탭 + 카드 그리드 ── */
+.main-tab-group {
+  display: flex;
+  gap: 8px;
+}
+
+.main-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 24px;
+}
+
+/* cardComponent.jsp의 기본 규격(고정 320px + margin-right)은 가로 나열용이라
+   그리드 안에서는 폭을 그리드 트랙에 맞추고 margin을 gap으로 대체한다 */
+.main-card-grid .card-col {
+  width: auto;
+  margin-right: 0;
+}
+
+/* ── 하단 CTA 배너 ── */
+.main-cta-banner {
+  background: linear-gradient(to right, var(--primary), #38bdf8);
+  padding: 64px 32px;
+  text-align: center;
+  color: var(--card);
+}
+
+.main-cta-title {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: 12px;
+}
+
+.main-cta-subtitle {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: var(--text-lg);
+  margin-bottom: 32px;
+}
+
+/* buttonComponent.jsp를 흰 배경으로 override (버튼 자체 텍스트 색은 고정값이라 여기서 같이 보정) */
+.main-cta-banner .btn-main-text {
+  color: var(--primary);
+}
+
+@media (max-width: 768px) {
+  .main-hero-title {
+    font-size: var(--text-xl);
+  }
+
+  .main-card-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
+}

@@ -2,6 +2,7 @@ package com.gnagnoohc.travel.reservation.scheduler;
 
 import com.gnagnoohc.travel.batch.payment.PaymentReconcileService;
 import com.gnagnoohc.travel.reservation.mapper.ReservationMapper;
+import com.gnagnoohc.travel.reservation.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -9,11 +10,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 예약 상태를 시간에 따라 자동 전환하는 스케줄러.
  * 1) 결제 대기(PENDING)로 30분이 지난 예약   -> EXPIRED
  * 2) 방문일이 지난 예약확정(CONFIRMED) 건     -> COMPLETED(이용완료)
+ * 3) 결제(PAID) 후 24시간이 지났는데 사업자가 승인/거절 안 한 건 -> 자동 취소+환불 (방문일 무관)
  * 주의: TravelApplication(또는 config 클래스)에 @EnableScheduling 필요!
  */
 @Slf4j
@@ -25,6 +28,7 @@ public class ReservationExpireScheduler {
 
     private final ReservationMapper reservationMapper;
     private final PaymentReconcileService paymentReconcileService;
+    private final PaymentService paymentService;
 
     /** 1분마다 실행 */
     @Scheduled(fixedDelay = 60_000)
@@ -58,6 +62,26 @@ public class ReservationExpireScheduler {
         int completed = reservationMapper.completeVisited();
         if (completed > 0) {
             log.info("방문일이 지난 예약확정 {}건을 이용완료 처리했습니다.", completed);
+        }
+    }
+
+    /**
+     * 매시 5분에 실행. 결제(PAID) 후 24시간이 지나도록 사업자가 승인도 거절도 안 한 예약을 자동 취소+환불한다.
+     * 방문일이 언제인지와 무관하게 결제 시점 기준 SLA다.
+     * 건별로 환불(PG 호출)이 필요해 하나씩 처리하고, 개별 실패가 나머지를 막지 않도록 catch한다.
+     */
+    @Scheduled(cron = "0 5 * * * *")
+    public void cancelUnapprovedExpiredReservations() {
+        List<Long> targets = reservationMapper.findExpiredUnapprovedPaidIds();
+        for (Long reservationId : targets) {
+            try {
+                paymentService.rejectPaid(reservationId, "결제 후 24시간 내 미승인으로 자동 취소되었습니다.");
+            } catch (Exception e) {
+                log.error("결제 후 24시간 경과 자동취소 실패. reservationId={}", reservationId, e);
+            }
+        }
+        if (!targets.isEmpty()) {
+            log.info("결제 후 24시간 경과 미승인 예약 {}건 자동취소 처리 시도 완료.", targets.size());
         }
     }
 }

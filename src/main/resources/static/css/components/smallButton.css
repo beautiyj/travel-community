@@ -61,3 +61,12 @@
 .btn-small-row.theme-danger .btn-small-text {
   color: var(--danger);
 }
+
+/* 중립 테마 (Outline - 흰 배경 + 연한 테두리. 상세보기 등 정보 열람용 버튼) : business 파트에서 추가 */
+.btn-small-row.theme-outline {
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+.btn-small-row.theme-outline .btn-small-text {
+  color: var(--foreground);
+}

@@ -8,19 +8,21 @@ import org.apache.ibatis.type.Alias;
 import lombok.Data;
 
 @Data
-//todo: auth쪽과 별칭명 동일하여 임시주석처리. 변경필요
-//@Alias("member")
+@Alias("mymember")
 public class MypageDto {
 
 	private Long memberId;
 	private String name;
 	private String loginId;
 	private String nickname;
+	private String email;
 	private Integer memberType;
+	private String memberRole;
 
 	private String phone;
 	private String gender;
 	private LocalDate birth;
+	private String address;
 
 	private String profileImgUrl;
 	private String signupType;
@@ -34,6 +36,10 @@ public class MypageDto {
 	private LocalDateTime updatedAt;
 	private LocalDateTime deletedAt;
 
+	public LocalDate getCreatedDate() {
+		return createdAt == null ? null : createdAt.toLocalDate();
+	}
+
 	private String password;
 	private String currentPassword;
 	private String newPassword;
@@ -41,10 +47,12 @@ public class MypageDto {
 
 	private Long reservationId;
 	private Long placeId;
+	private String placeName;
 	private String visitorName;
 	private LocalDate visitDate;
 	private Integer headcount;
 	private String status;
+	private Integer amount;
 	
 	private Long wishlistId;
 	

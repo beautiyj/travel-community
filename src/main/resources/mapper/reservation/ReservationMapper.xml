@@ -20,7 +20,8 @@
         r.pg_tid               AS pgTid,
         r.created_at           AS createdAt,
         r.cancel_reason        AS cancelReason,
-        r.cancel_requested_at  AS cancelRequestedAt
+        r.cancel_requested_at  AS cancelRequestedAt,
+        r.reject_reason        AS rejectReason
     </sql>
 
     <insert id="insert" parameterType="com.gnagnoohc.travel.reservation.entity.Reservation"
@@ -34,6 +35,14 @@
     <!-- 장소 타입 조회: PLACE.place_type(tour/food/stay)을 그대로 참조 (읽기 전용) -->
     <select id="findPlaceType" resultType="string">
         SELECT place_type FROM PLACE WHERE place_id = #{placeId}
+    </select>
+
+    <select id="findPlaceName" resultType="string">
+        SELECT name FROM PLACE WHERE place_id = #{placeId}
+    </select>
+
+    <select id="findMinPrice" resultType="int">
+        SELECT min_price FROM PLACE WHERE place_id = #{placeId}
     </select>
 
     <select id="findById" resultType="com.gnagnoohc.travel.reservation.entity.Reservation">
@@ -72,6 +81,13 @@
         SET status = 'PAID',
             cancel_reason = NULL,
             cancel_requested_at = NULL
+        WHERE reservation_id = #{reservationId}
+    </update>
+
+    <!-- 예약 거절: 사유만 기록 (환불·상태 전환은 PaymentService.rejectPaid가 이어서 처리) -->
+    <update id="reject">
+        UPDATE RESERVATION
+        SET reject_reason = #{reason}
         WHERE reservation_id = #{reservationId}
     </update>
 
@@ -137,6 +153,15 @@
           AND COALESCE(check_out_date, visit_date) &lt; CURDATE()
     </update>
 
+    <!-- 스케줄러: 예약 생성(결제) 후 24시간이 지났는데 아직 사업자가 승인/거절 안 한(PAID) 예약 대상 ID.
+         방문일과 무관하게 결제 시점 기준 SLA. 환불(PG API 호출)이 필요해서 벌크 UPDATE 대신 ID만 뽑아 서비스에서 건별 처리한다. -->
+    <select id="findExpiredUnapprovedPaidIds" resultType="long">
+        SELECT reservation_id
+        FROM RESERVATION
+        WHERE status = 'PAID'
+          AND created_at &lt; NOW() - INTERVAL 1 DAY
+    </select>
+
     <!--
       캘린더 마감 표시용: 장소의 활성 예약 구간 목록.
       숙박은 기간 예약이라 GROUP BY로는 중간 날짜를 못 잡는다 → 구간 그대로 반환하고 서비스에서 펼친다.
@@ -168,8 +193,33 @@
     </select>
 
     <!-- 휴무 여부 조회: 사업자가 /business/closure에서 설정한 PLACE.is_closed 그대로 참조 (읽기 전용) -->
-    <select id="findPlaceClosed" resultType="boolean">
+    <select id="findPlaceClosed" resultType="int">
         SELECT is_closed FROM PLACE WHERE place_id = #{placeId}
+    </select>
+
+    <!-- 날짜별 마감(PLACE_CLOSED_DATE) 겹침 체크. 역시 business 파트 테이블 읽기 전용 참조 -->
+    <select id="countClosedDatesInRange" resultType="int">
+        SELECT COUNT(*)
+        FROM PLACE_CLOSED_DATE
+        WHERE place_id = #{placeId}
+          AND closed_date &gt;= #{fromDate}
+          AND closed_date &lt; #{toDate}
+    </select>
+
+    <!-- 예약 캘린더용: 오늘 이후 날짜별 마감일 목록 -->
+    <select id="findClosedDates" resultType="java.time.LocalDate">
+        SELECT closed_date FROM PLACE_CLOSED_DATE
+        WHERE place_id = #{placeId} AND closed_date &gt;= CURDATE()
+        ORDER BY closed_date
+    </select>
+
+    <!-- 맛집·관광지 정원 체크: 특정 날짜의 활성 예약 인원 합계 -->
+    <select id="sumHeadcountOnDate" resultType="int">
+        SELECT COALESCE(SUM(headcount), 0)
+        FROM RESERVATION
+        WHERE place_id = #{placeId}
+          AND visit_date = #{visitDate}
+          AND status IN ('PENDING', 'PAID', 'CONFIRMED')
     </select>
 
 </mapper>

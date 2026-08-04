@@ -99,6 +99,7 @@
 .summary-card {
     background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg);
     padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.04);
+    position: sticky; top: 80px;   /* 헤더(64px) 아래 여백 두고 스크롤 시 따라오게 */
 }
 .summary-card h3 { font-size: var(--text-base); font-weight: var(--font-weight-bold); margin-bottom: 16px; }
 .summary-row { display: flex; justify-content: space-between; font-size: var(--text-sm); padding: 6px 0; }
@@ -115,9 +116,13 @@
     padding: 13px; border: 2px solid var(--border); border-radius: var(--radius-md);
     background: var(--card); font-size: var(--text-sm); font-weight: var(--font-weight-bold); cursor: pointer;
     color: var(--foreground); font-family: inherit; transition: all .15s;
+    min-height: 52px; box-sizing: border-box;
+    text-align: center;
 }
 .method-btn:hover { border-color: var(--muted-foreground); }
 .method-btn.active { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); }
+.method-btn[data-method="kakao"] { background: #FFEB00; border-color: #FFEB00; color: rgba(0, 0, 0, .85); }
+.method-btn .method-icon { display: block; height: 24px; width: auto; margin: 0 auto; }
 
 /* 간편결제 안내 패널 */
 .simple-pay-panel {
@@ -129,8 +134,9 @@
     display: flex; align-items: center; justify-content: center;
     color: var(--white); font-size: 22px; font-weight: var(--font-weight-bold);
 }
-.pay-logo.kakao { background: #facc15; color: #191919; }
-.pay-logo.toss  { background: #3b82f6; }
+.pay-logo.bank, .pay-logo.vcard { background: var(--foreground); color: var(--white); }
+.pay-logo.has-icon { width: auto; height: 46px; overflow: visible; background: transparent; }
+.pay-logo.has-icon img { width: auto; height: 100%; object-fit: contain; }
 .simple-pay-panel .pay-name { font-weight: var(--font-weight-bold); }
 .simple-pay-panel .pay-desc { font-size: var(--text-sm); color: var(--muted-foreground); margin-top: 4px; }
 

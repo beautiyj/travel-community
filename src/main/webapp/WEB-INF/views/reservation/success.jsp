@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>결제 완료</title>
 <link rel="stylesheet" href="/css/common.css">
-<link rel="stylesheet" href="/css/reservation.css">
+<link rel="stylesheet" href="/css/reservation/reservation.css">
 <link rel="stylesheet" href="/css/components/smallButton.css">
 <%-- 예약취소 모달(cancelModal)이 이 스타일로 숨겨져 있다가 openModal() 호출 시에만 보임 --%>
 <link rel="stylesheet" href="/css/components/confirmModal.css">

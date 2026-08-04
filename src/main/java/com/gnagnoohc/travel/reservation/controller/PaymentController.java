@@ -161,6 +161,10 @@ public class PaymentController {
         session.setAttribute("TOSS_AMOUNT", amount);
         session.setAttribute("TOSS_RESERVATION_ID", reservationId);
 
+        // 정합성 보정 배치가 나중에 조회할 수 있도록 orderId를 예약 행에 기록 (세션은 콜백 놓치면 유실)
+        // 토스 주문조회는 orderId가 키라 카카오와 달리 tid 저장이 필요 없다
+        reservationService.markPaymentReady(reservationId, orderId, Payment.TYPE_TOSS, null);
+
         return Map.of("orderId", orderId, "amount", amount);
     }
 
@@ -182,9 +186,28 @@ public class PaymentController {
             return bridgeToFail(model, "결제 정보가 일치하지 않습니다. 다시 시도해 주세요.");
         }
 
-        TossConfirmResponse confirm = tossPayService.confirm(paymentKey, orderId, amount);
-        Payment payment = paymentService.saveSuccess(
-                reservationId, amount, paymentKey, orderId, Payment.TYPE_TOSS);
+        // 토스 승인(confirm) 전 마감 재검증 — 여기서 걸리면 토스에 승인 요청 자체를 보내지 않는다
+        try {
+            reservationService.assertStillAvailable(reservationId);
+        } catch (IllegalStateException e) {
+            return bridgeToFail(model, e.getMessage());
+        }
+
+        TossConfirmResponse confirm;
+        try {
+            confirm = tossPayService.confirm(paymentKey, orderId, amount);
+        } catch (Exception e) {
+            log.error("[토스 confirm 실패] paymentKey={}, orderId={}", paymentKey, orderId, e);
+            return bridgeToFail(model, "토스페이먼츠 결제 승인에 실패했습니다.");
+        }
+
+        Payment payment;
+        try {
+            payment = paymentService.saveSuccess(
+                    reservationId, amount, paymentKey, orderId, Payment.TYPE_TOSS);
+        } catch (IllegalStateException e) {
+            return bridgeToFail(model, e.getMessage());
+        }
 
         session.removeAttribute("TOSS_ORDER_ID");
         session.removeAttribute("TOSS_AMOUNT");

@@ -8,18 +8,27 @@
     <title>사업자 인증 신청 상세 - 갈래말래</title>
     <c:url var="commonCssUrl" value="/css/common.css"/>
     <c:url var="adminCssUrl" value="/css/admin/admin.css"/>
-    <c:url var="listUrl" value="/admin/business-applications"/>
+    <c:url var="adminBfcacheReloadJsUrl" value="/js/admin/admin-bfcache-reload.js"/>
+    <%-- selectedStatus를 목록·처리 URL에 유지해 심사 후에도 관리자가 보던 필터로 돌아간다. --%>
+    <c:url var="listUrl" value="/admin/business-applications">
+        <c:param name="status" value="${selectedStatus}"/>
+    </c:url>
     <c:url var="documentUrl"
            value="/admin/business-applications/${application.businessApplicationId}/document"/>
     <c:url var="approveUrl"
-           value="/admin/business-applications/${application.businessApplicationId}/approve"/>
+           value="/admin/business-applications/${application.businessApplicationId}/approve">
+        <c:param name="status" value="${selectedStatus}"/>
+    </c:url>
     <c:url var="rejectUrl"
-           value="/admin/business-applications/${application.businessApplicationId}/reject"/>
+           value="/admin/business-applications/${application.businessApplicationId}/reject">
+        <c:param name="status" value="${selectedStatus}"/>
+    </c:url>
     <link rel="stylesheet" href="${commonCssUrl}">
     <link rel="stylesheet" href="${adminCssUrl}">
 </head>
 <body>
 <div class="admin-layout">
+    <%-- 화면 노출 여부와 별개로 상세 조회·문서 다운로드·승인·반려 URL은 모두 서버에서 ADMIN 권한을 검사해야 한다. --%>
     <jsp:include page="common/sidebar.jsp">
         <jsp:param name="activeTab" value="businessApplications"/>
     </jsp:include>
@@ -34,6 +43,7 @@
             <div class="admin-detail-heading">
                 <div>
                     <a class="admin-back-link" href="${listUrl}">← 신청 목록</a>
+                    <%-- application 모델의 실제 상태를 기준으로 알려진 상태는 한글 뱃지, 그 밖의 값은 원문으로 표시한다. --%>
                     <div class="admin-detail-heading__title-row">
                         <h2 class="admin-page-heading__title">
                             신청 #<c:out value="${application.businessApplicationId}"/>
@@ -61,6 +71,7 @@
                 </div>
             </div>
 
+            <%-- 승인·반려 POST 후 redirect 결과와 서버가 다시 렌더링한 오류를 구분해 표시한다. --%>
             <c:if test="${param.reviewed eq 'approved'}">
                 <div class="admin-alert admin-alert--success" role="status">
                     사업자 인증 신청을 승인했습니다.
@@ -104,6 +115,7 @@
                 </dl>
             </section>
 
+            <%-- 문서 URL은 원본 키를 직접 노출하지 않으며, 서버가 신청 존재 여부와 관리자 권한을 확인해 파일을 응답한다. --%>
             <section class="admin-card" aria-labelledby="document-title">
                 <div class="admin-card__header">
                     <div>
@@ -122,6 +134,10 @@
                 </div>
             </section>
 
+            <%--
+              PENDING 상태에서만 심사 폼을 렌더링하고 처리된 신청은 결과만 표시한다.
+              이 분기는 사용자 편의일 뿐이므로 서버도 현재 상태를 조건에 포함해 중복·동시 심사를 거부해야 한다.
+            --%>
             <c:choose>
                 <c:when test="${application.applicationStatus eq 'PENDING'}">
                     <section class="admin-card" aria-labelledby="review-title">
@@ -134,54 +150,50 @@
                             </div>
                         </div>
 
-                        <div class="admin-review-grid">
-                            <div class="admin-review-panel admin-review-panel--approve">
-                                <h4 class="admin-review-panel__title">승인</h4>
-                                <p class="admin-review-panel__description">
-                                    신청을 승인하면 해당 회원의 사업자 권한이 활성화됩니다.
-                                </p>
-                                <form class="admin-review-form"
-                                      method="post"
-                                      action="${approveUrl}"
-                                      data-confirm-message="이 사업자 인증 신청을 승인하시겠습니까?">
-                                    <button class="admin-btn admin-btn--approve admin-btn--block"
-                                            type="submit"
-                                            data-submitting-label="승인 처리 중">
-                                        신청 승인
-                                    </button>
-                                </form>
-                            </div>
+                        <div class="admin-review-actions">
+                            <%--
+                              승인·반려는 상태 변경 POST다. 서버는 관리자 인가, 현재 PENDING 상태, 영향받은 행 수를 검증해야 한다.
+                              현재 마크업에는 CSRF 토큰 출력이 없으므로 CSRF 보호 적용 시 두 폼 모두 서버 토큰 필드를 포함해야 한다.
+                            --%>
+                            <form class="admin-review-form"
+                                  method="post"
+                                  action="${approveUrl}"
+                                  data-confirm-message="이 사업자 인증 신청을 승인하시겠습니까?">
+                                <button id="approve-button"
+                                        class="admin-btn admin-btn--approve admin-btn--block"
+                                        type="submit"
+                                        data-submitting-label="승인 처리 중">
+                                    신청 승인
+                                </button>
+                            </form>
 
-                            <div class="admin-review-panel admin-review-panel--reject">
-                                <h4 class="admin-review-panel__title">반려</h4>
-                                <p class="admin-review-panel__description">
-                                    사업자가 보완할 내용을 알 수 있도록 구체적인 사유를 작성해 주세요.
-                                </p>
-                                <form class="admin-review-form"
-                                      method="post"
-                                      action="${rejectUrl}"
-                                      data-confirm-message="입력한 사유로 이 신청을 반려하시겠습니까?">
-                                    <label class="admin-form-label" for="rejection-reason">반려 사유</label>
-                                    <textarea class="admin-form-textarea"
-                                              id="rejection-reason"
-                                              name="reason"
-                                              rows="6"
-                                              maxlength="500"
-                                              required
-                                              aria-describedby="rejection-reason-help rejection-reason-count"><c:out value="${rejectionReasonInput}"/></textarea>
-                                    <div class="admin-form-help-row">
-                                        <span id="rejection-reason-help">공백을 제외한 내용을 입력해 주세요.</span>
-                                        <span id="rejection-reason-count" aria-live="polite">
-                                            <strong id="rejection-reason-length">0</strong>/500자
-                                        </span>
-                                    </div>
-                                    <button class="admin-btn admin-btn--reject admin-btn--block"
-                                            type="submit"
-                                            data-submitting-label="반려 처리 중">
-                                        신청 반려
-                                    </button>
-                                </form>
-                            </div>
+                            <form class="admin-review-form"
+                                  method="post"
+                                  action="${rejectUrl}"
+                                  data-confirm-message="입력한 사유로 이 신청을 반려하시겠습니까?">
+                                <label class="admin-form-label" for="rejection-reason">반려 사유 <span aria-hidden="true">*</span></label>
+                                <textarea class="admin-form-textarea"
+                                          id="rejection-reason"
+                                          name="reason"
+                                          rows="4"
+                                          maxlength="500"
+                                          required
+                                          placeholder="반려 사유를 입력해 주세요."
+                                          aria-describedby="rejection-reason-help rejection-reason-count"><c:out value="${rejectionReasonInput}"/></textarea>
+                                <div class="admin-form-help-row">
+                                    <span id="rejection-reason-help">반려 시 사유 입력은 필수입니다.</span>
+                                    <span id="rejection-reason-count" aria-live="polite">
+                                        <strong id="rejection-reason-length">0</strong>/500
+                                    </span>
+                                </div>
+                                <button id="reject-button"
+                                        class="admin-btn admin-btn--reject admin-btn--block"
+                                        type="submit"
+                                        data-submitting-label="반려 처리 중"
+                                        disabled>
+                                    신청 반려
+                                </button>
+                            </form>
                         </div>
                     </section>
                 </c:when>
@@ -231,21 +243,30 @@
     </main>
 </div>
 
+<script src="${adminBfcacheReloadJsUrl}" defer></script>
 <script>
     (function () {
-        // 반려 사유를 입력하는 동안 현재 글자 수를 바로 보여 줍니다.
+        // 반려 사유를 입력하는 동안 현재 글자 수를 바로 보여 준다.
         const reasonField = document.getElementById('rejection-reason');
         const reasonLength = document.getElementById('rejection-reason-length');
+        const approveButton = document.getElementById('approve-button');
+        const rejectButton = document.getElementById('reject-button');
 
-        if (reasonField && reasonLength) {
+        if (reasonField && reasonLength && approveButton && rejectButton) {
             const updateReasonLength = function () {
                 reasonLength.textContent = String(reasonField.value.length);
+
+                // 공백만 입력한 경우에는 반려를 막고, 사유가 있으면 승인과 반려를 동시에 제출할 수 없게 한다.
+                const hasReason = reasonField.value.trim().length > 0;
+                approveButton.disabled = hasReason;
+                rejectButton.disabled = !hasReason;
             };
             reasonField.addEventListener('input', updateReasonLength);
             updateReasonLength();
         }
 
-        // 최종 확인 뒤 버튼을 잠가 승인·반려 요청이 중복 제출되는 것을 막습니다.
+        // 최종 확인 뒤 버튼을 잠가 같은 화면에서 승인·반려 요청이 중복 제출되는 것을 줄인다.
+        // 버튼 잠금은 새 탭·재요청·동시 관리자를 막지 못하므로 서버의 조건부 상태 변경이 최종 방어선이다.
         document.querySelectorAll('.admin-review-form').forEach(function (form) {
             form.addEventListener('submit', function (event) {
                 const message = form.getAttribute('data-confirm-message');

@@ -29,6 +29,9 @@ public interface ReservationMapper {
     /** 관리자 목록용: 특정 상태의 예약 조회 (예: CANCEL_REQUESTED 건 모아보기) */
     List<Reservation> findByStatus(@Param("status") ReservationStatus status);
 
+    /** 스케줄러용: 예약 생성 후 24시간이 지나도록 미승인(PAID) 상태로 남은 예약 ID 목록 (방문일 무관) */
+    List<Long> findExpiredUnapprovedPaidIds();
+
     /**
      * 슬롯 선점 체크: 같은 회원이 같은 장소·날짜에 가진 활성(PENDING/PAID) 예약 1건. 없으면 null.
      * PENDING이면 재사용(결제 이어가기), PAID면 중복 거부 판단에 쓴다.
@@ -72,7 +75,7 @@ public interface ReservationMapper {
      * 마감(휴무) 여부 조회. PLACE는 사업자(business) 파트 테이블 — 여기서는 읽기만 한다.
      * 사업자가 /business/closure에서 껐다 켰다 하는 그 값(is_closed)을 그대로 참조.
      */
-    Boolean findPlaceClosed(@Param("placeId") Long placeId);
+    Integer findPlaceClosed(@Param("placeId") Long placeId);
 
     /** 장소 타입(tour/food/stay) 조회. PLACE.place_type을 읽기 전용으로 참조 */
     String findPlaceType(@Param("placeId") Long placeId);

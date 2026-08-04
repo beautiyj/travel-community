@@ -54,7 +54,7 @@ public class ReservationService {
     @Transactional
     public Long create(Integer memberId, ReservationCreateRequest req) {
         // 사업자가 휴무로 설정한 장소는 예약 자체를 막는다 (PLACE.is_closed 읽기 전용 참조)
-        if (Boolean.TRUE.equals(reservationMapper.findPlaceClosed(req.getPlaceId()))) {
+        if (Integer.valueOf(1).equals(reservationMapper.findPlaceClosed(req.getPlaceId()))) {
             throw new IllegalStateException("휴무 중인 장소입니다.");
         }
 
@@ -127,7 +127,7 @@ public class ReservationService {
     @Transactional(readOnly = true)
     public void assertStillAvailable(Long reservationId) {
         Reservation r = getById(reservationId);
-        if (Boolean.TRUE.equals(reservationMapper.findPlaceClosed(r.getPlaceId()))) {
+        if (Integer.valueOf(1).equals(reservationMapper.findPlaceClosed(r.getPlaceId()))) {
             throw new IllegalStateException("휴무 중인 장소입니다.");
         }
         LocalDate closedRangeTo = isStay(r.getPlaceType()) ? r.getCheckOutDate() : r.getVisitDate().plusDays(1);
@@ -188,7 +188,7 @@ public class ReservationService {
         }
         Map<String, Object> result = new HashMap<>();
         result.put("booked", booked);
-        result.put("closed", Boolean.TRUE.equals(reservationMapper.findPlaceClosed(placeId)));
+        result.put("closed", Integer.valueOf(1).equals(reservationMapper.findPlaceClosed(placeId)));
         result.put("closedDates", reservationMapper.findClosedDates(placeId));
         result.put("capacity", DAILY_CAPACITY);   // 맛집·관광지 캘린더의 남은 자리 표시용(차단 아님)
         return result;

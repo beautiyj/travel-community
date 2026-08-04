@@ -19,7 +19,10 @@ public interface MypageRepository {
     int updateProfileImage(@Param("memberId") Long memberId,
                            @Param("profileImgUrl") String profileImgUrl);
 
-//    int changePassword(MypageDto member);
+    String getPasswordHash(Long memberId);
+
+    int updatePassword(@Param("memberId") Long memberId,
+                       @Param("passwordHash") String passwordHash);
 
     List<MypageDto> getReservationList(Long memberId);
     

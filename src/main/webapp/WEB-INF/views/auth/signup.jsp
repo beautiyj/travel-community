@@ -7,8 +7,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>회원 유형 선택 | 갈래말래</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/auth/auth.css?v=naver-20260729-7">
+    <script defer src="${pageContext.request.contextPath}/js/auth/auth-history-guard.js"></script>
 </head>
-<body class="auth-page auth-page--signup-type">
+<%-- 로그인 이후 뒤로가기로 이 선택 화면이 복원되면 세션 상태를 다시 확인한다. --%>
+<body class="auth-page auth-page--signup-type"
+      data-session-status-url="${pageContext.request.contextPath}/auth/api/session-status">
 <main class="signup-type-shell">
     <%-- 시안의 여행 이미지는 프로젝트에 없으므로 외부 이미지를 추가하지 않고 그라데이션으로 분위기만 구현한다. --%>
     <aside class="signup-type-visual" aria-label="갈래말래 서비스 안내">
@@ -52,6 +55,7 @@
                 <p>유형에 따라 이용 가능한 서비스가 달라집니다.</p>
             </div>
 
+            <%-- 소셜 인증·연동 처리에서 서버가 redirect한 결과에 따라 하나의 오류만 표시한다. --%>
             <c:choose>
                 <c:when test="${param.socialAlreadyLinked != null}">
                     <div class="form-alert form-alert--error" role="alert">

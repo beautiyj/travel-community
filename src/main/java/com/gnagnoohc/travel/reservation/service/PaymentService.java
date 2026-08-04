@@ -40,6 +40,14 @@ public class PaymentService {
             return existing;
         }
 
+        // 결제 대기 중 마감됐을 가능성에 대한 마지막 방어. 카카오/토스는 이미 승인(이체)이 끝난 뒤라 실패하면 바로 환불한다
+        try {
+            reservationService.assertStillAvailable(reservationId);
+        } catch (IllegalStateException e) {
+            cancelAtPg(paymentType, paymentKey, amount, "마감으로 자동 환불");
+            throw e;
+        }
+
         Payment p = new Payment();
         p.setReservationId(reservationId);
         p.setAmount(amount);
@@ -67,27 +75,22 @@ public class PaymentService {
             throw new IllegalStateException("이미 취소된 결제입니다.");
         }
 
-        // 결제수단별 PG 취소 호출. 무료/무통장/가상카드는 실제 PG 거래가 없어 상태만 취소로 전환
-        switch (p.getPaymentType()) {
-            case Payment.TYPE_FREE:
-            case Payment.TYPE_BANK:
-            case Payment.TYPE_VIRTUAL_CARD:
-                // no-op
-                break;
-            case Payment.TYPE_TOSS:
-                tossPayService.cancel(p.getPaymentKey(), reason != null ? reason : "고객 요청");
-                break;
-            case Payment.TYPE_KAKAO:
-                kakaoPayService.cancel(p.getPaymentKey(), p.getAmount());
-                break;
-            default:
-                throw new IllegalStateException("알 수 없는 결제수단입니다. paymentType=" + p.getPaymentType());
-        }
+        cancelAtPg(p.getPaymentType(), p.getPaymentKey(), p.getAmount(), reason);   // 결제수단별 PG 취소
 
         paymentMapper.updateStatus(paymentId, PaymentStatus.CANCELED);
         reservationService.updateStatus(p.getReservationId(), ReservationStatus.CANCELED);
         log.info("[결제 취소 완료] paymentId={}, reservationId={}, 환불액={}",
                 paymentId, p.getReservationId(), p.getAmount());
+    }
+
+    /** 결제수단에 맞는 PG 취소 API를 호출한다. cancel()의 정상 환불과 saveSuccess()의 실패 환불이 이 로직을 공통으로 사용한다 */
+    private void cancelAtPg(int paymentType, String paymentKey, int amount, String reason) {
+        switch (paymentType) {
+            case Payment.TYPE_FREE, Payment.TYPE_BANK, Payment.TYPE_VIRTUAL_CARD -> { /* 실제 PG 거래 없음 */ }
+            case Payment.TYPE_TOSS  -> tossPayService.cancel(paymentKey, reason != null ? reason : "고객 요청");
+            case Payment.TYPE_KAKAO -> kakaoPayService.cancel(paymentKey, amount);
+            default -> throw new IllegalStateException("알 수 없는 결제수단입니다. paymentType=" + paymentType);
+        }
     }
 
     @Transactional(readOnly = true)
@@ -115,5 +118,23 @@ public class PaymentService {
 
         log.info("[취소 승인] reservationId={} → 환불 진행 (paymentId={})", reservationId, paid.getPaymentId());
         cancel(paid.getPaymentId(), "관리자 취소 승인");   // 환불 + 결제취소 + 예약취소
+    }
+
+    /**
+     * 사업자: 결제완료(PAID) 예약 거절 → 환불 실행.
+     * PAID 검증·사유 저장은 reservationService.reject()가 먼저 처리한 뒤, 여기서 실제 환불(cancel)을 진행한다.
+     */
+    @Transactional
+    public void rejectPaid(Long reservationId, String reason) {
+        String finalReason = reservationService.reject(reservationId, reason);
+
+        List<Payment> payments = paymentMapper.findByReservationId(reservationId);
+        Payment paid = payments.stream()
+                .filter(p -> p.getPaymentStatus() == PaymentStatus.DONE)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("환불할 결제완료 내역이 없습니다. reservationId=" + reservationId));
+
+        log.info("[예약 거절] reservationId={} → 환불 진행 (paymentId={})", reservationId, paid.getPaymentId());
+        cancel(paid.getPaymentId(), finalReason);
     }
 }

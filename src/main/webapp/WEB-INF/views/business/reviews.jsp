@@ -16,28 +16,16 @@
     </jsp:include>
 
     <div class="business-main">
-        <div class="business-topbar">
-            <h1 class="business-topbar__title">후기 확인</h1>
-        </div>
+        <jsp:include page="common/topbar.jsp">
+            <jsp:param name="title" value="후기 확인" />
+        </jsp:include>
 
         <div class="business-content">
-            <div class="business-filter-row">
-                <c:forEach var="s" items="${sentimentOptions}">
-                    <c:url value="/business/reviews" var="filterUrl">
-                        <c:if test="${s != '전체'}">
-                            <c:param name="sentiment" value="${s}" />
-                        </c:if>
-                    </c:url>
-                    <c:choose>
-                        <c:when test="${s == '긍정'}"><c:set var="filterCount" value="${sentimentCounts.positiveCount}" /></c:when>
-                        <c:when test="${s == '중립'}"><c:set var="filterCount" value="${sentimentCounts.neutralCount}" /></c:when>
-                        <c:when test="${s == '부정'}"><c:set var="filterCount" value="${sentimentCounts.negativeCount}" /></c:when>
-                        <c:otherwise><c:set var="filterCount" value="" /></c:otherwise>
-                    </c:choose>
-                    <a href="${filterUrl}" class="business-filter-btn${sentimentFilter == s ? ' is-active' : ''}">${s}<c:if test="${not empty filterCount}"> <span class="business-filter-btn__count">${filterCount}</span></c:if></a>
-                </c:forEach>
-                <span class="business-filter-row__total">총 ${reviews.size()}건</span>
-            </div>
+            <jsp:include page="common/filterTabs.jsp">
+                <jsp:param name="baseUrl" value="/business/reviews" />
+                <jsp:param name="paramName" value="sentiment" />
+                <jsp:param name="totalCount" value="${reviews.size()}" />
+            </jsp:include>
 
             <c:choose>
                 <c:when test="${empty reviews}">

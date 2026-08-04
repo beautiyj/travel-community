@@ -1,7 +1,5 @@
 package com.gnagnoohc.travel.tour.controller;
 
-import java.util.List;
-
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;

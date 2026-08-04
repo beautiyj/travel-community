@@ -21,4 +21,6 @@ public class BusinessReservationDto {
     private String placeName;
     private Integer amount;             // PAYMENT.amount (없으면 null)
     private PaymentStatus paymentStatus; // PAYMENT.payment_status (선결제 여부, 없으면 null)
+    private String cancelReason;        // RESERVATION.cancel_reason (CANCEL_REQUESTED 외 상태면 null)
+    private LocalDateTime cancelRequestedAt; // RESERVATION.cancel_requested_at
 }

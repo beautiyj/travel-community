@@ -100,6 +100,12 @@ public class SocialAuthController {
             HttpSession session,
             Model model,
             RedirectAttributes redirectAttributes) {
+        // 이미 로그인한 회원은 남아 있는 소셜 가입 정보보다 현재 역할을 우선한다.
+        String authenticatedRedirect = AuthController.resolveAuthenticatedRedirect(session);
+        if (authenticatedRedirect != null) {
+            return authenticatedRedirect;
+        }
+
         PendingSocialSignup pendingSignup = getPendingSocialSignup(session);
         if (pendingSignup == null) {
             return redirectToSocialLogin(redirectAttributes);

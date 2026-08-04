@@ -47,17 +47,17 @@
     }
 
     // 입력값을 sessionStorage에 저장 (입력할 때마다 호출)
+    // 날짜(visitDate/checkOutDate)는 일부러 저장하지 않는다 — 새로고침 사이 관리자가 마감시켜도
+    // 복원된 날짜로 결제하기가 눌리는 걸 막기 위해, 날짜는 매번 캘린더에서 다시 고르게 한다
     function saveDraft() {
         sessionStorage.setItem(DRAFT_KEY, JSON.stringify({
-            visitorName:  nameInput.value,
-            phone:        phoneInput.value,
-            visitDate:    dateInput.value,
-            checkOutDate: checkOutInput ? checkOutInput.value : '',
-            headcount:    headcountInput.value
+            visitorName: nameInput.value,
+            phone:       phoneInput.value,
+            headcount:   headcountInput.value
         }));
     }
 
-    // 저장된 입력값을 폼에 복원 (페이지 로드 시 1회). 뒤로가기·새로고침 대응
+    // 저장된 입력값을 폼에 복원 (페이지 로드 시 1회). 뒤로가기·새로고침 대응. 날짜는 복원 대상 아님(위 saveDraft 참고)
     function restoreDraft() {
         var raw = sessionStorage.getItem(DRAFT_KEY);
         if (!raw) return;
@@ -65,8 +65,6 @@
             var d = JSON.parse(raw);
             if (d.visitorName) nameInput.value      = d.visitorName;
             if (d.phone)       phoneInput.value     = d.phone;
-            if (d.visitDate)   dateInput.value      = d.visitDate;
-            if (d.checkOutDate && checkOutInput) checkOutInput.value = d.checkOutDate;
             if (d.headcount)   headcountInput.value = d.headcount;
         } catch (e) { /* 손상된 데이터는 무시 */ }
     }
@@ -92,13 +90,39 @@
         document.getElementById('sumTotal').textContent = total.toLocaleString() + '원';
     }
 
-    /** 요약의 날짜 표기. 숙박은 "체크인 ~ 체크아웃", 그 외는 날짜 하나 */
+    /** 'yyyy-MM-dd' -> {y, m, d} 숫자 파싱 */
+    function parseIso(iso) {
+        var p = iso.split('-');
+        return { y: parseInt(p[0], 10), m: parseInt(p[1], 10), d: parseInt(p[2], 10) };
+    }
+
+    /** 요약의 날짜 표기. 체크인은 항상 "YYYY.M.d", 체크아웃은 체크인과 같은 해면 "M.d",
+     *  해가 넘어가면 "YY.M.d"(두 자리 연도)로 표시해 구분한다. 그 외(숙박 아님)는 "YYYY.M.d" 하나만. */
     function updateDateLabel() {
-        var label = dateInput.value || '—';
-        if (IS_STAY && dateInput.value) {
-            label = dateInput.value + ' ~ ' + ((checkOutInput && checkOutInput.value) || '체크아웃 선택');
+        var label = '—';
+        if (dateInput.value) {
+            var inD = parseIso(dateInput.value);
+            label = inD.y + '.' + inD.m + '.' + inD.d;
+            if (IS_STAY) {
+                if (checkOutInput && checkOutInput.value) {
+                    var outD = parseIso(checkOutInput.value);
+                    var outLabel = (outD.y === inD.y)
+                        ? outD.m + '.' + outD.d
+                        : String(outD.y % 100).padStart(2, '0') + '.' + outD.m + '.' + outD.d;
+                    label += '~' + outLabel + '(' + (nights() + 1) + '일)';
+                } else {
+                    label += ' ~ 체크아웃 선택';
+                }
+            }
         }
         document.getElementById('sumDate').textContent = label;
+    }
+
+    // 맛집·관광지 정원 초과 여부. 숙박은 정원 체크 대상이 아니라 항상 통과
+    function isWithinCapacity() {
+        if (!PAY_ON_SITE || !dateInput.value || !window.RESERVATION_REMAINING_SEATS) return true;
+        var count = parseInt(headcountInput.value, 10) || 0;
+        return count <= window.RESERVATION_REMAINING_SEATS(dateInput.value);
     }
 
     // 필수값(이름/날짜) + 연락처 형식까지 통과해야 결제하기 활성화
@@ -110,17 +134,17 @@
         phoneInput.classList.toggle('input-invalid', showErr);
         // 숙박은 체크아웃까지 골라야 결제로 넘어갈 수 있다
         var dateOk = dateInput.value && (!IS_STAY || (checkOutInput && checkOutInput.value));
-        submitBtn.disabled = !(nameInput.value.trim() && phoneOk && dateOk);
+        submitBtn.disabled = !(nameInput.value.trim() && phoneOk && dateOk && isWithinCapacity());
     }
 
     document.getElementById('btnMinus').addEventListener('click', function () {
         var v = parseInt(headcountInput.value, 10);
-        if (v > 1) { headcountInput.value = v - 1; updateAmount(); saveDraft(); }
+        if (v > 1) { headcountInput.value = v - 1; updateAmount(); validate(); saveDraft(); }
     });
 
     document.getElementById('btnPlus').addEventListener('click', function () {
         var v = parseInt(headcountInput.value, 10);
-        if (v < 10) { headcountInput.value = v + 1; updateAmount(); saveDraft(); }
+        if (v < 10) { headcountInput.value = v + 1; updateAmount(); validate(); saveDraft(); }
     });
 
     nameInput.addEventListener('input', function () { validate(); saveDraft(); });

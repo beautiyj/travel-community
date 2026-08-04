@@ -58,7 +58,7 @@
                                 <jsp:param name="idPrefix" value="edit-" />
                                 <jsp:param name="name" value="${placeDetail.name}" />
                                 <jsp:param name="placeType" value="${placeDetail.placeType}" />
-                                <jsp:param name="priceType" value="${placeDetail.priceType}" />
+                                <jsp:param name="priceMode" value="${(not empty placeDetail.minPrice && placeDetail.minPrice > 0) ? 'FIXED' : 'FREE'}" />
                                 <jsp:param name="minPrice" value="${placeDetail.minPrice}" />
                                 <jsp:param name="address" value="${placeDetail.address}" />
                                 <jsp:param name="addressDetail" value="${placeDetail.addressDetail}" />

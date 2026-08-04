@@ -47,13 +47,6 @@
         <result property="cancelledCount"     column="cancelled_count"/>
     </resultMap>
 
-    <!-- 지역코드는 당분간 사업자 직접등록 업소엔 null로 두기로 해서 관련 옵션 조회 잠시 주석처리
-    <resultMap id="regionOptionResultMap" type="com.gnagnoohc.travel.business.dto.BusinessRegionOptionDto">
-        <id     property="regionId"   column="region_id"/>
-        <result property="regionName" column="region_name"/>
-    </resultMap>
-    -->
-
     <resultMap id="reviewResultMap" type="com.gnagnoohc.travel.business.dto.BusinessReviewDto">
         <id     property="postId"        column="post_id"/>
         <result property="title"         column="title"/>
@@ -67,7 +60,6 @@
         <id     property="placeId"    column="place_id"/>
         <result property="name"       column="name"/>
         <result property="placeType"  column="place_type"/>
-        <result property="priceType"  column="price_type"/>
         <result property="minPrice"   column="min_price"/>
         <result property="regionId"   column="region_id"/>
         <result property="regionName" column="region_name"/>
@@ -231,13 +223,36 @@
           AND d.closed_date BETWEEN #{startDate} AND #{endDate}
     </delete>
 
-    <!-- 업소 등록 폼 지역 드롭다운. 지역코드를 당분간 null로 두기로 해서 주석처리
-    <select id="selectRegionOptions" resultMap="regionOptionResultMap">
-        SELECT region_id, region_name
+    <!-- 카카오 우편번호 API는 시/도명을 축약형으로 내려준다 (서울특별시 -> 서울, 충청북도 -> 충북 등).
+         REGION의 정식 명칭과 접두어가 안 맞는 경우가 많아 축약형 기준으로 직접 매핑한다.
+         혹시 정식 명칭 그대로 오는 경우(충청북도/전라남도 등 구 명칭 포함)도 같이 받는다.
+         '전남광주통합특별시'는 광주/전남 주소를 모두 받아야 해서 두 축약형을 같은 지역으로 묶는다 -->
+    <select id="selectRegionIdByAddressPrefix" resultType="java.lang.Long">
+        SELECT region_id
         FROM REGION
-        ORDER BY region_name
+        WHERE parent_region_id IS NULL
+          AND region_name = CASE
+              WHEN #{address} LIKE '서울%' THEN '서울특별시'
+              WHEN #{address} LIKE '부산%' THEN '부산광역시'
+              WHEN #{address} LIKE '대구%' THEN '대구광역시'
+              WHEN #{address} LIKE '인천%' THEN '인천광역시'
+              WHEN #{address} LIKE '광주%' THEN '전남광주통합특별시'
+              WHEN #{address} LIKE '대전%' THEN '대전광역시'
+              WHEN #{address} LIKE '울산%' THEN '울산광역시'
+              WHEN #{address} LIKE '세종%' THEN '세종특별자치시'
+              WHEN #{address} LIKE '경기%' THEN '경기도'
+              WHEN #{address} LIKE '강원%' THEN '강원특별자치도'
+              WHEN #{address} LIKE '충북%' OR #{address} LIKE '충청북도%' THEN '충청북도'
+              WHEN #{address} LIKE '충남%' OR #{address} LIKE '충청남도%' THEN '충청남도'
+              WHEN #{address} LIKE '전북%' OR #{address} LIKE '전라북도%' THEN '전북특별자치도'
+              WHEN #{address} LIKE '전남%' OR #{address} LIKE '전라남도%' THEN '전남광주통합특별시'
+              WHEN #{address} LIKE '경북%' OR #{address} LIKE '경상북도%' THEN '경상북도'
+              WHEN #{address} LIKE '경남%' OR #{address} LIKE '경상남도%' THEN '경상남도'
+              WHEN #{address} LIKE '제주%' THEN '제주특별자치도'
+              ELSE NULL
+          END
+        LIMIT 1
     </select>
-    -->
 
     <!-- member_role='BUSINESS'(관리자가 승인한 사업자)만 업소 등록 가능. 회원 없으면 null 반환 -->
     <select id="selectMemberRole" resultType="java.lang.String">
@@ -246,15 +261,21 @@
         WHERE member_id = #{memberId}
     </select>
 
+    <!-- place_id는 AUTO_INCREMENT가 아니다 (공공데이터는 contentId를 PK로 씀). 서비스가 난수로 채번해서 넘긴다 -->
+    <select id="existsPlace" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM PLACE
+        WHERE place_id = #{placeId}
+    </select>
+
     <!-- 사업자 직접등록. is_closed/created_at/updated_at은 DB DEFAULT에 맡기고 컬럼 목록에서 제외 -->
-    <!-- region_id/mapx/mapy는 사업자 직접등록 업소엔 당분간 null로 두기로 해서 컬럼 목록에서 제외 (BusinessPlaceRegisterDto도 동일하게 주석처리됨) -->
-    <insert id="insertOwnerPlace" parameterType="com.gnagnoohc.travel.business.dto.BusinessPlaceRegisterDto"
-            useGeneratedKeys="true" keyProperty="placeId" keyColumn="place_id">
+    <!-- mapx/mapy는 사업자 직접등록 업소엔 당분간 null로 두기로 해서 컬럼 목록에서 제외 (BusinessPlaceRegisterDto도 동일하게 주석처리됨) -->
+    <insert id="insertOwnerPlace" parameterType="com.gnagnoohc.travel.business.dto.BusinessPlaceRegisterDto">
         INSERT INTO PLACE (
-            place_type, price_type, min_price, <!-- region_id, --> member_id,
+            place_id, place_type, min_price, region_id, member_id,
             name, description, extra_info, address, <!-- mapx, mapy, --> first_image, hashtags
         ) VALUES (
-            #{placeType}, #{priceType}, #{minPrice}, <!-- #{regionId}, --> #{memberId},
+            #{placeId}, #{placeType}, #{minPrice}, #{regionId}, #{memberId},
             #{name}, #{description}, #{extraInfo}, #{address}, <!-- #{mapx}, #{mapy}, --> #{firstImage}, #{hashtags}
         )
     </insert>
@@ -266,7 +287,7 @@
 
     <!-- 업소정보 수정 폼 진입 시 기존 값 채우기용. 지역명까지 같이 조회 -->
     <select id="selectPlaceDetailByMember" resultMap="placeDetailResultMap">
-        SELECT p.place_id, p.name, p.place_type, p.price_type, p.min_price,
+        SELECT p.place_id, p.name, p.place_type, p.min_price,
                p.region_id, r.region_name, p.address, p.description, p.extra_info, p.hashtags, p.is_closed
         FROM PLACE p
         LEFT JOIN REGION r ON r.region_id = p.region_id
@@ -282,14 +303,13 @@
         ORDER BY sort_order
     </select>
 
-    <!-- 업소정보 수정. 소유자가 아니면 0건 UPDATE. region_id는 당분간 null로 두기로 해서 주석처리 (BusinessPlaceUpdateDto도 동일) -->
+    <!-- 업소정보 수정. 소유자가 아니면 0건 UPDATE -->
     <update id="updatePlace" parameterType="com.gnagnoohc.travel.business.dto.BusinessPlaceUpdateDto">
         UPDATE PLACE
         SET name = #{name},
             place_type = #{placeType},
-            price_type = #{priceType},
             min_price = #{minPrice},
-            <!-- region_id = #{regionId}, -->
+            region_id = #{regionId},
             address = #{address},
             description = #{description},
             extra_info = #{extraInfo},

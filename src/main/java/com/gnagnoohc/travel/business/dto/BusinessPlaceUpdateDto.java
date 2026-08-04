@@ -11,9 +11,8 @@ public class BusinessPlaceUpdateDto {
     private Long memberId;
     private String name;
     private String placeType;
-    private String priceType;
     private Integer minPrice;
-//    private Long regionId;
+    private Long regionId;
     private String address;
     private String description;
     // "[라벨] 값"을 줄바꿈으로 이어붙인 부가정보 한 덩어리 (공공데이터 배치와 동일 포맷). 입력이 없으면 null

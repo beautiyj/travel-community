@@ -16,11 +16,10 @@
      값을 span 안에서 바로 c:choose로 분기하면 태그 사이 개행까지 그대로 렌더링되어
      세로로 빈 줄이 생긴다. categoryLabel과 같은 방식으로 밖에서 값만 만들어 넣는다 --%>
 <c:choose>
-    <c:when test="${placeDetail.priceType == 'FIXED'}">
+    <c:when test="${not empty placeDetail.minPrice && placeDetail.minPrice > 0}">
         <fmt:formatNumber var="priceAmount" value="${placeDetail.minPrice}" pattern="#,###" />
         <c:set var="priceLabel" value="${priceAmount}원 / 1인"/>
     </c:when>
-    <c:when test="${placeDetail.priceType == 'VARIABLE'}"><c:set var="priceLabel" value="가격변동 (현장 문의)"/></c:when>
     <c:otherwise><c:set var="priceLabel" value="무료"/></c:otherwise>
 </c:choose>
 

@@ -26,7 +26,7 @@ public class BusinessDocumentStorage {
     private final Path uploadDirectory;
 
     public BusinessDocumentStorage(
-            @Value("${app.upload.business-dir:uploads/business-documents}")
+            @Value("${file.upload-auth}")
             String uploadDirectory) {
         this.uploadDirectory = Paths.get(uploadDirectory)
                 .toAbsolutePath().normalize();

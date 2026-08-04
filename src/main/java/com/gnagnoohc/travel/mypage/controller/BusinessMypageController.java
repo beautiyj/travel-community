@@ -14,6 +14,7 @@ import com.gnagnoohc.travel.auth.dto.LoginMemberDto;
 import com.gnagnoohc.travel.mypage.service.BusinessDocumentStorage;
 import com.gnagnoohc.travel.mypage.service.BusinessMediaStorage;
 import com.gnagnoohc.travel.mypage.service.BusinessService;
+import com.gnagnoohc.travel.mypage.dto.BusinessApplicationDto;
 import com.gnagnoohc.travel.mypage.dto.MypageDto;
 import com.gnagnoohc.travel.mypage.service.MypageService;
 

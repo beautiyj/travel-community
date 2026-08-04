@@ -16,29 +16,20 @@ java {
 
 // tour & batch 전용 실행 빌드 (yun)
 // todo: 개발완료되면 해당 코드 전체 삭제
-sourceSets {
-	main {
-		java {
-			exclude 'com/gnagnoohc/travel/auth/**'
-			exclude 'com/gnagnoohc/travel/business/**'
-			exclude 'com/gnagnoohc/travel/community/**'
-			exclude 'com/gnagnoohc/travel/reservation/**'
-			exclude 'com/gnagnoohc/travel/mypage/**'
-			exclude 'com/gnagnoohc/travel/batch/payment/**'
-			exclude 'com/gnagnoohc/travel/admin/**'
-			exclude 'com/gnagnoohc/travel/config/SecurityConfig.java'
-		}
-		resources {
-			// tour와 batch 관련 매퍼나 리소스를 제외한 나머지를 막거나 조정
-			exclude 'mapper/auth/**'
-			exclude 'mapper/business/**'
-			exclude 'mapper/community/**'
-			exclude 'mapper/reservation/**'
-			exclude 'mapper/mypage/**'
-			exclude 'mapper/admin/**'
-		}
-	}
-}
+// sourceSets {
+// 	main {
+// 		java {
+// 			exclude 'com/gnagnoohc/travel/auth/**'
+// 			exclude 'com/gnagnoohc/travel/mypage/**'
+// 			exclude 'com/gnagnoohc/travel/config/SecurityConfig.java'
+// 		}
+// 		resources {
+// 			// tour와 batch 관련 매퍼나 리소스를 제외한 나머지를 막거나 조정
+// 			exclude 'mapper/auth/**'
+// 			exclude 'mapper/mypage/**'
+// 		}
+// 	}
+// }
 
 // tour 도메인과 관광공사 API 배치를 빌드에서 제외 (개발 진행중이라 컴파일이 통과하지 않음)
 // batch/payment(결제 정합성 보정)는 reservation의 ReservationExpireScheduler가 참조하므로 반드시 포함한다.

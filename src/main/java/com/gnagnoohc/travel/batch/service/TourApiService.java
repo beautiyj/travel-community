@@ -260,11 +260,11 @@ public class TourApiService {
         return rawValidList;
     }
 
-    // TODO: 0804 무작위 샘플링 및 DB 적재 핵심 처리 메서드 (2단계 Fallback 확장 적용)
-    // - contenttypeid가 아니라 placeType(tour/stay/food) 기준으로 그룹핑하여 타입별 최소 1개 보장
-    // - 재실행/부분 재수집 시 지역당 총 10개를 넘지 않도록 기존 DB 적재 건수 확인
-    // - DB 실제 성공 건수만 정직하게 카운팅 및 타입별 분포 로그 추가
-    // - 1차 정교한 큐 순회 후 목표 건수(10개) 미달 시, 2차 보완(조건 완화/부실 데이터 허용) 로직으로 잔여 수량 충족
+    // TODO: 0804 무작위 샘플링 및 DB 적재 핵심 처리 메서드 (타입별 보완 2단계 Fallback 확장 적용)
+    // - 1차 큐 처리는 기존 흐름 유지
+    // - 2단계 Fallback 시 큐를 사용하지 않고, 전체 후보군에서 stay / tour 타입을 각각 타겟팅하여
+    //   중분류가 다양하게 섞이도록 랜덤하게 뽑아 부족한 수량을 강제 적재
+    // TODO: 0804 무작위 샘플링 및 DB 적재 핵심 처리 메서드 (1차 큐 10건 + stay 5 / tour 5 강제 적재 + 최종 10개 채우기 패딩)
     private void processRandomSamplingAndSave(List<TourAreaBasedSyncListDTO> rawValidList) {
         if (rawValidList == null || rawValidList.isEmpty()) return;
 
@@ -278,7 +278,7 @@ public class TourApiService {
             String regionKey = entry.getKey();
             List<TourAreaBasedSyncListDTO> regionItems = entry.getValue();
 
-            // regionId(Integer) 파싱 - DB 기존 건수 조회 및 PlaceDTO 매핑 시 사용하는 동일한 PK 체계
+            // regionId(Integer) 파싱
             Integer regionId;
             try {
                 regionId = Integer.parseInt(regionKey);
@@ -287,13 +287,9 @@ public class TourApiService {
                 continue;
             }
 
-            // 이미 목표 수량(10개)을 채운 지역이면 스킵 - 여러 타입/재실행 시 중복 초과 적재 방지
+            // 기존 적재 건수 확인
             int existingCount = tourMapper.selectPlaceCountByRegion(regionId);
-            int targetGoal = 10;
-            if (existingCount >= targetGoal) {
-                log.info("[Batch Sampling Skip] 지역코드 {}: 이미 목표 수량 충족 - 현재 {}건", regionKey, existingCount);
-                continue;
-            }
+            int targetGoal = 10; // 1차 기본 목표 10건
 
             // placeType(tour/stay/food)별 그룹핑
             Map<String, List<TourAreaBasedSyncListDTO>> typedMap = new HashMap<>();
@@ -321,7 +317,7 @@ public class TourApiService {
             for (String type : targetTypes) {
                 List<TourAreaBasedSyncListDTO> typeList = typedMap.get(type);
                 if (typeList != null && !typeList.isEmpty()) {
-                    candidateQueue.add(typeList.remove(0)); // 셔플된 목록 중 첫 번째 무작위 추출 후 제거
+                    candidateQueue.add(typeList.remove(0));
                 }
             }
 
@@ -332,21 +328,20 @@ public class TourApiService {
             Collections.shuffle(remainList);
             candidateQueue.addAll(remainList);
 
-            // 무작위 선발 후보군 순회 및 2차 필터링 통과 시 DB 적재 (목표 10개 도달 시까지 탐색)
             int currentTotalCount = existingCount;
             int newlySavedCount = 0;
 
-            // [1단계] 기존 정교한 큐 기반 수집 시도
+            // =====================================================================================
+            // [1단계] 기존 큐 기반 10건 채우기 처리
+            // =====================================================================================
             for (TourAreaBasedSyncListDTO targetItem : candidateQueue) {
-                // 이미 기존 건수 + 신규 적재 건수가 10개가 되었으면 추가 탐색 즉시 중단
-                if (currentTotalCount >= targetGoal) {
+                if (newlySavedCount >= targetGoal) {
                     break;
                 }
 
                 try {
                     log.info("[PLACE SAVE TRY - Stage 1] contentId: {}, title: {}", targetItem.getContentid(), targetItem.getTitle());
 
-                    // processSinglePlace 가 true(실제 DB 적재 성공)를 반환할 때만 카운트 증가
                     if (processSinglePlace(targetItem)) {
                         currentTotalCount++;
                         newlySavedCount++;
@@ -357,78 +352,113 @@ public class TourApiService {
                 }
             }
 
-            // [2단계 Fallback] 1차 큐를 모두 소진했음에도 목표치(10개)에 미달한 경우, 조건 완화/부실 데이터 허용 로직으로 잔여분 충족
-            if (currentTotalCount < targetGoal) {
-                int remainingNeeded = targetGoal - currentTotalCount;
-                log.info("[Batch Fallback Triggered] 지역코드 {}: 1차 수집 완료(총 {}건). 부족한 {}개를 채우기 위해 2단계(조건 완화) 보완 수집을 시작합니다.",
-                        regionKey, currentTotalCount, remainingNeeded);
+            // 1차 큐 처리에 사용된 아이템 ID 집합 추출 (중복 방지용)
+            Set<String> processedIds = candidateQueue.stream()
+                    .limit(newlySavedCount)
+                    .map(TourAreaBasedSyncListDTO::getContentid)
+                    .collect(Collectors.toSet());
 
-                // TODO: 0804 필요에 따라 이미 1차에 사용된 아이템들을 제외하거나, 
-                // 빡빡한 필터링 조건(이미지 수 등)을 해제한 relaxed 후보군 리스트를 가져와서 셔플 후 순회
-                List<TourAreaBasedSyncListDTO> relaxedQueue = getRelaxedCandidateQueue(regionItems, candidateQueue);
+            // =====================================================================================
+            // [2단계 강제 예외 처리] 큐 처리를 거치지 않고, stay 5개 및 tour 5개를 각각 검증 없이 강제 적재
+            // =====================================================================================
+            log.info("[Batch Fallback Triggered] 지역코드 {}: 1차 큐 수집 완료. 이후 stay 5개, tour 5개 강제 랜덤 적재를 시작합니다.", regionKey);
 
-                for (TourAreaBasedSyncListDTO relaxedItem : relaxedQueue) {
-                    if (currentTotalCount >= targetGoal) {
+            // 1) STAY 타입 5개 강제 랜덤 적재
+            processForcedRandomByType(regionItems, processedIds, "stay", 5);
+
+            // 2) TOUR 타입 5개 강제 랜덤 적재
+            processForcedRandomByType(regionItems, processedIds, "tour", 5);
+
+            // =====================================================================================
+            // [3단계 패딩 안전장치] 최종 적재 건수가 10개 미만인 경우, 남은 전체 풀에서 무작위로 빈자리 채우기
+            // =====================================================================================
+            int currentFinalCount = tourMapper.selectPlaceCountByRegion(regionId);
+            if (currentFinalCount < targetGoal) {
+                int paddingNeeded = targetGoal - currentFinalCount;
+                log.info("[Batch Padding Triggered] 지역코드 {}: 현재 총 {}건으로 10개 미만. 남은 후보 중에서 {}개를 무작위로 마저 채웁니다.",
+                        regionKey, currentFinalCount, paddingNeeded);
+
+                List<TourAreaBasedSyncListDTO> paddingCandidates = regionItems.stream()
+                        .filter(item -> !processedIds.contains(item.getContentid()))
+                        .collect(Collectors.toList());
+
+                Collections.shuffle(paddingCandidates);
+
+                int paddedCount = 0;
+                for (TourAreaBasedSyncListDTO paddingItem : paddingCandidates) {
+                    if (paddedCount >= paddingNeeded) {
                         break;
                     }
 
                     try {
-                        log.info("[PLACE SAVE TRY - Stage 2 Fallback] contentId: {}, title: {}", relaxedItem.getContentid(), relaxedItem.getTitle());
+                        TourItemDTO tourItem = tourDataConverter.convertToTourItemDTO(paddingItem);
+                        PlaceDTO placeDto = tourDataConverter.convertToPlaceDTO(paddingItem, tourItem, null, null, null);
+                        tourMapper.upsertPlace(placeDto);
 
-                        // 조건이 완화된 단건 처리 메서드 (또는 기존 processSinglePlace 내부에서 완화 조건을 탈 수 있도록 분기 처리)
-                        if (processSinglePlaceRelaxed(relaxedItem)) {
-                            currentTotalCount++;
-                            newlySavedCount++;
-                        }
+                        processedIds.add(paddingItem.getContentid());
+                        paddedCount++;
+                        log.info("[Padding Success] 빈자리 채우기 성공 - title: {}", paddingItem.getTitle());
                     } catch (Exception e) {
-                        log.error("[Batch Error - Stage 2 Fallback] 지역코드 {} placeId: {} DB 적재 오류: {}",
-                                regionKey, relaxedItem.getContentid(), e.getMessage());
+                        log.error("[Batch Error - Padding] placeId: {} 적재 오류: {}", paddingItem.getContentid(), e.getMessage());
                     }
                 }
             }
 
-            // 정직한 실제 DB 성공 결과 출력
-            log.info("[Batch Sampling] 지역코드 {}: 기존 {}건 + 실제 최종 적재 {}건 완료 (최종 총 {}건 / 전체 유효 후보: {}건)",
-                    regionKey, existingCount, newlySavedCount, currentTotalCount, regionItems.size());
+            // 최종 결과 로깅
+            int finalCount = tourMapper.selectPlaceCountByRegion(regionId);
+            log.info("[Batch Sampling Complete] 지역코드 {}: 최종 DB 총 적재 건수 {}건 (유효 후보: {}건)", 
+                    regionKey, finalCount, regionItems.size());
         }
     }
 
     /**
-     * 1차 큐에 포함되지 않았거나 조건이 완화된 2단계 보완 후보군을 반환하는 메서드
+     * [보조 메서드] 큐를 거치지 않고 특정 타입(stay 또는 tour)을 
+     * 이미 처리된 ID 제외 후 무작위로 골라 지정된 개수만큼 검증 없이 강제 적재
      */
-    private List<TourAreaBasedSyncListDTO> getRelaxedCandidateQueue(
+    private void processForcedRandomByType(
             List<TourAreaBasedSyncListDTO> regionItems, 
-            List<TourAreaBasedSyncListDTO> candidateQueue) {
+            Set<String> processedIds, 
+            String targetType, 
+            int targetCount) {
         
-        // 1차 큐에 들어있던 아이템들의 contentId 집합 추출
-        Set<String> processedIds = candidateQueue.stream()
-                .map(TourAreaBasedSyncListDTO::getContentid)
-                .collect(Collectors.toSet());
-
-        // 전체 지역 아이템 중 1차에 쓰이지 않은 나머지 항목들을 2단계 후보로 활용
-        List<TourAreaBasedSyncListDTO> relaxedList = regionItems.stream()
+        // 1. 1차에 쓰이지 않았고, 해당 타입인 후보 필터링
+        List<TourAreaBasedSyncListDTO> candidates = regionItems.stream()
                 .filter(item -> !processedIds.contains(item.getContentid()))
+                .filter(item -> {
+                    String type = tourApiHelper.convertContentType(item.getContenttypeid(), item.getLclsSystm2(), item.getLclsSystm3());
+                    return targetType.equalsIgnoreCase(type);
+                })
                 .collect(Collectors.toList());
 
-        // 무작위 셔플
-        Collections.shuffle(relaxedList);
-        return relaxedList;
+        // 2. 무작위 셔플 (중분류 다양성 및 랜덤성 부여)
+        Collections.shuffle(candidates);
+
+        int savedCount = 0;
+        for (TourAreaBasedSyncListDTO item : candidates) {
+            if (savedCount >= targetCount) {
+                break;
+            }
+
+            try {
+                log.info("[PLACE SAVE FORCED - {} Type] contentId: {}, title: {}", targetType.toUpperCase(), item.getContentid(), item.getTitle());
+                
+                // 엄격한 검증을 타지 않고 곧바로 변환 및 강제 적재 수행
+                TourItemDTO tourItem = tourDataConverter.convertToTourItemDTO(item);
+                PlaceDTO placeDto = tourDataConverter.convertToPlaceDTO(item, tourItem, null, null, null);
+                tourMapper.upsertPlace(placeDto);
+
+                processedIds.add(item.getContentid());
+                savedCount++;
+                log.info("[Forced Success] 강제 적재 완료 - title: {}", item.getTitle());
+
+            } catch (Exception e) {
+                log.error("[Batch Error - Forced {}] placeId: {} 적재 오류: {}", targetType, item.getContentid(), e.getMessage());
+            }
+        }
+        
+        log.info("[Forced Result] 타입: {} - 목표 {}개 중 {}개 강제 적재 완료", targetType.toUpperCase(), targetCount, savedCount);
     }
 
-    /**
-     * 2단계 보완 시 부실 데이터를 허용하거나 검증 조건을 낮추어 처리하는 단건 메서드
-     * (기존 processSinglePlace 로직에서 이미지 수 제한 등의 조건을 완화한 버전, 
-     * 혹은 기존 processSinglePlace 내부에서 완화 플래그를 받을 수 있다면 그것을 활용해도 좋습니다)
-     */
-    private boolean processSinglePlaceRelaxed(TourAreaBasedSyncListDTO targetItem) {
-        // TODO: 0804 2단계에서는 이미지 수 5장 미만 등의 부실 데이터 조건 완화 적용 후 DB 저장 시도
-        // 기존 processSinglePlace 메서드와 동일하되, 내부 필터링 조건만 완화된 쿼리/로직을 태우거나
-        // 기존 processSinglePlace 메서드에 boolean isRelaxed 파라미터를 추가하여 재사용할 수 있습니다.
-        
-        // 예시: 기존 저수준 저장 메서드를 그대로 호출하되, 내부적으로 빡빡한 필터링 검증을 스킵하도록 처리
-        return processSinglePlace(targetItem); 
-    }
-    
     // 폐업(showflag == 0) 데이터 전용 처리 헬퍼
     private void processClosedPlace(TourAreaBasedSyncListDTO syncItem) {
         TourItemDTO tourItem = tourDataConverter.convertToTourItemDTO(syncItem);

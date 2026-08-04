@@ -30,7 +30,6 @@
                         </c:choose>
                     </dd>
                 </div>
-                <div><dt>주소</dt><dd><c:out value="${member.address}" default="-"/></dd></div>
                 <div>
                     <dt>사업자 승인 상태</dt>
                     <dd>${application.status eq 'APPROVED' ? '사업자' : '대기'}</dd>

@@ -12,7 +12,7 @@
             resultType="com.gnagnoohc.travel.mypage.dto.MypageDto">
 
         select member_id, login_id, name, nickname, email, member_type,
-               phone, gender, birth, address, profile_img_url, signup_type,
+               phone, gender, birth, profile_img_url, signup_type,
                member_status, member_role, email_verified,
                email_verified_at, last_login_at,
                created_at, updated_at, deleted_at
@@ -30,8 +30,7 @@
             name = #{name},
             nickname = #{nickname},
             phone = #{phone},
-            gender = #{gender},
-            address = #{address}
+            gender = #{gender}
         where member_id = #{memberId}
 
     </update>
@@ -148,7 +147,7 @@
             parameterType="string"
             resultType="com.gnagnoohc.travel.mypage.dto.MypageDto">
         select member_id, login_id, name, nickname, email, member_type,
-               phone, gender, birth, address, profile_img_url, signup_type,
+               phone, gender, birth, profile_img_url, signup_type,
                member_status, member_role, email_verified,
                email_verified_at, last_login_at,
                created_at, updated_at, deleted_at

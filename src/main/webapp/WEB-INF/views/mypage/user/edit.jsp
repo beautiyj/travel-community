@@ -107,14 +107,6 @@
                 </select>
             </div>
 
-            <jsp:include page="/WEB-INF/views/common/inputField.jsp">
-                <jsp:param name="label" value="주소" />
-                <jsp:param name="name" value="address" />
-                <jsp:param name="value" value="${member.address}" />
-                <jsp:param name="placeholder" value="주소를 입력해 주세요" />
-                <jsp:param name="maxlength" value="255" />
-            </jsp:include>
-
             <div class="profile-edit__actions">
                 <a class="profile-edit__cancel" href="${cp}/mypage/info">취소</a>
                 <button class="profile-edit__submit" type="submit">저장</button>

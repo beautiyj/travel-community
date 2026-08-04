@@ -5,23 +5,6 @@
 
 <mapper namespace="com.gnagnoohc.travel.mypage.repository.BusinessRepository">
 
-    <resultMap id="businessPlaceMap"
-               type="com.gnagnoohc.travel.mypage.dto.BusinessPlaceDto">
-        <id property="placeId" column="place_id"/>
-        <result property="memberId" column="member_id"/>
-        <result property="regionId" column="region_id"/>
-        <result property="placeType" column="place_type"/>
-        <result property="name" column="name"/>
-        <result property="description" column="description"/>
-        <result property="address" column="address"/>
-        <result property="closed" column="is_closed"/>
-        <result property="firstImage" column="first_image"/>
-        <collection property="images"
-                    ofType="com.gnagnoohc.travel.mypage.dto.BusinessPlaceImageDto"
-                    column="place_id"
-                    select="findPlaceImages"/>
-    </resultMap>
-
     <select id="findApplicationByMemberId"
             parameterType="long"
             resultType="com.gnagnoohc.travel.mypage.dto.BusinessApplicationDto">

@@ -30,7 +30,7 @@
             name = #{name},
             nickname = #{nickname},
             phone = #{phone},
-            gender = #{gender},
+            gender = #{gender}
         where member_id = #{memberId}
 
     </update>

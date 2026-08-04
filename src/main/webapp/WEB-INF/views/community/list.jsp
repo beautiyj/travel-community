@@ -42,12 +42,15 @@
         <c:set var="label" value="${c}" />
         <c:if test="${c == '모집'}"><c:set var="label" value="모집(동행)" /></c:if>
         <c:set var="isActive" value="${param.category == c or (empty param.category and c == '전체')}" />
+        <c:url value="/community/list" var="tabUrl">
+          <c:param name="category" value="${c}" />
+          <c:param name="q" value="${param.q}" />
+        </c:url>
 
         <jsp:include page="../common/selectableButton.jsp">
           <jsp:param name="text"     value="${label}" />
           <jsp:param name="isActive" value="${isActive}" />
-          <jsp:param name="onclick"  value="location.href='${cp}/community/list?category=${c}&q=${param.q}'" />
-          <jsp:param name="group"    value="categoryTabs" />
+          <jsp:param name="href"     value="${tabUrl}" />
         </jsp:include>
       </c:forEach>
     </div>

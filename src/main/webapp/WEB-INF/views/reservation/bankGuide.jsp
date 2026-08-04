@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>무통장 입금 안내</title>
     <link rel="stylesheet" href="/css/common.css">
-    <link rel="stylesheet" href="/css/reservation.css">
+    <link rel="stylesheet" href="/css/reservation/reservation.css">
 </head>
 <body>
 

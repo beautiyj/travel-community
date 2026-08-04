@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>결제 실패</title>
     <link rel="stylesheet" href="/css/common.css">
-    <link rel="stylesheet" href="/css/reservation.css">
+    <link rel="stylesheet" href="/css/reservation/reservation.css">
     <link rel="stylesheet" href="/css/components/smallButton.css">
 </head>
 <body>

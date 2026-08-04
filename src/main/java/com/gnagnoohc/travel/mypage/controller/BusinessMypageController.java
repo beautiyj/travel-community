@@ -69,17 +69,6 @@ public class BusinessMypageController {
         return "mypage/business/dashboard";
     }
 
-    @GetMapping("/places")
-    public String places(HttpSession session, Model model) {
-        MypageDto member = getBusinessMember(session);
-        if (member == null) {
-            return redirectBySession(session);
-        }
-        model.addAttribute("member", member);
-        model.addAttribute(
-                "places", businessService.getPlaces(member.getMemberId()));
-        return "mypage/business/places";
-    }
 
     @GetMapping("/edit")
     public String editForm(HttpSession session, Model model) {

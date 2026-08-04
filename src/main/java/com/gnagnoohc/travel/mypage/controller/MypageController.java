@@ -41,7 +41,7 @@ public class MypageController {
 
     @GetMapping("/test")
     public String mypageTest() {
-        return "mypage/test";
+        return "mypage/user/test";
     }
 
     @GetMapping("")
@@ -73,7 +73,7 @@ public class MypageController {
 
         model.addAttribute("member", member);
 
-        return "mypage/info";
+        return "mypage/user/info";
     }
 
     @GetMapping("/edit")
@@ -87,7 +87,7 @@ public class MypageController {
 
         model.addAttribute("member", member);
 
-        return "mypage/edit";
+        return "mypage/user/edit";
     }
 
     @PostMapping("/edit")
@@ -121,7 +121,7 @@ public class MypageController {
 
     @GetMapping("/password")
     public String passwordForm() {
-        return "mypage/password";
+        return "mypage/user/password";
     }
 
     @PostMapping("/password")
@@ -170,12 +170,13 @@ public class MypageController {
         model.addAttribute("reservationList", reservationList);
         model.addAttribute("member", mypageService.getMemberInfo(memberId));
 
-        return "mypage/reservation";
+        return "mypage/user/reservation";
     }
 
     private List<Map<String, Object>> buildReservationTabs(List<MypageDto> reservations) {
         Map<String, String> filters = new LinkedHashMap<>();
         filters.put("전체", null);
+        filters.put("예약대기", "PENDING");
         filters.put("결제완료", "PAID");
         filters.put("취소요청", "CANCEL_REQUESTED");
         filters.put("확정", "CONFIRMED");
@@ -203,7 +204,7 @@ public class MypageController {
             return null;
         }
         return switch (status) {
-            case "PAID", "CANCEL_REQUESTED", "CONFIRMED", "COMPLETED", "CANCELED" -> status;
+            case "PENDING", "PAID", "CANCEL_REQUESTED", "CONFIRMED", "COMPLETED", "CANCELED" -> status;
             default -> null;
         };
     }
@@ -228,12 +229,12 @@ public class MypageController {
         model.addAttribute("wishlist", wishlist);
         model.addAttribute("member", mypageService.getMemberInfo(memberId));
 
-        return "mypage/wishlist";
+        return "mypage/user/wishlist";
     }
 
     @GetMapping("/withdraw")
     public String withdrawForm() {
-        return "mypage/withdraw";
+        return "mypage/user/withdraw";
     }
 
     @PostMapping("/withdraw")
@@ -337,6 +338,6 @@ public class MypageController {
         model.addAttribute("paymentList", paymentList);
         model.addAttribute("member", mypageService.getMemberInfo(memberId));
 
-        return "mypage/payment";
+        return "mypage/user/payment";
     }
 }

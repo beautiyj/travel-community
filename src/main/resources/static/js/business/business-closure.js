@@ -23,12 +23,12 @@ document.addEventListener("DOMContentLoaded", function () {
         fetch(url, { method: "PATCH" })
             .then(function (res) {
                 if (!res.ok) throw new Error("요청 실패");
+                // 사이드바 상태 표시는 새로고침
+                window.location.reload();
             })
             .catch(function () {
                 window.alert("마감 상태 변경에 실패했습니다. 다시 시도해주세요.");
                 applyState(card, toggle, !nextClosed);
-            })
-            .finally(function () {
                 toggle.disabled = false;
             });
     });
@@ -48,6 +48,25 @@ document.addEventListener("DOMContentLoaded", function () {
         text.textContent = isClosed
             ? "현재 예약 마감 상태입니다. 신규 예약이 차단됩니다."
             : "예약을 정상적으로 받고 있습니다.";
+
+        updateSidebarStatus(isClosed);
+    }
+
+    // 사이드바 상단 상태(dot + 라벨)는 서버 렌더링 시 한 번만 그려지므로,
+    // 토글로 즉시 마감 상태가 바뀔 때 여기서도 같이 갱신해줘야 화면 간 상태가 어긋나지 않는다.
+    function updateSidebarStatus(isClosed) {
+        var status = document.querySelector(".business-sidebar__status");
+        if (!status) return;
+
+        var dot = status.querySelector(".business-status-dot");
+        var label = status.querySelector(".business-status-label");
+        if (!dot || !label) return;
+
+        dot.classList.toggle("business-status-dot--closed", isClosed);
+        dot.classList.toggle("business-status-dot--open", !isClosed);
+        label.classList.toggle("business-status-label--closed", isClosed);
+        label.classList.toggle("business-status-label--open", !isClosed);
+        label.textContent = isClosed ? "예약 마감" : "예약 운영중";
     }
 
     // ── 날짜별 마감 설정 (달력형 UI) ──

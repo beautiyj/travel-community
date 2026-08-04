@@ -18,53 +18,29 @@
     </head>
     <body>
 
-        <!-- 1. 상단 헤더 컴포넌트 인클루드 -->
+        <!-- 1. 상단 헤더 컴포넌트 -->
         <jsp:include page="/WEB-INF/views/common/header.jsp" />
 
-        <!-- 2. 배너 컴포넌트 인클루드 -->
-        <jsp:include page="/WEB-INF/views/common/banner.jsp">
-            <jsp:param name="bannerId" value="detailBanner" />
-        </jsp:include>
-
-        <!-- 3. 내부 레이아웃 및 콘텐츠 영역 -->
+        <!-- 2. 전체 컨테이너 시작 -->
         <div class="container">
+
+            <!-- 💡 [요청사항 1] '목록으로' 버튼은 컨테이너 최상단에 위치 -->
             <a href="${pageContext.request.contextPath}/tour/list?placeType=${place.placeType}" class="back-link">
                 &lt; 목록으로
             </a>
 
+            <!-- 💡 [요청사항 1] 최상단 전체 너비 배너 (실제 DB 이미지 연동 필요) -->
+            <div class="detail-top-banner">
+                <jsp:include page="/WEB-INF/views/common/banner.jsp">
+                    <jsp:param name="bannerId" value="tourDetailBanner" />
+                </jsp:include>
+            </div>
+
+            <!-- 3. 배너 아래부터 좌우 2컬럼 레이아웃 시작 -->
             <div class="detail-layout">
-                <!-- 좌측 메인 정보 -->
+                <!-- 👈 좌측 메인 영역 -->
                 <div class="detail-main">
-                    <!-- 원본 사진 비율 유지 갤러리 슬라이더 -->
-                    <div class="post-gallery" data-gallery>
-                        <div class="post-gallery-track" data-gallery-track>
-                            <c:choose>
-                                <c:when test="${not empty placeImages}">
-                                    <c:forEach var="img" items="${placeImages}">
-                                        <div class="post-gallery-slide">
-                                            <img src="${img.imageUrl}" alt="${place.name}" class="post-gallery-img">
-                                        </div>
-                                    </c:forEach>
-                                </c:when>
-                                <c:otherwise>
-                                    <div class="post-gallery-slide">
-                                        <img src="${not empty place.firstImage ? place.firstImage : pageContext.request.contextPath.concat('/images/default-thumbnail.png')}" alt="${place.name}" class="post-gallery-img">
-                                    </div>
-                                </c:otherwise>
-                            </c:choose>
-                        </div>
-
-                        <button type="button" class="btn-wish-trigger gallery-arrow-prev" data-gallery-prev aria-label="이전 사진">
-                            <svg class="banner-chevron" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                        </button>
-                        <button type="button" class="btn-wish-trigger gallery-arrow-next" data-gallery-next aria-label="다음 사진">
-                            <svg class="banner-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                        </button>
-
-                        <div class="gallery-counter" data-gallery-counter>1 / 1</div>
-                    </div>
-
-                    <!-- 타입 및 지역 (tagButton 컴포넌트 재사용) -->
+                    <!-- 타입 및 지역 -->
                     <div class="place-badge-group">
                         <jsp:include page="/WEB-INF/views/common/tagButton.jsp">
                             <jsp:param name="place_type" value="${place.placeType}" />
@@ -75,9 +51,8 @@
                     <h1 class="place-title">${place.name}</h1>
 
                     <div class="place-rating-area">
-                        <span class="star-icon">★</span>
-                        <span>0.0</span>
-                        <span class="place-rating-count">(리뷰 0개)</span>
+                        <span class="star-icon">리뷰수</span>
+                        <span class="place-rating-count">(0개)</span>
                     </div>
 
                     <div class="place-desc">
@@ -111,9 +86,28 @@
                         <div class="map-box-title">🗺️ 지도 영역</div>
                         <div class="map-box-addr">${place.address}</div>
                     </div>
-                </div>
 
-                <!-- 4. 우측 예약 및 결제 카드 영역 -->
+                    <!-- 부가정보 렌더링 -->
+                    <c:if test="${not empty extraInfoLines}">
+                        <div class="extra-info">
+                            <h4>이용 안내</h4>
+                            <ul class="extra-info-list">
+                                <c:forEach var="line" items="${extraInfoLines}">
+                                    <li>${line}</li>
+                                </c:forEach>
+                            </ul>
+                        </div>
+                    </c:if>
+
+                    <div class="review-section">
+                        <div class="review-title">여행 후기 (0)</div>
+                        <div class="review-empty-box">
+                            아직 후기가 없습니다. 첫 번째 후기를 남겨보세요!
+                        </div>
+                    </div>
+                </div> <!-- 👈 detail-main 끝 -->
+
+                <!-- 👉 우측 사이드바 영역 -->
                 <div class="detail-sidebar">
                     <div class="booking-card">
                         <div class="booking-price">
@@ -128,11 +122,10 @@
                             </div>
 
                             <div class="booking-features">
-                                <div class="feature-item">✔ 즉시 예약 확정</div>
-                                <div class="feature-item">🛡️ 안전 결제 보장</div>
+                                <div class="feature-item">메세지0804</div>
+                                <div class="feature-item">메시지조정필요함</div>
                             </div>
 
-                            <!-- todo: 리다이렉션 추가 -->
                             <div class="booking-action-group">
                                 <jsp:include page="/WEB-INF/views/common/buttonComponent.jsp">
                                     <jsp:param name="text" value="예약하기" />
@@ -149,31 +142,12 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
+                    </div> <!-- 👈 detail-sidebar 끝 -->
 
-                <!-- 0803 부가정보(주차, 휴무일, 영업시간 등) 렌더링 -->
-                <c:if test="${not empty extraInfoLines}">
-                    <div class="extra-info">
-                        <h4>이용 안내</h4>
-                        <ul class="extra-info-list">
-                            <c:forEach var="line" items="${extraInfoLines}">
-                                <li>${line}</li>
-                            </c:forEach>
-                        </ul>
-                    </div>
-                </c:if>
+                </div> <!-- 👈 detail-layout 끝 -->
+            </div> <!-- 👈 container 끝 -->
 
-                <!-- 5. 여행 후기 코너 영역 -->
-                <div class="review-section">
-                    <div class="review-title">여행 후기 (0)</div>
-                    <div class="review-empty-box">
-                        아직 후기가 없습니다. 첫 번째 후기를 남겨보세요!
-                    </div>
-                </div>
-            </div>
-
-            <!-- 6. 하단 푸터 컴포넌트 인클루드 -->
+            <!-- 하단 푸터 -->
             <jsp:include page="/WEB-INF/views/common/footer.jsp" />
 
             <script src="${pageContext.request.contextPath}/js/common.js"></script>

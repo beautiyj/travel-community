@@ -258,14 +258,16 @@ public class TourApiService {
         }
         return rawValidList;
     }
+
     // TODO: 0804 무작위 샘플링 및 DB 적재 핵심 처리 메서드
     // - contenttypeid가 아니라 placeType(tour/stay/food) 기준으로 그룹핑하여 타입별 최소 1개 보장
     // - 재실행/부분 재수집 시 지역당 총 10개를 넘지 않도록 기존 DB 적재 건수 확인
     // - DB 실제 성공 건수만 정직하게 카운팅 및 타입별 분포 로그 추가
+    // - 2차 상세 필터링(이미지 5장 이상, 가격 검증 등) 탈락 시 남은 후보군을 연속 순회하여 목표 건수(10개) 보장
     private void processRandomSamplingAndSave(List<TourAreaBasedSyncListDTO> rawValidList) {
         if (rawValidList == null || rawValidList.isEmpty()) return;
 
-        // 1. 법정동 시도/시군구 코드로 지역군 그룹핑 (269개 지역 기준)
+        // 법정동 시도/시군구 코드로 지역군 그룹핑 (269개 지역 기준)
         Map<String, List<TourAreaBasedSyncListDTO>> regionGroupMap = rawValidList.stream()
                 .collect(Collectors.groupingBy(item ->
                         item.getLDongRegnCd() + (StringUtils.hasText(item.getLDongSignguCd()) ? item.getLDongSignguCd() : "")
@@ -286,19 +288,20 @@ public class TourApiService {
 
             // 이미 목표 수량(10개)을 채운 지역이면 스킵 - 여러 타입/재실행 시 중복 초과 적재 방지
             int existingCount = tourMapper.selectPlaceCountByRegion(regionId);
-            if (existingCount >= 10) {
+            int targetGoal = 10;
+            if (existingCount >= targetGoal) {
                 log.info("[Batch Sampling Skip] 지역코드 {}: 이미 목표 수량 충족 - 현재 {}건", regionKey, existingCount);
                 continue;
             }
 
-            // 2. placeType(tour/stay/food)별 그룹핑
+            // placeType(tour/stay/food)별 그룹핑
             Map<String, List<TourAreaBasedSyncListDTO>> typedMap = new HashMap<>();
             for (TourAreaBasedSyncListDTO item : regionItems) {
                 String type = tourApiHelper.convertContentType(item.getContenttypeid(), item.getLclsSystm2(), item.getLclsSystm3());
                 typedMap.computeIfAbsent(type, k -> new ArrayList<>()).add(item);
             }
 
-            // 💡 [원인 파악용 로그] 수집된 데이터 중 카테고리별 유효 개수를 미리 출력하여 확인
+            // 💡수집된 데이터 중 카테고리별 유효 개수를 미리 출력하여 확인
             log.info("[Type Check] 지역코드 {} 유효 후보 분포 - tour: {}건, stay: {}건, food: {}건 (전체: {}건)",
                     regionKey,
                     typedMap.getOrDefault("tour", Collections.emptyList()).size(),
@@ -309,44 +312,52 @@ public class TourApiService {
             // 가나다/순차 정렬 방지를 위해 타입별 목록 각각 무작위 셔플
             typedMap.values().forEach(Collections::shuffle);
 
-            List<TourAreaBasedSyncListDTO> selectedList = new ArrayList<>();
+            // 관광지(tour), 숙박(stay), 맛집(food) 타입별 우선순위 선발 + 전체 후보 통합 큐 생성
+            List<TourAreaBasedSyncListDTO> candidateQueue = new ArrayList<>();
 
-            // 3. 관광지(tour), 숙박(stay), 맛집(food) 타입별로 무작위 1개씩 우선 추출 (타입 비중 균형 보장)
+            // 타입별로 무작위 1개씩 우선 추출 (타입 비중 균형 보장)
             List<String> targetTypes = List.of("tour", "stay", "food");
             for (String type : targetTypes) {
                 List<TourAreaBasedSyncListDTO> typeList = typedMap.get(type);
                 if (typeList != null && !typeList.isEmpty()) {
-                    selectedList.add(typeList.remove(0)); // 셔플된 목록 중 첫 번째 무작위 추출 후 제거
+                    candidateQueue.add(typeList.remove(0)); // 셔플된 목록 중 첫 번째 무작위 추출 후 제거
                 }
             }
 
-            // 4. 남은 후보군을 다시 하나로 모아 셔플 후, 지역당 남은 슬롯만큼 보충
+            // 남은 후보군을 다시 하나로 모아 셔플 후 큐 뒤에 이어 붙임
             List<TourAreaBasedSyncListDTO> remainList = typedMap.values().stream()
                     .flatMap(List::stream)
                     .collect(Collectors.toList());
             Collections.shuffle(remainList);
+            candidateQueue.addAll(remainList);
 
-            int needed = 10 - existingCount - selectedList.size();
-            for (int i = 0; i < Math.min(needed, remainList.size()); i++) {
-                selectedList.add(remainList.get(i));
-            }
+            // 무작위 선발 후보군 순회 및 2차 필터링 통과 시 DB 적재 (목표 10개 도달 시까지 탐색)
+            int currentTotalCount = existingCount;
+            int newlySavedCount = 0;
 
-            // 5. 무작위 선발 완료된 지역당 데이터를 연쇄 수집 및 DB(PLACE, PLACE_IMAGE) 적재
-            int actualSuccessCount = 0; // 💡 실제 DB 성공 건수 카운트
-            for (TourAreaBasedSyncListDTO targetItem : selectedList) {
+            for (TourAreaBasedSyncListDTO targetItem : candidateQueue) {
+                // 이미 기존 건수 + 신규 적재 건수가 10개가 되었으면 추가 탐색 즉시 중단
+                if (currentTotalCount >= targetGoal) {
+                    break;
+                }
+
                 try {
-                    log.info("[PLACE SAVE CHECK] contentId: {}, title: {}", targetItem.getContentid(), targetItem.getTitle());
-                    processSinglePlace(targetItem); // 👈 기존 void 메서드 그대로 호출
-                    actualSuccessCount++;            // 👈 예외가 발생하지 않으면 저장 성공으로 처리
+                    log.info("[PLACE SAVE TRY] contentId: {}, title: {}", targetItem.getContentid(), targetItem.getTitle());
+
+                    // processSinglePlace 가 true(실제 DB 적재 성공)를 반환할 때만 카운트 증가
+                    if (processSinglePlace(targetItem)) {
+                        currentTotalCount++;
+                        newlySavedCount++;
+                    }
                 } catch (Exception e) {
-                    log.error("[Batch Error] 지역코드 {} placeId: {} DB 적재 오류: {}", 
+                    log.error("[Batch Error] 지역코드 {} placeId: {} DB 적재 오류: {}",
                             regionKey, targetItem.getContentid(), e.getMessage());
                 }
             }
 
-            // 💡 정직한 실제 DB 성공 결과 출력
-            log.info("[Batch Sampling] 지역코드 {}: 기존 {}건 + 실제 저장 {}건 완료 (선발 시도: {}건 / 전체 유효 후보: {}건)",
-                    regionKey, existingCount, actualSuccessCount, selectedList.size(), regionItems.size());
+            // 정직한 실제 DB 성공 결과 출력
+            log.info("[Batch Sampling] 지역코드 {}: 기존 {}건 + 실제 필터링 통과 적재 {}건 완료 (최종 총 {}건 / 전체 유효 후보: {}건)",
+                    regionKey, existingCount, newlySavedCount, currentTotalCount, regionItems.size());
         }
     }
 
@@ -360,7 +371,8 @@ public class TourApiService {
 
     // 헬퍼 메소드 - 개별 장소의 상세정보 연쇄 수집 및 DB 적재(PLACE + PLACE_IMAGE)
     // 소개정보(/detailIntro2) & 반복정보(/detailInfo2) 조회용 헬퍼 각각 호출
-    private void processSinglePlace(TourAreaBasedSyncListDTO syncItem) {
+    // 0804 DB 적재 성공 여부를 boolean으로 리턴하도록 보정하여 정직한 카운팅 보장
+    private boolean processSinglePlace(TourAreaBasedSyncListDTO syncItem) {
         TourItemDTO tourItem = tourDataConverter.convertToTourItemDTO(syncItem);
         TourDetailIntroDTO introDetail = null;
         TourDetailInfoDTO infoDetail = null;
@@ -376,7 +388,7 @@ public class TourApiService {
             }
         }
 
-        //  상세 이미지 API를 먼저 조회하여 최소 이미지 개수(2장 이상) 검증 수행
+        // 상세 이미지 API를 먼저 조회하여 최소 이미지 개수(2장 이상) 검증 수행
         List<TourDetailImageDTO> detailImages = tourApiHelper.fetchDetailImages(syncItem.getContentid());
         List<String> imageUrls = new ArrayList<>();
         if (detailImages != null && !detailImages.isEmpty()) {
@@ -386,15 +398,26 @@ public class TourApiService {
                     .distinct() // 중복 URL 제거
                     .toList();
         }
-        if (imageUrls.size() < 5)  { return; }
+
+        // 2차 상세 필터링 A: 이미지 개수 부족 시 스킵 (DB 적재 안함 -> false 반환)
+        if (imageUrls.size() < 5) {
+            log.warn("[PLACE SAVE SKIP] 이미지 개수 부족 (현재 {}장 / 기준 5장) - contentId: {}, title: {}",
+                    imageUrls.size(), syncItem.getContentid(), syncItem.getTitle());
+            return false;
+        }
+
         // PlaceImage 판단 로직에서 썸네일(카드용) 이미지 먼저 계산 -> convertToPlaceDTO로 전달
         String thumbnailImage = tourDataConverter.resolveThumbnailImage(syncItem);
 
         // convertToPlaceDTO -> 서비스 PlaceDTO 변환 및 해시태그 생성
         PlaceDTO placeDto = tourDataConverter.convertToPlaceDTO(syncItem, tourItem, introDetail, infoDetail, thumbnailImage);
-        // 2차 부실 가격 검증: useFeeInfo도 넘겨주어, minPrice가 null이어도 요금안내 문구가 있으면 통과시킴
-        // TourValidator.isValidPrice(minPrice, placeType, useFeeInfo) 순서에 맞게 인자 순서 조정
-        if (!tourValidator.isValidPrice(placeDto.getMinPrice(), placeDto.getPlaceType(), placeDto.getUseFeeInfo())) { return; }
+
+        // 2차 상세 필터링 B: 부실 가격 검증 실패 시 스킵 (DB 적재 안함 -> false 반환)
+        if (!tourValidator.isValidPrice(placeDto.getMinPrice(), placeDto.getPlaceType(), placeDto.getUseFeeInfo())) {
+            log.warn("[PLACE SAVE SKIP] 가격 검증 실패 - contentId: {}, title: {}", syncItem.getContentid(), syncItem.getTitle());
+            return false;
+        }
+
         // 최종 검증을 통과한 알짜 데이터만 DB 적재
         tourMapper.upsertPlace(placeDto);
 
@@ -408,6 +431,8 @@ public class TourApiService {
                 }
             }
         }
+        // 실제 DB 저장까지 성공했으므로 true 리턴
+        return true;
     }
 
     // 장소 이미지 목록 조회 (대표 이미지와 중복되는 항목 자동 제거)

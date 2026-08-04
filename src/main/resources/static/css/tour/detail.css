@@ -18,17 +18,31 @@
   color: var(--primary);
 }
 
+/* 2컬럼 레이아웃 설정 */
 .detail-layout {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 40px;
-  align-items: start;
+    display: flex;
+    gap: 40px;
+    align-items: flex-start; /* 높이가 서로 달라도 우측 카드가 깨지지 않음 */
+    position: relative;
 }
 
+/* 좌측 메인 영역 */
 .detail-main {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
+    flex: 1;
+    min-width: 0; /* 내부 넘침 방지 */
+}
+
+/* 우측 사이드바 영역 */
+.detail-sidebar {
+    width: 360px; /* 사이드바 적정 너비 */
+    flex-shrink: 0;
+    
+    /* 우측 카드를 아래로 내려주는 여백 */
+    margin-top: 90px; 
+    
+    /* 스크롤 시 상단에 고정되도록 Sticky 처리 */
+    position: sticky;
+    top: 100px;
 }
 
 /* 게시글 이미지 갤러리 슬라이더 스타일 */
@@ -246,3 +260,40 @@
   font-size: var(--text-sm);
   margin-left: 8px;
 }
+
+/* 상세 페이지 내부의 배너(tourDetailBanner)만 사이즈와 비율을 큼직하게 조정 */
+#tourDetailBanner.banner {
+    aspect-ratio: 16 / 7;   /* 시원한 비율로 변경 */
+    max-height: 600px;      /* 최대 높이 제한 설정 */
+    border-radius: var(--radius-lg);
+    margin-bottom: 24px;
+    overflow: hidden;
+}
+
+/* 커진 배너 크기에 맞춰 좌우 화살표 위치를 세로 중앙으로 정확히 고정 */
+#tourDetailBanner .banner-arrow-prev,
+#tourDetailBanner .banner-arrow-next {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+}
+
+#tourDetailBanner .banner-slide {
+    flex: 0 0 100% !important;
+    width: 100% !important;
+}
+
+/* 상세 페이지 배너는 어두운 그라데이션 막(오버레이) 제거하고 원본 사진 색감 그대로 노출 */
+#tourDetailBanner.banner .banner-slide::after {
+    display: none !important;
+}
+
+/* 상세 페이지 배너 이미지만 크롭 없이 원본 비율 그대로(contain) 다 보여주기 */
+#tourDetailBanner.banner .banner-bg {
+    object-fit: contain !important;
+    background-color: #0f172a; /* 여백이 생길 경우 어두운 톤의 배경색으로 채워 자연스럽게 처리 */
+}
+
+#tourDetailBanner .banner-arrow-prev { left: 20px; }
+#tourDetailBanner .banner-arrow-next { right: 20px; }

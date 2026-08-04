@@ -64,23 +64,5 @@
           and application_status = 'PENDING'
     </delete>
 
-    <select id="findPlacesByMemberId"
-            parameterType="long"
-            resultMap="businessPlaceMap">
-        select place_id, member_id, region_id, place_type, name,
-               description, address, is_closed, first_image
-        from PLACE
-        where member_id = #{memberId}
-        order by created_at desc
-    </select>
-
-    <select id="findPlaceImages"
-            parameterType="long"
-            resultType="com.gnagnoohc.travel.mypage.dto.BusinessPlaceImageDto">
-        select image_id, place_id, image_url, sort_order
-        from PLACE_IMAGE
-        where place_id = #{placeId}
-        order by sort_order, image_id
-    </select>
 
 </mapper>

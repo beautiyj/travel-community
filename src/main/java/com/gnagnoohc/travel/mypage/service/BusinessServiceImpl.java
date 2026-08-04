@@ -51,11 +51,6 @@ public class BusinessServiceImpl implements BusinessService {
         }
     }
 
-    @Override
-    public List<BusinessPlaceDto> getPlaces(Long memberId) {
-        validateMemberId(memberId);
-        return businessRepository.findPlacesByMemberId(memberId);
-    }
 
     private void prepareApplication(
             Long memberId, BusinessApplicationDto application) {

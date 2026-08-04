@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // memberId는 서버가 로그인 세션에서 파생하므로 더 이상 보내지 않는다
         var url = "/api/business/place/closed"
             + "?placeId=" + encodeURIComponent(placeId)
-            + "&isClosed=" + nextClosed;
+            + "&isClosed=" + (nextClosed ? 1 : 0);
 
         fetch(url, { method: "PATCH" })
             .then(function (res) {

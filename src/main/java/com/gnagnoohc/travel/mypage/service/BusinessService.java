@@ -9,9 +9,10 @@ public interface BusinessService {
 
     BusinessApplicationDto getApplication(Long memberId);
 
-    void resubmit(Long memberId, BusinessApplicationDto application);
+    void submitApplication(
+            Long memberId, BusinessApplicationDto application);
 
-    List<BusinessPlaceDto> getPlaces(Long memberId);
+    void cancelPendingApplication(Long memberId);
 
-    void addPlaceImage(Long memberId, Long placeId, String imageUrl);
+
 }

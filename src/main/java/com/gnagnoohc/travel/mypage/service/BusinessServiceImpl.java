@@ -25,44 +25,32 @@ public class BusinessServiceImpl implements BusinessService {
 
     @Override
     @Transactional
-    public void resubmit(Long memberId, BusinessApplicationDto application) {
+    public void submitApplication(
+            Long memberId, BusinessApplicationDto application) {
         validateMemberId(memberId);
         BusinessApplicationDto current =
                 businessRepository.findApplicationByMemberId(memberId);
-        if (current == null || !"APPROVED".equals(current.getStatus())) {
+        if (current != null && "PENDING".equals(current.getStatus())) {
             throw new IllegalStateException(
-                    "승인 완료된 사업자만 재승인을 요청할 수 있습니다.");
+                    "승인 대기 중에는 사업자등록증을 다시 제출할 수 없습니다.");
         }
         prepareApplication(memberId, application);
-        if (businessRepository.resubmitApplication(application) != 1) {
-            throw new IllegalStateException("사업자 재신청을 저장하지 못했습니다.");
+        if (businessRepository.saveApplication(application) != 1) {
+            throw new IllegalStateException(
+                    "사업자 승인 신청을 저장하지 못했습니다.");
         }
-    }
-
-    @Override
-    public List<BusinessPlaceDto> getPlaces(Long memberId) {
-        validateMemberId(memberId);
-        return businessRepository.findPlacesByMemberId(memberId);
     }
 
     @Override
     @Transactional
-    public void addPlaceImage(
-            Long memberId, Long placeId, String imageUrl) {
+    public void cancelPendingApplication(Long memberId) {
         validateMemberId(memberId);
-        if (placeId == null || placeId <= 0
-                || businessRepository.countOwnedPlace(
-                        placeId, memberId) != 1) {
-            throw new IllegalArgumentException(
-                    "본인 소유의 사업장만 이미지를 등록할 수 있습니다.");
-        }
-        if (imageUrl == null || imageUrl.isBlank()
-                || businessRepository.insertPlaceImage(
-                        placeId, imageUrl) != 1) {
+        if (businessRepository.deletePendingApplication(memberId) != 1) {
             throw new IllegalStateException(
-                    "사업장 이미지를 저장하지 못했습니다.");
+                    "승인 대기 중인 사업자 신청만 취소할 수 있습니다.");
         }
     }
+
 
     private void prepareApplication(
             Long memberId, BusinessApplicationDto application) {

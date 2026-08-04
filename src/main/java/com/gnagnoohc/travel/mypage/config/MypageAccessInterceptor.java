@@ -44,7 +44,7 @@ public class MypageAccessInterceptor implements HandlerInterceptor {
 
         if (Integer.valueOf(2).equals(member.getMemberType())) {
             response.sendRedirect(
-                    request.getContextPath() + "/business/mypage");
+                    request.getContextPath() + "/mypage/business-info");
             return false;
         }
         return true;

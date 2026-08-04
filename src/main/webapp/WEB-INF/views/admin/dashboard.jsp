@@ -14,6 +14,7 @@
 </head>
 <body>
 <div class="admin-layout">
+    <%-- include 파라미터는 메뉴 강조에만 쓰이며 관리자 인가는 컨트롤러 진입 전에 서버가 보장해야 한다. --%>
     <jsp:include page="common/sidebar.jsp">
         <jsp:param name="activeTab" value="dashboard"/>
     </jsp:include>
@@ -34,7 +35,10 @@
                 </div>
             </div>
 
-            <!-- 서버에서 집계한 신청 상태별 건수만 표시하여 화면과 DB 결과가 어긋나지 않게 합니다. -->
+            <%--
+              summary는 서버가 DB에서 집계한 total/pending/approved/rejected 건수 모델이다.
+              화면에서 목록을 다시 세지 않아 조회 시점의 서버 집계 결과를 그대로 표시한다.
+            --%>
             <section class="admin-dashboard-kpi-grid" aria-label="사업자 인증 신청 요약">
                 <article class="admin-dashboard-kpi">
                     <p class="admin-dashboard-kpi__label">전체 신청</p>

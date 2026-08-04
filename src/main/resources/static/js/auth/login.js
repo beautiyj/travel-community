@@ -1,3 +1,7 @@
+/**
+ * 로그인 폼의 표시 전환과 빈 값 검사를 담당한다.
+ * 유효한 자격증명인지, 계정이 잠겼는지, 로그인 가능한 상태인지는 POST 요청을 받는 서버가 판단한다.
+ */
 document.addEventListener("DOMContentLoaded", () => {
 	// 로그인 화면 요소
 	const form = document.querySelector("#loginForm");
@@ -13,7 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		togglePassword.setAttribute("aria-label", shouldShow ? "비밀번호 숨기기" : "비밀번호 표시");
 	});
 
-	// 로그인 입력값 검증
+	// 제출 전에 필수 입력만 확인하고, 통과하면 브라우저의 일반 form POST 흐름을 그대로 진행한다.
 	form.addEventListener("submit", (event) => {
 		let valid = true;
 

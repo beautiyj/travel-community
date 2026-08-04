@@ -8,6 +8,12 @@ import com.gnagnoohc.travel.auth.model.EmailVerification;
 import com.gnagnoohc.travel.auth.model.Member;
 import com.gnagnoohc.travel.auth.model.MemberLocalAuth;
 
+/**
+ * 로컬 인증·회원가입·이메일 인증 SQL을 Java 서비스에 노출하는 MyBatis Mapper다.
+ * 구현체는 MyBatis가 런타임에 만들며 메서드 이름과 XML의 statement id가 일치해야 한다.
+ * INSERT/UPDATE 반환값은 영향받은 행 수이고, 서비스는 데이터 무결성이 필요한 작업에서
+ * 그 값이 정확히 1인지 확인한다.
+ */
 @Mapper
 public interface AuthMapper {
 

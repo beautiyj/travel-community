@@ -17,4 +17,5 @@ public class TossConfirmResponse {
     private String method;        // "카드", "가상계좌" 등
     private String approvedAt;
     private int totalAmount;
+    private String status;        // "DONE", "CANCELED", "ABORTED", "EXPIRED" 등 — 주문조회(getOrder) 응답에도 동일하게 포함됨
 }

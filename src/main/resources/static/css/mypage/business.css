@@ -207,6 +207,15 @@ body { color: var(--biz-text); font-family: Arial, "Noto Sans KR", sans-serif; }
 }
 .business-approval-summary dt { color: var(--biz-muted); }
 .business-approval-summary dd { margin: 0; font-weight: 700; }
+.business-rejection-reason {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: clip;
+  white-space: normal;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
 .business-approval-form {
   display: grid;
   gap: 8px;

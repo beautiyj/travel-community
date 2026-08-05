@@ -109,6 +109,8 @@
   text-decoration: none;
 }
 .place-tag-link:hover { text-decoration: underline; }
+/* 일반후기: 태그된 장소가 여러 개면 링크를 가로로 나열 */
+.place-tag-list { display: flex; flex-wrap: wrap; gap: 4px 14px; }
 
 
 /* ---------- Comments ---------- */
@@ -172,16 +174,26 @@
 
 /* ---------- 검색창 (list-filter-row 안에서 오른쪽 배치) ---------- */
 /* 카테고리 탭과 한 줄에 놓이므로 세로 margin은 없애고(간격은 .list-filter-row 의 gap이 담당),
-   고정폭(280px)을 줘서 flex 컨테이너 안에서 tabs 쪽으로 늘어나지 않게 함 */
+   고정폭(360px)을 줘서 flex 컨테이너 안에서 tabs 쪽으로 늘어나지 않게 함
+   (검색타입 드롭다운이 추가되어 280px -> 360px로 확장) */
 .search-wrap {
   margin: 0;
-  width: 280px;
+  width: 400px;
   flex-shrink: 0;
 }
 
 .search-wrap .search-row-view {
   width: 100%;
-  padding: 4px 8px 4px 20px;
+  padding: 4px 8px 4px 14px;
+  box-shadow: none; /* 커뮤니티 검색창만 그림자 제거 (공용 searchbar.css의 그림자를 오버라이드) */
+}
+
+/* 드롭다운 필터 양옆 여백 축소 (공용 searchbar.css의 12px/16px margin 오버라이드) */
+.search-wrap .search-dropdown-wrapper {
+  margin-right: 8px;
+}
+.search-wrap .search-divider {
+  margin-right: 10px;
 }
 .search-wrap .search-input {
   flex: 1;
@@ -298,7 +310,7 @@
   gap: 12px;
 }
 
-/* write-container(max-width:720px) 안에서 4열이면 카드 폭이 좁아 설명 텍스트가
+/* write-container(max-width:1101px) 안에서도 4열이면 카드 폭이 좁아 설명 텍스트가
    빡빡해질 수 있어, 좁은 화면에서는 2열로 줄여 가독성 확보 */
 @media (max-width: 640px) {
   .category-group {
@@ -417,7 +429,8 @@
   color: var(--primary);
 }
 
-/* ---------- 장소 태그 필드 (write.jsp/edit.jsp, 방문자인증후기 전용) ---------- */
+/* ---------- 장소 태그 필드 (write.jsp/edit.jsp) - 방문자인증후기: 단일(#place-tag-selected)
+   / 일반후기: 다중(#place-tag-selected-list, 아래 .place-tag-selected-list) ---------- */
 .place-tag-open-btn {
   border: 1px dashed var(--primary);
   border-radius: var(--radius-md);
@@ -442,6 +455,15 @@
   font-weight: bold;
   color: var(--primary);
 }
+/* 일반후기 다중 태그 칩 목록: 칩(.place-tag-selected)이 여러 개 쌓이므로 줄바꿈 허용 */
+.place-tag-selected-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.place-tag-selected-list:empty { display: none; margin-bottom: 0; }
+
 .place-tag-remove {
   background: none;
   border: none;

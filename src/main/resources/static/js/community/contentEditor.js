@@ -41,6 +41,11 @@
   let existingImageCount = 0;  // edit.jsp: 이미 저장된(잠금) 이미지 개수, write.jsp: 0
   let savedRange = null;       // 툴바 클릭 직전까지의 캐럿 위치
   let builderFiles = [];       // [{id, file, url, x?, y?}] — 빌더 모달에서 고른 이미지들
+  let pendingTextOverflow = false; // contentLimitModal 확인 클릭 시 텍스트를 잘라낼지 여부
+
+  const MAX_BUILDER_ITEMS = 4;        // 콜라주/슬라이더 빌더 각각의 최대 선택 장수
+  const MAX_TOTAL_IMAGE_BLOCKS = 50;  // 본문 전체 이미지 블록(단일/콜라주/슬라이더 각 1개) 최대 개수
+  const MAX_CONTENT_TEXT_LENGTH = 9999; // 본문에 실제로 타이핑한 텍스트 최대 길이
 
   /* ---------- 공통 유틸 ---------- */
 
@@ -420,8 +425,9 @@
   toolSliderBtn && toolSliderBtn.addEventListener('click', openSliderBuilder);
 
   collageFileInput && collageFileInput.addEventListener('change', function () {
-    Array.from(collageFileInput.files).forEach(function (file) {
-      if (file.type.indexOf('image/') !== 0) return;
+    const files = Array.from(collageFileInput.files).filter(function (f) { return f.type.indexOf('image/') === 0; });
+    const availableSlots = MAX_BUILDER_ITEMS - builderFiles.length;
+    files.slice(0, availableSlots).forEach(function (file) {
       const item = { id: 'f' + (fileIdSeq++), file: file, url: URL.createObjectURL(file) };
       const pos = defaultCollagePosition(builderFiles.length);
       item.x = pos.x;
@@ -431,11 +437,13 @@
     });
     collageFileInput.value = '';
     renderCollageCanvas();
+    if (files.length > availableSlots && window.openModal) window.openModal('collageLimitModal');
   });
 
   sliderFileInput && sliderFileInput.addEventListener('change', function () {
-    Array.from(sliderFileInput.files).forEach(function (file) {
-      if (file.type.indexOf('image/') !== 0) return;
+    const files = Array.from(sliderFileInput.files).filter(function (f) { return f.type.indexOf('image/') === 0; });
+    const availableSlots = MAX_BUILDER_ITEMS - builderFiles.length;
+    files.slice(0, availableSlots).forEach(function (file) {
       const item = { id: 'f' + (fileIdSeq++), file: file, url: URL.createObjectURL(file) };
       builderFiles.push(item);
       const probe = new Image();
@@ -448,6 +456,7 @@
     });
     sliderFileInput.value = '';
     renderSliderPreview();
+    if (files.length > availableSlots && window.openModal) window.openModal('sliderLimitModal');
   });
 
   // 콜라주: 고정 캔버스 위에 사진을 자유롭게 드래그로 배치(겹침 허용), ×로 제거
@@ -966,9 +975,89 @@
     };
   }
 
+  /* ---------- 본문 전체 이미지 개수(50장) / 텍스트 길이(9999자) 제한 ---------- */
+
+  // 텍스트 절삭 지점 이후의 텍스트 노드/<br>만 제거하고, [data-block] 이미지 블록은
+  // 순회는 하되 내부로 들어가지 않고 그대로 둔다(이미지는 개수 맞춰 삭제하지 않음).
+  function truncateEditorTrailingText(maxLen) {
+    let count = 0;
+    let cutNode = null;
+    let cutOffset = -1;
+
+    (function findCut(node) {
+      if (cutNode) return;
+      if (node.nodeType === Node.TEXT_NODE) {
+        const len = node.textContent.length;
+        if (count + len > maxLen) {
+          cutNode = node;
+          cutOffset = maxLen - count;
+        } else {
+          count += len;
+        }
+        return;
+      }
+      if (node.nodeType !== Node.ELEMENT_NODE) return;
+      if (node.getAttribute && node.getAttribute('data-block')) return; // 이미지 블록은 건너뜀
+      Array.from(node.childNodes).forEach(findCut);
+    })(editorRoot);
+
+    if (!cutNode) return; // 이미 한도 이내
+    cutNode.textContent = cutNode.textContent.slice(0, cutOffset);
+
+    let reachedCut = false;
+    (function removeAfter(node) {
+      Array.from(node.childNodes).forEach(function (child) {
+        if (child.nodeType === Node.ELEMENT_NODE && child.getAttribute && child.getAttribute('data-block')) {
+          return; // 이미지 블록은 건너뛰고 유지
+        }
+        if (child === cutNode) {
+          reachedCut = true;
+          return;
+        }
+        if (reachedCut) {
+          if (child.nodeType === Node.TEXT_NODE || child.tagName === 'BR') {
+            child.remove();
+          } else if (child.nodeType === Node.ELEMENT_NODE) {
+            removeAfter(child);
+          }
+          return;
+        }
+        if (child.nodeType === Node.ELEMENT_NODE) removeAfter(child);
+      });
+    })(editorRoot);
+  }
+
+  const contentLimitModal = document.getElementById('contentLimitModal');
+  if (contentLimitModal) {
+    const confirmBtn = contentLimitModal.querySelector('.modal-btn');
+    confirmBtn && confirmBtn.addEventListener('click', function () {
+      if (pendingTextOverflow) {
+        truncateEditorTrailingText(MAX_CONTENT_TEXT_LENGTH);
+        pendingTextOverflow = false;
+      }
+    });
+  }
+
   const form = editorRoot.closest('form');
   if (form) {
-    form.addEventListener('submit', function () {
+    form.addEventListener('submit', function (e) {
+      const blockCount = editorRoot.querySelectorAll('[data-block]').length;
+      const textLength = (editorRoot.textContent || '').length;
+      const imageOver = blockCount > MAX_TOTAL_IMAGE_BLOCKS;
+      const textOver = textLength > MAX_CONTENT_TEXT_LENGTH;
+
+      if (imageOver || textOver) {
+        e.preventDefault();
+        const lines = [];
+        if (imageOver) lines.push('본문에는 사진을 최대 ' + MAX_TOTAL_IMAGE_BLOCKS + '장까지 추가할 수 있습니다. (콜라주, 슬라이더는 각각 1장으로 계산됩니다)');
+        if (textOver) lines.push('본문은 ' + MAX_CONTENT_TEXT_LENGTH + '자 이내로 작성해주세요. 확인을 누르면 초과된 내용이 자동으로 삭제됩니다.');
+        pendingTextOverflow = textOver;
+        const messageEl = contentLimitModal && contentLimitModal.querySelector('.modal-message');
+        if (messageEl) messageEl.innerHTML = lines.join('<br>');
+        if (window.openModal) window.openModal('contentLimitModal');
+        return;
+      }
+
       try {
         const result = serializeEditor();
         contentField.value = result.text;

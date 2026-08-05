@@ -18,6 +18,7 @@
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/community/community.css">
 </head>
 <body>
+<jsp:include page="/WEB-INF/views/common/header.jsp" />
 <c:set var="cp" value="${pageContext.request.contextPath}" />
 
 <%-- 로그인 회원: 세션엔 LoginMemberDto(memberId, nickname, memberRole)가 통째로 들어있음 --%>
@@ -89,12 +90,18 @@
       </div>
     </div>
 
-    <!-- 장소 태그: 방문자인증후기로 태그된 장소가 있을 때만 노출 (community.css 의 .place-tag)
-         사진 없이 장소 이름만 다른 색 링크로 표시, 클릭하면 해당 장소 상세페이지로 이동
-         ※ 장소 상세페이지 URL은 place 모듈 담당자 라우팅에 맞춰 조정 필요 (지금은 가정한 경로) -->
+    <!-- 장소 태그 (community.css 의 .place-tag) - 사진 없이 장소 이름만 다른 색 링크로 표시, 클릭하면 tour 모듈의 장소 상세페이지로 이동
+         방문자인증후기: 단일 태그(post.placeId/placeName) / 일반후기: 다중 태그(post.placeTags, 0개~여러 개) -->
     <c:if test="${not empty post.placeId}">
       <div class="place-tag">
-        <a href="${cp}/place/detail?placeId=${post.placeId}" class="place-tag-link">📍 ${post.placeName}</a>
+        <a href="${cp}/tour/detail?placeId=${post.placeId}" class="place-tag-link">📍 ${post.placeName}</a>
+      </div>
+    </c:if>
+    <c:if test="${not empty post.placeTags}">
+      <div class="place-tag place-tag-list">
+        <c:forEach var="tag" items="${post.placeTags}">
+          <a href="${cp}/tour/detail?placeId=${tag.placeId}" class="place-tag-link">📍 ${tag.name}</a>
+        </c:forEach>
       </div>
     </c:if>
 
@@ -171,13 +178,10 @@
                               onclick="toggleReply(${comment.commentId})">답글 달기</span>
                       </c:if>
 
-                      <!-- 삭제: 본인 댓글일 때만, 확인창 없이 바로 삭제 (comment/delete 는 서버에서 본인 확인 후 처리) -->
+                      <!-- 삭제: 본인 댓글일 때만, commentDeleteModal 로 확인 후 삭제 (comment/delete 는 서버에서 본인 확인 후 처리) -->
                       <c:if test="${isLoggedIn and loginMember.memberId == comment.memberId}">
-                        <form action="${cp}/community/comment/delete" method="post" class="comment-delete-form">
-                          <input type="hidden" name="commentId" value="${comment.commentId}">
-                          <input type="hidden" name="postId" value="${post.postId}">
-                          <button type="submit" class="comment-delete-btn">삭제</button>
-                        </form>
+                        <button type="button" class="comment-delete-btn"
+                                onclick="openModal('commentDeleteModal', ${comment.commentId})">삭제</button>
                       </c:if>
                     </div>
                   </div>
@@ -238,14 +242,11 @@
                         </div>
                         <p class="comment-text">${reply.content}</p>
 
-                        <!-- 삭제: 본인 답글일 때만, 확인창 없이 바로 삭제 -->
+                        <!-- 삭제: 본인 답글일 때만, commentDeleteModal 로 확인 후 삭제 -->
                         <c:if test="${isLoggedIn and loginMember.memberId == reply.memberId}">
                           <div class="comment-actions">
-                            <form action="${cp}/community/comment/delete" method="post" class="comment-delete-form">
-                              <input type="hidden" name="commentId" value="${reply.commentId}">
-                              <input type="hidden" name="postId" value="${post.postId}">
-                              <button type="submit" class="comment-delete-btn">삭제</button>
-                            </form>
+                            <button type="button" class="comment-delete-btn"
+                                    onclick="openModal('commentDeleteModal', ${reply.commentId})">삭제</button>
                           </div>
                         </c:if>
                       </div>
@@ -290,6 +291,7 @@
   </div>
 </div>
 
+<jsp:include page="/WEB-INF/views/common/footer.jsp" />
 
 <!-- ───────── 삭제 확인 모달 (조각 파일) ───────── -->
 <c:if test="${isOwner}">
@@ -299,6 +301,21 @@
     <jsp:param name="title"       value="게시글 삭제" />
     <jsp:param name="message"     value="삭제 후 복구할 수 없습니다. 정말 삭제하시겠습니까?" />
     <jsp:param name="confirmText" value="삭제" />
+    <jsp:param name="hiddenName"  value="postId" />
+    <jsp:param name="hiddenValue" value="${post.postId}" />
+  </jsp:include>
+</c:if>
+
+<!-- ───────── 댓글 삭제 확인 모달 (댓글마다 다른 commentId를 openModal 로 동적 주입해서 재사용) ───────── -->
+<c:if test="${isLoggedIn}">
+  <jsp:include page="../common/confirmModal.jsp">
+    <jsp:param name="modalId"     value="commentDeleteModal" />
+    <jsp:param name="action"      value="/community/comment/delete" />
+    <jsp:param name="title"       value="댓글 삭제" />
+    <jsp:param name="message"     value="삭제 후 복구할 수 없습니다. 정말 삭제하시겠습니까?" />
+    <jsp:param name="confirmText" value="삭제" />
+    <jsp:param name="hiddenName"  value="commentId" />
+    <jsp:param name="hiddenValue" value="" />
     <jsp:param name="hiddenName"  value="postId" />
     <jsp:param name="hiddenValue" value="${post.postId}" />
   </jsp:include>
@@ -324,7 +341,6 @@
 
 
 <script>window.CP = "${cp}";</script>
-<script src="${cp}/js/common.js"></script>
 <script src="${cp}/js/community/postContentRenderer.js"></script>
 <script src="${cp}/js/community/postDetail.js"></script>
 <script src="${cp}/js/community/commentDeniedModal.js"></script>

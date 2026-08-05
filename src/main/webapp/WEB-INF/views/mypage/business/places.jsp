@@ -3,24 +3,25 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <jsp:include page="/WEB-INF/views/mypage/common/pageHead.jsp">
-        <jsp:param name="title" value="내 사업장 목록"/>
-    </jsp:include>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>내 사업장 목록</title>
+    <link rel="stylesheet" href="/css/common.css">
+    <link rel="stylesheet" href="/css/mypage/common.css">
+    <link rel="stylesheet" href="/css/mypage/business.css">
 </head>
 <body class="business-mypage">
 <main class="mypage-page">
-    <h1 class="mypage-page__title">마이페이지</h1>
+    <h1 class="mypage-page__title">내 사업장 목록</h1>
     <div class="mypage-layout">
-        <jsp:include page="/WEB-INF/views/mypage/business/components/sidebar.jsp">
+        <jsp:include page="/WEB-INF/views/mypage/common/sidebar.jsp">
+            <jsp:param name="accountType" value="BUSINESS"/>
             <jsp:param name="active" value="places"/>
         </jsp:include>
 
         <section class="mypage-content" aria-labelledby="my-places-title">
             <div class="mypage-content__header">
-                <h2 id="my-places-title">
-                    내 사업장 목록
-                    <em>(<c:out value="${empty places ? 0 : places.size()}"/>)</em>
-                </h2>
+                <h2 id="my-places-title"><em>(<c:out value="${empty places ? 0 : places.size()}"/>)</em></h2>
             </div>
 
             <c:choose>

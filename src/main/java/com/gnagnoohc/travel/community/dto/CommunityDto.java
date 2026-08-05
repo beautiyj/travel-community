@@ -27,6 +27,7 @@ public class CommunityDto {
     private String profileImgUrl;          // 일반 회원 프로필 사진 (member 테이블 JOIN)
     private String businessImage;          // 사업자 회원의 업소 대표사진 (place.first_image, member_id로 JOIN)
     private String placeName;              // 태그된 장소 이름 (place 테이블 JOIN, place_id 없으면 null) - 방문자인증후기 단일 태그용
+    private String placeType;              // 태그된 장소 유형 ("stay"/"food"/"tour", place 테이블 JOIN) - 방문자인증후기 단일 태그 배지용
     private List<PlaceTagDto> placeTags;   // 일반후기 다중 태그 목록 (post_place_tag join place 로 조회, 상세/수정 화면 표시용)
     private List<ImageDto> imageList;       // 이미지 목록
     private List<CommentDto> commentList;   // 댓글 목록

@@ -52,7 +52,7 @@
 	<select id="selectOne" parameterType="int" resultType="community">
 		select p.post_id, p.member_id, p.place_id, p.title, p.content, p.created_at, p.updated_at, p.readcount,
 		p.category, m.nickname as nickname, m.member_type as memberType, m.profile_img_url as profileImgUrl,
-		biz.first_image as businessImage, pl.name as placeName
+		biz.first_image as businessImage, pl.name as placeName, pl.place_type as placeType
 		from post p
 		join member m on p.member_id = m.member_id
 		left join place pl on p.place_id = pl.place_id

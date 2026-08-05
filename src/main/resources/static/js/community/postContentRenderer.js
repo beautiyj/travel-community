@@ -97,20 +97,26 @@
       setOffset(offset);
     }
 
-    thumb.addEventListener('mousedown', function (e) {
+    thumb.addEventListener('pointerdown', function (e) {
       e.preventDefault();
+      thumb.setPointerCapture(e.pointerId);
       const barRect = barTrack.getBoundingClientRect();
 
       function onMove(ev) {
+        if (ev.pointerId !== e.pointerId) return;
         const ratio = (ev.clientX - barRect.left) / barRect.width;
         setOffset(ratio * maxOffset);
       }
-      function onUp() {
-        document.removeEventListener('mousemove', onMove);
-        document.removeEventListener('mouseup', onUp);
+      function onUp(ev) {
+        if (ev.pointerId !== e.pointerId) return;
+        thumb.releasePointerCapture(e.pointerId);
+        thumb.removeEventListener('pointermove', onMove);
+        thumb.removeEventListener('pointerup', onUp);
+        thumb.removeEventListener('pointercancel', onUp);
       }
-      document.addEventListener('mousemove', onMove);
-      document.addEventListener('mouseup', onUp);
+      thumb.addEventListener('pointermove', onMove);
+      thumb.addEventListener('pointerup', onUp);
+      thumb.addEventListener('pointercancel', onUp);
     });
 
     const imgs = Array.from(track.querySelectorAll('img'));

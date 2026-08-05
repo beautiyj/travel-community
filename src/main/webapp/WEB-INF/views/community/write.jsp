@@ -86,7 +86,6 @@
         <button type="button" id="toolPhotoBtn" class="editor-tool-btn">🖼 사진</button>
         <button type="button" id="toolCollageBtn" class="editor-tool-btn">▦ 콜라주</button>
         <button type="button" id="toolSliderBtn" class="editor-tool-btn">⇄ 슬라이더</button>
-        <span class="editor-tool-hint">이미지는 커서 아래에 삽입됩니다</span>
       </div>
 
       <div id="contentEditor" class="content-editor" contenteditable="true"
@@ -128,12 +127,14 @@
         <jsp:include page="../common/buttonComponent.jsp">
           <jsp:param name="text"  value="취소" />
           <jsp:param name="color" value="var(--card)" />
+          <jsp:param name="width" value="100%" />
         </jsp:include>
       </div>
 
       <div class="btn-submit-wrap">
         <jsp:include page="../common/buttonComponent.jsp">
-          <jsp:param name="text" value="게시하기" />
+          <jsp:param name="text"  value="게시하기" />
+          <jsp:param name="width" value="100%" />
         </jsp:include>
       </div>
     </div>

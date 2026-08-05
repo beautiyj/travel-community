@@ -1,17 +1,22 @@
 package com.gnagnoohc.travel.tour.controller;
 
-import com.gnagnoohc.travel.tour.model.PlaceDTO;
-import com.gnagnoohc.travel.tour.model.PlaceImageDTO;
-import com.gnagnoohc.travel.tour.service.TourService;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import java.util.List;
 
+import com.gnagnoohc.travel.tour.model.PlaceDTO;
+import com.gnagnoohc.travel.tour.model.PlaceImageDTO;
+import com.gnagnoohc.travel.tour.service.TourService;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Controller
 @RequiredArgsConstructor
 public class TourController {
@@ -59,6 +64,7 @@ public class TourController {
         model.addAttribute("place", place);
         model.addAttribute("placeImages", placeImages);
         model.addAttribute("extraInfoLines", extraInfoLines);
+        log.info("[Detail Check] placeId: {}, placeImages 개수: {}", placeId, (placeImages != null ? placeImages.size() : "null"));
 
         return "tour/detail";
     }

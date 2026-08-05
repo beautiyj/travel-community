@@ -2,6 +2,8 @@ package com.gnagnoohc.travel.batch.controller;
 
 import com.gnagnoohc.travel.batch.service.TourApiService;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -37,5 +39,21 @@ public class TourBatchTestController {
         // 실제 서비스에 있는 장소 수집/배치 메서드 호출
         tourApiService.syncTourDataForRegions(regionIds); 
         return "[2단계 완료] 지정 지역 장소 데이터 수집 완료 - regionIds: " + regionIds;
+    }
+
+    // 보충 배치 수집 실행
+    @PostMapping("/sync-supplement")
+    public ResponseEntity<String> testSupplementSync() {
+        tourApiService.fetchAllTargetSyncList();
+        return ResponseEntity.ok("보충 배치 수집 테스트 완료");
+    }
+
+    // TODO: 테스트후제거필요 
+    // 0805 추가 - 지정 지역만 대상으로 배치스케줄러 로직(fetchAllTargetSyncList와 동일 로직) 동작 검증용 테스트
+    // 포스트맨: POST http://localhost:9999/test/batch/sync-supplement-regions?regionIds=11440,12790,26350
+    @PostMapping("/sync-supplement-regions")
+    public ResponseEntity<String> testSupplementSyncForRegions(@RequestParam List<Integer> regionIds) {
+        tourApiService.fetchSupplementForRegions(regionIds);
+        return ResponseEntity.ok("지정 지역 보충 배치 테스트 완료 - regionIds: " + regionIds);
     }
 }

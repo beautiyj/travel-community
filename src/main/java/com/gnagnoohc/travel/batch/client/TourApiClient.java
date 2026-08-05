@@ -262,7 +262,7 @@ public class TourApiClient {
     /**
      * 관광정보 동기화 목록 조회 /areaBasedSyncList2 - 배치 수집 전용 API (DB 최신상태 유지용 API)
      * 파라미터에 따라 제목순, 수정일순(최신순), 등록일순 정렬 검색 제공
-     * @param contentTypeId 관광타입 ID (옵션) - 0803 수정: 기존 modifiedtime 자리에 잘못 바인딩되던 버그 수정
+     * @param contentTypeId 관광타입 ID (옵션)
      * @param showflag 콘텐츠표출여부 1/0 (옵션, 1=표출 0=비표출)
      * 
      * 동기화 목록에서만 페이징 매개변수 처리

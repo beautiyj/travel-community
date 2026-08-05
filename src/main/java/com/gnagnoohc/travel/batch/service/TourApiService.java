@@ -59,6 +59,12 @@ public class TourApiService {
             "39"  // food 음식점
     );
 
+    // 0804 추가 - 부실데이터 예외 보완 레이어에서 사용할, tour/stay 각각의 원본 contentTypeId 목록
+    private static final List<String> TOUR_CONTENT_TYPES = List.of("12", "14", "28");
+    private static final List<String> STAY_CONTENT_TYPES = List.of("32");
+    // 0804 추가 - 지역당 부실데이터로 추가 확보할 타입별 목표 건수 (큐 셀렉팅 결과와 무관하게 항상 추가됨, 10건 캡과 별개)
+    private static final int LOW_QUALITY_SUPPLEMENT_COUNT = 3;
+
     // contentTypeId 5가지 선별하여 데이터 가져오기 : 타깃 타입별로 순회하며 수집 배치 실행, 타입별로 pageNo=1부터 페이징 돌리는 메인 파이프라인 호출하기
     // TODO: 샘플링테스트 확인 - 0804 수정: 타입별로 각각 syncTourData를 호출해 그때그때 샘플링/적재하던 기존 방식 변경
     // "타입별 최소 1개 + 지역당 총 10개" 보장이 실제로 성립하지 않아(각 호출엔 타입이 1개뿐이라 그룹핑 무의미),
@@ -408,6 +414,21 @@ public class TourApiService {
             int finalCount = tourMapper.selectPlaceCountByRegion(regionId);
             log.info("[Batch Sampling Complete] 지역코드 {}: 최종 DB 총 적재 건수 {}건 (유효 후보: {}건)", 
                     regionKey, finalCount, regionItems.size());
+
+            // =====================================================================================
+            // 0804 추가 [부실데이터 예외 보완 레이어] - 위 1~3단계(최대 10건 캡)와는 완전히 별개로,
+            // tour 3건 + stay 3건을 블랙리스트만 통과한 부실 데이터라도 무조건 추가로 확보 (캡 없음, 최대 16건까지 가능)
+            // 이 레이어는 isValid()/isValidItem()/이미지 5장↑/isValidPrice를 전혀 거치지 않고,
+            // TourValidator.isValidBlacklistOnly() + 필수 필드(주소/대표이미지/개요)만 확인함
+            // =====================================================================================
+            String regnCd = regionKey.length() >= 2 ? regionKey.substring(0, 2) : regionKey;
+            String signguCd = regionKey.length() > 2 ? regionKey.substring(2) : "";
+            fillLowQualitySupplement(regnCd, signguCd, regionKey, "tour", TOUR_CONTENT_TYPES, LOW_QUALITY_SUPPLEMENT_COUNT);
+            fillLowQualitySupplement(regnCd, signguCd, regionKey, "stay", STAY_CONTENT_TYPES, LOW_QUALITY_SUPPLEMENT_COUNT);
+
+            int finalCountWithSupplement = tourMapper.selectPlaceCountByRegion(regionId);
+            log.info("[Batch Sampling Complete + Supplement] 지역코드 {}: 부실데이터 보완 레이어 포함 최종 DB 총 적재 건수 {}건",
+                    regionKey, finalCountWithSupplement);
         }
     }
 
@@ -457,6 +478,70 @@ public class TourApiService {
         }
         
         log.info("[Forced Result] 타입: {} - 목표 {}개 중 {}개 강제 적재 완료", targetType.toUpperCase(), targetCount, savedCount);
+    }
+
+    // 0804 추가 - 부실데이터 예외 보완 레이어 전용 메서드
+    // TourApiClient.fetchAreaBasedList로 해당 지역+타입군을 직접 다시 조회 (1~3단계 큐와는 독립적인 별도 후보 풀)
+    // TourValidator.isValidBlacklistOnly()(블랙리스트만) + 필수 필드(주소/대표이미지/개요) 확인만 거쳐 무조건 need개수만큼 추가 적재
+    private void fillLowQualitySupplement(String regnCd, String signguCd, String regionKey,
+                                           String bucketType, List<String> sourceContentTypeIds, int need) {
+        List<TourAreaBasedSyncListDTO> pool = new ArrayList<>();
+        for (String contentTypeId : sourceContentTypeIds) {
+            try {
+                String jsonResponse = tourApiClient.fetchAreaBasedList(regnCd, signguCd, contentTypeId, null);
+                if (!StringUtils.hasText(jsonResponse)) continue;
+
+                TourApiResponseDTO<TourAreaBasedSyncListDTO> response = objectMapper.readValue(
+                        jsonResponse, new TypeReference<TourApiResponseDTO<TourAreaBasedSyncListDTO>>() { }
+                );
+                if (response == null || response.getResponse() == null
+                        || response.getResponse().getBody() == null
+                        || response.getResponse().getBody().getItems() == null
+                        || response.getResponse().getBody().getItems().getItem() == null) {
+                    continue;
+                }
+                pool.addAll(response.getResponse().getBody().getItems().getItem());
+            } catch (Exception e) {
+                log.warn("[Batch Low-Quality Supplement] regnCd:{} signguCd:{} contentTypeId:{} 조회 중 오류: {}",
+                        regnCd, signguCd, contentTypeId, e.getMessage());
+            }
+        }
+
+        // 블랙리스트만 통과 + 주소/대표이미지 1차 필수값 확인
+        List<TourAreaBasedSyncListDTO> filtered = pool.stream()
+                .filter(tourValidator::isValidBlacklistOnly)
+                .filter(item -> StringUtils.hasText(item.getAddr1()))
+                .filter(item -> StringUtils.hasText(item.getFirstimage()))
+                .collect(Collectors.toList());
+        Collections.shuffle(filtered);
+
+        int saved = 0;
+        for (TourAreaBasedSyncListDTO item : filtered) {
+            if (saved >= need) break;
+
+            try {
+                TourItemDTO tourItem = tourDataConverter.convertToTourItemDTO(item);
+                // description(개요) 필수 확보를 위해 detailCommon2만 연쇄 호출 (블랙리스트 외 다른 검증은 생략)
+                if (!"0".equals(item.getShowflag())) {
+                    tourApiHelper.enrichTourItemDetails(tourItem);
+                }
+                if (!StringUtils.hasText(tourItem.getOverview())) {
+                    // description 필수 조건 미충족 - 이 후보는 스킵
+                    continue;
+                }
+
+                PlaceDTO placeDto = tourDataConverter.convertToPlaceDTO(
+                        item, tourItem, null, null, tourDataConverter.resolveThumbnailImage(item));
+                tourMapper.upsertPlace(placeDto);
+
+                saved++;
+                log.info("[Low-Quality Supplement Success] 지역코드 {} 타입 {} - title: {}", regionKey, bucketType, item.getTitle());
+            } catch (Exception e) {
+                log.error("[Batch Error - Low-Quality Supplement] 지역코드 {} 타입 {} contentId:{} 적재 오류: {}",
+                        regionKey, bucketType, item.getContentid(), e.getMessage());
+            }
+        }
+        log.info("[Low-Quality Supplement Result] 지역코드 {} 타입 {} - 목표 {}건 중 {}건 확보", regionKey, bucketType, need, saved);
     }
 
     // 폐업(showflag == 0) 데이터 전용 처리 헬퍼

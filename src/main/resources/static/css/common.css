@@ -1,6 +1,19 @@
 /* ============= 1. 외부 리소스 및 폰트 정의 =================*/
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@font-face {
+  font-family: 'Gunhamimalmunteuyeot';
+  src: url('https://cdn.jsdelivr.net/gh/Project-Noonnu/2607131613@gfcgunhamitalks/gfcgunhamitalks/GFCGunhamiTalks.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
 
+.brand .name {
+  font-family: 'Gunhamimalmunteuyeot', 'Noto Sans KR', sans-serif;
+  color: var(--primary);
+  font-size: var(--text-xl);
+  font-weight: var(--font-weight-bold);
+  letter-spacing:3px;
+}
 /* ============= 2. 디자인 토큰 (Design Tokens) - 전역 변수 중앙 제어 ======================*/
 
 /* ── 디자인 토큰 (색·모서리) ── */
@@ -210,28 +223,16 @@ a {
   font-size: var(--text-sm);
   font-weight: var(--font-weight-bold);
   cursor: pointer;
-} /* 헤더 텍스트 링크 (기본: 흐린 글자). 페이지별로 색 override 가능 */
+}
 
 /* 회원가입버튼 컴포넌트 수정*/
 .header .btn-main {
-  padding: 8px 16px;
+  padding: 8px 14px;
   border-radius: 8px;
   box-shadow: none;
+  margin-left:5px;
 }
 
-/*헤더부분*/
-.header .drop-select-trigger {
-  padding: 6px 12px;
-}
-
-.header .drop-select-text {
-  font-size: 13px;
-}
-
-.header .drop-menu-item.dropdown-item {
-  padding: 6px 10px !important;
-  font-size: 13px;
-}
 
 /* 위시버튼 클릭 안내 토스트 팝업 (Toast Notification) */
 .wish-toast {

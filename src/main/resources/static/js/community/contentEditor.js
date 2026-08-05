@@ -101,25 +101,45 @@
     return endOfEditorRange();
   }
 
+  // 블록 바로 뒤에 이어 쓸 실제 텍스트가 없으면(빈 에디터에 처음 삽입했거나, 블록을
+  // 연달아 삽입/재배치한 경우) 캐럿을 앵커링할 자리를 만들어야 한다. 본문 이미지 블록은
+  // align-center(폭 100%, 줄 전체 차지) 또는 align-left/right(플로트)로 렌더링되는데,
+  // 이런 레이아웃 바로 뒤에 "빈 텍스트 노드"만 두면 크롬이 그 자리에 실제 라인 박스를
+  // 만들어주지 않아(Range.getBoundingClientRect()가 전부 0으로 나옴) 포커스/셀렉션은
+  // 정상으로 잡혀 있어도 타이핑한 글자가 소리 없이 사라진다. <br>을 그 자리에 두고
+  // 캐럿을 <br> 바로 앞 "컨테이너 오프셋"(텍스트 노드 안이 아니라 부모 기준 인덱스)에
+  // 둬야 실제로 타이핑이 먹는 자리로 인식되고, 타이핑을 시작하면 브라우저가 그 <br>을
+  // 알아서 걷어낸다(표준 contenteditable 동작). 이미 텍스트가 있던 자리에 삽입한
+  // 경우엔 insertNode가 분할해 남긴 텍스트 노드를 그대로 재사용한다(이미 라인 박스가
+  // 있으므로 문제 없음). 블록을 삽입하거나(insertBlockAtRange) 드래그로 재배치한
+  // 뒤(아래 블록 재배치 핸들러) 모두 이 헬퍼로 캐럿을 앵커링해야 한다 - setStartAfter(blockEl)나
+  // 빈 텍스트 노드처럼 라인 박스 없는 위치에 직접 캐럿을 두면 다시 같은 버그로 회귀한다.
+  function anchorCaretAfterBlock(blockEl) {
+    const parent = blockEl.parentNode;
+    const sibling = blockEl.nextSibling;
+    const range = document.createRange();
+
+    if (sibling && sibling.nodeType === Node.TEXT_NODE && sibling.textContent.length > 0) {
+      range.setStart(sibling, 0);
+      range.collapse(true);
+      return range;
+    }
+
+    const br = (sibling && sibling.nodeName === 'BR') ? sibling : document.createElement('br');
+    if (br !== sibling) parent.insertBefore(br, sibling);
+
+    range.setStart(parent, Array.prototype.indexOf.call(parent.childNodes, br));
+    range.collapse(true);
+    return range;
+  }
+
   // 블록을 range 위치에 그대로 끼워 넣는다. 강제 줄바꿈을 추가하지 않으므로
   // 삽입한 자리 바로 옆(또는 정렬에 따라 옆/위아래)에서 바로 이어 쓸 수 있다.
   function insertBlockAtRange(range, blockEl) {
     range.deleteContents();
     range.insertNode(blockEl);
 
-    // 블록 바로 뒤에 텍스트 노드가 없으면(빈 에디터에 처음 삽입했거나, 블록을 연달아
-    // 삽입한 경우) contenteditable=false 블록 바로 뒤 컨테이너 경계에는 캐럿이 제대로
-    // 앵커링되지 않아 이어서 타이핑해도 글자가 씹히므로, 빈 텍스트 노드를 하나 만들어
-    // 그 안에 캐럿을 둔다. 이미 텍스트가 있던 자리에 삽입한 경우엔 insertNode가 그
-    // 텍스트 노드를 분할해 남긴 노드를 그대로 재사용한다.
-    let caretNode = blockEl.nextSibling;
-    if (!caretNode || caretNode.nodeType !== Node.TEXT_NODE) {
-      caretNode = document.createTextNode('');
-      blockEl.parentNode.insertBefore(caretNode, blockEl.nextSibling);
-    }
-    range.setStart(caretNode, 0);
-    range.collapse(true);
-
+    range = anchorCaretAfterBlock(blockEl);
     restoreRange(range);
     savedRange = range.cloneRange();
     return range;
@@ -852,10 +872,9 @@
         console.error('블록 재배치 실패', err);
         return;
       }
-      range.setStartAfter(block);
-      range.collapse(true);
-      restoreRange(range);
-      savedRange = range.cloneRange();
+      const caretRange = anchorCaretAfterBlock(block);
+      restoreRange(caretRange);
+      savedRange = caretRange.cloneRange();
 
       const align = alignFromClientX(ev.clientX);
       block.classList.remove('align-left', 'align-center', 'align-right');
@@ -1035,11 +1054,12 @@
     }
 
     // 본문이 이미지로 끝나는 글(뒤에 텍스트가 없는 경우)은 appendChild로만 쌓아올린 터라
-    // 마지막 블록 뒤에 캐럿을 앵커링할 텍스트 노드가 없다 - insertBlockAtRange와 동일한 이유로
-    // 이어서 타이핑이 안 되므로, 마지막 자식이 이미지 블록이면 빈 텍스트 노드를 붙여둔다.
+    // 마지막 블록 뒤에 캐럿을 앵커링할 자리가 없다 - anchorCaretAfterBlock과 동일한 이유로
+    // 이어서 타이핑이 안 되므로, 마지막 자식이 이미지 블록이면 같은 방식(<br>)으로 앵커를 붙여둔다.
+    // 페이지 로드 시점이라 반환된 Range는 포커스/셀렉션에 적용하지 않고 버린다.
     const lastChild = editorRoot.lastChild;
     if (lastChild && lastChild.nodeType === Node.ELEMENT_NODE && lastChild.getAttribute('data-block')) {
-      editorRoot.appendChild(document.createTextNode(''));
+      anchorCaretAfterBlock(lastChild);
     }
   }
 

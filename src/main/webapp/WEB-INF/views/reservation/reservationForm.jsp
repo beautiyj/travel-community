@@ -37,12 +37,18 @@
 
             <!-- ─── 왼쪽: 입력 폼 ─── -->
             <div>
-                <!-- TODO: 숙박/맛집 파트 완성 후 placeId로 조회한 장소 정보(지역/사진/평점)로 교체. 이름만 우선 반영 -->
                 <div class="place-card">
-                    <div class="thumb">&#127756;</div>
+                    <c:choose>
+                        <c:when test="${not empty placeImage}">
+                            <img class="thumb" src="${fn:escapeXml(placeImage)}" alt="${fn:escapeXml(placeName)} 대표 이미지">
+                        </c:when>
+                        <c:otherwise>
+                            <div class="thumb">&#127756;</div>
+                        </c:otherwise>
+                    </c:choose>
                     <div>
                         <p class="name">${fn:escapeXml(placeName)}</p>
-                        <p class="desc">장소 정보 연동 예정</p>
+                        <p class="desc">${not empty placeAddress ? fn:escapeXml(placeAddress) : '장소 정보 연동 예정'}</p>
                     </div>
                 </div>
 

@@ -3,9 +3,9 @@
 
 <mapper namespace="com.gnagnoohc.travel.tour.mapper.TourMapper">
 
-    <!-- 1. REGION 테이블 UPSERT -->
+    <!-- 1. region 테이블 UPSERT -->
     <insert id="upsertRegion" parameterType="com.gnagnoohc.travel.tour.model.RegionDTO">
-        INSERT INTO REGION (
+        INSERT INTO region (
             region_id,
             region_name,
             parent_region_id
@@ -19,9 +19,9 @@
             parent_region_id = VALUES(parent_region_id);
     </insert>
 
-    <!-- 2. PLACE 테이블 UPSERT -->
+    <!-- 2. place 테이블 UPSERT -->
     <insert id="upsertPlace" parameterType="com.gnagnoohc.travel.tour.model.PlaceDTO">
-        INSERT INTO PLACE (
+        INSERT INTO place (
             place_id,
             member_id,
             region_id,
@@ -78,9 +78,9 @@
             extra_info = VALUES(extra_info);
     </insert>
 
-    <!-- 3. PLACE_IMAGE 테이블 INSERT -->
+    <!-- 3. place_image 테이블 INSERT -->
     <insert id="insertPlaceImage" parameterType="com.gnagnoohc.travel.tour.model.PlaceImageDTO">
-        INSERT INTO PLACE_IMAGE (
+        INSERT INTO place_image (
             place_id,
             image_url,
             sort_order
@@ -91,7 +91,7 @@
         );
     </insert>
 
-    <!-- 4. PLACE 단건 조회 -->
+    <!-- 4. place 단건 조회 -->
     <select id="selectPlaceById" resultType="com.gnagnoohc.travel.tour.model.PlaceDTO">
         SELECT 
             place_id AS placeId,
@@ -112,7 +112,7 @@
             use_fee_info AS useFeeInfo,
             people_count AS peopleCount,
             extra_info AS extraInfo
-        FROM PLACE
+        FROM place
         WHERE place_id = #{placeId}
     </select>
 
@@ -138,8 +138,8 @@
             p.people_count AS peopleCount,
             p.extra_info AS extraInfo,
             r.region_name AS regionName
-        FROM PLACE p
-        LEFT JOIN REGION r ON p.region_id = r.region_id
+        FROM place p
+        LEFT JOIN region r ON p.region_id = r.region_id
         WHERE p.is_closed = 0
 
         <!-- 0803 추가예정 ; 타입별 필터링 (제목순/금액최저가순.최고가순 정렬/지역순(혹은지역옵션쿼리..형태...)/리뷰순 등 -->
@@ -171,15 +171,15 @@
             place_id AS placeId,
             image_url AS imageUrl,
             sort_order AS sortOrder
-        FROM PLACE_IMAGE
+        FROM place_image
         WHERE place_id = #{placeId}
         ORDER BY sort_order ASC
     </select>
 
-    <!-- 0804 7. 특정 지역의 현재 적재된 PLACE 건수 조회 (지역별 무작위 샘플링 쿼터 체크용) -->
+    <!-- 0804 7. 특정 지역의 현재 적재된 place 건수 조회 (지역별 무작위 샘플링 쿼터 체크용) -->
     <select id="selectPlaceCountByRegion" resultType="int">
         SELECT COUNT(*)
-        FROM PLACE
+        FROM place
         WHERE region_id = #{regionId}
     </select>
 </mapper>

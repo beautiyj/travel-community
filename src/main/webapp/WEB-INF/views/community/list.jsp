@@ -28,9 +28,12 @@
       <p>여행 경험을 나누고 함께 소통해보세요</p>
     </div>
 
-    <%-- 로그인 시에만 글쓰기 버튼 노출 --%>
+    <%-- 로그인 시에만 글쓰기 버튼 노출 (buttonComponent 재사용) --%>
     <c:if test="${not empty sessionScope.loginMember}">
-      <a href="${cp}/community/write" class="write-btn">+ 글쓰기</a>
+      <jsp:include page="../common/buttonComponent.jsp">
+        <jsp:param name="text"    value="+ 글쓰기" />
+        <jsp:param name="onclick" value="location.href='${cp}/community/write'" />
+      </jsp:include>
     </c:if>
   </div>
 

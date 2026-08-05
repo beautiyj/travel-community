@@ -2,12 +2,11 @@
    contentEditor.js — write.jsp / edit.jsp 공용 본문 미니 에디터
    - contenteditable 안에 커서 위치로 이미지(사진/콜라주/슬라이더)를 삽입한다.
      삽입 후 강제 줄바꿈을 넣지 않으므로, 삽입한 자리 바로 옆에서 이어 쓸 수 있다.
-   - 단일 이미지/콜라주/슬라이더 블록 모두: 편집 중 리사이즈(저장 안 함) +
-     블록을 직접 드래그해서 본문 안 다른 위치로 재배치 가능(재배치한 가로 위치 기준으로
-     좌/가운데/우 정렬이 자동으로 정해지고, 그 정렬만 저장됨). 슬라이더는 리사이즈 핸들로
-     폭뿐 아니라 높이도 조절 가능.
-   - 콜라주: 빌더 모달 안 고정 캔버스에 사진들을 자유롭게(겹침 허용) 드래그로 배치 →
-     완료 시 그 배치(x/y, %) 그대로 하나의 블록으로 삽입
+   - 단일 이미지/콜라주/슬라이더 블록 모두: 항상 가운데 정렬·에디터 폭의 80%로 고정되며
+     (텍스트 옆에 배치되지 않음), 리사이즈 기능은 없다. 블록을 직접 드래그해서 본문 안
+     다른 위치로 재배치할 수는 있지만, 정렬/크기에는 영향이 없다.
+   - 콜라주: 빌더 모달 안 고정 2×2 격자(4칸)에 사진을 순서대로 채워 넣고, 완료 시 각 칸을
+     폭 기준으로 꽉 채우도록(원본 비율 무시, 세로 초과분은 잘림) 4:3 프레임 하나로 합성해 삽입
    - 슬라이더: 사진들을 나란히 배치한 가로 스트립 + 하단 커스텀 슬라이드바로 옆으로 스크롤
    - 제출(submit) 시 DOM을 순서대로 훑어 content 텍스트에
      [[IMG:n]] / [[COLLAGE:n-x-y,...:align]] / [[SLIDER:n1,n2:align]] 토큰을 심고,
@@ -145,18 +144,13 @@
     return range;
   }
 
-  // 콜라주/슬라이더 블록 공용: 삭제(×) + 리사이즈 핸들
+  // 콜라주/슬라이더 블록 공용: 삭제(×)
   function appendBlockControls(wrapper) {
     const removeBtn = document.createElement('span');
     removeBtn.className = 'block-remove';
     removeBtn.title = '삭제';
     removeBtn.textContent = '×';
     wrapper.appendChild(removeBtn);
-
-    const resizeHandle = document.createElement('span');
-    resizeHandle.className = 'block-resize-handle';
-    resizeHandle.title = '드래그해서 크기 조절';
-    wrapper.appendChild(resizeHandle);
   }
 
   /* ---------- 슬라이더: 사진을 나란히 배치한 스트립 + 하단 커스텀 슬라이드바 ---------- */
@@ -207,20 +201,27 @@
 
     wrapper._sliderRecompute = recompute; // 리사이즈 핸들에서 폭/높이 바뀔 때 다시 호출
 
-    thumb.addEventListener('mousedown', function (e) {
+    thumb.addEventListener('pointerdown', function (e) {
       e.preventDefault();
+      e.stopPropagation(); // 블록 재배치용 위임 pointerdown(editorRoot)으로 버블링되어 포인터 캡처를 가로채는 것 방지
+      thumb.setPointerCapture(e.pointerId);
       const barRect = barTrack.getBoundingClientRect();
 
       function onMove(ev) {
+        if (ev.pointerId !== e.pointerId) return;
         const ratio = (ev.clientX - barRect.left) / barRect.width;
         setOffset(ratio * maxOffset);
       }
-      function onUp() {
-        document.removeEventListener('mousemove', onMove);
-        document.removeEventListener('mouseup', onUp);
+      function onUp(ev) {
+        if (ev.pointerId !== e.pointerId) return;
+        thumb.releasePointerCapture(e.pointerId);
+        thumb.removeEventListener('pointermove', onMove);
+        thumb.removeEventListener('pointerup', onUp);
+        thumb.removeEventListener('pointercancel', onUp);
       }
-      document.addEventListener('mousemove', onMove);
-      document.addEventListener('mouseup', onUp);
+      thumb.addEventListener('pointermove', onMove);
+      thumb.addEventListener('pointerup', onUp);
+      thumb.addEventListener('pointercancel', onUp);
     });
 
     const imgs = Array.from(track.querySelectorAll('img'));
@@ -263,8 +264,7 @@
     wrapper.setAttribute('data-file-id', id);
     wrapper.innerHTML =
       '<img src="' + url + '" data-file-id="' + id + '" alt="첨부 이미지" draggable="false">' +
-      '<span class="block-remove" title="삭제">×</span>' +
-      '<span class="block-resize-handle" title="드래그해서 크기 조절"></span>';
+      '<span class="block-remove" title="삭제">×</span>';
 
     return insertBlockAtRange(range, wrapper);
   }
@@ -273,79 +273,9 @@
 
   const DEFAULT_COLLAGE_ITEM_WIDTH = 42; // % of canvas width, 구버전(폭 정보 없는) 토큰의 기본값과도 동일
 
-  // 콜라주 아이템(캔버스 안에 배치된 사진 한 장)의 폭을 드래그로 조절하는 핸들.
-  // 높이는 CSS(.collage-item img { height:auto }) 덕분에 원본 비율 그대로 폭을 따라간다.
-  // stopPropagation으로 에디터 루트에 달린 블록 전체 드래그-재배치/리사이즈 리스너로
-  // 이벤트가 새지 않게 막는다.
-  function appendCollageItemResizeHandle(cell, canvasEl) {
-    const handle = document.createElement('span');
-    handle.className = 'collage-item-resize-handle';
-    handle.title = '드래그해서 크기 조절';
-    cell.appendChild(handle);
-
-    handle.addEventListener('mousedown', function (e) {
-      e.preventDefault();
-      e.stopPropagation();
-
-      const img = cell.querySelector('img');
-      const canvasRect = canvasEl.getBoundingClientRect();
-      const startWidthPercent = parseFloat(cell.style.width) || DEFAULT_COLLAGE_ITEM_WIDTH;
-      const startX = e.clientX;
-
-      function onMove(ev) {
-        const deltaPercent = ((ev.clientX - startX) / canvasRect.width) * 100;
-        const w = Math.min(80, Math.max(15, startWidthPercent + deltaPercent));
-        cell.style.width = w + '%';
-        if (img) img.setAttribute('data-w', Math.round(w));
-      }
-      function onUp() {
-        document.removeEventListener('mousemove', onMove);
-        document.removeEventListener('mouseup', onUp);
-      }
-      document.addEventListener('mousemove', onMove);
-      document.addEventListener('mouseup', onUp);
-    });
-  }
-
-  // 빌더 캔버스(정사각형)에 배치된 사진들이 실제로 차지하는 영역(바운딩 박스)만 남기고
-  // 나머지 여백은 잘라낸다. cellEls는 items와 같은 순서로 렌더링된 .collage-builder-item
-  // 요소들이며, 이미 화면에 표시되어 있어 img.naturalWidth/Height를 바로 읽을 수 있다.
-  // 반환하는 items의 x/y/w는 그 바운딩 박스를 100%로 삼은 새 좌표계 값이고,
-  // ratio는 그 박스의 가로:세로 비율(캔버스를 더 이상 정사각형으로 그리지 않기 위함)이다.
-  function cropCollageToContent(items, cellEls) {
-    let left = Infinity, top = Infinity, right = -Infinity, bottom = -Infinity;
-    items.forEach(function (item, i) {
-      const img = cellEls[i].querySelector('img');
-      const naturalW = (img && img.naturalWidth) || 1;
-      const naturalH = (img && img.naturalHeight) || 1;
-      const h = item.w * (naturalH / naturalW);
-      left = Math.min(left, item.x - item.w / 2);
-      right = Math.max(right, item.x + item.w / 2);
-      top = Math.min(top, item.y - h / 2);
-      bottom = Math.max(bottom, item.y + h / 2);
-    });
-    const cropW = Math.max(1, right - left);
-    const cropH = Math.max(1, bottom - top);
-
-    const normalized = items.map(function (item) {
-      return {
-        id: item.id,
-        file: item.file,
-        url: item.url,
-        x: (item.x - left) / cropW * 100,
-        y: (item.y - top) / cropH * 100,
-        w: item.w / cropW * 100
-      };
-    });
-
-    return { items: normalized, ratio: { rw: Math.max(1, Math.round(cropW)), rh: Math.max(1, Math.round(cropH)) } };
-  }
-
   // 캔버스에 그려 넣은 결과를 하나의 이미지 File로 만든다(콜라주/슬라이더 공용).
-  // 콜라주는 겹치지 않은 빈 자리가 반드시 생기므로 투명도가 있는 PNG로 저장해서
-  // .collage-canvas의 배경(var(--muted))이 그 틈으로 비쳐 보이게 한다. JPEG로 저장하면
-  // 알파 채널이 없어 투명 영역이 검은색으로 구워진다. 슬라이더는 사진끼리 빈틈없이 이어
-  // 그리므로 투명 이슈가 없어 용량이 작은 JPEG를 그대로 쓴다.
+  // 콜라주/슬라이더 모두 사진끼리 빈틈없이 이어 그리므로 투명 이슈가 없어
+  // 용량이 작은 JPEG를 그대로 쓴다.
   function canvasToImageFile(canvas, namePrefix, mimeType) {
     mimeType = mimeType || 'image/jpeg';
     const ext = mimeType === 'image/png' ? 'png' : 'jpg';
@@ -358,33 +288,49 @@
     });
   }
 
-  // 콜라주 빌더에 배치된 사진들을 items(x/y/w, % 단위, cropCollageToContent가 계산한 좌표계)
-  // 그대로 캔버스에 합성해 하나의 이미지 File로 만든다. cellEls[i]는 items[i]와 같은 순서로
-  // 빌더 캔버스에 렌더링된 .collage-builder-item 이고, 이미 화면에 표시되어 있어 그 안의
-  // <img>를 그대로 drawImage 소스로 쓸 수 있다(원본 File을 다시 읽어 로드를 기다릴 필요 없음).
-  function composeCollageImage(items, cellEls, ratio) {
-    const wide = ratio.rw >= ratio.rh;
-    const canvasW = wide ? COMPOSE_CANVAS_MAX_DIM : Math.round(COMPOSE_CANVAS_MAX_DIM * ratio.rw / ratio.rh);
-    const canvasH = wide ? Math.round(COMPOSE_CANVAS_MAX_DIM * ratio.rh / ratio.rw) : COMPOSE_CANVAS_MAX_DIM;
+  // 콜라주 빌더 4칸에 채워진 사진들을 고정 2×2 격자(4:3 프레임)로 합성해 하나의 이미지 File로
+  // 만든다. 각 칸은 가로/세로 중 더 크게 확대해야 하는 쪽 기준으로 칸을 꽉 채우고(= CSS
+  // object-fit: cover와 동일), 원본 비율을 무시하고 넘치는 부분은 칸 영역으로 클리핑해서
+  // 잘라낸다. 칸 사이 여백도 없어 사진들이 서로 완전히 맞닿는다.
+  // cellEls[i]는 items[i]와 같은 순서로 빌더 그리드에 렌더링된 .collage-builder-slot 이고,
+  // 이미 화면에 표시되어 있어 그 안의 <img>를 그대로 drawImage 소스로 쓸 수 있다.
+  function composeCollageImage(items, cellEls) {
+    const canvasW = COMPOSE_CANVAS_MAX_DIM;
+    const canvasH = Math.round(COMPOSE_CANVAS_MAX_DIM * 3 / 4);
 
     const canvas = document.createElement('canvas');
-    canvas.width = Math.max(1, canvasW);
-    canvas.height = Math.max(1, canvasH);
+    canvas.width = canvasW;
+    canvas.height = canvasH;
     const ctx = canvas.getContext('2d');
+
+    const cellW = canvasW / 2;
+    const cellH = canvasH / 2;
 
     items.forEach(function (item, i) {
       const img = cellEls[i] && cellEls[i].querySelector('img');
       if (!img) return;
+      const col = i % 2;
+      const row = Math.floor(i / 2);
+      const cellX = col * cellW;
+      const cellY = row * cellH;
+
       const naturalW = img.naturalWidth || 1;
       const naturalH = img.naturalHeight || 1;
-      const drawW = (item.w / 100) * canvasW;
-      const drawH = drawW * (naturalH / naturalW);
-      const cx = (item.x / 100) * canvasW;
-      const cy = (item.y / 100) * canvasH;
-      ctx.drawImage(img, cx - drawW / 2, cy - drawH / 2, drawW, drawH);
+      const scale = Math.max(cellW / naturalW, cellH / naturalH); // cover: 항상 칸을 꽉 채움
+      const drawW = naturalW * scale;
+      const drawH = naturalH * scale;
+      const drawX = cellX + (cellW - drawW) / 2; // 가로 중앙 정렬
+      const drawY = cellY + (cellH - drawH) / 2; // 세로 중앙 정렬
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(cellX, cellY, cellW, cellH);
+      ctx.clip();
+      ctx.drawImage(img, drawX, drawY, drawW, drawH);
+      ctx.restore();
     });
 
-    return canvasToImageFile(canvas, 'collage', 'image/png');
+    return canvasToImageFile(canvas, 'collage');
   }
 
   /* ---------- 슬라이더 빌더에 배치된 사진들을 하나의 이미지로 합성 ---------- */
@@ -420,10 +366,10 @@
   }
 
   // 합성된 콜라주 이미지 1장을 콜라주 블록 구조(.collage-canvas 배경 + 100% 채운 .collage-item)
-  // 안에 넣어 삽입한다. 합성 캔버스가 ratio(rw:rh)와 정확히 같은 비율로 그려지므로 이미지가
-  // .collage-canvas를 꽉 채우고, PNG 투명 영역으로 .collage-canvas 배경(var(--muted))이 비쳐
-  // 보인다(appendLockedCollage/appendCollage가 이미 항목 1개짜리 콜라주도 그대로 지원함).
-  function insertCollageBlock(file, range, ratio) {
+  // 안에 넣어 삽입한다. 합성 캔버스가 항상 고정 4:3 비율로 그려지므로(community.css의
+  // .collage-canvas { aspect-ratio: 4/3 } 기본값과 동일) 이미지가 .collage-canvas를 꽉 채운다
+  // (appendLockedCollage/appendCollage가 이미 항목 1개짜리 콜라주도 그대로 지원함).
+  function insertCollageBlock(file, range) {
     const id = 'f' + (fileIdSeq++);
     fileMap.set(id, file);
     const url = URL.createObjectURL(file);
@@ -434,12 +380,9 @@
     wrapper.className = 'content-collage-block align-center';
     wrapper.setAttribute('data-block', 'collage');
     wrapper.setAttribute('data-align', 'center');
-    wrapper.setAttribute('data-canvas-rw', ratio.rw);
-    wrapper.setAttribute('data-canvas-rh', ratio.rh);
 
     const canvas = document.createElement('div');
     canvas.className = 'collage-canvas';
-    canvas.style.aspectRatio = ratio.rw + ' / ' + ratio.rh;
     const cell = document.createElement('div');
     cell.className = 'collage-item';
     cell.style.left = '50%';
@@ -512,18 +455,12 @@
   });
 
   /* ---------- "콜라주"/"슬라이더" 버튼: 빌더 모달 ----------
-     콜라주는 고정 캔버스에 자유 배치(겹침 허용), 슬라이더는 목록에서 순서만 조정 */
-
-  function defaultCollagePosition(i) {
-    const spots = [[32, 32], [68, 30], [50, 62], [74, 66], [26, 66], [50, 26], [76, 26], [24, 26], [50, 50]];
-    const p = spots[i % spots.length];
-    return { x: p[0], y: p[1], w: 38 };
-  }
+     콜라주는 고정 2×2 격자(4칸)에 순서대로 채워 넣고, 슬라이더는 목록에서 순서만 조정 */
 
   function openCollageBuilder() {
     saveCurrentRange();
     builderFiles = [];
-    renderCollageCanvas();
+    renderCollageGrid();
     if (window.openModal) window.openModal('collageModal');
   }
 
@@ -541,15 +478,10 @@
     const files = Array.from(collageFileInput.files).filter(function (f) { return f.type.indexOf('image/') === 0; });
     const availableSlots = MAX_BUILDER_ITEMS - builderFiles.length;
     files.slice(0, availableSlots).forEach(function (file) {
-      const item = { id: 'f' + (fileIdSeq++), file: file, url: URL.createObjectURL(file) };
-      const pos = defaultCollagePosition(builderFiles.length);
-      item.x = pos.x;
-      item.y = pos.y;
-      item.w = pos.w;
-      builderFiles.push(item);
+      builderFiles.push({ id: 'f' + (fileIdSeq++), file: file, url: URL.createObjectURL(file) });
     });
     collageFileInput.value = '';
-    renderCollageCanvas();
+    renderCollageGrid();
     if (files.length > availableSlots && window.openModal) window.openModal('collageLimitModal');
   });
 
@@ -572,76 +504,104 @@
     if (files.length > availableSlots && window.openModal) window.openModal('sliderLimitModal');
   });
 
-  // 콜라주: 고정 캔버스 위에 사진을 자유롭게 드래그로 배치(겹침 허용), ×로 제거
-  function renderCollageCanvas() {
+  // 콜라주: 고정 2×2 격자(4칸)에 순서대로 채워 넣는다. 빈 칸은 placeholder를 보여주고
+  // 클릭하면 파일 선택이 열리며, 채워진 칸은 미리보기 + 하단 삭제 바를 보여준다.
+  // 채워진 칸끼리는 드래그로 자리를 맞바꿀 수 있다.
+  // 실제 크롭/합성은 완료 시 composeCollageImage가 담당하므로 여기 미리보기는
+  // object-fit:cover(CSS)로만 칸에 맞춰 보여준다.
+  function renderCollageGrid() {
     if (!collageCanvas) return;
     collageCanvas.innerHTML = '';
-    builderFiles.forEach(function (item, i) {
-      const w = item.w || DEFAULT_COLLAGE_ITEM_WIDTH;
-      const el = document.createElement('div');
-      el.className = 'collage-builder-item';
-      el.style.left = item.x + '%';
-      el.style.top = item.y + '%';
-      el.style.width = w + '%';
-      el.innerHTML =
-        '<img src="' + item.url + '" alt="선택한 이미지" draggable="false">' +
-        '<button type="button" class="collage-builder-item-remove" data-i="' + i + '">×</button>' +
-        '<span class="collage-builder-item-resize-handle" title="드래그해서 크기 조절"></span>';
-      collageCanvas.appendChild(el);
-
-      const resizeHandle = el.querySelector('.collage-builder-item-resize-handle');
-      resizeHandle.addEventListener('mousedown', function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        const canvasRect = collageCanvas.getBoundingClientRect();
-        const startWidthPercent = item.w || DEFAULT_COLLAGE_ITEM_WIDTH;
-        const startX = e.clientX;
-
-        function onMove(ev) {
-          const deltaPercent = ((ev.clientX - startX) / canvasRect.width) * 100;
-          const newW = Math.min(80, Math.max(15, startWidthPercent + deltaPercent));
-          item.w = newW;
-          el.style.width = newW + '%';
-        }
-        function onUp() {
-          document.removeEventListener('mousemove', onMove);
-          document.removeEventListener('mouseup', onUp);
-        }
-        document.addEventListener('mousemove', onMove);
-        document.addEventListener('mouseup', onUp);
-      });
-
-      el.addEventListener('mousedown', function (e) {
-        if (e.target.closest('.collage-builder-item-remove') || e.target.closest('.collage-builder-item-resize-handle')) return;
-        e.preventDefault();
-        const canvasRect = collageCanvas.getBoundingClientRect();
-
-        function onMove(ev) {
-          let x = ((ev.clientX - canvasRect.left) / canvasRect.width) * 100;
-          let y = ((ev.clientY - canvasRect.top) / canvasRect.height) * 100;
-          x = Math.min(90, Math.max(10, x));
-          y = Math.min(90, Math.max(10, y));
-          item.x = x;
-          item.y = y;
-          el.style.left = x + '%';
-          el.style.top = y + '%';
-        }
-        function onUp() {
-          document.removeEventListener('mousemove', onMove);
-          document.removeEventListener('mouseup', onUp);
-        }
-        document.addEventListener('mousemove', onMove);
-        document.addEventListener('mouseup', onUp);
-      });
-    });
-    if (collageConfirmBtn) collageConfirmBtn.disabled = builderFiles.length < 2;
+    for (let i = 0; i < MAX_BUILDER_ITEMS; i++) {
+      const item = builderFiles[i];
+      const slot = document.createElement('div');
+      slot.className = 'collage-builder-slot';
+      slot.dataset.i = String(i);
+      if (item) {
+        slot.classList.add('is-filled');
+        slot.innerHTML =
+          '<img src="' + item.url + '" alt="선택한 이미지" draggable="false">' +
+          '<button type="button" class="collage-builder-remove" data-i="' + i + '" title="삭제">🗑 삭제</button>';
+      } else {
+        slot.textContent = '+ 사진 추가';
+        slot.addEventListener('click', function () {
+          if (collageFileInput) collageFileInput.click();
+        });
+      }
+      collageCanvas.appendChild(slot);
+    }
+    if (collageConfirmBtn) collageConfirmBtn.disabled = builderFiles.length !== MAX_BUILDER_ITEMS;
   }
 
   collageCanvas && collageCanvas.addEventListener('click', function (e) {
-    const btn = e.target.closest('.collage-builder-item-remove');
+    const btn = e.target.closest('.collage-builder-remove');
     if (!btn) return;
     builderFiles.splice(Number(btn.getAttribute('data-i')), 1);
-    renderCollageCanvas();
+    renderCollageGrid();
+  });
+
+  // 콜라주: 채워진 칸을 다른 채워진 칸으로 드래그하면 두 사진의 자리가 서로 바뀐다.
+  // 네이티브 HTML5 draggable 대신 Pointer Events로 구현해 모바일 터치에서도 동작하게 한다
+  // (아래쪽 블록 재배치 드래그와 같은 방식).
+  collageCanvas && collageCanvas.addEventListener('pointerdown', function (e) {
+    if (e.target.closest('.collage-builder-remove')) return;
+    const startSlot = e.target.closest('.collage-builder-slot.is-filled');
+    if (!startSlot) return;
+
+    const sourceI = Number(startSlot.dataset.i);
+    const pointerId = e.pointerId;
+    const startX = e.clientX;
+    const startY = e.clientY;
+    let dragging = false;
+    let currentTarget = null;
+
+    function clearDropTarget() {
+      if (currentTarget) currentTarget.classList.remove('is-drop-target');
+      currentTarget = null;
+    }
+
+    function onMove(ev) {
+      if (ev.pointerId !== pointerId) return;
+      if (!dragging) {
+        if (Math.abs(ev.clientX - startX) < 4 && Math.abs(ev.clientY - startY) < 4) return;
+        dragging = true;
+        startSlot.classList.add('is-dragging');
+      }
+      ev.preventDefault();
+      const el = document.elementFromPoint(ev.clientX, ev.clientY);
+      const hovered = el && el.closest('.collage-builder-slot.is-filled');
+      const target = hovered && hovered !== startSlot ? hovered : null;
+      if (target !== currentTarget) {
+        clearDropTarget();
+        if (target) {
+          target.classList.add('is-drop-target');
+          currentTarget = target;
+        }
+      }
+    }
+
+    function onUp(ev) {
+      if (ev.pointerId !== pointerId) return;
+      startSlot.releasePointerCapture(pointerId);
+      startSlot.removeEventListener('pointermove', onMove);
+      startSlot.removeEventListener('pointerup', onUp);
+      startSlot.removeEventListener('pointercancel', onUp);
+      startSlot.classList.remove('is-dragging');
+      const dropTarget = currentTarget;
+      clearDropTarget();
+      if (!dragging || !dropTarget) return;
+
+      const targetI = Number(dropTarget.dataset.i);
+      const tmp = builderFiles[sourceI];
+      builderFiles[sourceI] = builderFiles[targetI];
+      builderFiles[targetI] = tmp;
+      renderCollageGrid();
+    }
+
+    startSlot.setPointerCapture(pointerId);
+    startSlot.addEventListener('pointermove', onMove);
+    startSlot.addEventListener('pointerup', onUp);
+    startSlot.addEventListener('pointercancel', onUp);
   });
 
   // 슬라이더 썸네일 박스 크기: 선택한 사진 중 "가장 큰"(면적 기준) 사진의 원본 비율에 맞춰
@@ -682,7 +642,7 @@
           '<button type="button" class="img-block-thumb-move" data-i="' + i + '" data-dir="-1" title="앞으로"' + (i === 0 ? ' disabled' : '') + '>‹</button>' +
           '<button type="button" class="img-block-thumb-move" data-i="' + i + '" data-dir="1" title="뒤로"' + (i === builderFiles.length - 1 ? ' disabled' : '') + '>›</button>' +
         '</div>' +
-        '<button type="button" class="img-block-thumb-remove" data-i="' + i + '" title="제거">×</button>';
+        '<button type="button" class="modal-photo-remove" data-i="' + i + '" title="제거">×</button>';
       sliderPreview.appendChild(div);
     });
     if (sliderConfirmBtn) sliderConfirmBtn.disabled = builderFiles.length < 2;
@@ -701,32 +661,31 @@
       return;
     }
 
-    const removeBtn = e.target.closest('.img-block-thumb-remove');
+    const removeBtn = e.target.closest('.modal-photo-remove');
     if (removeBtn) {
       builderFiles.splice(Number(removeBtn.getAttribute('data-i')), 1);
       renderSliderPreview();
     }
   });
 
-  // 완료 시 빌더의 배치를 그대로 캔버스에 합성해 하나의 이미지로 만든 뒤,
+  // 완료 시 고정 2×2 격자의 4칸을 그대로 캔버스에 합성해 하나의 이미지로 만든 뒤,
   // 일반 사진 한 장과 동일하게(insertSingleImage) 삽입한다.
   collageConfirmBtn && collageConfirmBtn.addEventListener('click', function () {
-    if (builderFiles.length < 2 || collageConfirmBtn.disabled) return;
+    if (builderFiles.length !== MAX_BUILDER_ITEMS || collageConfirmBtn.disabled) return;
     const range = savedRange ? savedRange.cloneRange() : endOfEditorRange();
     restoreRange(range);
-    const cellEls = Array.from(collageCanvas.querySelectorAll('.collage-builder-item'));
-    const cropped = cropCollageToContent(builderFiles, cellEls);
+    const cellEls = Array.from(collageCanvas.querySelectorAll('.collage-builder-slot'));
 
     collageConfirmBtn.disabled = true;
-    composeCollageImage(cropped.items, cellEls, cropped.ratio).then(function (file) {
+    composeCollageImage(builderFiles, cellEls).then(function (file) {
       restoreRange(range);
-      insertCollageBlock(file, range, cropped.ratio);
+      insertCollageBlock(file, range);
       if (window.closeModal) window.closeModal('collageModal');
       builderFiles = [];
     }).catch(function (err) {
       console.error('콜라주 합성 실패', err);
     }).then(function () {
-      collageConfirmBtn.disabled = builderFiles.length < 2;
+      collageConfirmBtn.disabled = builderFiles.length !== MAX_BUILDER_ITEMS;
     });
   });
 
@@ -764,46 +723,6 @@
     }
   });
 
-  /* ---------- 리사이즈 핸들 (단일/콜라주/슬라이더 공용, 편집 중 미리보기 용도, 저장 안 함) ----------
-     가로로 끌면 블록 폭이 바뀌고, 슬라이더는 세로로 끌면 사진 높이(--slider-item-height)도 바뀐다. */
-
-  editorRoot.addEventListener('mousedown', function (e) {
-    const handle = e.target.closest('.block-resize-handle');
-    if (!handle) return;
-    e.preventDefault();
-    e.stopPropagation();
-
-    const block = handle.closest('[data-block]');
-    if (!block) return;
-
-    const isSlider = block.getAttribute('data-block') === 'slider';
-    const startX = e.clientX;
-    const startY = e.clientY;
-    const startWidth = block.getBoundingClientRect().width;
-    const maxWidth = editorRoot.clientWidth;
-    const startHeight = isSlider
-      ? (parseFloat(getComputedStyle(block).getPropertyValue('--slider-item-height')) || block.querySelector('.slider-item').getBoundingClientRect().height)
-      : 0;
-
-    function onMove(ev) {
-      const newWidth = Math.min(maxWidth, Math.max(120, startWidth + (ev.clientX - startX)));
-      block.style.width = newWidth + 'px';
-      block.setAttribute('data-block-width', Math.round(newWidth / maxWidth * 100));
-
-      if (isSlider) {
-        const newHeight = Math.min(600, Math.max(80, startHeight + (ev.clientY - startY)));
-        block.style.setProperty('--slider-item-height', newHeight + 'px');
-        if (block._sliderRecompute) block._sliderRecompute();
-      }
-    }
-    function onUp() {
-      document.removeEventListener('mousemove', onMove);
-      document.removeEventListener('mouseup', onUp);
-    }
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', onUp);
-  });
-
   /* ---------- 블록을 직접 드래그해서 본문 안 다른 위치로 재배치 (단일/콜라주/슬라이더 공용) ----------
      별도 손잡이 없이, 블록 위에서 그대로 마우스를 누르고 끌면 옮겨진다.
      네이티브 HTML5 draggable 대신 mousedown/mousemove/mouseup 으로 직접 구현한다.
@@ -811,19 +730,11 @@
      mousedown 시점엔 preventDefault를 하지 않고 브라우저의 기본 캐럿 배치를 그대로 둔다
      (막아버리면 블록이 에디터 전체를 채울 때 클릭해도 캐럿을 못 두는 문제가 생김).
      대신 실제로 드래그가 확정된 뒤부터만 selectstart를 막아 네이티브 텍스트 선택만 억제한다.
-     드롭한 가로 위치(에디터 폭 기준 좌/중간/우)로 정렬(왼쪽/가운데/오른쪽)이 자동으로 정해지고,
-     그 정렬만 저장되며(플로트로 텍스트가 자연스럽게 감쌈), 정확한 픽셀 위치 자체는 저장하지 않는다. */
+     정렬은 항상 가운데(align-center) 고정이라 텍스트 옆에 배치되지 않으며, 드롭 위치는
+     본문 안 순서만 바꿀 뿐 좌우 정렬에는 영향을 주지 않는다. */
 
-  function alignFromClientX(clientX) {
-    const rect = editorRoot.getBoundingClientRect();
-    const ratio = (clientX - rect.left) / rect.width;
-    if (ratio < 0.33) return 'left';
-    if (ratio > 0.67) return 'right';
-    return 'center';
-  }
-
-  editorRoot.addEventListener('mousedown', function (e) {
-    if (e.target.closest('.block-resize-handle') || e.target.closest('.block-remove')) return;
+  editorRoot.addEventListener('pointerdown', function (e) {
+    if (e.target.closest('.block-remove')) return;
     const block = e.target.closest('[data-block]');
     if (!block) return;
 
@@ -834,6 +745,10 @@
     // 그래서 실제로 드래그가 확정된 시점(4px 이상 이동)부터만 selectstart를 막아
     // 커스텀 드래그 중 네이티브 텍스트 선택만 억제하고, 그냥 클릭은 브라우저가 정상적으로
     // 캐럿을 배치하도록 둔다. (draggable=false라 네이티브 HTML5 드래그는 원래 안 걸림)
+    // Pointer Capture를 block에 걸어두면 커서가 창 밖으로 나가도 pointermove/pointerup이
+    // 계속 block으로 전달되고 pointerup/pointercancel이 반드시 발생하므로, 창 밖에서 마우스
+    // 버튼을 떼도 리스너가 미해제 상태로 남아 이후 무관한 드래그에 반응하는 문제가 없다.
+    const pointerId = e.pointerId;
     const startX = e.clientX;
     const startY = e.clientY;
     let dragging = false;
@@ -843,6 +758,7 @@
     }
 
     function onMove(ev) {
+      if (ev.pointerId !== pointerId) return;
       if (!dragging) {
         if (Math.abs(ev.clientX - startX) < 4 && Math.abs(ev.clientY - startY) < 4) return;
         dragging = true;
@@ -852,8 +768,11 @@
     }
 
     function onUp(ev) {
-      document.removeEventListener('mousemove', onMove);
-      document.removeEventListener('mouseup', onUp);
+      if (ev.pointerId !== pointerId) return;
+      block.releasePointerCapture(pointerId);
+      block.removeEventListener('pointermove', onMove);
+      block.removeEventListener('pointerup', onUp);
+      block.removeEventListener('pointercancel', onUp);
       document.removeEventListener('selectstart', onSelectStart);
       block.classList.remove('is-dragging');
       if (!dragging) return; // 이동 없이 그냥 클릭한 경우 - 브라우저가 이미 캐럿을 배치했으므로 그대로 둠
@@ -875,15 +794,12 @@
       const caretRange = anchorCaretAfterBlock(block);
       restoreRange(caretRange);
       savedRange = caretRange.cloneRange();
-
-      const align = alignFromClientX(ev.clientX);
-      block.classList.remove('align-left', 'align-center', 'align-right');
-      block.classList.add('align-' + align);
-      block.setAttribute('data-align', align);
     }
 
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', onUp);
+    block.setPointerCapture(pointerId);
+    block.addEventListener('pointermove', onMove);
+    block.addEventListener('pointerup', onUp);
+    block.addEventListener('pointercancel', onUp);
   });
 
   /* ---------- 캐럿 위치 추적 (툴바 클릭으로 포커스가 빠지기 전까지 계속 갱신) ---------- */
@@ -929,8 +845,10 @@
     container.appendChild(wrapper);
   }
 
-  // entries: [{n, x, y, w}] — 기존 콜라주. 겹침/자유배치는 그대로 재현하고, 새 콜라주처럼 편집 가능
-  // ratio: {rw, rh} — 삽입 당시 여백을 잘라낸 캔버스 비율(없으면 정사각형 기본값 유지)
+  // entries: [{n, x, y, w}] — 구버전 자유배치 콜라주(항목 여러 개, x/y/w 좌표 있음) 하위 호환용.
+  // 새로 만드는 콜라주는 항상 항목 1개(고정 2×2 격자로 합성된 이미지)로 저장되지만, 이전에
+  // 저장된 자유배치 콜라주가 있다면 겹침/위치를 그대로(리사이즈 불가) 재현한다.
+  // ratio: {rw, rh} — 삽입 당시 여백을 잘라낸 캔버스 비율(없으면 CSS 기본값인 4:3 유지)
   function appendLockedCollage(container, imgUrlFor, entries, align, ratio, bw) {
     const wrapper = document.createElement('div');
     wrapper.contentEditable = 'false';
@@ -965,7 +883,6 @@
       img.alt = '첨부 이미지';
       img.draggable = false;
       cell.appendChild(img);
-      appendCollageItemResizeHandle(cell, canvas);
       canvas.appendChild(cell);
     });
     wrapper.appendChild(canvas);

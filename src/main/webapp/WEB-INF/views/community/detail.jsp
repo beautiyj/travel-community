@@ -121,7 +121,7 @@
 
 
   <!-- ───────── 댓글 영역 (community.css 의 .comments) ───────── -->
-  <div class="comments">
+  <div class="comments" id="comments">
 
     <div class="comments-head">
       <span class="title">댓글</span>

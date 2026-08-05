@@ -85,7 +85,6 @@
         <button type="button" id="toolPhotoBtn" class="editor-tool-btn">🖼 사진</button>
         <button type="button" id="toolCollageBtn" class="editor-tool-btn">▦ 콜라주</button>
         <button type="button" id="toolSliderBtn" class="editor-tool-btn">⇄ 슬라이더</button>
-        <span class="editor-tool-hint">이미지는 커서 아래에 삽입됩니다</span>
       </div>
 
       <div id="contentEditor" class="content-editor" contenteditable="true"
@@ -115,7 +114,13 @@
 
       <div id="place-tag-selected" class="place-tag-selected"
            style="${empty post.placeId ? 'display:none;' : ''}">
-        <span id="place-tag-selected-name">${post.placeName}</span>
+        <span id="place-tag-selected-name">${post.placeName}
+          <div class="tag-view type-${post.placeType}"><span class="tag-text"><c:choose>
+            <c:when test="${post.placeType == 'stay'}">숙박</c:when>
+            <c:when test="${post.placeType == 'food'}">맛집</c:when>
+            <c:otherwise>관광지</c:otherwise>
+          </c:choose></span></div>
+        </span>
         <button type="button" id="place-tag-remove" class="place-tag-remove">✕</button>
       </div>
 
@@ -152,12 +157,14 @@
         <jsp:include page="../common/buttonComponent.jsp">
           <jsp:param name="text"  value="취소" />
           <jsp:param name="color" value="var(--card)" />
+          <jsp:param name="width" value="100%" />
         </jsp:include>
       </div>
 
       <div class="btn-submit-wrap">
         <jsp:include page="../common/buttonComponent.jsp">
-          <jsp:param name="text" value="수정 완료" />
+          <jsp:param name="text"  value="수정 완료" />
+          <jsp:param name="width" value="100%" />
         </jsp:include>
       </div>
     </div>

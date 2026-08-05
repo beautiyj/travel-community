@@ -4,6 +4,8 @@
 
 <c:set var="cp" value="${pageContext.request.contextPath}" />
 <c:set var="bannerId" value="${empty param.bannerId ? 'mainBanner' : param.bannerId}" />
+<%-- 컨트롤러에서 넘어온 requestScope의 placeImages 객체를 우선 참조하도록 세팅 --%>
+<c:set var="placeImages" value="${empty placeImages ? requestScope.placeImages : placeImages}" />
 
 <%--
   ── 테스트 데이터 ──────────────────────────────────────────────

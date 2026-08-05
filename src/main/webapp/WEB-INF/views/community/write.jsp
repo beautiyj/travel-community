@@ -16,6 +16,7 @@
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/community/community.css">
 </head>
 <body>
+<jsp:include page="/WEB-INF/views/common/header.jsp" />
 <c:set var="cp" value="${pageContext.request.contextPath}" />
 <c:set var="loginMember" value="${sessionScope.loginMember}" />
 
@@ -102,7 +103,8 @@
       <input type="file" id="images" name="images" accept="image/*" multiple hidden>
     </div>
 
-    <!-- 장소 태그: "방문자인증후기"/"일반후기" 카테고리일 때만 노출, 취소/게시하기 버튼 바로 위 -->
+    <!-- 장소 태그: "방문자인증후기"/"일반후기" 카테고리일 때만 노출, 취소/게시하기 버튼 바로 위
+         방문자인증후기: 단일 선택(#place-tag-selected, 필수) / 일반후기: 다중 선택(#place-tag-selected-list, 선택사항, 개수 제한 없음) -->
     <div class="field" id="place-tag-field" style="display:none;">
       <label class="field-label">장소 태그</label>
 
@@ -110,6 +112,8 @@
         <span id="place-tag-selected-name"></span>
         <button type="button" id="place-tag-remove" class="place-tag-remove">✕</button>
       </div>
+
+      <div id="place-tag-selected-list" class="place-tag-selected-list" style="display:none;"></div>
 
       <button type="button" id="place-tag-open-btn" class="place-tag-open-btn">장소 검색해서 태그하기</button>
     </div>
@@ -133,6 +137,8 @@
   </form>
 </div>
 
+<jsp:include page="/WEB-INF/views/common/footer.jsp" />
+
 <jsp:include page="placeSearchModal.jsp">
   <jsp:param name="modalId" value="placeSearchModal" />
 </jsp:include>
@@ -142,8 +148,29 @@
 
 <jsp:include page="titleLengthModal.jsp" />
 
+<!-- 방문자인증후기 장소 태그 필수 안내 (titleLengthModal.jsp를 modalId/message로 재사용) -->
+<jsp:include page="titleLengthModal.jsp">
+  <jsp:param name="modalId" value="placeTagRequiredModal" />
+  <jsp:param name="message" value="방문자인증후기는 장소를 1곳 태그해야 게시할 수 있습니다." />
+</jsp:include>
+
+<!-- 콜라주/슬라이더 빌더 사진 개수 제한(각 4장) 안내 (titleLengthModal.jsp를 modalId/message로 재사용) -->
+<jsp:include page="titleLengthModal.jsp">
+  <jsp:param name="modalId" value="collageLimitModal" />
+  <jsp:param name="message" value="콜라주에는 사진을 최대 4장까지 추가할 수 있습니다." />
+</jsp:include>
+<jsp:include page="titleLengthModal.jsp">
+  <jsp:param name="modalId" value="sliderLimitModal" />
+  <jsp:param name="message" value="슬라이더에는 사진을 최대 4장까지 추가할 수 있습니다." />
+</jsp:include>
+
+<!-- 본문 전체 이미지 개수(50장)/텍스트 길이(9999자) 제한 안내: message는 contentEditor.js가 상황에 맞게 채움 -->
+<jsp:include page="titleLengthModal.jsp">
+  <jsp:param name="modalId" value="contentLimitModal" />
+  <jsp:param name="message" value="" />
+</jsp:include>
+
 <script>window.CP = "${cp}";</script>
-<script src="${cp}/js/common.js"></script>
 <script src="${cp}/js/dropdownSelector.js"></script>
 <script src="${cp}/js/community/categorySelect.js"></script>
 <script src="${cp}/js/community/contentEditor.js"></script>

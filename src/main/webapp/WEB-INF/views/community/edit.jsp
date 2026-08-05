@@ -16,6 +16,7 @@
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/community/community.css">
 </head>
 <body>
+<jsp:include page="/WEB-INF/views/common/header.jsp" />
 <c:set var="cp" value="${pageContext.request.contextPath}" />
 
 <div class="write-container">
@@ -106,7 +107,8 @@
     </div>
 
     <!-- 장소 태그: "방문자인증후기"/"일반후기" 카테고리일 때만 노출, 취소/수정완료 버튼 바로 위
-         이미 태그된 장소가 있으면 미리 채워서 보여줌 -->
+         이미 태그된 장소가 있으면 미리 채워서 보여줌
+         방문자인증후기: 단일 선택(#place-tag-selected, 필수) / 일반후기: 다중 선택(#place-tag-selected-list, 선택사항) -->
     <div class="field" id="place-tag-field"
          style="${(post.category == '방문자인증후기' || post.category == '일반후기') ? '' : 'display:none;'}">
       <label class="field-label">장소 태그</label>
@@ -115,6 +117,25 @@
            style="${empty post.placeId ? 'display:none;' : ''}">
         <span id="place-tag-selected-name">${post.placeName}</span>
         <button type="button" id="place-tag-remove" class="place-tag-remove">✕</button>
+      </div>
+
+      <!-- 일반후기 다중 태그 pre-fill: placeTag.js의 addPlaceTagChip()이 만드는 것과 동일한 마크업이어야
+           칩 제거(이벤트 위임)/중복 방지 로직이 새로 추가한 태그와 똑같이 동작함 -->
+      <div id="place-tag-selected-list" class="place-tag-selected-list"
+           style="${post.category == '일반후기' ? '' : 'display:none;'}">
+        <c:forEach var="tag" items="${post.placeTags}">
+          <span class="place-tag-selected" data-place-id="${tag.placeId}">
+            <input type="hidden" name="placeIds" value="${tag.placeId}">
+            <span>${tag.name}
+              <div class="tag-view type-${tag.placeType}"><span class="tag-text"><c:choose>
+                <c:when test="${tag.placeType == 'stay'}">숙박</c:when>
+                <c:when test="${tag.placeType == 'food'}">맛집</c:when>
+                <c:otherwise>관광지</c:otherwise>
+              </c:choose></span></div>
+            </span>
+            <button type="button" class="place-tag-remove" data-remove-place-id="${tag.placeId}">✕</button>
+          </span>
+        </c:forEach>
       </div>
 
       <button type="button" id="place-tag-open-btn" class="place-tag-open-btn"
@@ -140,6 +161,8 @@
   </form>
 </div>
 
+<jsp:include page="/WEB-INF/views/common/footer.jsp" />
+
 <jsp:include page="placeSearchModal.jsp">
   <jsp:param name="modalId" value="placeSearchModal" />
 </jsp:include>
@@ -149,8 +172,29 @@
 
 <jsp:include page="titleLengthModal.jsp" />
 
+<!-- 방문자인증후기 장소 태그 필수 안내 (titleLengthModal.jsp를 modalId/message로 재사용) -->
+<jsp:include page="titleLengthModal.jsp">
+  <jsp:param name="modalId" value="placeTagRequiredModal" />
+  <jsp:param name="message" value="방문자인증후기는 장소를 1곳 태그해야 게시할 수 있습니다." />
+</jsp:include>
+
+<!-- 콜라주/슬라이더 빌더 사진 개수 제한(각 4장) 안내 (titleLengthModal.jsp를 modalId/message로 재사용) -->
+<jsp:include page="titleLengthModal.jsp">
+  <jsp:param name="modalId" value="collageLimitModal" />
+  <jsp:param name="message" value="콜라주에는 사진을 최대 4장까지 추가할 수 있습니다." />
+</jsp:include>
+<jsp:include page="titleLengthModal.jsp">
+  <jsp:param name="modalId" value="sliderLimitModal" />
+  <jsp:param name="message" value="슬라이더에는 사진을 최대 4장까지 추가할 수 있습니다." />
+</jsp:include>
+
+<!-- 본문 전체 이미지 개수(50장)/텍스트 길이(9999자) 제한 안내: message는 contentEditor.js가 상황에 맞게 채움 -->
+<jsp:include page="titleLengthModal.jsp">
+  <jsp:param name="modalId" value="contentLimitModal" />
+  <jsp:param name="message" value="" />
+</jsp:include>
+
 <script>window.CP = "${cp}";</script>
-<script src="${cp}/js/common.js"></script>
 <script src="${cp}/js/dropdownSelector.js"></script>
 <script src="${cp}/js/community/categorySelect.js"></script>
 <script src="${cp}/js/community/contentEditor.js"></script>

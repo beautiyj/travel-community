@@ -11,6 +11,7 @@
       var trigger = container.querySelector(".drop-select-trigger");
       var label   = container.querySelector(".drop-select-text");
       var menuItems = container.querySelectorAll(".drop-menu-item");
+      var hiddenInput = container.querySelector("input[type=hidden]");
 
       if (!trigger || !label || !menuItems.length) return;
 
@@ -41,6 +42,11 @@
 
           // 2. 버튼 라벨 텍스트 변경
           label.textContent = selectedText;
+
+          // 2-1. hidden input이 있으면 실제 제출값 갱신 (검색폼 등에서 선택값을 서버로 전달)
+          if (hiddenInput) {
+            hiddenInput.value = val || "";
+          }
 
           // 3. 선택값 유무에 따라 is-selected 토글
           if (val) {

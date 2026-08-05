@@ -16,6 +16,7 @@
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/community/community.css">
 </head>
 <body>
+<jsp:include page="/WEB-INF/views/common/header.jsp" />
 <c:set var="cp" value="${pageContext.request.contextPath}" />
 
 <div class="container">
@@ -44,6 +45,7 @@
         <c:set var="isActive" value="${param.category == c or (empty param.category and c == '전체')}" />
         <c:url value="/community/list" var="tabUrl">
           <c:param name="category" value="${c}" />
+          <c:param name="searchType" value="${param.searchType}" />
           <c:param name="q" value="${param.q}" />
         </c:url>
 
@@ -55,15 +57,24 @@
       </c:forEach>
     </div>
 
-    <!-- 검색 (searchbar 컴포넌트 재사용) -->
+    <!-- 검색 (searchbar 컴포넌트 재사용)
+         검색 타입(제목/작성자/내용) 드롭다운: searchbar.jsp 내장 드롭다운 옵션 사용 -->
     <form action="/community/list" method="get" class="search-wrap">
       <input type="hidden" name="category" value="${param.category}">
     <jsp:include page="/WEB-INF/views/common/searchbar.jsp">
        	<jsp:param name="name"        value="q" />
         <jsp:param name="value"       value="${param.q}" />
         <jsp:param name="btnText"     value="조회" />
-        <jsp:param name="placeholder" value="제목, 작성자 검색" />
+        <jsp:param name="placeholder" value="검색어를 입력하세요" />
         <jsp:param name="width"       value="100%" />
+        <jsp:param name="useDropdown"        value="true" />
+        <jsp:param name="dropdownId"         value="community_search_type" />
+        <jsp:param name="listAttr"           value="searchTypeList" />
+        <jsp:param name="defaultLabel"       value="전체" />
+        <jsp:param name="dropdownWidth"      value="88px" />
+        <jsp:param name="dropdownHiddenName" value="searchType" />
+        <jsp:param name="selectedAttr"       value="searchType" />
+        <jsp:param name="selectedNameAttr"   value="searchTypeName" />
     </jsp:include>
 </form>
   </div>
@@ -115,8 +126,8 @@
     <center>
       <div class="pagination">
         <c:if test="${startPage > 1}">
-          <a class="page-nav" href="${cp}/community/list?category=${param.category}&q=${param.q}&page=1">&laquo;</a>
-          <a class="page-nav" href="${cp}/community/list?category=${param.category}&q=${param.q}&page=${startPage - 1}">이전</a>
+          <a class="page-nav" href="${cp}/community/list?category=${param.category}&searchType=${param.searchType}&q=${param.q}&page=1">&laquo;</a>
+          <a class="page-nav" href="${cp}/community/list?category=${param.category}&searchType=${param.searchType}&q=${param.q}&page=${startPage - 1}">이전</a>
         </c:if>
 
         <c:forEach var="p" begin="${startPage}" end="${endPage}">
@@ -125,21 +136,22 @@
               <span class="page-num active">${p}</span>
             </c:when>
             <c:otherwise>
-              <a class="page-num" href="${cp}/community/list?category=${param.category}&q=${param.q}&page=${p}">${p}</a>
+              <a class="page-num" href="${cp}/community/list?category=${param.category}&searchType=${param.searchType}&q=${param.q}&page=${p}">${p}</a>
             </c:otherwise>
           </c:choose>
         </c:forEach>
 
         <c:if test="${endPage < totalPages}">
-          <a class="page-nav" href="${cp}/community/list?category=${param.category}&q=${param.q}&page=${endPage + 1}">다음</a>
-          <a class="page-nav" href="${cp}/community/list?category=${param.category}&q=${param.q}&page=${totalPages}">&raquo;</a>
+          <a class="page-nav" href="${cp}/community/list?category=${param.category}&searchType=${param.searchType}&q=${param.q}&page=${endPage + 1}">다음</a>
+          <a class="page-nav" href="${cp}/community/list?category=${param.category}&searchType=${param.searchType}&q=${param.q}&page=${totalPages}">&raquo;</a>
         </c:if>
       </div>
     </center>
   </c:if>
 </div>
 
-<script src="${cp}/js/common.js"></script>
+<jsp:include page="/WEB-INF/views/common/footer.jsp" />
+
 <script src="${cp}/js/common/highlightKeyword.js"></script>
 <script src="${cp}/js/community/postSearchHighlight.js"></script>
 </body>

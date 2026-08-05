@@ -40,6 +40,11 @@ public class BusinessMypageController {
         this.mediaStorage = mediaStorage;
     }
 
+    @ModelAttribute("businessAccount")
+    public boolean businessAccount() {
+        return true;
+    }
+
     @GetMapping
     public String index(HttpSession session, Model model) {
         MypageDto member = getBusinessMember(session);
@@ -49,7 +54,7 @@ public class BusinessMypageController {
         model.addAttribute("member", member);
         model.addAttribute("application",
                 businessService.getApplication(member.getMemberId()));
-        return "mypage/business/info";
+        return "mypage/common/memberInfo";
     }
 
     @GetMapping("/info")
@@ -77,7 +82,7 @@ public class BusinessMypageController {
             return redirectBySession(session);
         }
         model.addAttribute("member", member);
-        return "mypage/business/edit";
+        return "mypage/common/memberEdit";
     }
 
     @PostMapping("/edit")
@@ -112,10 +117,13 @@ public class BusinessMypageController {
     }
 
     @GetMapping("/password")
-    public String passwordForm(HttpSession session) {
-        return getBusinessMember(session) == null
-                ? redirectBySession(session)
-                : "mypage/business/password";
+    public String passwordForm(HttpSession session, Model model) {
+        MypageDto member = getBusinessMember(session);
+        if (member == null) {
+            return redirectBySession(session);
+        }
+        model.addAttribute("member", member);
+        return "mypage/common/password";
     }
 
     @PostMapping("/password")
@@ -191,7 +199,7 @@ public class BusinessMypageController {
             return redirectBySession(session);
         }
         model.addAttribute("member", member);
-        return "mypage/business/withdraw";
+        return "mypage/common/withdraw";
     }
 
     @PostMapping("/withdraw")

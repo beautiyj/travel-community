@@ -133,4 +133,23 @@ public class TourValidator {
         // minPrice가 null이더라도 useFeeInfo(이용요금 텍스트)가 존재하면 적재 허용!
         return StringUtils.hasText(useFeeInfo);    }
 
+    // 0804 추가 - 부실데이터 예외 보완용(tour/stay 각 3건 추가 확보) 완화된 검증
+    // 카테고리 화이트리스트/해시태그 컷오프는 건너뛰고, 블랙리스트 키워드만 필터링
+    // (1차 큐 셀렉팅의 isValid()보다 훨씬 느슨한 기준 - 부족한 tour/stay를 별도로 보완하기 위함)
+    public boolean isValidBlacklistOnly(TourAreaBasedSyncListDTO item) {
+        if (item == null) return false;
+
+        String contentTypeId = item.getContenttypeid();
+        if (!List.of("12", "14", "28", "32", "39").contains(contentTypeId)) { return false; }
+
+        String title = item.getTitle();
+        if (StringUtils.hasText(title)) {
+            String cleanTitle = title.replaceAll("\\s+", "").toLowerCase();
+            for (String keyword : BLACK_KEYWORDS) {
+                if (cleanTitle.contains(keyword.toLowerCase())) { return false; }
+            }
+        }
+        return true;
+    }
+
 }

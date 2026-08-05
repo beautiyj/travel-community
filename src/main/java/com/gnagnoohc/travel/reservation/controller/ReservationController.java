@@ -50,7 +50,8 @@ public class ReservationController {
         // 예약 폼도 로그인 필수 — 예약자 정보 자동입력을 위해 회원 조회가 필요해 폼 진입 자체를 로그인 필수로 전환
         LoginMemberDto loginMember = (LoginMemberDto) session.getAttribute("loginMember");
         if (loginMember == null) {
-            return "redirect:/auth/login";
+            model.addAttribute("message", "로그인이 필요한 서비스입니다.");
+            return "reservation/loginRequired";
         }
         MypageDto member = mypageService.getMemberInfo((long) loginMember.getMemberId());
         model.addAttribute("loginMemberName", member.getName());

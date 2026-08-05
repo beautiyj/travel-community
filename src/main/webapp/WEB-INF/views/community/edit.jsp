@@ -108,7 +108,7 @@
 
     <!-- 장소 태그: "방문자인증후기"/"일반후기" 카테고리일 때만 노출, 취소/수정완료 버튼 바로 위
          이미 태그된 장소가 있으면 미리 채워서 보여줌
-         방문자인증후기: 단일 선택(#place-tag-selected, 필수) / 일반후기: 다중 선택(#place-tag-selected-list, 선택사항) -->
+         방문자인증후기: 단일 선택(#place-tag-selected, 필수) / 일반후기: 다중 선택(#place-tag-selected-list, 선택사항, 최대 5개) -->
     <div class="field" id="place-tag-field"
          style="${(post.category == '방문자인증후기' || post.category == '일반후기') ? '' : 'display:none;'}">
       <label class="field-label">장소 태그</label>
@@ -137,6 +137,10 @@
           </span>
         </c:forEach>
       </div>
+
+      <!-- 일반후기 다중 태그가 5개에 도달하면 placeTag.js의 updatePlaceTagLimitUI()가 이 문구를 보여주고
+           아래 open-btn을 숨김 (이미 5개가 pre-fill된 상태로 페이지가 로드되는 경우도 JS가 처리). 기본은 숨김 상태 -->
+      <p id="place-tag-limit-msg" class="place-tag-limit-msg" style="display:none;">장소 태그는 최대 5개까지 추가할 수 있습니다.</p>
 
       <button type="button" id="place-tag-open-btn" class="place-tag-open-btn"
               style="${empty post.placeId ? '' : 'display:none;'}">장소 검색해서 태그하기</button>

@@ -34,6 +34,8 @@ public class CommunityController {
     private final ImageService imageService;        // 이미지 저장/조회 (image 부분 분리)
     private final CommonService commonService;      // 장소 태그 검색 (community/comment 공통)
 
+    private static final int MAX_PLACE_TAGS = 5;    // 일반후기 다중 장소 태그 최대 개수
+
     // 커뮤니티 테스트 파일 실행
     @GetMapping("/community/test")
     public String index() {
@@ -288,13 +290,20 @@ public class CommunityController {
     }
 
     // placeIds에서 null/중복 제거, 남는 게 없으면 null로 정규화 (foreach insert에 빈 리스트가 안 들어가게)
+    // 최대 5개까지만 허용 (화면에서 5개 넘게 못 고르게 막아도, 폼 조작으로 더 넘어올 수 있으니 서버에서 잘라냄)
     private List<Integer> dedupePlaceIds(List<Integer> placeIds) {
         if (placeIds == null || placeIds.isEmpty()) {
             return null;
         }
         List<Integer> deduped = new ArrayList<>(new LinkedHashSet<>(placeIds));
         deduped.remove(null);
-        return deduped.isEmpty() ? null : deduped;
+        if (deduped.isEmpty()) {
+            return null;
+        }
+        if (deduped.size() > MAX_PLACE_TAGS) {
+            deduped = deduped.subList(0, MAX_PLACE_TAGS);
+        }
+        return deduped;
     }
 
     // 방문자인증후기인데 장소 태그(placeId)가 없는 경우 (필수 검증)

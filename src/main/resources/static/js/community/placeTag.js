@@ -3,11 +3,12 @@
 // 장소 검색 모달(placeSearchModal.jsp)에서 장소를 검색/선택/해제하는 로직을 담당함.
 // - 방문자인증후기: 로그인 회원의 확정(결제완료) 예약 장소만 검색됨 (서버 /community/place/search가 category로 분기)
 //   장소 태그가 필수라서, 태그 없이 제출하면 막고 안내 모달(placeTagRequiredModal)을 띄움
-// - 일반후기: 전체 장소 검색, 장소 태그는 선택사항이고 여러 개 선택 가능 (개수 제한 없음)
+// - 일반후기: 전체 장소 검색, 장소 태그는 선택사항이고 여러 개 선택 가능 (최대 5개)
 // ※ window.CP 전역변수(contextPath)가 이 스크립트보다 먼저 정의되어 있어야 함.
 
 const VERIFIED_REVIEW_VALUE = '방문자인증후기';
 const GENERAL_REVIEW_VALUE = '일반후기';
+const MAX_PLACE_TAGS = 5;
 let placeSearchTimer = null;
 
 function currentCategoryValue() {
@@ -29,6 +30,26 @@ function syncPlaceFieldVisibility() {
 
   // 장소 태그 대상 카테고리가 아닌 값으로 바뀌면 이미 골라둔 태그도 같이 초기화
   if (!showField) clearAllPlaceTags();
+
+  updatePlaceTagLimitUI();
+}
+
+// 일반후기 다중 태그가 최대 개수(5개)에 도달하면 "장소 검색해서 태그하기" 버튼을 숨기고
+// 안내 문구를 보여줌. edit.jsp처럼 이미 5개가 채워진 상태로 페이지가 로드되는 경우도 커버해야 해서
+// 카테고리 변경 시뿐 아니라 태그 추가/삭제 직후에도 호출됨
+function updatePlaceTagLimitUI() {
+  const openBtn = document.getElementById('place-tag-open-btn');
+  const limitMsg = document.getElementById('place-tag-limit-msg');
+  const listEl = document.getElementById('place-tag-selected-list');
+
+  if (currentCategoryValue() !== GENERAL_REVIEW_VALUE) {
+    if (limitMsg) limitMsg.style.display = 'none';
+    return;
+  }
+
+  const atMax = !!listEl && listEl.children.length >= MAX_PLACE_TAGS;
+  if (openBtn) openBtn.style.display = atMax ? 'none' : '';
+  if (limitMsg) limitMsg.style.display = atMax ? '' : 'none';
 }
 
 // 사용자가 카테고리 라디오를 직접 바꿨을 때만 호출됨: 방문자인증후기(단일 placeId)와
@@ -98,12 +119,13 @@ function selectPlaceTag(placeId, placeName, placeType) {
   if (window.closeModal) window.closeModal('placeSearchModal');
 }
 
-// 일반후기 다중 태그: 칩 하나 추가 (이미 선택된 장소면 중복 추가하지 않음). 개수 상한 없음.
+// 일반후기 다중 태그: 칩 하나 추가 (이미 선택된 장소면 중복 추가하지 않음). 최대 5개.
 // 각 칩은 자체 hidden input(name="placeIds")을 가지고 있어서 폼 제출 시 선택한 개수만큼 그대로 넘어감
 function addPlaceTagChip(placeId, placeName, placeType) {
   const listEl = document.getElementById('place-tag-selected-list');
   if (!listEl) return;
   if (listEl.querySelector('[data-place-id="' + placeId + '"]')) return;
+  if (listEl.children.length >= MAX_PLACE_TAGS) return;
 
   const chip = document.createElement('span');
   chip.className = 'place-tag-selected';
@@ -113,6 +135,7 @@ function addPlaceTagChip(placeId, placeName, placeType) {
     '<span>' + escapeHtml(placeName) + ' ' + placeTypeBadgeHtml(placeType) + '</span>' +
     '<button type="button" class="place-tag-remove" data-remove-place-id="' + placeId + '">✕</button>';
   listEl.appendChild(chip);
+  updatePlaceTagLimitUI();
 }
 
 // 검색 결과 아이템 목록의 HTML 생성 (최초 검색/더보기 공용). 이름에 매칭된 keyword는 굵게 강조.
@@ -242,6 +265,7 @@ document.addEventListener('DOMContentLoaded', function () {
       if (!btn) return;
       const chip = btn.closest('[data-place-id]');
       if (chip) chip.remove();
+      updatePlaceTagLimitUI();
     });
   }
 

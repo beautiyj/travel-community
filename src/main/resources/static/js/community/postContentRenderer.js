@@ -8,7 +8,7 @@
 (function () {
   'use strict';
 
-  const TOKEN_PATTERN = /\[\[IMG:(\d+)(?::(left|right))?\]\]|\[\[SLIDER:(\d+(?:,\d+)*)(?::(left|right))?\]\]|\[\[COLLAGE:(?:(\d+)-(\d+):)?(\d+-\d+-\d+(?:-\d+)?(?:,\d+-\d+-\d+(?:-\d+)?)*)(?::(left|right))?\]\]/g;
+  const TOKEN_PATTERN = /\[\[IMG:(\d+)(?::(left|right))?(?::(\d{1,3}))?\]\]|\[\[SLIDER:(\d+(?:,\d+)*)(?::(left|right))?(?::(\d{1,3}))?\]\]|\[\[COLLAGE:(?:(\d+)-(\d+):)?(\d+-\d+-\d+(?:-\d+)?(?:,\d+-\d+-\d+(?:-\d+)?)*)(?::(left|right))?(?::(\d{1,3}))?\]\]/g;
 
   const DEFAULT_COLLAGE_ITEM_WIDTH = 42; // % of canvas width, 폭 정보 없는 구버전 토큰의 기본값
 
@@ -21,10 +21,11 @@
     });
   }
 
-  function appendSingle(root, imgUrlFor, total, n, align) {
+  function appendSingle(root, imgUrlFor, total, n, align, bw) {
     if (n < 0 || n >= total) return;
     const wrap = document.createElement('div');
     wrap.className = 'content-img-block align-' + (align || 'center');
+    if (bw) wrap.style.width = bw + '%';
     const img = document.createElement('img');
     img.src = imgUrlFor(n);
     img.alt = '첨부 이미지';
@@ -34,12 +35,14 @@
 
   // entries: [{n, x, y, w}] — 겹침이 있을 수 있는 자유 배치 콜라주를 그대로 재현
   // ratio: {rw, rh} — 삽입 당시 여백을 잘라낸 캔버스 비율(없으면 정사각형 기본값 유지)
-  function appendCollage(root, imgUrlFor, total, entries, align, ratio) {
+  // bw: 작성/수정 시 전체 블록 리사이즈 핸들로 조절한 폭(에디터 폭 대비 %, 없으면 CSS 기본값 사용)
+  function appendCollage(root, imgUrlFor, total, entries, align, ratio, bw) {
     const valid = entries.filter(function (e) { return e.n >= 0 && e.n < total; });
     if (!valid.length) return;
 
     const wrap = document.createElement('div');
     wrap.className = 'content-collage-block align-' + (align || 'center');
+    if (bw) wrap.style.width = bw + '%';
     const canvas = document.createElement('div');
     canvas.className = 'collage-canvas';
     if (ratio) canvas.style.aspectRatio = ratio.rw + ' / ' + ratio.rh;
@@ -132,12 +135,13 @@
     }
   }
 
-  function appendSlider(root, imgUrlFor, total, indices, align) {
+  function appendSlider(root, imgUrlFor, total, indices, align, bw) {
     const valid = indices.filter(function (n) { return n >= 0 && n < total; });
     if (!valid.length) return;
 
     const wrap = document.createElement('div');
     wrap.className = 'content-slider-block align-' + (align || 'center');
+    if (bw) wrap.style.width = bw + '%';
     wrap.innerHTML =
       '<div class="slider-viewport"><div class="slider-track"></div></div>' +
       '<div class="slider-scrollbar-track"><div class="slider-scrollbar-thumb"></div></div>';
@@ -180,18 +184,18 @@
       appendText(root, rawContent.slice(lastIndex, match.index));
 
       if (match[1] !== undefined) {
-        appendSingle(root, imgUrlFor, imageUrls.length, parseInt(match[1], 10), match[2]);
-      } else if (match[3] !== undefined) {
-        appendSlider(root, imgUrlFor, imageUrls.length, match[3].split(',').map(Number), match[4]);
+        appendSingle(root, imgUrlFor, imageUrls.length, parseInt(match[1], 10), match[2], match[3]);
+      } else if (match[4] !== undefined) {
+        appendSlider(root, imgUrlFor, imageUrls.length, match[4].split(',').map(Number), match[5], match[6]);
       } else {
-        const entries = match[7].split(',').map(function (s) {
+        const entries = match[9].split(',').map(function (s) {
           const parts = s.split('-').map(Number);
           return { n: parts[0], x: parts[1], y: parts[2], w: parts.length > 3 ? parts[3] : DEFAULT_COLLAGE_ITEM_WIDTH };
         });
-        const ratio = (match[5] !== undefined && match[6] !== undefined)
-          ? { rw: Number(match[5]), rh: Number(match[6]) }
+        const ratio = (match[7] !== undefined && match[8] !== undefined)
+          ? { rw: Number(match[7]), rh: Number(match[8]) }
           : null;
-        appendCollage(root, imgUrlFor, imageUrls.length, entries, match[8], ratio);
+        appendCollage(root, imgUrlFor, imageUrls.length, entries, match[10], ratio, match[11]);
       }
       lastIndex = TOKEN_PATTERN.lastIndex;
     }

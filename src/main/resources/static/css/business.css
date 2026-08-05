@@ -44,11 +44,16 @@ body {
     height: 64px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    /*gap: 8px;*/
     padding: 0 20px;
     border-bottom: 1px solid var(--business-border);
     font-weight: 800;
     color: var(--business-primary);
+}
+.business-sidebar__logo>a{
+    display: flex;
+    align-items: center;
+    gap:8px;
 }
 
 .business-sidebar__logo-badge {
@@ -170,6 +175,19 @@ body {
 
 .business-nav-item--danger {
     color: var(--business-danger);
+}
+
+.business-sidebar__logout-form {
+    width: 100%;
+}
+
+.business-sidebar__logout-form .business-nav-item--danger {
+    width: 100%;
+    background: transparent;
+    border: 0;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
 }
 
 .business-badge {

@@ -1,11 +1,9 @@
 package com.gnagnoohc.travel.admin.controller;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.util.Locale;
 import java.util.NoSuchElementException;
 
-import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ContentDisposition;
@@ -25,6 +23,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.gnagnoohc.travel.admin.service.AdminBusinessApplicationService;
+import com.gnagnoohc.travel.admin.service.AdminBusinessApplicationService.DocumentContent;
 import com.gnagnoohc.travel.auth.dto.LoginMemberDto;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -86,11 +85,11 @@ public class AdminBusinessApplicationController {
 			@PathVariable int applicationId,
 			HttpServletRequest request) {
 		LoginMemberDto admin = AdminSessionSupport.requireAdmin(request);
-		Path document = service.getBusinessRegistrationDocument(
+		DocumentContent document = service.getBusinessRegistrationDocument(
 				applicationId, admin.getMemberId());
 
-		MediaType mediaType = determineMediaType(document);
-		String extension = getSafeExtension(document);
+		MediaType mediaType = determineMediaType(document.sourceUrl());
+		String extension = getSafeExtension(document.sourceUrl());
 		String downloadName = "business-registration-" + applicationId + extension;
 
 		return ResponseEntity.ok()
@@ -103,7 +102,7 @@ public class AdminBusinessApplicationController {
 								.filename(downloadName)
 								.build()
 								.toString())
-				.body(new FileSystemResource(document));
+				.body(new ByteArrayResource(document.content()));
 	}
 
 	/**
@@ -193,25 +192,13 @@ public class AdminBusinessApplicationController {
 		response.setDateHeader(HttpHeaders.EXPIRES, 0);
 	}
 
-	private MediaType determineMediaType(Path document) {
-		try {
-			String detectedType = Files.probeContentType(document);
-			if (detectedType != null) {
-				MediaType mediaType = MediaType.parseMediaType(detectedType);
-				if (MediaType.IMAGE_PNG.includes(mediaType)
-						|| MediaType.IMAGE_JPEG.includes(mediaType)) {
-					return mediaType;
-				}
-			}
-		} catch (IOException | IllegalArgumentException ignored) {
-			// 가입 시 PNG/JPEG만 저장하지만 운영체제의 MIME 감지가 실패할 수 있어 확장자를 한 번 더 확인한다.
-		}
-
-		String filename = document.getFileName().toString().toLowerCase();
-		if (filename.endsWith(".png")) {
+	// 가입 시 PNG/JPEG만 저장하므로 Cloudinary URL의 확장자만으로 판단해도 충분하다.
+	private MediaType determineMediaType(String documentUrl) {
+		String lowerUrl = documentUrl.toLowerCase(Locale.ROOT);
+		if (lowerUrl.endsWith(".png")) {
 			return MediaType.IMAGE_PNG;
 		}
-		if (filename.endsWith(".jpg") || filename.endsWith(".jpeg")) {
+		if (lowerUrl.endsWith(".jpg") || lowerUrl.endsWith(".jpeg")) {
 			return MediaType.IMAGE_JPEG;
 		}
 		throw new ResponseStatusException(
@@ -219,12 +206,12 @@ public class AdminBusinessApplicationController {
 				"지원하지 않는 사업자등록증 파일 형식입니다.");
 	}
 
-	private String getSafeExtension(Path document) {
-		String filename = document.getFileName().toString().toLowerCase();
-		if (filename.endsWith(".png")) {
+	private String getSafeExtension(String documentUrl) {
+		String lowerUrl = documentUrl.toLowerCase(Locale.ROOT);
+		if (lowerUrl.endsWith(".png")) {
 			return ".png";
 		}
-		if (filename.endsWith(".jpeg")) {
+		if (lowerUrl.endsWith(".jpeg")) {
 			return ".jpeg";
 		}
 		return ".jpg";

@@ -4,11 +4,9 @@ import org.springframework.util.unit.DataSize;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Locale;
-import java.util.UUID;
 
 /**
- * 업로드 파일 검증과 저장용 파일명 생성. 로컬/Cloudinary 구현이 같은 규칙을 쓰도록 여기에 모아둔다.
- * Cloudinary는 업로드 전에 걸러야 무료 한도를 낭비하지 않는다.
+ * 업로드 파일 검증. Cloudinary는 업로드 전에 걸러야 무료 한도를 낭비하지 않는다.
  */
 final class ImageUploads {
 
@@ -18,11 +16,6 @@ final class ImageUploads {
     /** 빈 파일·용량·확장자를 검사한다. 통과 못 하면 IllegalArgumentException. */
     static void validate(MultipartFile file, StorageProperties.Bucket bucket) {
         extensionOf(file, bucket);
-    }
-
-    /** 검증까지 마친 뒤 저장에 쓸 파일명(UUID + 확장자)을 만든다. */
-    static String newFilename(MultipartFile file, StorageProperties.Bucket bucket) {
-        return UUID.randomUUID() + "." + extensionOf(file, bucket);
     }
 
     private static String extensionOf(MultipartFile file, StorageProperties.Bucket bucket) {

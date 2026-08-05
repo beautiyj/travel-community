@@ -4,7 +4,6 @@ import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -13,13 +12,9 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
-/**
- * 배포용 구현
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "app.storage.type", havingValue = "cloudinary")
 public class CloudinaryImageStorage implements ImageStorage {
 
     private static final String UPLOAD_SEGMENT = "/upload/";

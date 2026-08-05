@@ -3,19 +3,20 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <jsp:include page="/WEB-INF/views/mypage/common/pageHead.jsp">
-        <jsp:param name="title" value="사업자 비밀번호 변경"/>
-    </jsp:include>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>사업자 비밀번호 변경</title>
+    <link rel="stylesheet" href="/css/mypage/common.css">
+    <link rel="stylesheet" href="/css/mypage/business.css">
 </head>
 <body class="business-mypage">
 <main class="mypage-page">
-    <h1 class="mypage-page__title">마이페이지</h1>
+    <h1 class="mypage-page__title">비밀번호 변경</h1>
     <div class="mypage-layout">
         <jsp:include page="/WEB-INF/views/mypage/business/components/sidebar.jsp">
             <jsp:param name="active" value="info"/>
         </jsp:include>
-        <section class="mypage-content mypage-content--form" aria-labelledby="business-password-title">
-        <div class="mypage-content__header"><h2 id="business-password-title">비밀번호 변경</h2></div>
+        <section class="mypage-content mypage-content--form">
         <c:if test="${not empty error}">
             <p class="profile-edit__message profile-edit__message--error">
                 <c:out value="${error}"/>

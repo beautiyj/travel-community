@@ -3,17 +3,22 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <jsp:include page="/WEB-INF/views/mypage/common/pageHead.jsp"><jsp:param name="title" value="사업자 기본 정보"/></jsp:include>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>사업자 기본 정보</title>
+    <link rel="stylesheet" href="/css/mypage/common.css">
+    <link rel="stylesheet" href="/css/mypage/business.css">
+    <link rel="stylesheet" href="/css/components/buttonComponent.css">
+    <link rel="stylesheet" href="/css/components/confirmModal.css">
 </head>
 <body class="business-mypage">
 <main class="mypage-page">
-    <h1 class="mypage-page__title">마이페이지</h1>
+    <h1 class="mypage-page__title">기본 정보</h1>
     <c:if test="${not empty message}"><div class="biz-message"><c:out value="${message}"/></div></c:if>
     <c:if test="${not empty error}"><div class="biz-message biz-message--error"><c:out value="${error}"/></div></c:if>
     <div class="mypage-layout">
         <jsp:include page="/WEB-INF/views/mypage/business/components/sidebar.jsp"><jsp:param name="active" value="info"/></jsp:include>
-        <section class="mypage-content" aria-labelledby="business-info-title">
-            <div class="mypage-content__header"><h2 id="business-info-title">기본 정보</h2></div>
+        <section class="mypage-content mypage-content--form">
             <dl class="member-info-list">
                 <div><dt>아이디</dt><dd><c:out value="${member.loginId}" default="-"/></dd></div>
                 <div><dt>이름</dt><dd><c:out value="${member.name}" default="-"/></dd></div>
@@ -32,8 +37,21 @@
                 </div>
                 <div>
                     <dt>사업자 승인 상태</dt>
-                    <dd>${application.status eq 'APPROVED' ? '사업자' : '대기'}</dd>
+                    <dd>
+                        <c:choose>
+                            <c:when test="${application.status eq 'PENDING'}">승인 대기</c:when>
+                            <c:when test="${application.status eq 'APPROVED'}">승인 완료</c:when>
+                            <c:when test="${application.status eq 'REJECTED'}">승인 반려</c:when>
+                            <c:otherwise><c:out value="${application.status}"/></c:otherwise>
+                        </c:choose>
+                    </dd>
                 </div>
+                <c:if test="${application.status eq 'REJECTED' and not empty application.rejectionReason}">
+                    <div>
+                        <dt>반려 사유</dt>
+                        <dd><c:out value="${application.rejectionReason}"/></dd>
+                    </div>
+                </c:if>
                 <div><dt>가입일</dt><dd><c:out value="${member.createdDate}" default="-"/></dd></div>
             </dl>
             <div class="member-info-actions">
@@ -47,5 +65,6 @@
         </section>
     </div>
 </main>
+<script src="/js/common.js"></script>
 </body>
 </html>

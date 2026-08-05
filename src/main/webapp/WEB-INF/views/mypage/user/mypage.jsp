@@ -2,7 +2,13 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <!DOCTYPE html>
 <html lang="ko">
-<head><jsp:include page="/WEB-INF/views/mypage/common/pageHead.jsp"><jsp:param name="title" value="마이페이지" /></jsp:include></head>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>마이페이지</title>
+    <link rel="stylesheet" href="/css/mypage/common.css">
+    <link rel="stylesheet" href="/css/mypage/user.css">
+</head>
 <body>
 <main class="mypage-page">
     <h1 class="mypage-page__title">마이페이지</h1>

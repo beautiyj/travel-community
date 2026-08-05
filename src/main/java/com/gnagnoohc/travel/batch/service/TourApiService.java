@@ -61,40 +61,84 @@ public class TourApiService {
     // "타입별 최소 1개 + 지역당 총 10개" 보장이 실제로 성립하지 않아(각 호출엔 타입이 1개뿐이라 그룹핑 무의미),
     // 5개 타입을 모두 모아 후보 리스트를 합친 뒤 지역별 샘플링을 단 한 번만 수행하도록 변경
 
-    // TODO: 배치스케줄러 테스트로직확인필요 & 확인 후 로그삭제
-    public void fetchAllTargetSyncList() {
-        log.info("[Batch Sync Start] 지역별/타입별 부족한 수량 점검 및 보충 수집을 시작합니다.");
+    // TODO: 배치스케줄러 테스트로직확인필요 & 확인 후 로그만 삭제 / 원본코드임시주석처리.배포시주석해제
+    // public void fetchAllTargetSyncList() {
+    //     log.info("[Batch Sync Start] 지역별/타입별 부족한 수량 점검 및 보충 수집을 시작합니다.");
 
-        // 기존에 사용 중이신 전체 REGION 목록 조회
-        List<RegionDTO> regionList = tourMapper.selectAllRegions();
+    //     // 기존에 사용 중이신 전체 REGION 목록 조회
+    //     List<RegionDTO> regionList = tourMapper.selectAllRegions();
 
-        // 버킷별 목표 수량 (필요 시 수정)
-        final int TARGET_COUNT_PER_BUCKET = 3;
+    //     // 버킷별 목표 수량 (필요 시 수정)
+    //     final int TARGET_COUNT_PER_BUCKET = 3;
 
-        for (RegionDTO region : regionList) {
-            String regionKey = String.valueOf(region.getRegionId());
+    //     for (RegionDTO region : regionList) {
+    //         String regionKey = String.valueOf(region.getRegionId());
 
-            for (String contentTypeId : TARGET_CONTENT_TYPES) {
-                // 기존 helper의 convertContentType 활용
-                String bucketType = tourApiHelper.convertContentType(contentTypeId, null, null);
+    //         for (String contentTypeId : TARGET_CONTENT_TYPES) {
+    //             // 기존 helper의 convertContentType 활용
+    //             String bucketType = tourApiHelper.convertContentType(contentTypeId, null, null);
 
-                // 해당 지역/타입의 DB 적재 개수 조회
-                int currentCount = tourMapper.countPlacesByRegionAndType(regionKey, bucketType);
-                int need = TARGET_COUNT_PER_BUCKET - currentCount;
+    //             // 해당 지역/타입의 DB 적재 개수 조회
+    //             int currentCount = tourMapper.countPlacesByRegionAndType(regionKey, bucketType);
+    //             int need = TARGET_COUNT_PER_BUCKET - currentCount;
 
-                // 부족한 T.O가 있을 때만 수집 실행
-                if (need > 0) {
-                    // 기존 방식대로 region에서 코드를 구하거나 null 처리
-                    String regnCd = (region.getRegionId() != null) ? String.valueOf(region.getRegionId()).substring(0, 2) : null;
-                    String signguCd = (region.getRegionId() != null && String.valueOf(region.getRegionId()).length() > 2)
-                            ? String.valueOf(region.getRegionId()).substring(2) : null;
+    //             // 부족한 T.O가 있을 때만 수집 실행
+    //             if (need > 0) {
+    //                 // 기존 방식대로 region에서 코드를 구하거나 null 처리
+    //                 String regnCd = (region.getRegionId() != null) ? String.valueOf(region.getRegionId()).substring(0, 2) : null;
+    //                 String signguCd = (region.getRegionId() != null && String.valueOf(region.getRegionId()).length() > 2)
+    //                         ? String.valueOf(region.getRegionId()).substring(2) : null;
 
-                    fillLowQualitySupplement(regnCd, signguCd, regionKey, bucketType, List.of(contentTypeId), need);
-                }
+    //                 fillLowQualitySupplement(regnCd, signguCd, regionKey, bucketType, List.of(contentTypeId), need);
+    //             }
+    //         }
+    //     }
+    //     log.info("[Batch Sync End] 부족한 수량 보충 수집이 완료되었습니다.");
+    // }
+
+    // TODO: 테스트후제거필요  - 지정 지역만 대상으로 부족분 보충 로직을 테스트 실행 (fetchAllTargetSyncList의 지역 한정 버전)
+// 아래 processSupplementForRegions()를 그대로 공유하므로, 실제 스케줄러가 타는 로직과 100% 동일하게 검증 가능
+public void fetchSupplementForRegions(List<Integer> regionIds) {
+    log.info("[Batch Sync Test Start] 지정 지역 {} 대상 부족분 점검을 시작합니다.", regionIds);
+    List<RegionDTO> regionList = regionIds.stream()
+            .map(id -> RegionDTO.builder().regionId(id).build())
+            .toList();
+    processSupplementForRegions(regionList);
+    log.info("[Batch Sync Test End] 지정 지역 부족분 점검이 완료되었습니다.");
+}
+
+// TODO: 테스트후제거필요 : 배치스케줄러 테스트로직확인필요 & 확인 후 로그삭제
+public void fetchAllTargetSyncList() {
+    log.info("[Batch Sync Start] 지역별/타입별 부족한 수량 점검 및 보충 수집을 시작합니다.");
+    List<RegionDTO> regionList = tourMapper.selectAllRegions();
+    processSupplementForRegions(regionList);
+    log.info("[Batch Sync End] 부족한 수량 보충 수집이 완료되었습니다.");
+}
+
+// TODO: 테스트후제거필요 - fetchAllTargetSyncList / fetchSupplementForRegions가 공유하는 실제 보충 로직
+// (원래 fetchAllTargetSyncList의 for문 본체를 그대로 분리한 것 - 로직 자체는 전혀 안 바뀜)
+private void processSupplementForRegions(List<RegionDTO> regionList) {
+    final int TARGET_COUNT_PER_BUCKET = 3;
+
+    for (RegionDTO region : regionList) {
+        String regionKey = String.valueOf(region.getRegionId());
+
+        for (String contentTypeId : TARGET_CONTENT_TYPES) {
+            String bucketType = tourApiHelper.convertContentType(contentTypeId, null, null);
+
+            int currentCount = tourMapper.countPlacesByRegionAndType(regionKey, bucketType);
+            int need = TARGET_COUNT_PER_BUCKET - currentCount;
+
+            if (need > 0) {
+                String regnCd = (region.getRegionId() != null) ? String.valueOf(region.getRegionId()).substring(0, 2) : null;
+                String signguCd = (region.getRegionId() != null && String.valueOf(region.getRegionId()).length() > 2)
+                        ? String.valueOf(region.getRegionId()).substring(2) : null;
+
+                fillLowQualitySupplement(regnCd, signguCd, regionKey, bucketType, List.of(contentTypeId), need);
             }
         }
-        log.info("[Batch Sync End] 부족한 수량 보충 수집이 완료되었습니다.");
     }
+}
 
     // 법정동 코드 수집 및 REGION 적재 파이프라인 (코드는 전체 목록 조회 Y 옵션으로 진행)
     @Transactional

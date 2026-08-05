@@ -9,7 +9,7 @@
             parameterType="long"
             resultType="com.gnagnoohc.travel.mypage.dto.BusinessApplicationDto">
         select member_id,
-               business_registration_img_url as document_url,
+               business_registration_file_key as document_url,
                application_status as status,
                applied_at as created_at,
                approved_by as reviewed_by,
@@ -22,7 +22,7 @@
             parameterType="com.gnagnoohc.travel.mypage.dto.BusinessApplicationDto">
         insert into business_application (
             member_id,
-            business_registration_img_url,
+            business_registration_file_key,
             application_status,
             applied_at
         )
@@ -33,8 +33,8 @@
             now()
         )
         on duplicate key update
-            business_registration_img_url =
-                values(business_registration_img_url),
+            business_registration_file_key =
+                values(business_registration_file_key),
             application_status = 'PENDING',
             applied_at = now(),
             approved_by = null,

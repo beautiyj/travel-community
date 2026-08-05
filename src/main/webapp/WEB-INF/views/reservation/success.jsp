@@ -39,7 +39,7 @@
 				<jsp:param name="text" value="내 예약 확인하기" />
 				<jsp:param name="width" value="100%" />
 				<jsp:param name="onclick"
-					value="location.href='/mypage/reservations'" />
+					value="location.href='${pageContext.request.contextPath}/mypage/reservation'" />
 			</jsp:include>
 			<%-- 예약 취소 요청은 마이페이지 예약 내역에서 처리한다(구현 예정).
              아래 트리거 버튼만 제거하고, 모달·JS·API는 그대로 남겨 마이페이지에서 버튼만 추가하면 바로 연결되게 둔다. --%>

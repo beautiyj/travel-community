@@ -19,6 +19,8 @@
     <div class="business-main">
         <jsp:include page="common/topbar.jsp">
             <jsp:param name="title" value="마감 관리" />
+            <jsp:param name="date" value="${todayLabel}" />
+            <jsp:param name="dateIcon" value="true" />
         </jsp:include>
 
         <div class="business-content">

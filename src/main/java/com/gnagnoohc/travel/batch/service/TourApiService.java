@@ -266,11 +266,11 @@ public class TourApiService {
         return rawValidList;
     }
 
-    // TODO: 0804 무작위 샘플링 및 DB 적재 핵심 처리 메서드 (타입별 보완 2단계 Fallback 확장 적용)
-    // - 1차 큐 처리는 기존 흐름 유지
-    // - 2단계 Fallback 시 큐를 사용하지 않고, 전체 후보군에서 stay / tour 타입을 각각 타겟팅하여
-    //   중분류가 다양하게 섞이도록 랜덤하게 뽑아 부족한 수량을 강제 적재
-    // TODO: 0804 무작위 샘플링 및 DB 적재 핵심 처리 메서드 (1차 큐 10건 + stay 5 / tour 5 강제 적재 + 최종 10개 채우기 패딩)
+    // TODO: 0804 무작위 샘플링 및 DB 적재 핵심 처리 메서드 (테스트용로그이후삭제:)
+    // 0805 10:54 2단계 강제적재 제거, 1단계 큐처리+2단계 패딩(안전장치)처리+3단계 부실데이터보완처리 진행.
+    // - 1차 큐 10건(엄격 검증: 이미지 5장 이상, 가격 등)
+    // - 10건 미달 시 패딩(안전장치): 필수값(대표이미지 + 개요 + 주소)이 보장된 잔여 데이터로 10개 채우기
+    // - 3단계 부실 보완 레이어: 위 10개 캡과 별개로 필수값 보장된 tour 3건 + stay 3건 추가 적재 
     private void processRandomSamplingAndSave(List<TourAreaBasedSyncListDTO> rawValidList) {
         if (rawValidList == null || rawValidList.isEmpty()) return;
 
@@ -304,7 +304,7 @@ public class TourApiService {
                 typedMap.computeIfAbsent(type, k -> new ArrayList<>()).add(item);
             }
 
-            // 💡수집된 데이터 중 카테고리별 유효 개수를 미리 출력하여 확인
+            // TODO: 테스트용로그이후삭제: 수집된 데이터 중 카테고리별 유효 개수를 미리 출력하여 확인
             log.info("[Type Check] 지역코드 {} 유효 후보 분포 - tour: {}건, stay: {}건, food: {}건 (전체: {}건)",
                     regionKey,
                     typedMap.getOrDefault("tour", Collections.emptyList()).size(),
@@ -338,8 +338,13 @@ public class TourApiService {
             int newlySavedCount = 0;
 
             // =====================================================================================
-            // [1단계] 기존 큐 기반 10건 채우기 처리
+            // [1단계] 기존 큐 기반 10건 채우기 처리 (엄격한 검증: 이미지 5장 이상, 가격 검증 등)
             // =====================================================================================
+            // 큐 처리: 1차 딕셔너리처럼 맵 그룹핑한 데이터를, -> 타입별 균형선발하여 큐 구성.
+            // 큐는 특정타입이 몰리지 않게 정형화시키는 가공작업으로, 일부데이터를 무작위로 1개씩 우선추출하여 리스트 맨앞에 저장,
+            // 그다음 우선추출 후 나머지데이터는 하나로 셔플 -> 우선추출 뒤에 붙여서 선입선출 후보군 큐(리스트) 구성
+            // 이후 후보군 큐처리를 맨앞부터 순회하면서 DB 적재 시도, 적재 성공 시 newlySavedCount 증가, 실패 시 스킵,
+            // 큐셀렉팅 이루 2차 검증까지 통과하면 최종 적재.
             for (TourAreaBasedSyncListDTO targetItem : candidateQueue) {
                 if (newlySavedCount >= targetGoal) {
                     break;
@@ -361,23 +366,25 @@ public class TourApiService {
             // 1차 큐 처리에 사용된 아이템 ID 집합 추출 (중복 방지용)
             Set<String> processedIds = candidateQueue.stream()
                     .limit(newlySavedCount)
+                    // 스트림 내부의 TourAreaBasedSyncListDTO 객체들 각각에서 getContentid() 메서드를 호출해서 값 가져오는 메서드 참조 로직(람다식)
                     .map(TourAreaBasedSyncListDTO::getContentid)
                     .collect(Collectors.toSet());
 
-            // =====================================================================================
-            // [2단계 강제 예외 처리] 큐 처리를 거치지 않고, stay 5개 및 tour 5개를 각각 검증 없이 강제 적재
-            // =====================================================================================
-            log.info("[Batch Fallback Triggered] 지역코드 {}: 1차 큐 수집 완료. 이후 stay 5개, tour 5개 강제 랜덤 적재를 시작합니다.", regionKey);
+            // // =====================================================================================
+            // // [2단계 강제 예외 처리] 큐 처리를 거치지 않고, stay 5개 및 tour 5개를 각각 검증 없이 강제 적재
+            // // =====================================================================================
+            // log.info("[Batch Fallback Triggered] 지역코드 {}: 1차 큐 수집 완료. 이후 stay 5개, tour 5개 강제 랜덤 적재를 시작합니다.", regionKey);
 
-            // 1) STAY 타입 5개 강제 랜덤 적재
-            processForcedRandomByType(regionItems, processedIds, "stay", 5);
+            // // 1) STAY 타입 5개 강제 랜덤 적재
+            // processForcedRandomByType(regionItems, processedIds, "stay", 5);
 
-            // 2) TOUR 타입 5개 강제 랜덤 적재
-            processForcedRandomByType(regionItems, processedIds, "tour", 5);
+            // // 2) TOUR 타입 5개 강제 랜덤 적재
+            // processForcedRandomByType(regionItems, processedIds, "tour", 5);
 
             // =====================================================================================
-            // [3단계 패딩 안전장치] 최종 적재 건수가 10개 미만인 경우, 남은 전체 풀에서 무작위로 빈자리 채우기
+            // [2단계 패딩 안전장치] 최종 적재 건수가 10개 미만인 경우, 필수값(대표이미지+개요+주소)이 존재하는 후보로 마저 채우기            
             // =====================================================================================
+            
             int currentFinalCount = tourMapper.selectPlaceCountByRegion(regionId);
             if (currentFinalCount < targetGoal) {
                 int paddingNeeded = targetGoal - currentFinalCount;
@@ -386,6 +393,9 @@ public class TourApiService {
 
                 List<TourAreaBasedSyncListDTO> paddingCandidates = regionItems.stream()
                         .filter(item -> !processedIds.contains(item.getContentid()))
+                        .filter(tourValidator::isValidBlacklistOnly) // 블랙리스트 제거
+                        .filter(item -> StringUtils.hasText(item.getAddr1())) // 주소 필수
+                        .filter(item -> StringUtils.hasText(item.getFirstimage())) // 대표이미지 필수
                         .collect(Collectors.toList());
 
                 Collections.shuffle(paddingCandidates);
@@ -398,7 +408,16 @@ public class TourApiService {
 
                     try {
                         TourItemDTO tourItem = tourDataConverter.convertToTourItemDTO(paddingItem);
-                        PlaceDTO placeDto = tourDataConverter.convertToPlaceDTO(paddingItem, tourItem, null, null, null);
+
+                        // 개요(description) 필수 수집
+                        if (!"0".equals(paddingItem.getShowflag())) {
+                            tourApiHelper.enrichTourItemDetails(tourItem);
+                        }
+                        if (!StringUtils.hasText(tourItem.getOverview())) {
+                            continue; // 개요가 없으면 패딩 대상에서도 스킵
+                        }
+
+                        PlaceDTO placeDto = tourDataConverter.convertToPlaceDTO(paddingItem, tourItem, null, null,tourDataConverter.resolveThumbnailImage(paddingItem));
                         tourMapper.upsertPlace(placeDto);
 
                         processedIds.add(paddingItem.getContentid());
@@ -410,9 +429,9 @@ public class TourApiService {
                 }
             }
 
-            // 최종 결과 로깅
+            /// 1차 수집 및 패딩 결과 로깅
             int finalCount = tourMapper.selectPlaceCountByRegion(regionId);
-            log.info("[Batch Sampling Complete] 지역코드 {}: 최종 DB 총 적재 건수 {}건 (유효 후보: {}건)", 
+            log.info("[Batch Sampling Complete] 지역코드 {}: 기본 큐/패딩 DB 총 적재 건수 {}건 (유효 후보: {}건)", 
                     regionKey, finalCount, regionItems.size());
 
             // =====================================================================================
@@ -432,53 +451,53 @@ public class TourApiService {
         }
     }
 
-    /**
-     * [보조 메서드] 큐를 거치지 않고 특정 타입(stay 또는 tour)을 
-     * 이미 처리된 ID 제외 후 무작위로 골라 지정된 개수만큼 검증 없이 강제 적재
-     */
-    private void processForcedRandomByType(
-            List<TourAreaBasedSyncListDTO> regionItems, 
-            Set<String> processedIds, 
-            String targetType, 
-            int targetCount) {
+    // /**  0805 10:54 강제적재용코드 1차삭제.
+    //  * [보조 메서드] 큐를 거치지 않고 특정 타입(stay 또는 tour)을 
+    //  * 이미 처리된 ID 제외 후 무작위로 골라 지정된 개수만큼 검증 없이 강제 적재
+    //  */
+    // private void processForcedRandomByType(
+    //         List<TourAreaBasedSyncListDTO> regionItems, 
+    //         Set<String> processedIds, 
+    //         String targetType, 
+    //         int targetCount) {
         
-        // 1. 1차에 쓰이지 않았고, 해당 타입인 후보 필터링
-        List<TourAreaBasedSyncListDTO> candidates = regionItems.stream()
-                .filter(item -> !processedIds.contains(item.getContentid()))
-                .filter(item -> {
-                    String type = tourApiHelper.convertContentType(item.getContenttypeid(), item.getLclsSystm2(), item.getLclsSystm3());
-                    return targetType.equalsIgnoreCase(type);
-                })
-                .collect(Collectors.toList());
+    //     // 1. 1차에 쓰이지 않았고, 해당 타입인 후보 필터링
+    //     List<TourAreaBasedSyncListDTO> candidates = regionItems.stream()
+    //             .filter(item -> !processedIds.contains(item.getContentid()))
+    //             .filter(item -> {
+    //                 String type = tourApiHelper.convertContentType(item.getContenttypeid(), item.getLclsSystm2(), item.getLclsSystm3());
+    //                 return targetType.equalsIgnoreCase(type);
+    //             })
+    //             .collect(Collectors.toList());
 
-        // 2. 무작위 셔플 (중분류 다양성 및 랜덤성 부여)
-        Collections.shuffle(candidates);
+    //     // 2. 무작위 셔플 (중분류 다양성 및 랜덤성 부여)
+    //     Collections.shuffle(candidates);
 
-        int savedCount = 0;
-        for (TourAreaBasedSyncListDTO item : candidates) {
-            if (savedCount >= targetCount) {
-                break;
-            }
+    //     int savedCount = 0;
+    //     for (TourAreaBasedSyncListDTO item : candidates) {
+    //         if (savedCount >= targetCount) {
+    //             break;
+    //         }
 
-            try {
-                log.info("[PLACE SAVE FORCED - {} Type] contentId: {}, title: {}", targetType.toUpperCase(), item.getContentid(), item.getTitle());
+    //         try {
+    //             log.info("[PLACE SAVE FORCED - {} Type] contentId: {}, title: {}", targetType.toUpperCase(), item.getContentid(), item.getTitle());
                 
-                // 엄격한 검증을 타지 않고 곧바로 변환 및 강제 적재 수행
-                TourItemDTO tourItem = tourDataConverter.convertToTourItemDTO(item);
-                PlaceDTO placeDto = tourDataConverter.convertToPlaceDTO(item, tourItem, null, null, null);
-                tourMapper.upsertPlace(placeDto);
+    //             // 엄격한 검증을 타지 않고 곧바로 변환 및 강제 적재 수행
+    //             TourItemDTO tourItem = tourDataConverter.convertToTourItemDTO(item);
+    //             PlaceDTO placeDto = tourDataConverter.convertToPlaceDTO(item, tourItem, null, null, null);
+    //             tourMapper.upsertPlace(placeDto);
 
-                processedIds.add(item.getContentid());
-                savedCount++;
-                log.info("[Forced Success] 강제 적재 완료 - title: {}", item.getTitle());
+    //             processedIds.add(item.getContentid());
+    //             savedCount++;
+    //             log.info("[Forced Success] 강제 적재 완료 - title: {}", item.getTitle());
 
-            } catch (Exception e) {
-                log.error("[Batch Error - Forced {}] placeId: {} 적재 오류: {}", targetType, item.getContentid(), e.getMessage());
-            }
-        }
+    //         } catch (Exception e) {
+    //             log.error("[Batch Error - Forced {}] placeId: {} 적재 오류: {}", targetType, item.getContentid(), e.getMessage());
+    //         }
+    //     }
         
-        log.info("[Forced Result] 타입: {} - 목표 {}개 중 {}개 강제 적재 완료", targetType.toUpperCase(), targetCount, savedCount);
-    }
+    //     log.info("[Forced Result] 타입: {} - 목표 {}개 중 {}개 강제 적재 완료", targetType.toUpperCase(), targetCount, savedCount);
+    // }
 
     // 0804 추가 - 부실데이터 예외 보완 레이어 전용 메서드
     // TourApiClient.fetchAreaBasedList로 해당 지역+타입군을 직접 다시 조회 (1~3단계 큐와는 독립적인 별도 후보 풀)
@@ -519,29 +538,109 @@ public class TourApiService {
         for (TourAreaBasedSyncListDTO item : filtered) {
             if (saved >= need) break;
 
-            try {
-                TourItemDTO tourItem = tourDataConverter.convertToTourItemDTO(item);
-                // description(개요) 필수 확보를 위해 detailCommon2만 연쇄 호출 (블랙리스트 외 다른 검증은 생략)
-                if (!"0".equals(item.getShowflag())) {
-                    tourApiHelper.enrichTourItemDetails(tourItem);
-                }
-                if (!StringUtils.hasText(tourItem.getOverview())) {
-                    // description 필수 조건 미충족 - 이 후보는 스킵
-                    continue;
-                }
+        //     try {
+        //         TourItemDTO tourItem = tourDataConverter.convertToTourItemDTO(item);
+        //         // description(개요) 필수 확보를 위해 detailCommon2만 연쇄 호출 (블랙리스트 외 다른 검증은 생략)
+        //         if (!"0".equals(item.getShowflag())) {
+        //             tourApiHelper.enrichTourItemDetails(tourItem);
+        //         }
+        //         if (!StringUtils.hasText(tourItem.getOverview())) {
+        //             // description 필수 조건 미충족 - 이 후보는 스킵
+        //             continue;
+        //         }
 
-                PlaceDTO placeDto = tourDataConverter.convertToPlaceDTO(
-                        item, tourItem, null, null, tourDataConverter.resolveThumbnailImage(item));
-                tourMapper.upsertPlace(placeDto);
+        //         PlaceDTO placeDto = tourDataConverter.convertToPlaceDTO(
+        //                 item, tourItem, null, null, tourDataConverter.resolveThumbnailImage(item));
+        //         tourMapper.upsertPlace(placeDto);
 
-                saved++;
-                log.info("[Low-Quality Supplement Success] 지역코드 {} 타입 {} - title: {}", regionKey, bucketType, item.getTitle());
-            } catch (Exception e) {
-                log.error("[Batch Error - Low-Quality Supplement] 지역코드 {} 타입 {} contentId:{} 적재 오류: {}",
-                        regionKey, bucketType, item.getContentid(), e.getMessage());
+        //         // place_image 테이블 서브 이미지 연쇄 수집 및 저장
+        //         if (StringUtils.hasText(item.getContentid())) {
+        //             List<TourDetailImageDTO> detailImages = tourApiHelper.fetchDetailImages(item.getContentid());
+        //             if (detailImages != null && !detailImages.isEmpty()) {
+        //                 List<String> imageUrls = detailImages.stream()
+        //                         .map(TourDetailImageDTO::getOriginimgurl)
+        //                         .filter(StringUtils::hasText)
+        //                         .distinct()
+        //                         .toList();
+
+        //                 Integer targetPlaceId = Integer.parseInt(item.getContentid());
+        //                 List<PlaceImageDTO> imageDtos = tourDataConverter.convertToPlaceImageDTOs(targetPlaceId, imageUrls);
+                        
+        //                 for (PlaceImageDTO imageDto : imageDtos) {
+        //                     if (imageDto != null) {
+        //                         tourMapper.insertPlaceImage(imageDto);
+        //                     }
+        //                 }
+        //             }
+        //         }
+
+        //         saved++;
+        //         log.info("[Low-Quality Supplement Success] 지역코드 {} 타입 {} - title: {}", regionKey, bucketType, item.getTitle());
+        //     } catch (Exception e) {
+        //         log.error("[Batch Error - Low-Quality Supplement] 지역코드 {} 타입 {} contentId:{} 적재 오류: {}",
+        //                 regionKey, bucketType, item.getContentid(), e.getMessage());
+        //     }
+        // }
+        // log.info("[Low-Quality Supplement Result] 지역코드 {} 타입 {} - 목표 {}건 중 {}건 확보", regionKey, bucketType, need, saved);
+         try {
+        // 기본 DTO 생성
+        TourItemDTO tourItem = tourDataConverter.convertToTourItemDTO(item);
+
+        // 개요(description) 확보 및 해시태그 생성에 필요한 소개정보/반복정보를 가져와 컨버터에 전달
+        TourDetailIntroDTO introDetail = null;
+        TourDetailInfoDTO infoDetail = null;
+        if (!"0".equals(item.getShowflag())) {
+            // tourItem 내 개요 등 세부 데이터 보강
+            tourApiHelper.enrichTourItemDetails(tourItem);
+
+            // 해시태그 부가정보(주차/연중무휴 등)를 위해 detailIntro도 조회
+            introDetail = tourApiHelper.fetchDetailIntro(item.getContentid(), item.getContenttypeid());
+
+            // 숙박(32)인 경우 반복정보(detailInfo)도 획득하여 요금/룸 정보 파싱에 도움
+            if ("32".equals(item.getContenttypeid())) {
+                infoDetail = tourApiHelper.fetchDetailInfo(item.getContentid(), item.getContenttypeid());
             }
         }
-        log.info("[Low-Quality Supplement Result] 지역코드 {} 타입 {} - 목표 {}건 중 {}건 확보", regionKey, bucketType, need, saved);
+
+        // description 필수 조건 미충족 시 스킵
+        if (!StringUtils.hasText(tourItem.getOverview())) {
+            continue;
+        }
+
+        // 컨버터에 intro/info를 전달하여 해시태그 생성 로직이 동일하게 동작하도록 보장
+        PlaceDTO placeDto = tourDataConverter.convertToPlaceDTO(
+                item, tourItem, introDetail, infoDetail, tourDataConverter.resolveThumbnailImage(item));
+        tourMapper.upsertPlace(placeDto);
+
+        // place_image 테이블 서브 이미지 연쇄 수집 및 저장 (기존 로직 유지)
+        if (StringUtils.hasText(item.getContentid())) {
+            List<TourDetailImageDTO> detailImages = tourApiHelper.fetchDetailImages(item.getContentid());
+            if (detailImages != null && !detailImages.isEmpty()) {
+                List<String> imageUrls = detailImages.stream()
+                        .map(TourDetailImageDTO::getOriginimgurl)
+                        .filter(StringUtils::hasText)
+                        .distinct()
+                        .toList();
+
+                Integer targetPlaceId = Integer.parseInt(item.getContentid());
+                List<PlaceImageDTO> imageDtos = tourDataConverter.convertToPlaceImageDTOs(targetPlaceId, imageUrls);
+
+                for (PlaceImageDTO imageDto : imageDtos) {
+                    if (imageDto != null) {
+                        tourMapper.insertPlaceImage(imageDto);
+                    }
+                }
+            }
+        }
+
+        saved++;
+        log.info("[Low-Quality Supplement Success] 지역코드 {} 타입 {} - title: {}", regionKey, bucketType, item.getTitle());
+    } catch (Exception e) {
+        log.error("[Batch Error - Low-Quality Supplement] 지역코드 {} 타입 {} contentId:{} 적재 오류: {}",
+                regionKey, bucketType, item.getContentid(), e.getMessage());
+    }
+}
+log.info("[Low-Quality Supplement Result] 지역코드 {} 타입 {} - 목표 {}건 중 {}건 확보", regionKey, bucketType, need, saved);
     }
 
     // 폐업(showflag == 0) 데이터 전용 처리 헬퍼

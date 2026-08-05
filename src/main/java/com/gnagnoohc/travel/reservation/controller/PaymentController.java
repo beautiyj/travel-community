@@ -46,6 +46,7 @@ public class PaymentController {
     public String checkout(@PathVariable("reservationId") Long reservationId, Model model) {
         Reservation r = reservationService.getById(reservationId);
         model.addAttribute("reservation", r);
+        model.addAttribute("placeName", reservationService.getPlaceName(r.getPlaceId()));
         model.addAttribute("amount", reservationService.calculateAmount(r));
         model.addAttribute("tossClientKey", tossClientKey);
         return "reservation/checkout";

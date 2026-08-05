@@ -104,7 +104,7 @@
     </div>
 
     <!-- 장소 태그: "방문자인증후기"/"일반후기" 카테고리일 때만 노출, 취소/게시하기 버튼 바로 위
-         방문자인증후기: 단일 선택(#place-tag-selected, 필수) / 일반후기: 다중 선택(#place-tag-selected-list, 선택사항, 개수 제한 없음) -->
+         방문자인증후기: 단일 선택(#place-tag-selected, 필수) / 일반후기: 다중 선택(#place-tag-selected-list, 선택사항, 최대 5개) -->
     <div class="field" id="place-tag-field" style="display:none;">
       <label class="field-label">장소 태그</label>
 
@@ -114,6 +114,10 @@
       </div>
 
       <div id="place-tag-selected-list" class="place-tag-selected-list" style="display:none;"></div>
+
+      <!-- 일반후기 다중 태그가 5개에 도달하면 placeTag.js의 updatePlaceTagLimitUI()가 이 문구를 보여주고
+           위 open-btn을 숨김. 기본은 숨김 상태 -->
+      <p id="place-tag-limit-msg" class="place-tag-limit-msg" style="display:none;">장소 태그는 최대 5개까지 추가할 수 있습니다.</p>
 
       <button type="button" id="place-tag-open-btn" class="place-tag-open-btn">장소 검색해서 태그하기</button>
     </div>

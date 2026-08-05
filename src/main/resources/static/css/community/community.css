@@ -443,6 +443,13 @@
 }
 .place-tag-open-btn:hover { border-color: var(--primary); color: var(--primary); }
 
+/* 일반후기 다중 태그 5개 도달 시 안내 문구 (open-btn 대신 노출됨) */
+.place-tag-limit-msg {
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+  margin: 0 0 10px;
+}
+
 .place-tag-selected {
   display: inline-flex;
   align-items: center;

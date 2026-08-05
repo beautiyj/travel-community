@@ -7,12 +7,12 @@
 <div id="collageModal" class="modal-overlay" data-modal role="dialog" aria-modal="true" aria-labelledby="collageModalTitle">
   <div class="modal collage-modal">
     <h2 class="modal-title" id="collageModalTitle">콜라주 만들기</h2>
-    <p class="modal-message">사진을 2장 이상 선택하세요.</p>
+    <p class="modal-message">사진을 4장 선택하세요.</p>
 
     <label for="collageFileInput" class="image-upload-box">클릭해서 사진을 선택하세요 (여러 장 가능)</label>
     <input type="file" id="collageFileInput" accept="image/*" multiple hidden>
 
-    <div id="collageCanvas" class="collage-builder-canvas"></div>
+    <div id="collageCanvas" class="collage-builder-grid"></div>
 
     <div class="modal-buttons">
       <button type="button" class="btn-main" style="background: var(--card); border:1px solid var(--border); box-shadow:none;" data-modal-close>

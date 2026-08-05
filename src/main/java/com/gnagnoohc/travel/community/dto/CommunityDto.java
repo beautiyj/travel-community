@@ -12,7 +12,8 @@ import lombok.Data;
 public class CommunityDto {
 	private int postId;               // post_id      INT           PK, AUTO_INCREMENT
     private int memberId;             // member_id    INT           NOT NULL
-    private Integer placeId;          // place_id     INT           NULL (NULL 가능이라 int 대신 Integer 유지)
+    private Integer placeId;          // place_id     INT           NULL (방문자인증후기 전용 단일 태그, NULL 가능이라 int 대신 Integer 유지)
+    private List<Integer> placeIds;   // 일반후기 전용 다중 태그 (폼에서 바인딩, post_place_tag에 저장) - post 테이블 컬럼 아님
     private String title;             // title        VARCHAR(200) NOT NULL
     private String content;           // content      TEXT         NOT NULL
     private Timestamp createdAt;  	// created_at   DATETIME     DEFAULT CURRENT_TIMESTAMP
@@ -25,7 +26,9 @@ public class CommunityDto {
     private Integer memberType;            // 작성자 회원 유형 (1: 일반, 2: 사업자, member 테이블 JOIN)
     private String profileImgUrl;          // 일반 회원 프로필 사진 (member 테이블 JOIN)
     private String businessImage;          // 사업자 회원의 업소 대표사진 (place.first_image, member_id로 JOIN)
-    private String placeName;              // 태그된 장소 이름 (place 테이블 JOIN, place_id 없으면 null)
+    private String placeName;              // 태그된 장소 이름 (place 테이블 JOIN, place_id 없으면 null) - 방문자인증후기 단일 태그용
+    private String placeType;              // 태그된 장소 유형 ("stay"/"food"/"tour", place 테이블 JOIN) - 방문자인증후기 단일 태그 배지용
+    private List<PlaceTagDto> placeTags;   // 일반후기 다중 태그 목록 (post_place_tag join place 로 조회, 상세/수정 화면 표시용)
     private List<ImageDto> imageList;       // 이미지 목록
     private List<CommentDto> commentList;   // 댓글 목록
 

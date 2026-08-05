@@ -282,7 +282,7 @@
 
           <jsp:include page="../common/smallButton.jsp">
             <jsp:param name="text" value="로그인하기" />
-            <jsp:param name="onclick" value="location.href='${cp}/member/login'" />
+            <jsp:param name="onclick" value="location.href='${cp}/auth/login'" />
           </jsp:include>
         </div>
       </c:otherwise>

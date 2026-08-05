@@ -39,6 +39,22 @@ public class ReservationService {
         return !isPayOnSite(placeType) && !"free".equals(placeType);
     }
 
+    /**
+     * 기준일(asOfDate)부터 방문일까지 남은 일수로 환불액 계산. D-3 이상 100%, D-1~D-2 50%, 당일(D-0) 0%
+     * asOfDate는 "고객이 취소를 신청한 날"이어야 한다 — 승인일 기준으로 하면 사업자가 승인을 미룰수록
+     * 환불이 깎이는 나쁜 유인이 생기기 때문(승인 전 미리보기는 예외적으로 오늘 날짜를 그대로 씀).
+     */
+    public static int applyRefundPolicy(int paidAmount, LocalDate visitDate, LocalDate asOfDate) {
+        long daysUntilVisit = ChronoUnit.DAYS.between(asOfDate, visitDate);
+        if (daysUntilVisit >= 3) {
+            return paidAmount;
+        }
+        if (daysUntilVisit >= 1) {
+            return paidAmount / 2;
+        }
+        return 0;
+    }
+
     /** 숙박 박수. 체크아웃이 없으면(맛집/관광지 등) 1로 취급 */
     public static int nightsOf(Reservation r) {
         if (r.getCheckOutDate() == null || r.getVisitDate() == null) {

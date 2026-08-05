@@ -150,6 +150,33 @@ public class PaymentService {
     }
 
     /**
+     * 고객 취소 액션의 진입점. 상태에 따라 동작이 갈린다.
+     * - PAID(확정 전): 사업자가 아직 확인도 안 한 단계라 승인 절차 없이 즉시 취소 + 전액 환불
+     * - CONFIRMED(확정 후): 기존처럼 취소 요청만 남기고 사업자 승인을 기다림(방문일 기준 환불 정책은 승인 시 적용)
+     */
+    @Transactional
+    public void cancelByCustomer(Long reservationId, Integer memberId, String reason) {
+        Reservation r = reservationService.getById(reservationId);
+        if (!r.getMemberId().equals(memberId)) {
+            throw new IllegalStateException("본인의 예약만 취소할 수 있습니다.");
+        }
+        if (r.getStatus() == ReservationStatus.PAID) {
+            Payment paid = paymentMapper.findByReservationId(reservationId).stream()
+                    .filter(p -> p.getPaymentStatus() == PaymentStatus.DONE)
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException("환불할 결제완료 내역이 없습니다. reservationId=" + reservationId));
+            log.info("[고객 즉시취소] reservationId={} (예약확정 전) → 전액 환불", reservationId);
+            cancel(paid.getPaymentId(), reason != null && !reason.isBlank() ? reason : "고객 취소(예약확정 전)");
+            return;
+        }
+        if (r.getStatus() == ReservationStatus.CONFIRMED) {
+            reservationService.requestCancel(reservationId, memberId, reason);
+            return;
+        }
+        throw new IllegalStateException("결제완료 또는 예약확정 상태에서만 취소할 수 있습니다. 현재 상태: " + r.getStatus().getLabel());
+    }
+
+    /**
      * 사업자: 결제완료(PAID) 예약 거절 → 환불 실행.
      * PAID 검증·사유 저장은 reservationService.reject()가 먼저 처리한 뒤, 여기서 실제 환불(cancel)을 진행한다.
      */

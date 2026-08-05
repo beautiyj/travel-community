@@ -4,7 +4,7 @@
 
 <aside class="business-sidebar">
     <div class="business-sidebar__logo">
-        <span class="business-sidebar__logo-badge">TA</span> 갈래말래
+        <a href="/"><span class="business-sidebar__logo-badge">TA</span> 갈래말래</a>
     </div>
 
     <div class="business-sidebar__biz">
@@ -60,6 +60,6 @@
         <c:if test="${not empty placeId}">
             <a href="/place/detail?placeId=${placeId}" target="_blank" rel="noopener" class="business-nav-item">내 업소보기</a>
         </c:if>
-        <a href="/business/logout" class="business-nav-item business-nav-item--danger">로그아웃</a>
+        <a href="/auth/logout" class="business-nav-item business-nav-item--danger">로그아웃</a>
     </div>
 </aside>

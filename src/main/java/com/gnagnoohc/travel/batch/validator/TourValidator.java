@@ -9,8 +9,6 @@ import org.springframework.util.StringUtils;
 import java.util.List;
 import java.util.Set;
 
-// TODO: (최종필터링작업필요) 필터링 작업 진행 후, 지역-시군구 별로 랜덤 50-100개씩만 들여오는 최종 필터링 작업 처리할 것
-
 /*   1차 공공데이터 검증 & 필터링 로직
 *  - contentTypeId 필터링. 5가지 코드에 포함되지 않는 경우 필터링 처리
 *  - contentTypeId, title, addr1, addr2, firstimage, firstimage2, mapx, mapy, mlevel 필수값 검증
@@ -133,7 +131,7 @@ public class TourValidator {
         // minPrice가 null이더라도 useFeeInfo(이용요금 텍스트)가 존재하면 적재 허용!
         return StringUtils.hasText(useFeeInfo);    }
 
-    // 0804 추가 - 부실데이터 예외 보완용(tour/stay 각 3건 추가 확보) 완화된 검증
+    // 부실데이터 예외 보완용(tour/stay 각 3건 추가 확보) 완화된 검증
     // 카테고리 화이트리스트/해시태그 컷오프는 건너뛰고, 블랙리스트 키워드만 필터링
     // (1차 큐 셀렉팅의 isValid()보다 훨씬 느슨한 기준 - 부족한 tour/stay를 별도로 보완하기 위함)
     public boolean isValidBlacklistOnly(TourAreaBasedSyncListDTO item) {

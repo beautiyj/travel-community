@@ -1,20 +1,17 @@
 package com.gnagnoohc.travel.tour.controller;
 
-import java.util.List;
-
+import com.gnagnoohc.travel.tour.model.PlaceDTO;
+import com.gnagnoohc.travel.tour.model.PlaceImageDTO;
+import com.gnagnoohc.travel.tour.service.TourService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.gnagnoohc.travel.tour.model.PlaceDTO;
-import com.gnagnoohc.travel.tour.model.PlaceImageDTO;
-import com.gnagnoohc.travel.tour.service.TourService;
-
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
 
 @Slf4j
 @Controller
@@ -22,11 +19,6 @@ import lombok.extern.slf4j.Slf4j;
 public class TourController {
 
     private final TourService tourService;
-
-    @RequestMapping("/tour/test")
-    public String tourList() {
-        return "tour/test";
-    }
 
     // 실제 데이터베이스 연동된 장소 목록 통합 조회
     @GetMapping("/tour/list")

@@ -3,19 +3,20 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <jsp:include page="/WEB-INF/views/mypage/common/pageHead.jsp">
-        <jsp:param name="title" value="사업자 회원 탈퇴"/>
-    </jsp:include>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>사업자 회원 탈퇴</title>
+    <link rel="stylesheet" href="/css/mypage/common.css">
+    <link rel="stylesheet" href="/css/mypage/business.css">
 </head>
 <body class="business-mypage">
 <main class="mypage-page">
-    <h1 class="mypage-page__title">마이페이지</h1>
+    <h1 class="mypage-page__title">회원탈퇴</h1>
     <div class="mypage-layout">
         <jsp:include page="/WEB-INF/views/mypage/business/components/sidebar.jsp">
             <jsp:param name="active" value="withdraw"/>
         </jsp:include>
-        <section class="mypage-content mypage-content--form" aria-labelledby="business-withdraw-title">
-            <div class="mypage-content__header"><h2 id="business-withdraw-title">회원 탈퇴</h2></div>
+        <section class="mypage-content mypage-content--form">
             <div class="withdraw-card">
         <div class="withdraw-card__icon" aria-hidden="true">!</div>
         <p>탈퇴 시 모든 데이터가 삭제되며 복구할 수 없습니다.</p>

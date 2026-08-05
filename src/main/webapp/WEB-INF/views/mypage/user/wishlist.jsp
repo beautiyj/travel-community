@@ -2,14 +2,21 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <!DOCTYPE html>
 <html lang="ko">
-<head><jsp:include page="/WEB-INF/views/mypage/common/pageHead.jsp"><jsp:param name="title" value="찜목록" /></jsp:include></head>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>찜목록</title>
+    <link rel="stylesheet" href="/css/mypage/common.css">
+    <link rel="stylesheet" href="/css/mypage/user.css">
+    <link rel="stylesheet" href="/css/mypage/modal.css">
+</head>
 <body>
 <main class="mypage-page">
-    <h1 class="mypage-page__title">마이페이지</h1>
+    <h1 class="mypage-page__title">찜목록</h1>
     <div class="mypage-layout">
         <jsp:include page="/WEB-INF/views/mypage/user/components/sidebar.jsp"><jsp:param name="active" value="wishlist" /></jsp:include>
-        <section class="mypage-content" aria-labelledby="wishlist-title">
-            <div class="mypage-content__header"><h2 id="wishlist-title">찜목록 <em>(${empty wishlist ? 0 : wishlist.size()})</em></h2></div>
+        <section class="mypage-content">
+            <div class="mypage-content__header"><h2 id="wishlist-title"><em>(${empty wishlist ? 0 : wishlist.size()})</em></h2></div>
             <c:choose>
                 <c:when test="${empty wishlist}">
                     <div class="mypage-empty-state"><strong>아직 찜한 항목이 없습니다</strong><a href="${pageContext.request.contextPath}/">여행지 탐색하기</a></div>

@@ -4,13 +4,20 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <jsp:include page="/WEB-INF/views/mypage/common/pageHead.jsp">
-        <jsp:param name="title" value="사업자 승인 관리"/>
-    </jsp:include>
+<div class="header-wrapper">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>사업자 승인 관리</title>
+    <link rel="stylesheet" href="/css/mypage/common.css">
+    <link rel="stylesheet" href="/css/mypage/business.css">
+    <link rel="stylesheet" href="/css/mypage/modal.css">
+    <link rel="stylesheet" href="/css/components/buttonComponent.css">
+    <link rel="stylesheet" href="/css/components/confirmModal.css">
+</div>
 </head>
 <body class="business-mypage">
 <main class="mypage-page">
-    <h1 class="mypage-page__title">마이페이지</h1>
+    <h1 class="mypage-page__title">사업자 승인 내역</h1>
     <c:if test="${not empty message}">
         <div class="biz-message"><c:out value="${message}"/></div>
     </c:if>
@@ -23,22 +30,9 @@
             <jsp:param name="active" value="approval"/>
         </jsp:include>
 
-        <section class="mypage-content" aria-labelledby="approval-title">
-            <div class="mypage-content__header">
-                <h2 id="approval-title">사업자 승인 관리</h2>
-                <span class="business-approval-badge ${application.status eq 'APPROVED' ? 'is-approved' : ''}">
-                    <c:choose>
-                        <c:when test="${empty application}">미신청</c:when>
-                        <c:when test="${application.status eq 'PENDING'}">승인 대기</c:when>
-                        <c:when test="${application.status eq 'APPROVED'}">승인 완료</c:when>
-                        <c:when test="${application.status eq 'REJECTED'}">승인 반려</c:when>
-                        <c:otherwise><c:out value="${application.status}"/></c:otherwise>
-                    </c:choose>
-                </span>
-            </div>
-
+        <section class="mypage-content mypage-content--form" aria-labelledby="approval-title">
             <div class="business-approval-card">
-                <h3>사업자등록증 제출</h3>
+                <h3>사업자 인증 재신청</h3>
                 <p>
                     사업자등록증을 첨부하면 관리자 확인 전까지 승인 대기 상태로 저장됩니다.
                     JPG, PNG 또는 PDF 파일을 최대 5MB까지 제출할 수 있습니다.
@@ -57,6 +51,12 @@
                                 </c:choose>
                             </dd>
                         </div>
+                        <c:if test="${application.status eq 'REJECTED' and not empty application.rejectionReason}">
+                            <div>
+                                <dt>반려 사유</dt>
+                                <dd><c:out value="${application.rejectionReason}"/></dd>
+                            </div>
+                        </c:if>
                         <div>
                             <dt>최근 제출일</dt>
                             <dd><c:out value="${empty application.createdAt ? '-' : fn:replace(application.createdAt, 'T', ' ')}"/></dd>
@@ -89,9 +89,11 @@
                             <small class="business-file-input__help">
                                 JPG, JPEG, PNG, PDF 형식, 최대 5MB
                             </small>
+                            <div class="submit-wrapper">
                             <button class="mypage-primary-link" type="submit">
-                                <c:out value="${empty application ? '승인 신청' : '사업자등록증 다시 제출'}"/>
+                                <c:out value='제출'/>
                             </button>
+                            </div>
                         </form>
                     </c:otherwise>
                 </c:choose>
@@ -173,5 +175,6 @@
         });
     }
 </script>
+<script src="/js/common.js"></script>
 </body>
 </html>

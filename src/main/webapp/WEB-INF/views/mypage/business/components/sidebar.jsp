@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="cp" value="${pageContext.request.contextPath}" />
+<c:set var="isRejected" value="${application.status eq 'REJECTED'}" />
 <aside class="mypage-sidebar business-sidebar" aria-label="사업자 마이페이지 메뉴">
     <a class="mypage-sidebar__brand" href="${cp}/">
         <span class="mypage-sidebar__brand-badge">TA</span>
@@ -34,7 +35,8 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 12l2 2 4-4M7 3h10a2 2 0 0 1 2 2v16l-7-3-7 3V5a2 2 0 0 1 2-2Z"/></svg>
             <span>사업자 승인 내역</span>
         </a>
-        <a class="${param.active eq 'places' ? 'is-active' : ''}" href="${cp}/business/dashboard">
+        <a class="${param.active eq 'places' ? 'is-active' : ''}" href="${cp}/business/dashboard"
+            <c:if test="${isRejected}">onclick="event.preventDefault(); openModal('businessRejectedModal');"</c:if>>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6M8 10h.01M16 10h.01"/></svg>
             <span>나의 사업장 관리</span>
         </a>
@@ -44,3 +46,15 @@
         </a>
     </nav>
 </aside>
+<c:if test="${isRejected}">
+    <jsp:include page="../../../common/confirmModal.jsp">
+        <jsp:param name="modalId" value="businessRejectedModal" />
+        <jsp:param name="title" value="이동 불가" />
+        <jsp:param name="message" value="사업자 인증이 반려되어 사업장으로 갈 수 없습니다." />
+        <jsp:param name="confirmText" value="확인" />
+        <jsp:param name="cancelText" value="닫기" />
+        <jsp:param name="tone" value="primary" />
+        <jsp:param name="method" value="get" />
+        <jsp:param name="action" value="/" />
+    </jsp:include>
+</c:if>

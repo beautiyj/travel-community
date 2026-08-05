@@ -45,11 +45,6 @@ public class MypageController {
         return false;
     }
 
-    @GetMapping("/test")
-    public String mypageTest() {
-        return "mypage/user/test";
-    }
-
     @GetMapping("")
     public String mypage(HttpSession session) {
         Long memberId = getMemberId(session);

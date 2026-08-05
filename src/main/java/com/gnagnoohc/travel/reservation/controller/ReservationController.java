@@ -147,4 +147,11 @@ public class ReservationController {
         log.info("[취소 요청] reservationId={}, memberId={}, reason={}", reservationId, memberId, reason);
         return Map.of("result", "OK");
     }
+
+    /** 취소 요청 전 환불 예상액 미리보기 (방문일 기준 환불 정책 적용) */
+    @GetMapping("/{reservationId}/refund-preview")
+    @ResponseBody
+    public Map<String, Object> refundPreview(@PathVariable("reservationId") Long reservationId) {
+        return Map.of("refundAmount", paymentService.previewRefundAmount(reservationId));
+    }
 }

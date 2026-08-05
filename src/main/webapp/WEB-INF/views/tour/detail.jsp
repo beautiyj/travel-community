@@ -8,7 +8,6 @@
         <title>${place.name} - 상세 정보</title>
         <link rel="stylesheet" href="${pageContext.request.contextPath}/css/common.css">
         <link rel="stylesheet" href="${pageContext.request.contextPath}/css/tour/detail.css">
-        <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/header.css">
         <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/banner.css">
         <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/wishButton.css">
         <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/tagButton.css">
@@ -29,6 +28,7 @@
                 &lt; 목록으로
             </a>
 
+            <!-- [디버그] placeImages 개수 : ${placeImages != null ? placeImages.size() : 'null'} -->
             <!-- 💡 [요청사항 1] 최상단 전체 너비 배너 (실제 DB 이미지 연동 필요) -->
             <div class="detail-top-banner">
                 <jsp:include page="/WEB-INF/views/common/banner.jsp">

@@ -59,6 +59,7 @@
                     <jsp:param name="placeholder" value="이름을 입력하세요" />
                     <jsp:param name="maxlength" value="50" />
                     <jsp:param name="required" value="true" />
+                    <jsp:param name="value" value="${fn:escapeXml(loginMemberName)}" />
                 </jsp:include>
 
                 <jsp:include page="/WEB-INF/views/common/inputField.jsp">
@@ -69,6 +70,7 @@
                     <jsp:param name="placeholder" value="010-0000-0000" />
                     <jsp:param name="maxlength" value="20" />
                     <jsp:param name="required" value="true" />
+                    <jsp:param name="value" value="${fn:escapeXml(loginMemberPhone)}" />
                 </jsp:include>
                 <p class="field-error" id="phoneError" role="alert">올바른 휴대폰 번호를 입력하세요. (예: 010-1234-5678)</p>
 

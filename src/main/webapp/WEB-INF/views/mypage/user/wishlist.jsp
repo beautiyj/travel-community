@@ -6,6 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>찜목록</title>
+    <link rel="stylesheet" href="/css/common.css">
     <link rel="stylesheet" href="/css/mypage/common.css">
     <link rel="stylesheet" href="/css/mypage/user.css">
     <link rel="stylesheet" href="/css/mypage/modal.css">
@@ -14,7 +15,7 @@
 <main class="mypage-page">
     <h1 class="mypage-page__title">찜목록</h1>
     <div class="mypage-layout">
-        <jsp:include page="/WEB-INF/views/mypage/user/components/sidebar.jsp"><jsp:param name="active" value="wishlist" /></jsp:include>
+        <jsp:include page="/WEB-INF/views/mypage/common/sidebar.jsp"><jsp:param name="accountType" value="USER"/><jsp:param name="active" value="wishlist"/></jsp:include>
         <section class="mypage-content">
             <div class="mypage-content__header"><h2 id="wishlist-title"><em>(${empty wishlist ? 0 : wishlist.size()})</em></h2></div>
             <c:choose>

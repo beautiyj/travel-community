@@ -1,32 +1,4 @@
-/* ---------- 토큰 & 리셋 ---------- */
-:root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  --card: #ffffff;
-  --primary: #0284c7;
-  --primary-foreground: #ffffff;
-  --primary-soft: rgba(2, 132, 199, .1);
-  --secondary: #f0f9ff;
-  --secondary-foreground: #0c4a6e;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  --border: rgba(148, 163, 184, .25);
-  --danger: #fb2c36;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-full: 9999px;
-  --text-xs: .75rem;
-  --text-sm: .875rem;
-  --text-base: 1rem;
-  --text-lg: 1.125rem;
-  --text-xl: 1.25rem;
-  --text-2xl: 1.5rem;
-  --font-weight-normal: 400;
-  --font-weight-medium: 600;
-  --font-weight-bold: 700;
-  --transition-fast: .2s;
-}
-
+/* ---------- 마이페이지 기본 리셋 ---------- */
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--background); color: var(--foreground); font-family: "Noto Sans KR", Arial, sans-serif; line-height: 1.5; }
 h1, h2, h3, p, dl, dd { margin: 0; }

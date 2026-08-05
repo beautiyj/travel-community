@@ -7,7 +7,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>예약 관리</title>
+    <link rel="stylesheet" href="/css/common.css">
     <link rel="stylesheet" href="/css/mypage/common.css">
+    <link rel="stylesheet" href="/css/components/tagButton.css">
     <link rel="stylesheet" href="/css/mypage/user.css">
     <link rel="stylesheet" href="/css/mypage/modal.css">
 </head>
@@ -21,7 +23,7 @@
         </span>
     </h1>
     <div class="mypage-layout">
-        <jsp:include page="/WEB-INF/views/mypage/user/components/sidebar.jsp"><jsp:param name="active" value="reservation" /></jsp:include>
+        <jsp:include page="/WEB-INF/views/mypage/common/sidebar.jsp"><jsp:param name="accountType" value="USER"/><jsp:param name="active" value="reservation"/></jsp:include>
         <section class="mypage-content mypage-reservation-content" aria-labelledby="reservation-title">
             <h2 id="reservation-title" class="sr-only">내 예약 관리</h2>
 
@@ -82,15 +84,9 @@
                                         </c:choose>
                                     </div>
                                     <div class="mypage-reservation-actions" role="cell">
-                                        <c:choose>
-                                            <c:when test="${reservation.status eq 'PAID'}"><span class="mypage-status mypage-status--paid">결제완료</span></c:when>
-                                            <c:when test="${reservation.status eq 'CANCEL_REQUESTED'}"><span class="mypage-status mypage-status--requested">취소요청</span></c:when>
-                                            <c:when test="${reservation.status eq 'CONFIRMED'}"><span class="mypage-status mypage-status--confirmed">예약 확정</span></c:when>
-                                            <c:when test="${reservation.status eq 'COMPLETED'}"><span class="mypage-status mypage-status--completed">이용 완료</span></c:when>
-                                            <c:when test="${reservation.status eq 'CANCELED' or reservation.status eq 'CANCELLED'}"><span class="mypage-status mypage-status--cancelled">예약취소</span></c:when>
-                                            <c:when test="${reservation.status eq 'EXPIRED'}"><span class="mypage-status mypage-status--expired">예약만료</span></c:when>
-                                            <c:otherwise><span class="mypage-status mypage-status--pending">예약대기</span></c:otherwise>
-                                        </c:choose>
+                                        <jsp:include page="/WEB-INF/views/mypage/common/reservationStatusBadge.jsp">
+                                            <jsp:param name="status" value="${reservation.status}"/>
+                                        </jsp:include>
                                         <c:if test="${reservation.status eq 'PAID' or reservation.status eq 'CONFIRMED'}">
                                             <button class="mypage-outline-danger js-cancel-open" type="button"
                                                     data-reservation-id="<c:out value='${reservation.reservationId}'/>"

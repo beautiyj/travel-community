@@ -4,16 +4,15 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<div class="header-wrapper">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>사업자 승인 관리</title>
+    <link rel="stylesheet" href="/css/common.css">
     <link rel="stylesheet" href="/css/mypage/common.css">
     <link rel="stylesheet" href="/css/mypage/business.css">
     <link rel="stylesheet" href="/css/mypage/modal.css">
     <link rel="stylesheet" href="/css/components/buttonComponent.css">
     <link rel="stylesheet" href="/css/components/confirmModal.css">
-</div>
 </head>
 <body class="business-mypage">
 <main class="mypage-page">
@@ -26,7 +25,8 @@
     </c:if>
 
     <div class="mypage-layout">
-        <jsp:include page="/WEB-INF/views/mypage/business/components/sidebar.jsp">
+        <jsp:include page="/WEB-INF/views/mypage/common/sidebar.jsp">
+            <jsp:param name="accountType" value="BUSINESS"/>
             <jsp:param name="active" value="approval"/>
         </jsp:include>
 
@@ -43,18 +43,13 @@
                         <div>
                             <dt>현재 상태</dt>
                             <dd>
-                                <c:choose>
-                                    <c:when test="${application.status eq 'PENDING'}">승인 대기</c:when>
-                                    <c:when test="${application.status eq 'APPROVED'}">승인 완료</c:when>
-                                    <c:when test="${application.status eq 'REJECTED'}">승인 반려</c:when>
-                                    <c:otherwise><c:out value="${application.status}"/></c:otherwise>
-                                </c:choose>
+                                <jsp:include page="/WEB-INF/views/mypage/common/businessApprovalStatus.jsp"/>
                             </dd>
                         </div>
                         <c:if test="${application.status eq 'REJECTED' and not empty application.rejectionReason}">
                             <div>
                                 <dt>반려 사유</dt>
-                                <dd><c:out value="${application.rejectionReason}"/></dd>
+                                <dd class="business-rejection-reason"><c:out value="${application.rejectionReason}"/></dd>
                             </div>
                         </c:if>
                         <div>

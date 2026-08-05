@@ -143,8 +143,8 @@ public class ReservationController {
         }
         Integer memberId = loginMember.getMemberId();
 
-        reservationService.requestCancel(reservationId, memberId, reason);
-        log.info("[취소 요청] reservationId={}, memberId={}, reason={}", reservationId, memberId, reason);
+        paymentService.cancelByCustomer(reservationId, memberId, reason);
+        log.info("[취소 처리] reservationId={}, memberId={}, reason={}", reservationId, memberId, reason);
         return Map.of("result", "OK");
     }
 

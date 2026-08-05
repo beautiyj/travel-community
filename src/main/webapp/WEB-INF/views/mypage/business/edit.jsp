@@ -89,13 +89,6 @@
                     </select>
                 </div>
 
-                <div class="input-field">
-                    <label for="businessAddress">주소</label>
-                    <input id="businessAddress" name="address" type="text"
-                           value="<c:out value='${member.address}'/>"
-                           maxlength="255" placeholder="주소를 입력해 주세요">
-                </div>
-
                 <div class="profile-edit__actions">
                     <a class="profile-edit__cancel"
                        href="${pageContext.request.contextPath}/mypage/business-info">취소</a>

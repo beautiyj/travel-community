@@ -24,18 +24,22 @@ public class BusinessMediaStorage {
     private final Path rootDirectory;
 
     public BusinessMediaStorage(
-            @Value("${app.upload.media-dir:uploads/media}")
+            @Value("${file.upload-mypage}")
             String rootDirectory) {
         this.rootDirectory =
                 Paths.get(rootDirectory).toAbsolutePath().normalize();
     }
 
     public String storeProfile(MultipartFile file, Long memberId) {
-        return store(file, "profiles", "member-" + memberId);
+        return store(
+                file, rootDirectory, "member-" + memberId,
+                "/uploads/mypage/");
     }
 
     public String storePlace(MultipartFile file, Long placeId) {
-        return store(file, "places", "place-" + placeId);
+        return store(
+                file, rootDirectory.resolve("places"), "place-" + placeId,
+                "/uploads/mypage/places/");
     }
 
     public Path getRootDirectory() {
@@ -43,7 +47,10 @@ public class BusinessMediaStorage {
     }
 
     private String store(
-            MultipartFile file, String folder, String prefix) {
+            MultipartFile file,
+            Path directory,
+            String prefix,
+            String publicUrlPrefix) {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("이미지 파일을 선택해 주세요.");
         }
@@ -57,7 +64,7 @@ public class BusinessMediaStorage {
                     "JPG, PNG, WEBP 이미지만 업로드할 수 있습니다.");
         }
 
-        Path directory = rootDirectory.resolve(folder).normalize();
+        directory = directory.toAbsolutePath().normalize();
         String fileName = prefix + "-" + UUID.randomUUID() + extension;
         Path target = directory.resolve(fileName).normalize();
         if (!target.getParent().equals(directory)) {
@@ -70,6 +77,6 @@ public class BusinessMediaStorage {
         } catch (IOException e) {
             throw new IllegalStateException("이미지를 저장하지 못했습니다.", e);
         }
-        return "/uploads/media/" + folder + "/" + fileName;
+        return publicUrlPrefix + fileName;
     }
 }

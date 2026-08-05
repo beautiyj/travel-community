@@ -5,7 +5,6 @@ import com.gnagnoohc.travel.business.dto.BusinessPlaceFormDto;
 import com.gnagnoohc.travel.business.dto.BusinessPlaceOverviewDto;
 import com.gnagnoohc.travel.business.dto.BusinessPlaceRegisterDto;
 import com.gnagnoohc.travel.business.dto.BusinessPlaceUpdateDto;
-//import com.gnagnoohc.travel.business.dto.BusinessRegionOptionDto;
 import com.gnagnoohc.travel.business.mapper.BusinessMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,6 +16,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -35,13 +35,16 @@ public class BusinessPlaceService {
     private static final String NEW_PHOTO_TOKEN = "new";
     // 가격 설정 대상은 숙박(place_type='stay')뿐. 맛집/관광지는 예약금을 받지 않는다.
     private static final String PLACE_TYPE_LODGING = "stay";
-    private static final String PRICE_TYPE_FIXED = "FIXED";
-    private static final String PRICE_TYPE_VARIABLE = "VARIABLE";
-    private static final String PRICE_TYPE_FREE = "FREE";
-    private static final Set<String> ALLOWED_PRICE_TYPES =
-            Set.of(PRICE_TYPE_FIXED, PRICE_TYPE_VARIABLE, PRICE_TYPE_FREE);
+    private static final String PRICE_MODE_FIXED = "FIXED";
+    private static final String PRICE_MODE_FREE = "FREE";
+    private static final Set<String> ALLOWED_PRICE_MODES = Set.of(PRICE_MODE_FIXED, PRICE_MODE_FREE);
+    // place_id 채번용 난수 범위. 공공데이터 contentId(보통 7자리 이하)와 겹치지 않도록 9자리 대역을 쓴다
+    private static final long PLACE_ID_RANGE_START = 900_000_000L;
+    private static final long PLACE_ID_RANGE_BOUND = 1_000_000_000L;
+    private static final int PLACE_ID_MAX_ATTEMPTS = 20;
 
     private final BusinessMapper businessMapper;
+    private final SecureRandom random = new SecureRandom();
 
     @Value("${file.upload-dir}")
     private String uploadDir;
@@ -50,10 +53,6 @@ public class BusinessPlaceService {
     public BusinessPlaceOverviewDto findOverview(Long bizMemberId) {
         return businessMapper.selectPlaceOverviewByMember(bizMemberId);
     }
-
-//    public List<BusinessRegionOptionDto> getRegionOptions() {
-//        return businessMapper.selectRegionOptions();
-//    }
 
     // venue 화면에서 등록 폼을 보여줄지(사업자) 안내 문구만 보여줄지(일반 유저) 분기용
     public boolean isBusinessMember(Long memberId) {
@@ -76,15 +75,16 @@ public class BusinessPlaceService {
             throw new IllegalArgumentException("사진을 최소 1장 등록해야 합니다.");
         }
 
-        PriceSetting price = resolvePrice(form);
+        Integer minPrice = resolveMinPrice(form);
+        Long regionId = resolveRegionId(form.getAddress());
 
         List<String> savedUrls = nonEmpty.stream().map(this::saveImageFile).toList();
 
         BusinessPlaceRegisterDto place = BusinessPlaceRegisterDto.builder()
+                .placeId(generateUniquePlaceId())
                 .placeType(form.getPlaceType())
-                .priceType(price.priceType())
-                .minPrice(price.minPrice())
-//                .regionId(form.getRegionId())
+                .minPrice(minPrice)
+                .regionId(regionId)
                 .memberId(bizMemberId)
                 .name(form.getName())
                 .description(form.getDescription())
@@ -127,7 +127,8 @@ public class BusinessPlaceService {
         Long placeId = overview.getPlaceId();
 
         // 사진을 지우고 다시 넣기 전에 먼저 검증해야 실패 시 기존 사진이 날아가지 않는다
-        PriceSetting price = resolvePrice(form);
+        Integer minPrice = resolveMinPrice(form);
+        Long regionId = resolveRegionId(form.getAddress());
         String extraInfo = resolveExtraInfo(form);
 
         List<String> currentImages = businessMapper.selectPlaceImages(placeId);
@@ -179,9 +180,8 @@ public class BusinessPlaceService {
                 .memberId(bizMemberId)
                 .name(form.getName())
                 .placeType(form.getPlaceType())
-                .priceType(price.priceType())
-                .minPrice(price.minPrice())
-//                .regionId(form.getRegionId())
+                .minPrice(minPrice)
+                .regionId(regionId)
                 .address(form.getAddress())
                 .description(form.getDescription())
                 .extraInfo(extraInfo)
@@ -192,6 +192,18 @@ public class BusinessPlaceService {
         if (businessMapper.updatePlace(update) == 0) {
             throw new IllegalStateException("업소 정보를 수정할 권한이 없습니다.");
         }
+    }
+
+    // place_id는 AUTO_INCREMENT가 아니라서(공공데이터 contentId와 PK를 공유) 직접 채번한다.
+    // 9자리 대역에서 뽑고, 이미 쓰인 값이면 다시 뽑는다.
+    private Long generateUniquePlaceId() {
+        for (int attempt = 0; attempt < PLACE_ID_MAX_ATTEMPTS; attempt++) {
+            long candidate = PLACE_ID_RANGE_START + (long) (random.nextDouble() * (PLACE_ID_RANGE_BOUND - PLACE_ID_RANGE_START));
+            if (!businessMapper.existsPlace(candidate)) {
+                return candidate;
+            }
+        }
+        throw new IllegalStateException("업소 ID 생성에 실패했습니다. 잠시 후 다시 시도해주세요.");
     }
 
     // 원본 파일명은 신뢰하지 않고 확장자만 화이트리스트로 뽑아 서버측 생성 파일명(UUID)으로 저장
@@ -222,36 +234,46 @@ public class BusinessPlaceService {
         }
     }
 
+    // region_id는 폼에서 받지 않고 주소로 자동 매핑한다. 카카오 우편번호 API가 시/도명을 축약형으로
+    // 내려주므로(서울특별시 -> 서울 등) 최상위 지역(parent_region_id IS NULL)과 축약형 매핑표로 대응한다.
+    private Long resolveRegionId(String address) {
+        Long regionId = businessMapper.selectRegionIdByAddressPrefix(address);
+        if (regionId == null) {
+            throw new IllegalArgumentException("주소에 해당하는 지역을 찾을 수 없습니다. 주소를 다시 확인해주세요.");
+        }
+        return regionId;
+    }
+
     // 파일 input은 선택 없이 제출해도 빈 파트가 실려올 수 있어 걸러낸다
     private List<MultipartFile> toNonEmpty(List<MultipartFile> files) {
         return files == null ? List.of() : files.stream().filter(f -> !f.isEmpty()).toList();
     }
 
     /**
-     * 폼에서 온 가격 입력을 DB 제약(CK_PLACE_PRICE_TYPE / CK_PLACE_MIN_PRICE)에 맞게 정리한다.
-     * - 숙박이 아니면 무조건 FREE + min_price null (폼에서 가격 영역 자체가 숨겨져 값이 안 온다)
-     * - FIXED면 금액 필수, 그 외에는 금액을 버린다
-     * 화면 JS가 이미 같은 규칙으로 토글하지만, 폼 조작/직접 요청을 막는 서버측 최종 방어선이다.
+     * 폼에서 온 가격 입력을 정리한다.
+     * - 숙박이 아니면 무조건 min_price 0 (폼에서 가격 영역 자체가 숨겨져 값이 안 온다)
+     * - 숙박이고 "무료"를 고르면 금액 input 값과 무관하게 0으로 확정한다
+     * - 숙박이고 "가격입력"을 고르면 금액이 필수다
+     * 화면 JS가 이미 같은 규칙으로 토글하지만, 폼 조작/직접 요청을 막는 서버측 최종 방어선이라
+     * priceMode를 기준으로 판단하고 minPrice 값 자체는 FIXED일 때만 신뢰한다.
      */
-    private PriceSetting resolvePrice(BusinessPlaceFormDto form) {
+    private Integer resolveMinPrice(BusinessPlaceFormDto form) {
         if (!PLACE_TYPE_LODGING.equals(form.getPlaceType())) {
-            return new PriceSetting(PRICE_TYPE_FREE, null);
+            return 0;
         }
-        String priceType = form.getPriceType();
-        if (priceType == null || !ALLOWED_PRICE_TYPES.contains(priceType)) {
-            throw new IllegalArgumentException("가격 유형을 선택해주세요.");
+        String priceMode = form.getPriceMode();
+        if (priceMode == null || !ALLOWED_PRICE_MODES.contains(priceMode)) {
+            throw new IllegalArgumentException("가격을 선택해주세요.");
         }
-        if (!PRICE_TYPE_FIXED.equals(priceType)) {
-            return new PriceSetting(priceType, null);
+        if (PRICE_MODE_FREE.equals(priceMode)) {
+            return 0;
         }
         Integer minPrice = form.getMinPrice();
         if (minPrice == null || minPrice < 0) {
-            throw new IllegalArgumentException("가격입력을 선택한 경우 금액을 0원 이상으로 입력해야 합니다.");
+            throw new IllegalArgumentException("가격입력을 선택한 경우 금액을 0원 이상으로 입력해주세요.");
         }
-        return new PriceSetting(PRICE_TYPE_FIXED, minPrice);
+        return minPrice;
     }
-
-    private record PriceSetting(String priceType, Integer minPrice) {}
 
     /**
      * 부가정보 입력칸(라벨/값 병렬 리스트)을 extra_info에 저장할 한 덩어리로 조립한다.

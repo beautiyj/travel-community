@@ -182,4 +182,21 @@
         FROM place
         WHERE region_id = #{regionId}
     </select>
+
+    <select id="countPlacesByRegionAndType" resultType="int">
+        SELECT COUNT(*)
+        FROM place
+        WHERE region_id = #{regionId}
+        AND place_type = #{placeType}
+    </select>
+
+    <select id="selectAllRegions" resultType="com.gnagnoohc.travel.tour.model.RegionDTO">
+        SELECT
+        region_id AS regionId,
+        area_code AS areaCode,
+        sigg_code AS siggCode,
+        region_name AS regionName
+        FROM region
+    </select>
+
 </mapper>

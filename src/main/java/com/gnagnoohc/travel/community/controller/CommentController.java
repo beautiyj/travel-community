@@ -38,14 +38,14 @@ public class CommentController {
 			Integer placeOwnerId = commonService.selectPlaceOwnerId(comment.getPostId());
 			if (placeOwnerId != null && placeOwnerId != SessionUtil.getMemberId(login)) {
 				// 본인 업소의 리뷰가 아니면 등록 거부 → 안내 모달 띄우기 위한 파라미터
-				return "redirect:/community/detail?postId=" + comment.getPostId() + "&commentDenied=true";
+				return "redirect:/community/detail?postId=" + comment.getPostId() + "&commentDenied=true#comments";
 			}
 		}
 
 		service.insertComment(comment);
 
-		// 작성한 게시글 상세로 되돌아감
-		return "redirect:/community/detail?postId=" + comment.getPostId();
+		// 작성한 게시글 상세로 되돌아감 (댓글 섹션 앵커로 스크롤되도록 #comments 추가)
+		return "redirect:/community/detail?postId=" + comment.getPostId() + "#comments";
 	}
 
 	@PostMapping("/community/comment/delete")
@@ -59,12 +59,12 @@ public class CommentController {
 		// 본인 댓글인지 확인
 		CommentDto comment = service.selectComment(commentId);
 		if (!isOwner(comment, login)) {
-			return "redirect:/community/detail?postId=" + postId;
+			return "redirect:/community/detail?postId=" + postId + "#comments";
 		}
 
 		service.deleteComment(commentId);
 
-		return "redirect:/community/detail?postId=" + postId;
+		return "redirect:/community/detail?postId=" + postId + "#comments";
 	}
 
 	// 로그인한 사람이 댓글 작성자인지 확인

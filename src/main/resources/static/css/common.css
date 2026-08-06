@@ -99,6 +99,17 @@ body {
   color: var(--foreground);
   font-family: 'Noto Sans KR', 'Plus Jakarta Sans', -apple-system, sans-serif;
   line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* body가 flex container가 되면서 직계 자식(페이지별 콘텐츠 래퍼)이 flex item이 됨.
+   flex item은 기본 min-width:auto라 자식 콘텐츠(이미지 등)의 원본 크기가
+   레이아웃에 그대로 반영돼 페이지 폭이 흔들릴 수 있어 전부 min-width:0으로 해제 */
+body > * {
+  min-width: 0;
+  width: 100%;
 }
 
 /* 글로벌 타이포그래피 */
@@ -145,6 +156,10 @@ a {
   top: 0;
   z-index: 10;
 } /* ── 상단 헤더 / 내비게이션 ── */
+
+.site-footer {
+  margin-top: auto;
+} /* ── 하단 고정 푸터: body가 flex column이므로 남는 공간을 흡수해 화면 하단에 붙음 ── */
 
 .header-inner {
   margin: 0 auto;

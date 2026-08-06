@@ -20,4 +20,13 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     }
   });
+
+  const titleLengthModal = document.getElementById('titleLengthModal');
+  if (titleLengthModal) {
+    titleLengthModal.querySelectorAll('[data-modal-close]').forEach(function (closeEl) {
+      closeEl.addEventListener('click', function () {
+        titleInput.focus();
+      });
+    });
+  }
 });

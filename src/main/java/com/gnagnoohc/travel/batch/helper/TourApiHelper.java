@@ -48,21 +48,28 @@ public class TourApiHelper {
     // 배치 프로세스 진행 동안 동일 contentId 중복 요청을 방지하는 메모리 캐시
     private final Map<String, Object> controlledCache = new ConcurrentHashMap<>();
 
-    // TODO: 리질포제
     // CompletableFuture / inFlight 맵 제거 가능: 동일한 배치 내 단순 반복 호출 차단은 ConcurrentHashMap 캐시 하나로 충분하며, 재시도는 Resilience4j의 @Retry가 담당
-    // 어노테이션 설정만으로 QPS 제한, 429 감지, 지수 백오프, Jitter가 자동 작동함
+    // Resilience4j - 어노테이션 설정만으로 QPS 제한, 429 감지, 지수 백오프, Jitter가 자동 작동함
     @RateLimiter(name = "tourApiLimiter")
     @Retry(name = "tourApiRetry")
     public TourItemDTO fetchDetailCommonControlled(String contentId) {
+        // Rate Limit (429) 및 공공데이터 게이트웨이 초과 방지용 0.2초 대기
+        try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        
         if (!StringUtils.hasText(contentId)) { return null; }
         
-        // 1) 캐시 체크
+        // 캐시 체크
         String cacheKey = "detailCommon:" + contentId;
         if (controlledCache.containsKey(cacheKey)) {
             return (TourItemDTO) controlledCache.get(cacheKey);
         }
 
-        // 2) 실제 API 호출 및 파싱 (실패 시 Resilience4j가 알아서 재시도 및 속도제어)
+        // 실제 API 호출 및 파싱 (실패 시 Resilience4j가 알아서 재시도 및 속도제어)
         try {
             String commonJson = tourApiClient.fetchDetailCommon(contentId);
             if (!StringUtils.hasText(commonJson)) return null;
@@ -89,7 +96,7 @@ public class TourApiHelper {
     public void enrichTourItemDetails(TourItemDTO masterItem) {
         String contentId = masterItem.getContentid();
         try {
-            // TODO: 리질리언스적용 - 0806 제어 메서드 호출 (내부에서 JSON 파싱 및 캐싱/백오프까지 완료되어 DTO로 리턴됨)
+            // Resilience4j 제어 메서드 호출 (내부에서 JSON 파싱 및 캐싱/백오프까지 완료되어 DTO로 리턴됨)
             TourItemDTO commonDetail = fetchDetailCommonControlled(contentId);
             if (commonDetail != null) {
                 masterItem.setOverview(commonDetail.getOverview());
@@ -97,25 +104,6 @@ public class TourApiHelper {
                     masterItem.setTel(commonDetail.getTel());
                 }
             }
-
-            // String commonJson = tourApiClient.fetchDetailCommon(contentId);
-            // if (StringUtils.hasText(commonJson)) {
-            //     TourApiResponseDTO<TourItemDTO> commonResponse = objectMapper.readValue(
-            //             commonJson, new TypeReference<TourApiResponseDTO<TourItemDTO>>() {}
-            //     );
-
-            //     if (commonResponse != null && commonResponse.getResponse() != null
-            //             && commonResponse.getResponse().getBody() != null
-            //             && commonResponse.getResponse().getBody().getItems() != null
-            //             && !commonResponse.getResponse().getBody().getItems().getItem().isEmpty()) {
-
-            //         TourItemDTO commonDetail = commonResponse.getResponse().getBody().getItems().getItem().get(0);
-            //         masterItem.setOverview(commonDetail.getOverview());
-            //         if (!StringUtils.hasText(masterItem.getTel())) {
-            //             masterItem.setTel(commonDetail.getTel());
-            //         }
-            //     }
-            // }
 
             String petJson = tourApiClient.fetchDetailPetTour(contentId);
             if (StringUtils.hasText(petJson)) {

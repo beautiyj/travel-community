@@ -1,7 +1,6 @@
 package com.gnagnoohc.travel.batch.controller;
 
-import com.gnagnoohc.travel.batch.service.TourApiService;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -9,7 +8,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import com.gnagnoohc.travel.batch.service.TourApiService;
+
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/test/batch")
@@ -17,6 +18,17 @@ import java.util.List;
 public class TourBatchTestController {
 
     private final TourApiService tourApiService;
+
+    // 수동으로 전국 전체 적재를 돌리고 싶을 때 사용
+    // POST http://localhost:9999/test/batch/sync-all-real
+    @PostMapping("/sync-all-real")
+    public ResponseEntity<String> syncAllReal() {
+        tourApiService.syncAllTargetList();
+        return ResponseEntity.ok("전국 296개 지역군 1차 전체 적재 완료!");
+    }
+
+    
+
 
     // 특정 지역만 핀포인트 테스트하고 싶을 때 사용
     // POST http://localhost:9999/test/batch/sync-regions-test?regionIds=11110
@@ -34,12 +46,5 @@ public class TourBatchTestController {
         return ResponseEntity.ok("지정 지역 보충 배치 테스트 완료 - regionIds: " + regionIds);
     }
 
-    // 수동으로 전국 전체 적재를 돌리고 싶을 때 사용
-    // POST http://localhost:9999/test/batch/sync-all-real
-    @PostMapping("/sync-all-real")
-    public ResponseEntity<String> syncAllReal() {
-        tourApiService.syncAllTargetList();
-        return ResponseEntity.ok("전국 296개 지역군 1차 전체 적재 완료!");
-    }
-
+    
 }

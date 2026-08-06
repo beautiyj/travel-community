@@ -38,6 +38,11 @@ public class TourApiClient {
      */
     public String fetchLocationBasedTour(String mapX, String mapY, int radius, String arrange) {
         try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        try {
             // 쿼리스트링 빌더를 통해 메서드 전용 특수 변수들과 필수 페이징 정보만 매핑(공통은 config 이동)
             return this.webClient.get()                    // HTTP GET 방식 요청
                 .uri(uriBuilder -> uriBuilder
@@ -71,6 +76,11 @@ public class TourApiClient {
      */
     public String fetchAreaBasedList(String lDongRegnCd, String lDongSignguCd, String contentTypeId, String arrange) {
         try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        try {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
                     .path("/areaBasedList2")
@@ -100,6 +110,11 @@ public class TourApiClient {
      */
     public String fetchSearchKeywordTour(String keyword, String arrange) {
         try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        try {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
                     .path("/searchKeyword2")
@@ -127,6 +142,11 @@ public class TourApiClient {
      */
     public String fetchSearchStay(String lDongRegnCd, String lDongSignguCd,
                                 String lclsSystm1, String lclsSystm2, String lclsSystm3, String arrange) {
+        try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
         try {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
@@ -158,6 +178,11 @@ public class TourApiClient {
      */
     public String fetchDetailCommon(String contentId) {
         try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        try {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
                     .path("/detailCommon2")
@@ -182,6 +207,11 @@ public class TourApiClient {
      * @param contentTypeId 관광타입 ID (필수)
      */
     public String fetchDetailIntro(String contentId, String contentTypeId) {
+        try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
         try {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
@@ -211,6 +241,11 @@ public class TourApiClient {
      */
     public String fetchDetailInfo(String contentId, String contentTypeId) {
         try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        try {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
                     .path("/detailInfo2")
@@ -238,6 +273,12 @@ public class TourApiClient {
      * @param imageYN 이미지조회 구분 Y/N (옵션, Y=콘텐츠이미지조회 N="음식점"타입의음식메뉴이미지)
      */
     public String fetchDetailImage(String contentId, String imageYN) {
+        try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        
         try {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
@@ -267,7 +308,13 @@ public class TourApiClient {
      * 
      * 동기화 목록에서만 페이징 매개변수 처리
      */
-    public String fetchAreaBasedSyncList(int defaultPage, String contentTypeId, String showflag, String arrange) {        try {
+    public String fetchAreaBasedSyncList(int defaultPage, String contentTypeId, String showflag, String arrange) {        
+        try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        try {
         return this.webClient.get()
             .uri(uriBuilder -> uriBuilder
                 .path("/areaBasedSyncList2")
@@ -295,6 +342,11 @@ public class TourApiClient {
      */
     public String fetchDetailPetTour(String contentId) {
         try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        try {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
                     .path("/detailPetTour2")
@@ -321,6 +373,11 @@ public class TourApiClient {
      * @param lDongListYn 법정동 목록조회 여부 Y/N (옵션, N=코드조회 Y=전체목록조회)
      */
     public String fetchLdongCode(String lDongRegnCd, String lDongListYn) {
+        try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
         try {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
@@ -350,6 +407,11 @@ public class TourApiClient {
      * @param lclsSystmListYn 분류체계 목록조회 여부 Y/N (옵션, lclsSystm1 lclsSystm2 필수, N=코드조회 Y=전체목록조회)
      */
     public String fetchLclsSystmCode(String lclsSystm1, String lclsSystm2, String lclsSystmListYn) {
+        try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
         try {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder

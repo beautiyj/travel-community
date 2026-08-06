@@ -3,6 +3,8 @@ package com.gnagnoohc.travel.tour.service;
 import com.gnagnoohc.travel.tour.mapper.TourMapper;
 import com.gnagnoohc.travel.tour.model.PlaceDTO;
 import com.gnagnoohc.travel.tour.model.PlaceImageDTO;
+import com.gnagnoohc.travel.tour.model.RegionDTO;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +21,11 @@ public class TourService {
     // 통합 검색용 keyword 파라미터 추가
     public List<PlaceDTO> getPlaceList(String placeType, Integer regionId, String keyword, int page) {
         return tourMapper.selectPlaceList(placeType, regionId, keyword);
+    }
+
+    // 상위 시/도 지역 목록 조회 (지역 필터 버튼 바 동적 생성용)
+    public List<RegionDTO> getParentRegionList() {
+        return tourMapper.selectParentRegions();
     }
 
     // 장소 상세 정보 조회

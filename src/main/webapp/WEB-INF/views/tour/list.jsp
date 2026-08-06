@@ -42,7 +42,6 @@
                                             </div>
 
                                             <!-- 검색바 컴포넌트 및 지역 필터 영역 -->
-                                            <!-- 검색바 컴포넌트 및 지역 필터 영역 -->
                                             <div style="margin-bottom: 24px;">
                                                 <!-- 제출용 form 태그 생성 및 searchbar.jsp 기존 내장 드롭다운 옵션(useDropdown) 활성화 -->
                                                 <form action="${pageContext.request.contextPath}/tour/list" method="get">
@@ -58,7 +57,21 @@
                                                     <c:if test="${not empty selectedPlaceType}">
                                                         <input type="hidden" name="placeType" value="${selectedPlaceType}" />
                                                     </c:if>
+
+                                                    <!-- 검색어 변경 시에도 기존 선택된 정렬 기준 유지 -->
+                                                    <c:if test="${not empty selectedSort}">
+                                                        <input type="hidden" name="sort" value="${selectedSort}" />
+                                                    </c:if>
                                                 </form>
+                                            </div>
+
+                                            <div style="display: flex; justify: flex-end; margin-bottom: 16px;">
+                                                <select id="sortSelect" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border, #ccc); font-size: 14px; background-color: #fff; cursor: pointer;">
+                                                    <option value="latest" ${selectedSort eq 'latest' ? 'selected' : ''}>최신순</option>
+                                                    <option value="name" ${selectedSort eq 'name' ? 'selected' : ''}>가나다순</option>
+                                                    <option value="priceAsc" ${selectedSort eq 'priceAsc' ? 'selected' : ''}>낮은 가격순</option>
+                                                    <option value="priceDesc" ${selectedSort eq 'priceDesc' ? 'selected' : ''}>높은 가격순</option>
+                                                </select>
                                             </div>
 
                                             <!-- 카드 그리드 영역 (cardComponent.jsp 재사용) -->
@@ -92,5 +105,6 @@
                                     <!-- 공통 JS 인클루드 -->
                                     <jsp:include page="/WEB-INF/views/common/footer.jsp" />
                                     <script src="${pageContext.request.contextPath}/js/dropdownSelector.js"></script>
+                                    <script src="${pageContext.request.contextPath}/js/tour/tourList.js"></script>
                                 </body>
                             </html>

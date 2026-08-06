@@ -447,6 +447,7 @@ private void processSupplementForRegions(List<RegionDTO> regionList) {
 
                 Collections.shuffle(paddingCandidates);
 
+                // TODO: 셔플이후부터문제, 셔플이후 패딩루프부터 문제 해결필요
                 int paddedCount = 0;
                 for (TourAreaBasedSyncListDTO paddingItem : paddingCandidates) {
                     if (paddedCount >= paddingNeeded) {

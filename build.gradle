@@ -96,6 +96,9 @@ dependencies {
 	
 	// Email
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+	// Resilience4j - batch scheduler 전용 속도 제어 + 지수형 백오프(지터)
+	implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.2.0'
 }
 
 tasks.named('test') {

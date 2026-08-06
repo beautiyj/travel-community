@@ -195,23 +195,20 @@
 </div>
 
 <div class="cancel-modal" id="reasonModal" hidden>
-    <div class="cancel-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="reason-modal-title">
-        <div class="cancel-modal__header">
+    <div class="cancel-modal__dialog reason-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="reason-modal-title">
+        <div class="cancel-modal__header reason-modal__header">
             <div><h2 id="reason-modal-title">취소 사유</h2></div>
             <button class="cancel-modal__close js-reason-close" type="button" aria-label="닫기">×</button>
         </div>
-        <div class="cancel-modal__body">
-            <div id="reasonModalCancelBlock" hidden>
-                <p style="font-weight:500; margin-bottom:4px;">내가 취소 요청한 사유</p>
-                <p id="reasonModalCancelText" style="white-space: pre-line; margin-bottom:16px;">-</p>
+        <div class="cancel-modal__body reason-modal__body">
+            <div class="reason-modal__block" id="reasonModalCancelBlock" hidden>
+                <p class="reason-modal__label">내가 취소 요청한 사유</p>
+                <p class="reason-modal__text" id="reasonModalCancelText">-</p>
             </div>
-            <div id="reasonModalRejectBlock" hidden>
-                <p style="font-weight:500; margin-bottom:4px;">업체 거절 사유</p>
-                <p id="reasonModalRejectText" style="white-space: pre-line;">-</p>
+            <div class="reason-modal__block" id="reasonModalRejectBlock" hidden>
+                <p class="reason-modal__label">업체 거절 사유</p>
+                <p class="reason-modal__text" id="reasonModalRejectText">-</p>
             </div>
-        </div>
-        <div class="cancel-modal__actions">
-            <button class="cancel-modal__back js-reason-close" type="button" style="flex:1;">닫기</button>
         </div>
     </div>
 </div>

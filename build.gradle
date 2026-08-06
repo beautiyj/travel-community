@@ -60,6 +60,9 @@ dependencies {
 
 	// Resilience4j - batch scheduler 전용 속도 제어 + 지터
 	implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.2.0'
+
+	// 업소 사진 외부 저장소
+	implementation 'com.cloudinary:cloudinary-http5:2.3.0'
 }
 
 tasks.named('test') {

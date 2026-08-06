@@ -93,6 +93,7 @@ public class BusinessController {
         addSidebarAttributes(model, ctx);
         addFilterAttributes(model, sentiment,
                 ReviewFilter.toTabs(businessReviewService.getSentimentCounts(ctx.getPlaceId())));
+        model.addAttribute("todayLabel", businessDashboardService.todayLabel());
         model.addAttribute("reviews", businessReviewService.getReviews(
                 ctx.getPlaceId(), ReviewFilter.toSentimentValue(sentiment)));
 
@@ -104,6 +105,7 @@ public class BusinessController {
     public String closure(HttpSession session, Model model) {
         Long memberId = BusinessSessionSupport.requireBusinessMemberId(session);
         addSidebarAttributes(model, businessDashboardService.getSidebarContext(memberId));
+        model.addAttribute("todayLabel", businessDashboardService.todayLabel());
         return "business/closure";
     }
 
@@ -117,6 +119,7 @@ public class BusinessController {
         Long memberId = BusinessSessionSupport.requireBusinessMemberId(session);
         BusinessPlaceOverviewDto overview = businessPlaceService.findOverview(memberId);
         model.addAttribute("place", overview);
+        model.addAttribute("todayLabel", businessDashboardService.todayLabel());
         addExtraInfoOptions(model);
 
         // 아직 업소를 등록하지 않았으면 사이드바에 채울 값 자체가 없으므로 등록 화면 분기만 준비한다
@@ -189,12 +192,14 @@ public class BusinessController {
                 () -> businessReservationService.approveCancel(reservationId, memberId));
     }
 
-    //예약관리 : 취소 요청 거절 (PAID 원복은 reservation 파트 ReservationService 호출)
+    //예약관리 : 취소 요청 거절 (PAID 원복은 reservation 파트 ReservationService 호출, reason은 사업자가 입력한 거절 사유)
     @PostMapping("/business/reservations/{reservationId}/cancel-reject")
-    public String rejectCancelReservation(@PathVariable Long reservationId, HttpSession session, RedirectAttributes redirectAttributes) {
+    public String rejectCancelReservation(@PathVariable Long reservationId,
+                                           @RequestParam(required = false) String reason,
+                                           HttpSession session, RedirectAttributes redirectAttributes) {
         Long memberId = BusinessSessionSupport.requireBusinessMemberId(session);
         return runReservationAction(redirectAttributes,
-                () -> businessReservationService.rejectCancel(reservationId, memberId));
+                () -> businessReservationService.rejectCancel(reservationId, memberId, reason));
     }
 
     /**

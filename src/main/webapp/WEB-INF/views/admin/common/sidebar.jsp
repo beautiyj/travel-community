@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:url var="adminHomeUrl" value="/admin"/>
+<c:url var="mainUrl" value="/"/>
 <c:url var="businessApplicationsUrl" value="/admin/business-applications"/>
 <c:url var="logoutUrl" value="/auth/logout"/>
 
@@ -9,9 +10,8 @@
   사이드바 노출 자체는 인가가 아니므로 /admin/** 접근과 아래 상태 변경 요청은 서버가 ADMIN 권한을 검증해야 한다.
 --%>
 <aside class="admin-sidebar">
-    <a class="admin-sidebar__logo" href="${adminHomeUrl}">
-        <span class="admin-sidebar__logo-badge" aria-hidden="true">A</span>
-        <span>갈래말래 관리자</span>
+    <a class="admin-sidebar__brand brand" href="${mainUrl}" aria-label="갈래말래 메인으로 이동">
+        <span class="name">갈래말래</span>
     </a>
 
     <%-- 로그인 성공 시 세션에 저장된 회원 DTO의 닉네임을 출력하며, 권한 판단에는 이 표시값을 사용하지 않는다. --%>

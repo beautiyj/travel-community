@@ -1,0 +1,270 @@
+/* 신청 상세의 회원 정보·문서·심사 폼은 상세 화면에서만 사용한다. */
+.admin-detail-heading__title-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.admin-back-link {
+    color: var(--admin-muted);
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.admin-back-link:hover,
+.admin-back-link:focus-visible {
+    color: var(--admin-primary);
+}
+
+/* 상세 정보는 용어(dt)와 값(dd)의 대응을 유지하면서 두 열 카드 형태로 배치한다. */
+.admin-info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+    margin: 0;
+    border-top: 1px solid var(--admin-border);
+}
+
+.admin-info-item {
+    display: grid;
+    grid-template-columns: 112px minmax(0, 1fr);
+    gap: 16px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--admin-border);
+}
+
+.admin-info-item:nth-child(odd) {
+    padding-right: 24px;
+}
+
+.admin-info-item:nth-child(even) {
+    padding-left: 24px;
+    border-left: 1px solid var(--admin-border);
+}
+
+.admin-info-item dt {
+    color: var(--admin-muted);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.admin-info-item dd {
+    min-width: 0;
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+/* 등록증 원본 비율을 유지하되 큰 이미지는 카드 안의 제한된 높이에서 확인하도록 한다. */
+.admin-document {
+    display: flex;
+    min-height: 420px;
+    max-height: 720px;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 16px;
+    background: var(--muted);
+    border: 1px solid var(--admin-border);
+    border-radius: 12px;
+}
+
+.admin-document img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-height: 688px;
+    object-fit: contain;
+}
+
+.admin-review-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+/* 반려 사유를 먼저 표시하고, 승인·반려 버튼은 그 아래 같은 행에 배치한다. */
+.admin-review-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px 16px;
+}
+
+.admin-review-actions > .admin-review-form:first-child {
+    grid-column: 1;
+    grid-row: 4;
+}
+
+.admin-review-actions > .admin-review-form:last-child {
+    /* 폼의 요청 범위는 유지하면서 자식 요소를 바깥 Grid에 직접 배치한다. */
+    display: contents;
+}
+
+.admin-review-actions > .admin-review-form:last-child .admin-btn {
+    grid-column: 2;
+    grid-row: 4;
+}
+
+.admin-review-actions > .admin-review-form:last-child .admin-form-label,
+.admin-review-actions > .admin-review-form:last-child .admin-form-textarea,
+.admin-review-actions > .admin-review-form:last-child .admin-form-help-row {
+    grid-column: 1 / -1;
+}
+
+.admin-review-actions > .admin-review-form:last-child .admin-form-label {
+    margin-top: 4px;
+    /* 기존 13px 라벨 크기에 2pt를 더한다. */
+    font-size: calc(13px + 2pt);
+}
+
+.admin-review-panel {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    border: 1px solid var(--admin-border);
+    border-radius: 12px;
+}
+
+.admin-review-panel--approve {
+    background: var(--admin-success-bg);
+    border-color: #bbf7d0;
+}
+
+.admin-review-panel--reject {
+    background: var(--admin-danger-bg);
+    border-color: #fecaca;
+}
+
+.admin-review-panel__title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.admin-review-panel__description {
+    min-height: 44px;
+    margin: 6px 0 18px;
+    color: var(--admin-muted);
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+.admin-review-form {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+}
+
+.admin-review-panel--approve .admin-review-form {
+    justify-content: flex-end;
+}
+
+.admin-form-label {
+    margin-bottom: 7px;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.admin-form-textarea {
+    width: 100%;
+    min-height: 132px;
+    padding: 11px 12px;
+    resize: vertical;
+    background: var(--card);
+    border: 1px solid var(--admin-border);
+    border-radius: 8px;
+    color: var(--admin-text);
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.55;
+}
+
+.admin-form-textarea:focus {
+    outline: 2px solid rgba(2, 132, 199, 0.22);
+    border-color: var(--admin-primary);
+}
+
+.admin-form-help-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 7px 0 14px;
+    color: var(--admin-muted);
+    font-size: 12px;
+}
+
+.admin-rejection-result {
+    margin-top: 20px;
+    padding: 16px;
+    background: var(--admin-danger-bg);
+    border: 1px solid #fecaca;
+    border-radius: 12px;
+}
+
+.admin-rejection-result__title {
+    margin: 0 0 8px;
+    color: var(--admin-danger);
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.admin-rejection-result__reason {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.65;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+/* 상세 심사 중 중복 제출을 막는 disabled 상태는 상세 화면에서만 사용한다. */
+.admin-review-actions .admin-btn:disabled,
+.admin-review-actions .admin-btn:disabled:hover,
+.admin-review-actions .admin-btn:disabled:focus-visible {
+    background: #94a3b8;
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+@media (max-width: 768px) {
+    .admin-info-grid,
+    .admin-review-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-review-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-review-actions > .admin-review-form:first-child,
+    .admin-review-actions > .admin-review-form:last-child .admin-btn {
+        grid-column: 1;
+    }
+
+    .admin-review-actions > .admin-review-form:first-child {
+        grid-row: 4;
+    }
+
+    .admin-review-actions > .admin-review-form:last-child .admin-btn {
+        grid-row: 5;
+    }
+
+    .admin-info-item,
+    .admin-info-item:nth-child(odd),
+    .admin-info-item:nth-child(even) {
+        grid-template-columns: 96px minmax(0, 1fr);
+        padding: 14px 0;
+        border-left: 0;
+    }
+
+    .admin-document {
+        min-height: 280px;
+        padding: 10px;
+    }
+
+    .admin-review-panel__description {
+        min-height: 0;
+    }
+}

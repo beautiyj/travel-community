@@ -3,7 +3,16 @@
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <!DOCTYPE html>
 <html lang="ko">
-<head><jsp:include page="/WEB-INF/views/mypage/common/pageHead.jsp"><jsp:param name="title" value="예약 관리" /></jsp:include></head>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>예약 관리</title>
+    <link rel="stylesheet" href="/css/common.css">
+    <link rel="stylesheet" href="/css/mypage/common.css">
+    <link rel="stylesheet" href="/css/components/tagButton.css">
+    <link rel="stylesheet" href="/css/mypage/user.css">
+    <link rel="stylesheet" href="/css/mypage/modal.css">
+</head>
 <body>
 <main class="mypage-page mypage-reservation-page">
     <h1 class="mypage-page__title mypage-reservation-topbar">
@@ -14,7 +23,7 @@
         </span>
     </h1>
     <div class="mypage-layout">
-        <jsp:include page="/WEB-INF/views/mypage/user/components/sidebar.jsp"><jsp:param name="active" value="reservation" /></jsp:include>
+        <jsp:include page="/WEB-INF/views/mypage/common/sidebar.jsp"><jsp:param name="accountType" value="USER"/><jsp:param name="active" value="reservation"/></jsp:include>
         <section class="mypage-content mypage-reservation-content" aria-labelledby="reservation-title">
             <h2 id="reservation-title" class="sr-only">내 예약 관리</h2>
 
@@ -59,6 +68,7 @@
                                 <div role="columnheader">방문일</div>
                                 <div role="columnheader">인원</div>
                                 <div role="columnheader">금액</div>
+                                <div role="columnheader">사유</div>
                                 <div role="columnheader">상태 / 처리</div>
                             </div>
                             <c:forEach var="reservation" items="${reservationList}">
@@ -74,17 +84,28 @@
                                             <c:otherwise>-</c:otherwise>
                                         </c:choose>
                                     </div>
+                                    <div role="cell">
+                                        <c:if test="${not empty reservation.cancelReason or not empty reservation.rejectReason}">
+                                            <button type="button" class="js-reason-open"
+                                                    data-cancel-reason="<c:out value='${reservation.cancelReason}'/>"
+                                                    data-reject-reason="<c:out value='${reservation.rejectReason}'/>"
+                                                    style="background:none;border:none;color:var(--primary);text-decoration:underline;cursor:pointer;padding:0;font-size:inherit;">자세히</button>
+                                        </c:if>
+                                        <c:if test="${empty reservation.cancelReason and empty reservation.rejectReason}">-</c:if>
+                                    </div>
                                     <div class="mypage-reservation-actions" role="cell">
-                                        <c:choose>
-                                            <c:when test="${reservation.status eq 'PAID'}"><span class="mypage-status mypage-status--paid">결제완료</span></c:when>
-                                            <c:when test="${reservation.status eq 'CANCEL_REQUESTED'}"><span class="mypage-status mypage-status--requested">취소요청</span></c:when>
-                                            <c:when test="${reservation.status eq 'CONFIRMED'}"><span class="mypage-status mypage-status--confirmed">예약 확정</span></c:when>
-                                            <c:when test="${reservation.status eq 'COMPLETED'}"><span class="mypage-status mypage-status--completed">이용 완료</span></c:when>
-                                            <c:when test="${reservation.status eq 'CANCELED' or reservation.status eq 'CANCELLED'}"><span class="mypage-status mypage-status--cancelled">예약취소</span></c:when>
-                                            <c:when test="${reservation.status eq 'EXPIRED'}"><span class="mypage-status mypage-status--expired">예약만료</span></c:when>
-                                            <c:otherwise><span class="mypage-status mypage-status--pending">예약대기</span></c:otherwise>
-                                        </c:choose>
-                                        <c:if test="${reservation.status eq 'PAID' or reservation.status eq 'CONFIRMED'}">
+                                        <jsp:include page="/WEB-INF/views/mypage/common/reservationStatusBadge.jsp">
+                                            <jsp:param name="status" value="${reservation.status}"/>
+                                        </jsp:include>
+                                        <c:if test="${reservation.status eq 'PAID'}">
+                                            <button class="mypage-outline-danger js-cancel-now-open" type="button"
+                                                    data-reservation-id="<c:out value='${reservation.reservationId}'/>"
+                                                    data-place-name="<c:out value='${reservation.placeName}' default='장소 정보 없음'/>"
+                                                    data-visit-date="<c:out value='${reservation.visitDate}'/>"
+                                                    data-headcount="<c:out value='${reservation.headcount}'/>"
+                                                    data-amount="<c:out value='${reservation.amount}' default='0'/>">취소하기</button>
+                                        </c:if>
+                                        <c:if test="${reservation.status eq 'CONFIRMED'}">
                                             <button class="mypage-outline-danger js-cancel-open" type="button"
                                                     data-reservation-id="<c:out value='${reservation.reservationId}'/>"
                                                     data-place-name="<c:out value='${reservation.placeName}' default='장소 정보 없음'/>"
@@ -118,6 +139,7 @@
                     <p><span>예약 일정</span><strong id="cancelVisitDate">-</strong></p>
                     <p><span>인원</span><strong id="cancelHeadcount">-</strong></p>
                     <p><span>결제 금액</span><strong class="cancel-modal__price" id="cancelAmount">-</strong></p>
+                    <p><span>예상 환불액</span><strong class="cancel-modal__price" id="cancelRefundAmount">-</strong></p>
                 </div>
                 <div class="cancel-modal__field">
                     <label for="cancelReason">취소 사유</label>
@@ -144,6 +166,52 @@
         </form>
     </div>
 </div>
+
+<div class="cancel-modal" id="cancelNowModal" hidden>
+    <div class="cancel-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="cancel-now-modal-title">
+        <div class="cancel-modal__header">
+            <div><h2 id="cancel-now-modal-title">예약 취소하기</h2><p id="cancelNowPlaceName">장소</p></div>
+            <button class="cancel-modal__close js-cancel-now-close" type="button" aria-label="닫기">×</button>
+        </div>
+        <form action="#" method="post" id="cancelNowForm"
+              data-endpoint-prefix="${pageContext.request.contextPath}/reservations/"
+              data-success-url="${pageContext.request.contextPath}/mypage/reservation?status=CANCELED">
+            <input type="hidden" id="cancelNowReservationId" name="reservationId">
+            <div class="cancel-modal__body">
+                <div class="cancel-modal__summary">
+                    <p><span>예약 일정</span><strong id="cancelNowVisitDate">-</strong></p>
+                    <p><span>인원</span><strong id="cancelNowHeadcount">-</strong></p>
+                    <p><span>결제 금액</span><strong class="cancel-modal__price" id="cancelNowAmount">-</strong></p>
+                </div>
+                <p class="profile-edit__message profile-edit__message--error" id="cancelNowError" hidden></p>
+                <p class="cancel-modal__notice">아직 업체가 확정하지 않은 예약이라, 취소 즉시 결제하신 금액을 전액 환불합니다.</p>
+            </div>
+            <div class="cancel-modal__actions">
+                <button class="cancel-modal__back js-cancel-now-close" type="button">돌아가기</button>
+                <button class="cancel-modal__submit" type="submit">취소하기</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="cancel-modal" id="reasonModal" hidden>
+    <div class="cancel-modal__dialog reason-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="reason-modal-title">
+        <div class="cancel-modal__header reason-modal__header">
+            <div><h2 id="reason-modal-title">취소 사유</h2></div>
+            <button class="cancel-modal__close js-reason-close" type="button" aria-label="닫기">×</button>
+        </div>
+        <div class="cancel-modal__body reason-modal__body">
+            <div class="reason-modal__block" id="reasonModalCancelBlock" hidden>
+                <p class="reason-modal__label">내가 취소 요청한 사유</p>
+                <p class="reason-modal__text" id="reasonModalCancelText">-</p>
+            </div>
+            <div class="reason-modal__block" id="reasonModalRejectBlock" hidden>
+                <p class="reason-modal__label">업체 거절 사유</p>
+                <p class="reason-modal__text" id="reasonModalRejectText">-</p>
+            </div>
+        </div>
+    </div>
+</div>
 <script>
 (() => {
     const modal = document.getElementById('cancelModal');
@@ -168,6 +236,13 @@
         requestError.hidden = true;
         requestError.textContent = '';
         modal.hidden = false;
+
+        const cancelRefundAmount = document.getElementById('cancelRefundAmount');
+        cancelRefundAmount.textContent = '조회 중...';
+        fetch('/reservations/' + button.dataset.reservationId + '/refund-preview')
+            .then((res) => res.json())
+            .then((data) => { cancelRefundAmount.textContent = formatAmount(data.refundAmount); })
+            .catch(() => { cancelRefundAmount.textContent = '-'; });
     }));
     document.querySelectorAll('.js-cancel-close').forEach((button) => button.addEventListener('click', close));
     reasonSelect.addEventListener('change', (event) => {
@@ -208,6 +283,76 @@
         }
     });
     modal.addEventListener('click', (event) => { if (event.target === modal) close(); });
+})();
+
+(() => {
+    const modal = document.getElementById('cancelNowModal');
+    const form = document.getElementById('cancelNowForm');
+    const errorBox = document.getElementById('cancelNowError');
+    const submitButton = form.querySelector('.cancel-modal__submit');
+    const close = () => { modal.hidden = true; };
+    const formatAmount = (amount) => Number(amount || 0).toLocaleString('ko-KR') + '원';
+
+    document.querySelectorAll('.js-cancel-now-open').forEach((button) => button.addEventListener('click', () => {
+        document.getElementById('cancelNowReservationId').value = button.dataset.reservationId;
+        document.getElementById('cancelNowPlaceName').textContent = button.dataset.placeName;
+        document.getElementById('cancelNowVisitDate').textContent = button.dataset.visitDate;
+        document.getElementById('cancelNowHeadcount').textContent = button.dataset.headcount + '명';
+        document.getElementById('cancelNowAmount').textContent = formatAmount(button.dataset.amount);
+        errorBox.hidden = true;
+        errorBox.textContent = '';
+        modal.hidden = false;
+    }));
+
+    document.querySelectorAll('.js-cancel-now-close').forEach((button) => button.addEventListener('click', close));
+
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const reservationId = document.getElementById('cancelNowReservationId').value;
+        if (!reservationId) return;
+
+        errorBox.hidden = true;
+        submitButton.disabled = true;
+
+        try {
+            const response = await fetch(
+                form.dataset.endpointPrefix + encodeURIComponent(reservationId) + '/cancel-request',
+                { method: 'POST' }
+            );
+            if (!response.ok) throw new Error('cancel failed');
+            window.location.assign(form.dataset.successUrl);
+        } catch (error) {
+            errorBox.textContent = '취소 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.';
+            errorBox.hidden = false;
+            submitButton.disabled = false;
+        }
+    });
+
+    modal.addEventListener('click', (event) => { if (event.target === modal) close(); });
+})();
+
+(() => {
+    const modal = document.getElementById('reasonModal');
+    const cancelBlock = document.getElementById('reasonModalCancelBlock');
+    const cancelText = document.getElementById('reasonModalCancelText');
+    const rejectBlock = document.getElementById('reasonModalRejectBlock');
+    const rejectText = document.getElementById('reasonModalRejectText');
+
+    document.querySelectorAll('.js-reason-open').forEach((button) => button.addEventListener('click', () => {
+        const cancelReason = button.dataset.cancelReason;
+        const rejectReason = button.dataset.rejectReason;
+
+        cancelBlock.hidden = !cancelReason;
+        if (cancelReason) cancelText.textContent = cancelReason;
+
+        rejectBlock.hidden = !rejectReason;
+        if (rejectReason) rejectText.textContent = rejectReason;
+
+        modal.hidden = false;
+    }));
+
+    document.querySelectorAll('.js-reason-close').forEach((button) => button.addEventListener('click', () => { modal.hidden = true; }));
+    modal.addEventListener('click', (event) => { if (event.target === modal) modal.hidden = true; });
 })();
 </script>
 </body>

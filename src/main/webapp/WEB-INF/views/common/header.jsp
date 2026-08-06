@@ -4,13 +4,11 @@
 <c:set var="cp" value="${pageContext.request.contextPath}" />
 
 <link rel="stylesheet" href="${cp}/css/common.css">
-<link rel="stylesheet" href="${cp}/css/components/dropdownSelector.css">
 <link rel="stylesheet" href="${cp}/css/components/buttonComponent.css">
 
 <header class="header">
     <div class="header-inner">
         <a href="${cp}/" class="brand">
-            <span class="logo">TA</span>
             <span class="name">갈래말래</span>
         </a>
 

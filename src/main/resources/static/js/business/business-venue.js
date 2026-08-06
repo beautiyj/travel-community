@@ -193,28 +193,21 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 // ── 가격 설정 (등록/수정 폼 공용) ──
-// 1) 가격은 숙박(placeType='stay')만 설정 대상이라 업종이 숙박일 때만 영역을 노출한다.
-//    맛집/관광지는 서버가 무조건 min_price=0으로 저장하므로 여기서 값을 보내지 않아도 된다.
-// 2) 가격 선택 라디오에서 "가격입력"(FIXED)을 고른 경우에만 금액 input이 열린다.
-//    "무료"(FREE)를 고르면 금액 input을 비우고 닫는다 — 실제 0 저장은 서버가 priceMode를 보고 확정한다.
+// 업종(숙박/맛집/관광지) 구분 없이 모든 업소에 동일하게 영역을 노출한다.
+// 가격 선택 라디오에서 "가격입력"(FIXED)을 고른 경우에만 금액 input이 열린다.
+// "무료"(FREE)를 고르면 금액 input을 비우고 닫는다 — 실제 0 저장은 서버가 priceMode를 보고 확정한다.
 // 사진 그리드 로직과 무관하게 동작해야 해서 별도 리스너로 분리했다.
 document.addEventListener("DOMContentLoaded", function () {
-    var LODGING_PLACE_TYPE = "stay";
-
     var priceGroup = document.querySelector(".js-price-group");
     if (!priceGroup) return;
 
-    var placeTypeSelect = document.querySelector('select[name="placeType"]');
     var priceInputBox = priceGroup.querySelector(".js-price-input");
     var priceInput = priceInputBox.querySelector('input[name="minPrice"]');
     var priceRadios = priceGroup.querySelectorAll('input[name="priceMode"]');
 
     function syncPriceGroup() {
-        var isLodging = !placeTypeSelect || placeTypeSelect.value === LODGING_PLACE_TYPE;
-        priceGroup.classList.toggle("is-hidden", !isLodging);
-
         var checked = priceGroup.querySelector('input[name="priceMode"]:checked');
-        var isFixed = isLodging && checked && checked.value === "FIXED";
+        var isFixed = checked && checked.value === "FIXED";
         priceInputBox.classList.toggle("is-hidden", !isFixed);
 
         // 숨겨진 상태의 값이 그대로 제출되지 않도록 비활성화한다 (disabled 필드는 전송 대상에서 제외됨)
@@ -223,7 +216,6 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!isFixed) priceInput.value = "";
     }
 
-    if (placeTypeSelect) placeTypeSelect.addEventListener("change", syncPriceGroup);
     priceRadios.forEach(function (radio) {
         radio.addEventListener("change", syncPriceGroup);
     });

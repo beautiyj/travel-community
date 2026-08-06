@@ -15,4 +15,11 @@
 		from post_image where post_id = #{postId}
 		order by sort_order asc, image_id asc
 	</select>
+
+	<!-- 수정 화면에서 본문에서 빠진 기존 이미지 삭제 (postId로 다른 글의 행을 못 건드리게 함께 확인)
+	     메서드 리턴 타입이 int라 별도 select 없이도 영향받은 행 수가 그대로 호출부에 돌아간다. -->
+	<delete id="deleteImageByUrl">
+		delete from post_image
+		where post_id = #{postId} and image_url = #{imageUrl}
+	</delete>
 </mapper>

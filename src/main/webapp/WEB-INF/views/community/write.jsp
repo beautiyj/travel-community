@@ -16,6 +16,7 @@
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/community/community.css">
 </head>
 <body>
+<jsp:include page="/WEB-INF/views/common/header.jsp" />
 <c:set var="cp" value="${pageContext.request.contextPath}" />
 <c:set var="loginMember" value="${sessionScope.loginMember}" />
 
@@ -85,7 +86,6 @@
         <button type="button" id="toolPhotoBtn" class="editor-tool-btn">🖼 사진</button>
         <button type="button" id="toolCollageBtn" class="editor-tool-btn">▦ 콜라주</button>
         <button type="button" id="toolSliderBtn" class="editor-tool-btn">⇄ 슬라이더</button>
-        <span class="editor-tool-hint">이미지는 커서 아래에 삽입됩니다</span>
       </div>
 
       <div id="contentEditor" class="content-editor" contenteditable="true"
@@ -102,7 +102,8 @@
       <input type="file" id="images" name="images" accept="image/*" multiple hidden>
     </div>
 
-    <!-- 장소 태그: "방문자인증후기"/"일반후기" 카테고리일 때만 노출, 취소/게시하기 버튼 바로 위 -->
+    <!-- 장소 태그: "방문자인증후기"/"일반후기" 카테고리일 때만 노출, 취소/게시하기 버튼 바로 위
+         방문자인증후기: 단일 선택(#place-tag-selected, 필수) / 일반후기: 다중 선택(#place-tag-selected-list, 선택사항, 최대 5개) -->
     <div class="field" id="place-tag-field" style="display:none;">
       <label class="field-label">장소 태그</label>
 
@@ -110,6 +111,12 @@
         <span id="place-tag-selected-name"></span>
         <button type="button" id="place-tag-remove" class="place-tag-remove">✕</button>
       </div>
+
+      <div id="place-tag-selected-list" class="place-tag-selected-list" style="display:none;"></div>
+
+      <!-- 일반후기 다중 태그가 5개에 도달하면 placeTag.js의 updatePlaceTagLimitUI()가 이 문구를 보여주고
+           위 open-btn을 숨김. 기본은 숨김 상태 -->
+      <p id="place-tag-limit-msg" class="place-tag-limit-msg" style="display:none;">장소 태그는 최대 5개까지 추가할 수 있습니다.</p>
 
       <button type="button" id="place-tag-open-btn" class="place-tag-open-btn">장소 검색해서 태그하기</button>
     </div>
@@ -120,18 +127,22 @@
         <jsp:include page="../common/buttonComponent.jsp">
           <jsp:param name="text"  value="취소" />
           <jsp:param name="color" value="var(--card)" />
+          <jsp:param name="width" value="100%" />
         </jsp:include>
       </div>
 
       <div class="btn-submit-wrap">
         <jsp:include page="../common/buttonComponent.jsp">
-          <jsp:param name="text" value="게시하기" />
+          <jsp:param name="text"  value="게시하기" />
+          <jsp:param name="width" value="100%" />
         </jsp:include>
       </div>
     </div>
 
   </form>
 </div>
+
+<jsp:include page="/WEB-INF/views/common/footer.jsp" />
 
 <jsp:include page="placeSearchModal.jsp">
   <jsp:param name="modalId" value="placeSearchModal" />
@@ -142,11 +153,41 @@
 
 <jsp:include page="titleLengthModal.jsp" />
 
+<!-- 방문자인증후기 장소 태그 필수 안내 (titleLengthModal.jsp를 modalId/message로 재사용) -->
+<jsp:include page="titleLengthModal.jsp">
+  <jsp:param name="modalId" value="placeTagRequiredModal" />
+  <jsp:param name="message" value="방문자인증후기는 장소를 1곳 태그해야 게시할 수 있습니다." />
+</jsp:include>
+
+<!-- 콜라주/슬라이더 빌더 사진 개수 제한(각 4장) 안내 (titleLengthModal.jsp를 modalId/message로 재사용) -->
+<jsp:include page="titleLengthModal.jsp">
+  <jsp:param name="modalId" value="collageLimitModal" />
+  <jsp:param name="message" value="콜라주에는 사진을 최대 4장까지 추가할 수 있습니다." />
+</jsp:include>
+<jsp:include page="titleLengthModal.jsp">
+  <jsp:param name="modalId" value="sliderLimitModal" />
+  <jsp:param name="message" value="슬라이더에는 사진을 최대 4장까지 추가할 수 있습니다." />
+</jsp:include>
+
+<!-- 본문 전체 이미지 개수(50장)/텍스트 길이(9999자) 제한 안내: message는 contentEditor.js가 상황에 맞게 채움 -->
+<jsp:include page="titleLengthModal.jsp">
+  <jsp:param name="modalId" value="contentLimitModal" />
+  <jsp:param name="message" value="" />
+</jsp:include>
+
 <script>window.CP = "${cp}";</script>
-<script src="${cp}/js/common.js"></script>
 <script src="${cp}/js/dropdownSelector.js"></script>
 <script src="${cp}/js/community/categorySelect.js"></script>
-<script src="${cp}/js/community/contentEditor.js"></script>
+<script src="${cp}/js/community/contentEditor/constants.js"></script>
+<script src="${cp}/js/community/contentEditor/dom.js"></script>
+<script src="${cp}/js/community/contentEditor/state.js"></script>
+<script src="${cp}/js/community/contentEditor/range.js"></script>
+<script src="${cp}/js/community/contentEditor/canvasUtils.js"></script>
+<script src="${cp}/js/community/contentEditor/blockChrome.js"></script>
+<script src="${cp}/js/community/contentEditor/singleImage.js"></script>
+<script src="${cp}/js/community/contentEditor/collage.js"></script>
+<script src="${cp}/js/community/contentEditor/slider.js"></script>
+<script src="${cp}/js/community/contentEditor/serialize.js"></script>
 <script src="${cp}/js/common/highlightKeyword.js"></script>
 <script src="${cp}/js/community/placeTag.js"></script>
 <script src="${cp}/js/community/titleValidation.js"></script>

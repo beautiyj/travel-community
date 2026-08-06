@@ -6,7 +6,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>회원 유형 선택 | 갈래말래</title>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/auth/auth.css?v=naver-20260729-7">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/common.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/auth/auth.css?v=auth-admin-css-split-20260806-r7">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/auth/signup-choice.css?v=auth-admin-css-split-20260806-r7">
     <script defer src="${pageContext.request.contextPath}/js/auth/auth-history-guard.js"></script>
 </head>
 <%-- 로그인 이후 뒤로가기로 이 선택 화면이 복원되면 세션 상태를 다시 확인한다. --%>

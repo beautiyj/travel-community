@@ -17,6 +17,7 @@ import com.gnagnoohc.travel.mypage.service.BusinessService;
 import com.gnagnoohc.travel.mypage.dto.BusinessApplicationDto;
 import com.gnagnoohc.travel.mypage.dto.MypageDto;
 import com.gnagnoohc.travel.mypage.service.MypageService;
+import com.gnagnoohc.travel.storage.ImageStorage;
 
 import jakarta.servlet.http.HttpSession;
 
@@ -28,16 +29,24 @@ public class BusinessMypageController {
     private final MypageService mypageService;
     private final BusinessDocumentStorage documentStorage;
     private final BusinessMediaStorage mediaStorage;
+    private final ImageStorage imageStorage;
 
     public BusinessMypageController(
             BusinessService businessService,
             MypageService mypageService,
             BusinessDocumentStorage documentStorage,
-            BusinessMediaStorage mediaStorage) {
+            BusinessMediaStorage mediaStorage,
+            ImageStorage imageStorage) {
         this.businessService = businessService;
         this.mypageService = mypageService;
         this.documentStorage = documentStorage;
         this.mediaStorage = mediaStorage;
+        this.imageStorage = imageStorage;
+    }
+
+    @ModelAttribute("businessAccount")
+    public boolean businessAccount() {
+        return true;
     }
 
     @GetMapping
@@ -49,7 +58,7 @@ public class BusinessMypageController {
         model.addAttribute("member", member);
         model.addAttribute("application",
                 businessService.getApplication(member.getMemberId()));
-        return "mypage/business/info";
+        return "mypage/common/memberInfo";
     }
 
     @GetMapping("/info")
@@ -77,7 +86,7 @@ public class BusinessMypageController {
             return redirectBySession(session);
         }
         model.addAttribute("member", member);
-        return "mypage/business/edit";
+        return "mypage/common/memberEdit";
     }
 
     @PostMapping("/edit")
@@ -101,6 +110,7 @@ public class BusinessMypageController {
                         profileImage, member.getMemberId());
                 mypageService.updateProfileImage(
                         member.getMemberId(), imageUrl);
+                imageStorage.delete(member.getProfileImgUrl());
             }
             redirectAttributes.addFlashAttribute(
                     "message", "회원정보를 수정했습니다.");
@@ -112,10 +122,13 @@ public class BusinessMypageController {
     }
 
     @GetMapping("/password")
-    public String passwordForm(HttpSession session) {
-        return getBusinessMember(session) == null
-                ? redirectBySession(session)
-                : "mypage/business/password";
+    public String passwordForm(HttpSession session, Model model) {
+        MypageDto member = getBusinessMember(session);
+        if (member == null) {
+            return redirectBySession(session);
+        }
+        model.addAttribute("member", member);
+        return "mypage/common/password";
     }
 
     @PostMapping("/password")
@@ -191,7 +204,7 @@ public class BusinessMypageController {
             return redirectBySession(session);
         }
         model.addAttribute("member", member);
-        return "mypage/business/withdraw";
+        return "mypage/common/withdraw";
     }
 
     @PostMapping("/withdraw")

@@ -3,49 +3,46 @@
     PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="com.gnagnoohc.travel.mypage.repository.BusinessRepository">
+<mapper
+	namespace="com.gnagnoohc.travel.mypage.repository.BusinessRepository">
 
-    <select id="findApplicationByMemberId"
-            parameterType="long"
-            resultType="com.gnagnoohc.travel.mypage.dto.BusinessApplicationDto">
-        select member_id,
-               business_registration_file_key as document_url,
-               application_status as status,
-               applied_at as created_at,
-               approved_by as reviewed_by,
-               approved_at as reviewed_at
-        from business_application
-        where member_id = #{memberId}
-    </select>
+	<select id="findApplicationByMemberId" parameterType="long"
+		resultType="com.gnagnoohc.travel.mypage.dto.BusinessApplicationDto">
+		select member_id,
+		business_registration_file_key as document_url, application_status as status,
+		rejection_reason,
+		applied_at as created_at,
+		reviewed_by, reviewed_at from business_application
+		where member_id = #{memberId}
+		order by applied_at desc, business_application_id desc
+		limit 1
+	</select>
 
-    <insert id="saveApplication"
-            parameterType="com.gnagnoohc.travel.mypage.dto.BusinessApplicationDto">
-        insert into business_application (
-            member_id,
-            business_registration_file_key,
-            application_status,
-            applied_at
-        )
-        values (
-            #{memberId},
-            #{documentUrl},
-            'PENDING',
-            now()
-        )
-        on duplicate key update
-            business_registration_file_key =
-                values(business_registration_file_key),
-            application_status = 'PENDING',
-            applied_at = now(),
-            approved_by = null,
-            approved_at = null
-    </insert>
+	<insert id="saveApplication"
+		parameterType="com.gnagnoohc.travel.mypage.dto.BusinessApplicationDto">
+		insert into business_application (
+		member_id,	
+		business_registration_file_key, application_status,
+		applied_at
+		)
+		values (
+		#{memberId},
+		#{documentUrl},
+		'PENDING',
+		now()
+		)
+		on duplicate key update
+		business_registration_file_key = values(business_registration_file_key), application_status =
+		'PENDING',
+		applied_at = now(),
+		reviewed_by = null, reviewed_at = null
+	</insert>
 
-    <delete id="deletePendingApplication" parameterType="long">
-        delete from business_application
-        where member_id = #{memberId}
-          and application_status = 'PENDING'
-    </delete>
+	<delete id="deletePendingApplication" parameterType="long">
+		delete from business_application
+		where member_id = #{memberId}
+		and application_status = 'PENDING'
+	</delete>
 
 
 </mapper>

@@ -160,7 +160,21 @@
             OR p.hashtags LIKE CONCAT('%', #{keyword}, '%')
             )
         </if>
-        ORDER BY p.created_at DESC
+        <!-- 정렬 조건 동적 분기 -->
+        <choose>
+            <when test="sort == 'name'">
+                ORDER BY p.name ASC
+            </when>
+            <when test="sort == 'priceAsc'">
+                ORDER BY p.min_price ASC
+            </when>
+            <when test="sort == 'priceDesc'">
+                ORDER BY p.min_price DESC
+            </when>
+            <otherwise>
+                ORDER BY p.created_at DESC
+            </otherwise>
+        </choose>
     </select>
 
     <!-- 특정 장소의 추가 이미지 목록 조회 -->

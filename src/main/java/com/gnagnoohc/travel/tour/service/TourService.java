@@ -19,8 +19,8 @@ public class TourService {
     private final TourMapper tourMapper;
 
     // 통합 검색용 keyword 파라미터 추가
-    public List<PlaceDTO> getPlaceList(String placeType, Integer regionId, String keyword, int page) {
-        return tourMapper.selectPlaceList(placeType, regionId, keyword);
+    public List<PlaceDTO> getPlaceList(String placeType, Integer regionId, String keyword, String sort, int page) {
+        return tourMapper.selectPlaceList(placeType, regionId, keyword, sort);
     }
 
     // 상위 시/도 지역 목록 조회 (지역 필터 버튼 바 동적 생성용)

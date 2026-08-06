@@ -20,6 +20,49 @@
 .cancel-modal__back { border: 2px solid var(--border); background: var(--card); color: var(--foreground); }
 .cancel-modal__submit { border: 0; background: var(--danger); color: #fff; }
 
+/* ---------- 예약 취소 사유 읽기 전용 모달 ---------- */
+.reason-modal__dialog {
+  max-width: 520px;
+  border-radius: 20px;
+}
+
+.reason-modal__header {
+  align-items: center;
+  padding: 30px 32px 14px;
+  border-bottom: 0;
+}
+
+.reason-modal__header h2 {
+  font-size: 24px;
+}
+
+.reason-modal__body {
+  gap: 12px;
+  padding: 16px 32px 24px;
+}
+
+.reason-modal__block {
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: var(--secondary);
+}
+
+.reason-modal__label {
+  margin-bottom: 6px;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.reason-modal__text {
+  margin: 0;
+  color: var(--foreground);
+  font-size: 15px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
 /* ---------- 회원정보 수정 확인 모달 ---------- */
 .edit-confirm-modal__message {
   color: var(--foreground);

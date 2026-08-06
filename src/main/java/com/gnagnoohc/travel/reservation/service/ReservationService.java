@@ -5,6 +5,7 @@ import com.gnagnoohc.travel.reservation.entity.Reservation;
 import com.gnagnoohc.travel.reservation.entity.ReservationStatus;
 import com.gnagnoohc.travel.reservation.mapper.ReservationMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +17,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ReservationService {
@@ -37,6 +39,22 @@ public class ReservationService {
     /** 기간 예약(체크인·체크아웃) 대상인지. 숙박만 해당 — 맛집/관광지·무료는 당일 방문 */
     public static boolean isStay(String placeType) {
         return !isPayOnSite(placeType) && !"free".equals(placeType);
+    }
+
+    /**
+     * 기준일(asOfDate)부터 방문일까지 남은 일수로 환불액 계산. D-3 이상 100%, D-1~D-2 50%, 당일(D-0) 0%
+     * asOfDate는 "고객이 취소를 신청한 날"이어야 한다 — 승인일 기준으로 하면 사업자가 승인을 미룰수록
+     * 환불이 깎이는 나쁜 유인이 생기기 때문(승인 전 미리보기는 예외적으로 오늘 날짜를 그대로 씀).
+     */
+    public static int applyRefundPolicy(int paidAmount, LocalDate visitDate, LocalDate asOfDate) {
+        long daysUntilVisit = ChronoUnit.DAYS.between(asOfDate, visitDate);
+        if (daysUntilVisit >= 3) {
+            return paidAmount;
+        }
+        if (daysUntilVisit >= 1) {
+            return paidAmount / 2;
+        }
+        return 0;
     }
 
     /** 숙박 박수. 체크아웃이 없으면(맛집/관광지 등) 1로 취급 */
@@ -160,6 +178,21 @@ public class ReservationService {
         Integer price = reservationMapper.findMinPrice(placeId);
         if (price == null) {
             throw new IllegalStateException("등록된 가격이 없는 장소입니다. placeId=" + placeId);
+        }
+        return price;
+    }
+
+    /**
+     * 관광지·맛집 예약금 조회. PLACE.min_price가 있으면 그 값을 그대로 예약금으로 쓰고,
+     * 아직 사업자가 설정하지 않았거나(min_price null) 0 이하로 잘못 들어간 경우 RESERVE_DEPOSIT으로 폴백한다.
+     * 폴백 발생 시 놓치지 않도록 경고 로그를 남긴다.
+     */
+    @Transactional(readOnly = true)
+    public int getDepositAmount(Long placeId) {
+        Integer price = reservationMapper.findMinPrice(placeId);
+        if (price == null || price <= 0) {
+            log.warn("[예약금 폴백] placeId={} min_price 미설정({}) — RESERVE_DEPOSIT({})으로 대체", placeId, price, RESERVE_DEPOSIT);
+            return RESERVE_DEPOSIT;
         }
         return price;
     }
@@ -296,7 +329,7 @@ public class ReservationService {
      */
     public int calculateAmount(Reservation r) {
         if (isPayOnSite(r.getPlaceType())) {
-            return RESERVE_DEPOSIT;
+            return getDepositAmount(r.getPlaceId());
         }
         return nightsOf(r) * r.getHeadcount() * getUnitPrice(r.getPlaceId());
     }

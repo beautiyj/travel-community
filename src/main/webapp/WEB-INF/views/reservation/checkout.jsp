@@ -1,6 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <%-- tour(관광지)·food(맛집) = 예약금(만나서결제) --%>
 <c:set var="payOnSite" value="${reservation.placeType eq 'tour' or reservation.placeType eq 'food'}" />
 <!DOCTYPE html>
@@ -74,7 +75,7 @@
             <h3>결제 정보</h3>
             <div class="summary-row"><span class="label">예약자</span><span class="value">${reservation.visitorName}</span></div>
             <div class="summary-row"><span class="label">연락처</span><span class="value">${reservation.phone}</span></div>
-            <div class="summary-row"><span class="label">장소</span><span class="value">장소 #${reservation.placeId}</span></div>
+            <div class="summary-row"><span class="label">장소</span><span class="value">${fn:escapeXml(placeName)}</span></div>
             <c:choose>
                 <c:when test="${not empty reservation.checkOutDate}">
                     <div class="summary-row"><span class="label">기간</span>

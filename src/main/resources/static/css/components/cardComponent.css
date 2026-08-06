@@ -229,6 +229,9 @@
 
 /* 반응형: 뷰포트에 따라 열 수 조정 (계산식으로 카드 비율 축소) */
 @media (max-width: 1200px) {
+  .place-grid{
+    justify-content: left;
+  }
   .place-card-link { width: calc((100% - 48px) / 3); } /* 3열 */
 }
 

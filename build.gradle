@@ -96,6 +96,9 @@ dependencies {
 	
 	// Email
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+	// 업소 사진 외부 저장소
+	implementation 'com.cloudinary:cloudinary-http5:2.3.0'
 }
 
 tasks.named('test') {

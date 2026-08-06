@@ -178,7 +178,12 @@
       : [];
     const cp = window.CP || '';
 
-    function imgUrlFor(n) { return cp + '/upload/' + imageUrls[n]; }
+    // Cloudinary로 저장된 최신 글은 절대 URL이 그대로 들어있고, 예전에 로컬 디스크에
+    // 저장된 글은 파일명만 있어서 /upload/ 접두사를 붙여야 한다. 둘 다 지원한다.
+    function imgUrlFor(n) {
+      const url = imageUrls[n];
+      return /^https?:\/\//.test(url) ? url : cp + '/upload/' + url;
+    }
 
     const rawContent = dataEl.textContent;
     let lastIndex = 0;

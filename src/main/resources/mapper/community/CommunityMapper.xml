@@ -51,7 +51,9 @@
 	     ※ place 상호명 컬럼은 name (title -> name 으로 컬럼명 변경됨) -->
 	<select id="selectOne" parameterType="int" resultType="community">
 		select p.post_id, p.member_id, p.place_id, p.title, p.content, p.created_at, p.updated_at, p.readcount,
-		p.category, m.nickname as nickname, m.member_type as memberType, m.profile_img_url as profileImgUrl,
+		p.category, m.nickname as nickname, m.member_type as memberType,
+		<!-- 탈퇴 회원은 Cloudinary에서 이미 지워진 URL이라, 화면에서 기본 아바타로 대체되도록 null로 내려준다 -->
+		case when m.member_status = 'WITHDRAWN' then null else m.profile_img_url end as profileImgUrl,
 		biz.first_image as businessImage, pl.name as placeName, pl.place_type as placeType
 		from post p
 		join member m on p.member_id = m.member_id

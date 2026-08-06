@@ -62,84 +62,64 @@ public class TourApiService {
     // 5개 타입을 모두 모아 후보 리스트를 합친 뒤 지역별 샘플링을 단 한 번만 수행하도록 변경
 
     // TODO: 배치스케줄러 테스트로직확인필요 & 확인 후 로그만 삭제 / 원본코드임시주석처리.배포시주석해제
-    // public void fetchAllTargetSyncList() {
-    //     log.info("[Batch Sync Start] 지역별/타입별 부족한 수량 점검 및 보충 수집을 시작합니다.");
-
-    //     // 기존에 사용 중이신 전체 REGION 목록 조회
-    //     List<RegionDTO> regionList = tourMapper.selectAllRegions();
-
-    //     // 버킷별 목표 수량 (필요 시 수정)
-    //     final int TARGET_COUNT_PER_BUCKET = 3;
-
-    //     for (RegionDTO region : regionList) {
-    //         String regionKey = String.valueOf(region.getRegionId());
-
-    //         for (String contentTypeId : TARGET_CONTENT_TYPES) {
-    //             // 기존 helper의 convertContentType 활용
-    //             String bucketType = tourApiHelper.convertContentType(contentTypeId, null, null);
-
-    //             // 해당 지역/타입의 DB 적재 개수 조회
-    //             int currentCount = tourMapper.countPlacesByRegionAndType(regionKey, bucketType);
-    //             int need = TARGET_COUNT_PER_BUCKET - currentCount;
-
-    //             // 부족한 T.O가 있을 때만 수집 실행
-    //             if (need > 0) {
-    //                 // 기존 방식대로 region에서 코드를 구하거나 null 처리
-    //                 String regnCd = (region.getRegionId() != null) ? String.valueOf(region.getRegionId()).substring(0, 2) : null;
-    //                 String signguCd = (region.getRegionId() != null && String.valueOf(region.getRegionId()).length() > 2)
-    //                         ? String.valueOf(region.getRegionId()).substring(2) : null;
-
-    //                 fillLowQualitySupplement(regnCd, signguCd, regionKey, bucketType, List.of(contentTypeId), need);
-    //             }
-    //         }
-    //     }
-    //     log.info("[Batch Sync End] 부족한 수량 보충 수집이 완료되었습니다.");
-    // }
-
-    // TODO: 테스트후제거필요  - 지정 지역만 대상으로 부족분 보충 로직을 테스트 실행 (fetchAllTargetSyncList의 지역 한정 버전)
-// 아래 processSupplementForRegions()를 그대로 공유하므로, 실제 스케줄러가 타는 로직과 100% 동일하게 검증 가능
-public void fetchSupplementForRegions(List<Integer> regionIds) {
-    log.info("[Batch Sync Test Start] 지정 지역 {} 대상 부족분 점검을 시작합니다.", regionIds);
-    List<RegionDTO> regionList = regionIds.stream()
-            .map(id -> RegionDTO.builder().regionId(id).build())
-            .toList();
-    processSupplementForRegions(regionList);
-    log.info("[Batch Sync Test End] 지정 지역 부족분 점검이 완료되었습니다.");
-}
-
-// TODO: 테스트후제거필요 : 배치스케줄러 테스트로직확인필요 & 확인 후 로그삭제
-public void fetchAllTargetSyncList() {
-    log.info("[Batch Sync Start] 지역별/타입별 부족한 수량 점검 및 보충 수집을 시작합니다.");
-    List<RegionDTO> regionList = tourMapper.selectAllRegions();
-    processSupplementForRegions(regionList);
-    log.info("[Batch Sync End] 부족한 수량 보충 수집이 완료되었습니다.");
-}
-
-// TODO: 테스트후제거필요 - fetchAllTargetSyncList / fetchSupplementForRegions가 공유하는 실제 보충 로직
-// (원래 fetchAllTargetSyncList의 for문 본체를 그대로 분리한 것 - 로직 자체는 전혀 안 바뀜)
-private void processSupplementForRegions(List<RegionDTO> regionList) {
-    final int TARGET_COUNT_PER_BUCKET = 3;
-
-    for (RegionDTO region : regionList) {
-        String regionKey = String.valueOf(region.getRegionId());
-
+    // // [실제 운용/전체 적재용 로직] 
+    // // 5개 타입을 모아 1차 큐 셀렉팅(조기종료 3건) + 부실 보완(tour 3건, stay 3건)을 한 번에 적재하는 메인 로직
+    @Transactional
+    public void syncAllTargetList() {
+        log.info("[Batch Sync Start] 전국 296개 지역군 1차 전체 적재를 시작합니다.");
         for (String contentTypeId : TARGET_CONTENT_TYPES) {
-            String bucketType = tourApiHelper.convertContentType(contentTypeId, null, null);
+            // pageNo=1부터 시작하여 1차 목록을 수집한 뒤 샘플링/큐셀렉팅 실행
+            List<TourAreaBasedSyncListDTO> rawValidList = collectValidItems(contentTypeId, 1);
+            processRandomSamplingAndSave(rawValidList);
+        }
+        log.info("[Batch Sync End] 전국 296개 지역군 전체 적재가 완료되었습니다.");
+    }
 
-            int currentCount = tourMapper.countPlacesByRegionAndType(regionKey, bucketType);
-            int need = TARGET_COUNT_PER_BUCKET - currentCount;
+    // [테스트 / 특정 지역 한정용] 지정한 regionIds만 큐 셀렉팅 + 보충 적재
+    @Transactional
+    public void syncTargetListForRegions(List<Integer> regionIds) {
+        log.info("[Batch Sync Test Start] 지정 지역 {} 대상 큐 셀렉팅 적재를 시작합니다.", regionIds);
+        List<TourAreaBasedSyncListDTO> rawValidList = new ArrayList<>();
 
-            if (need > 0) {
-                String regnCd = (region.getRegionId() != null) ? String.valueOf(region.getRegionId()).substring(0, 2) : null;
-                String signguCd = (region.getRegionId() != null && String.valueOf(region.getRegionId()).length() > 2)
-                        ? String.valueOf(region.getRegionId()).substring(2) : null;
+        for (Integer regionId : regionIds) {
+            String regionIdStr = String.valueOf(regionId);
+            if (regionIdStr.length() < 3) continue;
+            
+            String regnCd = regionIdStr.substring(0, 2);
+            String signguCd = regionIdStr.substring(2);
 
-                fillLowQualitySupplement(regnCd, signguCd, regionKey, bucketType, List.of(contentTypeId), need);
+            for (String contentTypeId : TARGET_CONTENT_TYPES) {
+                rawValidList.addAll(collectValidItemsForRegion(regnCd, signguCd, contentTypeId));
             }
         }
+        // 동일한 큐 셀렉팅엔진 실행
+        processRandomSamplingAndSave(rawValidList);
+        log.info("[Batch Sync Test End] 지정 지역 {} 대상 큐 셀렉팅 적재 완료.", regionIds);
     }
-}
+    // 특정 지역 대상 부족분 보충 전용 메서드 (스케줄러와 동일 로직)
+    // [테스트 / 특정 지역 한정용 2] 지정한 regionIds만 부족분 T.O 체크 후 핀포인트 보충 적재
+    public void fetchSupplementForRegions(List<Integer> regionIds) {
+        log.info("[Batch Sync Test Start] 지정 지역 {} 대상 부족분 점검을 시작합니다.", regionIds);
+        final int TARGET_COUNT_PER_BUCKET = 3;
 
+        for (Integer regionId : regionIds) {
+            String regionKey = String.valueOf(regionId);
+            String regnCd = regionKey.length() >= 2 ? regionKey.substring(0, 2) : regionKey;
+            String signguCd = regionKey.length() > 2 ? regionKey.substring(2) : "";
+
+            for (String contentTypeId : TARGET_CONTENT_TYPES) {
+                String bucketType = tourApiHelper.convertContentType(contentTypeId, null, null);
+                int currentCount = tourMapper.countPlacesByRegionAndType(regionKey, bucketType);
+                int need = TARGET_COUNT_PER_BUCKET - currentCount;
+
+                if (need > 0) {
+                    fillLowQualitySupplement(regnCd, signguCd, regionKey, bucketType, List.of(contentTypeId), need);
+                }
+            }
+        }
+        log.info("[Batch Sync Test End] 지정 지역 부족분 점검이 완료되었습니다.");
+    }
+    
     // 법정동 코드 수집 및 REGION 적재 파이프라인 (코드는 전체 목록 조회 Y 옵션으로 진행)
     @Transactional
     public void syncRegionData() {
@@ -358,7 +338,7 @@ private void processSupplementForRegions(List<RegionDTO> regionList) {
 
             // 기존 적재 건수 확인
             int existingCount = tourMapper.selectPlaceCountByRegion(regionId);
-            int targetGoal = 10; // 1차 기본 목표 10건
+            int targetGoal = 3; // 기본목표수 줄이기
 
             // placeType(tour/stay/food)별 그룹핑
             Map<String, List<TourAreaBasedSyncListDTO>> typedMap = new HashMap<>();
@@ -479,7 +459,7 @@ private void processSupplementForRegions(List<RegionDTO> regionList) {
 
             /// 1차 수집 및 패딩 결과 로깅
             int finalCount = tourMapper.selectPlaceCountByRegion(regionId);
-            log.info("[Batch Sampling Complete] 지역코드 {}: 기본 큐/패딩 DB 총 적재 건수 {}건 (유효 후보: {}건)", 
+            log.info("[Batch Sampling Complete] 지역코드 {}: 이번 회차 신규 적재 {}건 / DB 누적 총 {}건 (전체 후보: {}건)",
                     regionKey, finalCount, regionItems.size());
 
             // 부실데이터 예외 보완 레이어 - 위 1~3단계(최대 10건 캡)와는 완전히 별개로 진행되는 예외로직
@@ -497,6 +477,7 @@ private void processSupplementForRegions(List<RegionDTO> regionList) {
         }
     }
 
+    // TODO: 0806 체크하기(조기종료옵션추가) - 1~3단계 큐 처리에서 적재 건수가 목표치에 도달하면 바로 종료하도록 옵션 추가 가능
     // 부실데이터 예외 보완 레이어 전용 메서드
     // TourApiClient.fetchAreaBasedList로 해당 지역+타입군을 직접 다시 조회 (1~3단계 큐와는 독립적인 별도 후보 풀)
     // TourValidator.isValidBlacklistOnly()(블랙리스트만) + 필수 필드(주소/대표이미지/개요) 확인만 거쳐 무조건 need개수만큼 추가 적재
@@ -540,21 +521,35 @@ private void processSupplementForRegions(List<RegionDTO> regionList) {
         // 기본 DTO 생성
         TourItemDTO tourItem = tourDataConverter.convertToTourItemDTO(item);
 
-        // 개요(description) 확보 및 해시태그 생성에 필요한 소개정보/반복정보를 가져와 컨버터에 전달
+        if (!"0".equals(item.getShowflag())) {
+            tourApiHelper.enrichTourItemDetails(tourItem);
+        }
+        if (!StringUtils.hasText(tourItem.getOverview())) { continue; } // overview 없으면 intro/info 호출 전에 즉시 스킵
+
         TourDetailIntroDTO introDetail = null;
         TourDetailInfoDTO infoDetail = null;
         if (!"0".equals(item.getShowflag())) {
-            // tourItem 내 개요 등 세부 데이터 보강
-            tourApiHelper.enrichTourItemDetails(tourItem);
-
-            // 해시태그 부가정보(주차/연중무휴 등)를 위해 detailIntro도 조회
             introDetail = tourApiHelper.fetchDetailIntro(item.getContentid(), item.getContenttypeid());
-
-            // 숙박(32)인 경우 반복정보(detailInfo)도 획득하여 요금/룸 정보 파싱에 도움
             if ("32".equals(item.getContenttypeid())) {
                 infoDetail = tourApiHelper.fetchDetailInfo(item.getContentid(), item.getContenttypeid());
             }
         }
+
+        // // 개요(description) 확보 및 해시태그 생성에 필요한 소개정보/반복정보를 가져와 컨버터에 전달
+        // TourDetailIntroDTO introDetail = null;
+        // TourDetailInfoDTO infoDetail = null;
+        // if (!"0".equals(item.getShowflag())) {
+        //     // tourItem 내 개요 등 세부 데이터 보강
+        //     tourApiHelper.enrichTourItemDetails(tourItem);
+
+        //     // 해시태그 부가정보(주차/연중무휴 등)를 위해 detailIntro도 조회
+        //     introDetail = tourApiHelper.fetchDetailIntro(item.getContentid(), item.getContenttypeid());
+
+        //     // 숙박(32)인 경우 반복정보(detailInfo)도 획득하여 요금/룸 정보 파싱에 도움
+        //     if ("32".equals(item.getContenttypeid())) {
+        //         infoDetail = tourApiHelper.fetchDetailInfo(item.getContentid(), item.getContenttypeid());
+        //     }
+        // }
 
         // description 필수 조건 미충족 시 스킵
         if (!StringUtils.hasText(tourItem.getOverview())) { continue; }
@@ -607,11 +602,30 @@ log.info("[Low-Quality Supplement Result] 지역코드 {} 타입 {} - 목표 {}�
     // 소개정보(/detailIntro2) & 반복정보(/detailInfo2) 조회용 헬퍼 각각 호출
     // DB 적재 성공 여부를 boolean으로 리턴하도록 보정하여 정직한 카운팅 보장
     private boolean processSinglePlace(TourAreaBasedSyncListDTO syncItem) {
+
+
+        // TODO: 0806 가장 저비용(API 1회)이면서 가장 잘 거르는 이미지 개수 게이트를 맨 앞으로 이동
+        // -> 실패할 후보에서 enrich/intro/info(최대 4회) 낭비 호출 방지
+        List<TourDetailImageDTO> detailImages = tourApiHelper.fetchDetailImages(syncItem.getContentid());
+        List<String> imageUrls = new ArrayList<>();
+        if (detailImages != null && !detailImages.isEmpty()) {
+            imageUrls = detailImages.stream()
+                    .map(TourDetailImageDTO::getOriginimgurl)
+                    .filter(StringUtils::hasText)
+                    .distinct()
+                    .toList();
+        }
+        if (imageUrls.size() < 4) {
+            log.warn("[PLACE SAVE SKIP] 이미지 개수 부족 (현재 {}장 / 기준 4장) - contentId: {}, title: {}",
+                    imageUrls.size(), syncItem.getContentid(), syncItem.getTitle());
+            return false;
+        }
+
         TourItemDTO tourItem = tourDataConverter.convertToTourItemDTO(syncItem);
         TourDetailIntroDTO introDetail = null;
         TourDetailInfoDTO infoDetail = null;
 
-        // 영업중인 장소 상세정보 연쇄 수집
+        // 영업중인 장소 상세정보 연쇄 수집 (이미지 게이트 통과한 후보만)
         if (!"0".equals(syncItem.getShowflag())) {
             tourApiHelper.enrichTourItemDetails(tourItem);
             // 소개정보(detailIntro2) 연쇄 호출 (관광지/레포츠 이용요금 등)
@@ -622,23 +636,23 @@ log.info("[Low-Quality Supplement Result] 지역코드 {} 타입 {} - 목표 {}�
             }
         }
 
-        // 상세 이미지 API를 먼저 조회하여 최소 이미지 개수(2장 이상) 검증 수행
-        List<TourDetailImageDTO> detailImages = tourApiHelper.fetchDetailImages(syncItem.getContentid());
-        List<String> imageUrls = new ArrayList<>();
-        if (detailImages != null && !detailImages.isEmpty()) {
-            imageUrls = detailImages.stream()
-                    .map(TourDetailImageDTO::getOriginimgurl)
-                    .filter(StringUtils::hasText)
-                    .distinct() // 중복 URL 제거
-                    .toList();
-        }
+        // // 상세 이미지 API를 먼저 조회하여 최소 이미지 개수(2장 이상) 검증 수행
+        // List<TourDetailImageDTO> detailImages = tourApiHelper.fetchDetailImages(syncItem.getContentid());
+        // List<String> imageUrls = new ArrayList<>();
+        // if (detailImages != null && !detailImages.isEmpty()) {
+        //     imageUrls = detailImages.stream()
+        //             .map(TourDetailImageDTO::getOriginimgurl)
+        //             .filter(StringUtils::hasText)
+        //             .distinct() // 중복 URL 제거
+        //             .toList();
+        // }
 
-        // 2차 상세 필터링 A: 이미지 개수 부족 시 스킵 (DB 적재 안함 -> false 반환)
-        if (imageUrls.size() < 5) {
-            log.warn("[PLACE SAVE SKIP] 이미지 개수 부족 (현재 {}장 / 기준 5장) - contentId: {}, title: {}",
-                    imageUrls.size(), syncItem.getContentid(), syncItem.getTitle());
-            return false;
-        }
+        // // 2차 상세 필터링 A: 이미지 개수 부족 시 스킵 (DB 적재 안함 -> false 반환)
+        // if (imageUrls.size() < 5) {
+        //     log.warn("[PLACE SAVE SKIP] 이미지 개수 부족 (현재 {}장 / 기준 5장) - contentId: {}, title: {}",
+        //             imageUrls.size(), syncItem.getContentid(), syncItem.getTitle());
+        //     return false;
+        // }
 
         // PlaceImage 판단 로직에서 썸네일(카드용) 이미지 먼저 계산 -> convertToPlaceDTO로 전달
         String thumbnailImage = tourDataConverter.resolveThumbnailImage(syncItem);

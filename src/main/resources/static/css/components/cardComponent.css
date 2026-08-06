@@ -213,7 +213,7 @@
 }
 
 /* 카드 크기: 기본적으로 4열 기준으로 계산, 최대 너비는 디자인 기준 유지(320px) */
-.card-col {
+.place-card-link{
   /* 기타 속성은 위에서 이미 정의됨; 너비만 재정의 */
   width: calc((100% - 72px) / 4); /* (전체 - 총 gap) / 4 */
   max-width: 320px; /* 기존 디자인 사이즈 유지 */
@@ -221,16 +221,16 @@
 
 /* 반응형: 뷰포트에 따라 열 수 조정 (계산식으로 카드 비율 축소) */
 @media (max-width: 1200px) {
-  .card-col { width: calc((100% - 48px) / 3); } /* 3열 */
+  .place-card-link { width: calc((100% - 48px) / 3); } /* 3열 */
 }
 
 @media (max-width: 900px) {
-  .card-col { width: calc((100% - 24px) / 2); } /* 2열 */
+  .place-card-link { width: calc((100% - 24px) / 2); } /* 2열 */
 }
 
 @media (max-width: 600px) {
-  .card-col { width: 100%; } /* 1열 */
+  .place-card-link { width: 100%; } /* 1열 */
 }
 
 /* 카드 링크가 셀 전체를 채우도록 보장 */
-.place-card-link { display: block; width: 100%; text-decoration: none; color: inherit; }
+.place-card-link { display: block; text-decoration: none; color: inherit; }

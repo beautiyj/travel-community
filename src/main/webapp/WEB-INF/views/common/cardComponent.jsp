@@ -6,7 +6,7 @@
 <c:set var="cardName" value="${empty param.name ? '기본 관광지 명칭' : param.name}" />
 <c:set var="cardRegion" value="${empty param.regionName ? '지역' : param.regionName}" />
 <%-- 평점 및 리뷰 수 기본값 처리 (평점은 삭제 가능) --%>
-<c:set var="cardRating" value="${empty param.rating ? '0.0' : param.rating}" />
+<c:set var="cardRating" value="${empty param.rating ? '리뷰수' : param.rating}" />
 <c:set var="cardReviewCount" value="${empty param.reviewCount ? '0' : param.reviewCount}" />
 <c:set var="cardPrice" value="${empty param.price ? '가격 변동' : param.price}" />
 

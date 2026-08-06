@@ -40,6 +40,16 @@ public interface ReservationMapper {
                                  @Param("placeId") Long placeId,
                                  @Param("visitDate") LocalDate visitDate);
 
+    /**
+     * 슬롯 재사용(결제 이어가기) 시: findActiveBySlot으로 찾은 본인 PENDING 건을 새로 고른 값으로 갱신한다.
+     * 체크인 날짜(visit_date)는 그대로, 체크아웃/인원/예약자 정보만 덮어쓴다. status='PENDING'일 때만 적용(안전장치).
+     */
+    void updateDetails(@Param("reservationId") Long reservationId,
+                       @Param("visitorName") String visitorName,
+                       @Param("phone") String phone,
+                       @Param("checkOutDate") LocalDate checkOutDate,
+                       @Param("headcount") int headcount);
+
     /** 결제 준비 시: 발급한 orderId·시도 PG·(카카오)tid를 예약 행에 기록 (정합성 보정 배치의 조회 키 확보) */
     void markPaymentReady(@Param("reservationId") Long reservationId,
                           @Param("orderId") String orderId,

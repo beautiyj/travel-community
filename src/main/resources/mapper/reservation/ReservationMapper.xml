@@ -33,6 +33,17 @@
             (#{memberId}, #{placeId}, #{visitorName}, #{phone}, #{visitDate}, #{checkOutDate}, #{headcount}, #{status})
     </insert>
 
+    <!-- 슬롯 재사용(결제 이어가기) 갱신: 새로 고른 체크아웃/인원/예약자 정보로 기존 PENDING 행을 덮어쓴다 -->
+    <update id="updateDetails">
+        UPDATE reservation
+        SET visitor_name   = #{visitorName},
+            phone          = #{phone},
+            check_out_date = #{checkOutDate},
+            headcount      = #{headcount}
+        WHERE reservation_id = #{reservationId}
+          AND status = 'PENDING'
+    </update>
+
     <!-- 장소 타입 조회: place.place_type(tour/food/stay)을 그대로 참조 (읽기 전용) -->
     <select id="findPlaceType" resultType="string">
         SELECT place_type FROM place WHERE place_id = #{placeId}

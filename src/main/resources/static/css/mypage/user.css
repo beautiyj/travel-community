@@ -30,15 +30,16 @@
 .mypage-reservation-tab.is-active span { color: rgba(255,255,255,.82); }
 .mypage-reservation-total { flex: 0 0 auto; color: var(--muted-foreground); font-size: 13px; }
 .mypage-reservation-card { overflow: hidden; padding: 28px 30px; border: 1px solid var(--border); border-radius: 18px; background: #fff; }
-.mypage-reservation-table { min-width: 980px; }
-.mypage-reservation-table__row { display: grid; min-height: 68px; grid-template-columns: minmax(150px,1.3fr) minmax(105px,.9fr) minmax(135px,1.1fr) minmax(110px,.9fr) repeat(3, minmax(150px,1fr)); align-items: center; border-bottom: 1px solid var(--border); }
+.mypage-reservation-table { min-width: 1080px; }
+.mypage-reservation-table__row { display: grid; min-height: 68px; grid-template-columns: minmax(150px,1.3fr) minmax(105px,.9fr) minmax(135px,1.1fr) minmax(110px,.9fr) repeat(4, minmax(130px,1fr)); align-items: center; border-bottom: 1px solid var(--border); }
 .mypage-reservation-table__row:last-child { border-bottom: 0; }
 .mypage-reservation-table__row > div { min-width: 0; padding: 14px 14px; color: var(--foreground); font-size: 14px; }
 .mypage-reservation-table__row--head { min-height: 60px; border: 0; border-radius: 12px; background: #f0f8fc; }
 .mypage-reservation-table__row--head > div { color: var(--muted-foreground); font-weight: 800; }
 .mypage-reservation-table__row > div:nth-child(5),
 .mypage-reservation-table__row > div:nth-child(6),
-.mypage-reservation-table__row--head > div:nth-child(7) { text-align: center; }
+.mypage-reservation-table__row > div:nth-child(7),
+.mypage-reservation-table__row--head > div:nth-child(8) { text-align: center; }
 .mypage-reservation-place { overflow: hidden; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
 .mypage-reservation-actions { display: flex; align-items: center; justify-content: center; gap: 8px; }
 .mypage-reservation-actions .mypage-status { flex: 0 0 auto; }

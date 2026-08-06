@@ -52,6 +52,8 @@ public class MypageDto {
 	private Integer headcount;
 	private String status;
 	private Integer amount;
+	private String cancelReason;
+	private String rejectReason;
 	
 	private Long wishlistId;
 	

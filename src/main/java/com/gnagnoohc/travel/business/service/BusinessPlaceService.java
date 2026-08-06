@@ -28,8 +28,7 @@ public class BusinessPlaceService {
     private static final String MEMBER_ROLE_BUSINESS = "BUSINESS";
     // 수정 폼에서 아직 저장 안 된 새 사진 카드를 나타내는 photoOrder 토큰
     private static final String NEW_PHOTO_TOKEN = "new";
-    // 가격 설정 대상은 숙박(place_type='stay')뿐. 맛집/관광지는 예약금을 받지 않는다.
-    private static final String PLACE_TYPE_LODGING = "stay";
+    // 가격 설정은 업종 구분 없이 모든 업소(숙박/맛집/관광지)가 대상이다.
     private static final String PRICE_MODE_FIXED = "FIXED";
     private static final String PRICE_MODE_FREE = "FREE";
     private static final Set<String> ALLOWED_PRICE_MODES = Set.of(PRICE_MODE_FIXED, PRICE_MODE_FREE);
@@ -245,17 +244,13 @@ public class BusinessPlaceService {
     }
 
     /**
-     * 폼에서 온 가격 입력을 정리한다.
-     * - 숙박이 아니면 무조건 min_price 0 (폼에서 가격 영역 자체가 숨겨져 값이 안 온다)
-     * - 숙박이고 "무료"를 고르면 금액 input 값과 무관하게 0으로 확정한다
-     * - 숙박이고 "가격입력"을 고르면 금액이 필수다
+     * 폼에서 온 가격 입력을 정리한다. 업종(숙박/맛집/관광지) 구분 없이 동일하게 적용한다.
+     * - "무료"를 고르면 금액 input 값과 무관하게 0으로 확정한다
+     * - "가격입력"을 고르면 금액이 필수다
      * 화면 JS가 이미 같은 규칙으로 토글하지만, 폼 조작/직접 요청을 막는 서버측 최종 방어선이라
      * priceMode를 기준으로 판단하고 minPrice 값 자체는 FIXED일 때만 신뢰한다.
      */
     private Integer resolveMinPrice(BusinessPlaceFormDto form) {
-        if (!PLACE_TYPE_LODGING.equals(form.getPlaceType())) {
-            return 0;
-        }
         String priceMode = form.getPriceMode();
         if (priceMode == null || !ALLOWED_PRICE_MODES.contains(priceMode)) {
             throw new IllegalArgumentException("가격을 선택해주세요.");

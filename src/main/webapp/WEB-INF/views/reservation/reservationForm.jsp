@@ -126,7 +126,7 @@
             <!-- ─── 오른쪽: 예약 요약 ─── -->
             <div class="summary-card">
                 <h3>예약 요약</h3>
-                <div class="summary-row"><span class="label">숙소/장소</span><span class="value">${fn:escapeXml(placeName)}</span></div>
+                <div class="summary-row"><span class="label">${placeType eq 'food' ? '음식점' : placeType eq 'tour' ? '관광지' : '숙소'}</span><span class="value">${fn:escapeXml(placeName)}</span></div>
                 <div class="summary-row"><span class="label">${isStay ? '기간' : '날짜'}</span><span class="value" id="sumDate">&mdash;</span></div>
                 <c:if test="${isStay}">
                     <div class="summary-row"><span class="label">숙박</span><span class="value" id="sumNights">&mdash;</span></div>

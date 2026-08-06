@@ -10,7 +10,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -18,9 +20,33 @@ public class TourService {
 
     private final TourMapper tourMapper;
 
-    // 통합 검색용 keyword 파라미터 추가
+    private static final int PAGE_SIZE = 16; // 페이지당 출력할 카드 개수 상수 선언
+
+    // 통합 검색용 keyword 파라미터 추가 + offset, limit 계산 로직 추가한 단순 목록 조회
     public List<PlaceDTO> getPlaceList(String placeType, Integer regionId, String keyword, String sort, int page) {
-        return tourMapper.selectPlaceList(placeType, regionId, keyword, sort);
+        int currentPage = Math.max(page, 1);
+        int offset = (currentPage - 1) * PAGE_SIZE;
+        return tourMapper.selectPlaceList(placeType, regionId, keyword, sort, offset, PAGE_SIZE);
+    }
+
+    // Controller 전용 목록 + 페이징 정보 패키징 메서드
+    public Map<String, Object> getPlacePage(String placeType, Integer regionId, String keyword, String sort, int page) {
+        int currentPage = Math.max(page, 1);
+        
+        // 목록 데이터 조회 (위의 getPlaceList 재사용)
+        List<PlaceDTO> placeList = getPlaceList(placeType, regionId, keyword, sort, currentPage);
+
+        // 전체 건수 조회 및 총 페이지 수 계산
+        int totalCount = tourMapper.countPlaceList(placeType, regionId, keyword);
+        int totalPages = (int) Math.ceil((double) totalCount / PAGE_SIZE);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("placeList", placeList);
+        result.put("currentPage", currentPage);
+        result.put("totalPages", totalPages);
+        result.put("totalCount", totalCount);
+
+        return result;
     }
 
     // 상위 시/도 지역 목록 조회 (지역 필터 버튼 바 동적 생성용)

@@ -175,6 +175,31 @@
                 ORDER BY p.created_at DESC
             </otherwise>
         </choose>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!-- 페이징 계산용 총 개수 조회 -->
+    <select id="countPlaceList" resultType="int">
+        SELECT COUNT(*)
+        FROM place p
+        LEFT JOIN region r ON p.region_id = r.region_id
+        WHERE p.is_closed = 0
+
+        <if test="placeType != null and placeType != ''">
+            AND p.place_type = #{placeType}
+        </if>
+
+        <if test="regionId != null">
+            AND (p.region_id = #{regionId} OR r.parent_region_id = #{regionId})
+        </if>
+
+        <if test="keyword != null and keyword != ''">
+            AND (
+            p.name LIKE CONCAT('%', #{keyword}, '%')
+            OR p.address LIKE CONCAT('%', #{keyword}, '%')
+            OR p.hashtags LIKE CONCAT('%', #{keyword}, '%')
+            )
+        </if>
     </select>
 
     <!-- 특정 장소의 추가 이미지 목록 조회 -->

@@ -27,11 +27,21 @@ public interface TourMapper {
     List<com.gnagnoohc.travel.tour.model.PlaceEntity> selectByAreaCode(@Param("areaCode") String areaCode);
 
     // 키워드 파라미터 추가 - 타입별 및 지역별 장소 목록 통합 조회 (TourController의 getPlaceList 에러 해결용)
+    // 타입별/지역별/키워드/정렬 및 페이징 적용된 장소 목록 조회 용도(정렬)
     List<PlaceDTO> selectPlaceList(
             @Param("placeType") String placeType,
             @Param("regionId") Integer regionId,
             @Param("keyword") String keyword,
-            @Param("sort") String sort
+            @Param("sort") String sort,
+            @Param("offset") int offset,
+            @Param("limit") int limit
+    );
+
+    // 페이징 처리를 위한 전체 개수 조회
+    int countPlaceList(
+            @Param("placeType") String placeType,
+            @Param("regionId") Integer regionId,
+            @Param("keyword") String keyword
     );
     
     List<PlaceImageDTO> getImagesByPlaceId(@Param("placeId") Integer placeId);

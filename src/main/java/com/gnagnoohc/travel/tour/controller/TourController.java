@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Controller
@@ -35,11 +36,12 @@ public class TourController {
             placeType = null;
         }
 
-        List<PlaceDTO> placeList = tourService.getPlaceList(placeType, regionId, keyword, sort, page);
+        // 목록 + 페이징 메타데이터 일괄 수집
+        Map<String, Object> pageData = tourService.getPlacePage(placeType, regionId, keyword, sort, page);
 
         List<RegionDTO> parentRegionList = tourService.getParentRegionList();
 
-        model.addAttribute("placeList", placeList);
+        model.addAllAttributes(pageData);    
         model.addAttribute("selectedPlaceType", placeType);
         model.addAttribute("selectedRegionId", regionId);
         model.addAttribute("keyword", keyword);

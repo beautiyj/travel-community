@@ -67,7 +67,7 @@
   padding: 33px; margin-bottom: 24px;
 }
 .detail-card h2 { font-size: 24px; font-weight: bold; margin: 12px 0 0; }
-.detail-author-row { display: flex; align-items: center; gap: 10px; padding: 12px 0 24px; }
+.detail-author-row { display: flex; align-items: center; gap: 10px; padding: 12px 0 20px; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
 .detail-avatar { width: 36px; height: 36px; border-radius: 9999px; object-fit: cover; flex-shrink: 0; background: var(--secondary); }
 .detail-author-name { font-size: 14px; font-weight: bold; color: var(--foreground); }
 .detail-meta { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
@@ -103,6 +103,14 @@
 .avatar.sm { width: 28px; height: 28px; }
 .comment-head { display: flex; align-items: center; gap: 8px; }
 .comment-author { font-size: 14px; font-weight: bold; }
+/* 방문자인증후기 댓글 작성자가 해당 장소의 사장님일 때 표시되는 뱃지 */
+.badge-owner {
+  display: inline-flex; align-items: center; gap: 3px;
+  border-radius: 9999px; padding: 2px 8px;
+  background: #DBEAFE; color: #1E40AF;
+  font-size: 12px; font-weight: bold; white-space: nowrap;
+}
+.badge-owner-icon { width: 12px; height: 12px; object-fit: contain; flex-shrink: 0; }
 .comment-date { color: var(--muted-foreground); font-size: 12px; }
 .comment-text { font-size: 14px; color: var(--foreground); margin: 4px 0 8px; white-space: pre-line; overflow-wrap: anywhere; word-break: break-word; }
 .comment-text.deleted { color: var(--muted-foreground); font-style: italic; margin: 0; }
@@ -388,27 +396,28 @@
   display: none;
 }
 
-/* ---------- 제목: 테두리 없는 큰 폰트 ---------- */
+/* ---------- 제목: 박스형 입력창 ---------- */
 .title-input-plain {
   display: block;
   width: 100%;
-  border: none;
-  border-bottom: 1px solid var(--border);
-  padding: 8px 0 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
   font-size: 1.4rem;
   font-weight: var(--font-weight-bold);
   font-family: inherit;
   color: var(--foreground);
-  background: transparent;
+  background: var(--muted);
   outline: none;
-  transition: border-color var(--transition-fast);
+  transition: border-color var(--transition-fast), background-color var(--transition-fast);
 }
 .title-input-plain::placeholder {
   color: var(--muted-foreground);
   font-weight: var(--font-weight-normal);
 }
 .title-input-plain:focus {
-  border-bottom-color: var(--primary);
+  border-color: var(--primary);
+  background: var(--card);
 }
 
 /* ---------- 본문 에디터 툴바 ---------- */
@@ -455,14 +464,16 @@
   font-size: var(--text-base);
   line-height: 1.8;
   color: var(--foreground);
+  background: var(--muted);
   outline: none;
   overflow-wrap: anywhere;
   word-break: break-word;
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition: border-color var(--transition-fast), background-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 /* clearfix는 .detail-body::after 규칙과 공유 (좌/우 정렬 블록이 마지막 내용일 때 높이 0으로 접히는 문제 방지) */
 .content-editor:focus {
   border-color: var(--primary);
+  background: var(--card);
   box-shadow: 0 0 0 3px var(--primary-soft);
 }
 .content-editor:empty::before {
@@ -473,7 +484,8 @@
 /* 본문 속 이미지 블록 (write/edit 에디터 + 상세페이지 공용) */
 .content-img-block {
   position: relative;
-  margin: 12px 0;
+  margin-top: 12px;
+  margin-bottom: 12px;
   cursor: grab;
 }
 [data-block].is-dragging {
@@ -489,7 +501,8 @@
 /* 정렬은 단일/콜라주/슬라이더 블록 모두 공통. [data-block] 없이 클래스만으로 선택해야
    상세페이지(postContentRenderer.js, data-block 속성을 안 붙임)에서도 정렬이 먹는다. */
 .align-center {
-  width: 100%;
+  width: 80%;
+  margin: 0 auto;
   clear: both;
 }
 .align-left {
@@ -516,18 +529,24 @@
 }
 [data-block] .block-remove {
   position: absolute;
-  left: 6px;
-  top: 6px;
-  width: 22px;
-  height: 22px;
+  left: 50%;
+  bottom: 6px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
   border: none;
   border-radius: 9999px;
-  background: rgba(15, 23, 42, 0.6);
-  color: var(--white);
+  background: rgba(15, 23, 42, 0.75);
+  color: #fff;
   cursor: pointer;
-  font-size: 13px;
+  padding: 4px 10px;
+  font-size: 12px;
   line-height: 1;
   z-index: 2;
+}
+[data-block] .block-remove:hover {
+  background: rgba(15, 23, 42, 0.9);
 }
 /* 리사이즈 핸들 공통 스타일: 단일 블록([data-block])과 콜라주 아이템(.collage-item)이 공유,
    위치(right/bottom)와 hover 트리거만 각자 정의 */
@@ -554,13 +573,14 @@
 /* ---------- 콜라주 블록: 고정 캔버스 안에 사진을 자유 배치(겹침 허용) ---------- */
 .content-collage-block {
   position: relative;
-  margin: 12px 0;
+  margin-top: 12px;
+  margin-bottom: 12px;
   cursor: grab;
 }
 .collage-canvas {
   position: relative;
   width: 100%;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 4 / 3;
   background: var(--muted);
   border-radius: var(--radius-lg);
   overflow: hidden;
@@ -583,7 +603,8 @@
 /* ---------- 슬라이더 블록: 사진을 나란히 배치한 스트립 + 하단 커스텀 슬라이드바 ---------- */
 .content-slider-block {
   position: relative;
-  margin: 12px 0;
+  margin-top: 12px;
+  margin-bottom: 12px;
   cursor: grab;
 }
 .slider-viewport {

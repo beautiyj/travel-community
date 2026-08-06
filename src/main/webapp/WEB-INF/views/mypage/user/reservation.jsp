@@ -68,6 +68,7 @@
                                 <div role="columnheader">방문일</div>
                                 <div role="columnheader">인원</div>
                                 <div role="columnheader">금액</div>
+                                <div role="columnheader">사유</div>
                                 <div role="columnheader">상태 / 처리</div>
                             </div>
                             <c:forEach var="reservation" items="${reservationList}">
@@ -82,6 +83,15 @@
                                             <c:when test="${not empty reservation.amount}"><fmt:formatNumber value="${reservation.amount}" pattern="#,###" />원</c:when>
                                             <c:otherwise>-</c:otherwise>
                                         </c:choose>
+                                    </div>
+                                    <div role="cell">
+                                        <c:if test="${not empty reservation.cancelReason or not empty reservation.rejectReason}">
+                                            <button type="button" class="js-reason-open"
+                                                    data-cancel-reason="<c:out value='${reservation.cancelReason}'/>"
+                                                    data-reject-reason="<c:out value='${reservation.rejectReason}'/>"
+                                                    style="background:none;border:none;color:var(--primary);text-decoration:underline;cursor:pointer;padding:0;font-size:inherit;">자세히</button>
+                                        </c:if>
+                                        <c:if test="${empty reservation.cancelReason and empty reservation.rejectReason}">-</c:if>
                                     </div>
                                     <div class="mypage-reservation-actions" role="cell">
                                         <jsp:include page="/WEB-INF/views/mypage/common/reservationStatusBadge.jsp">
@@ -181,6 +191,28 @@
                 <button class="cancel-modal__submit" type="submit">취소하기</button>
             </div>
         </form>
+    </div>
+</div>
+
+<div class="cancel-modal" id="reasonModal" hidden>
+    <div class="cancel-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="reason-modal-title">
+        <div class="cancel-modal__header">
+            <div><h2 id="reason-modal-title">취소 사유</h2></div>
+            <button class="cancel-modal__close js-reason-close" type="button" aria-label="닫기">×</button>
+        </div>
+        <div class="cancel-modal__body">
+            <div id="reasonModalCancelBlock" hidden>
+                <p style="font-weight:500; margin-bottom:4px;">내가 취소 요청한 사유</p>
+                <p id="reasonModalCancelText" style="white-space: pre-line; margin-bottom:16px;">-</p>
+            </div>
+            <div id="reasonModalRejectBlock" hidden>
+                <p style="font-weight:500; margin-bottom:4px;">업체 거절 사유</p>
+                <p id="reasonModalRejectText" style="white-space: pre-line;">-</p>
+            </div>
+        </div>
+        <div class="cancel-modal__actions">
+            <button class="cancel-modal__back js-reason-close" type="button" style="flex:1;">닫기</button>
+        </div>
     </div>
 </div>
 <script>
@@ -300,6 +332,30 @@
     });
 
     modal.addEventListener('click', (event) => { if (event.target === modal) close(); });
+})();
+
+(() => {
+    const modal = document.getElementById('reasonModal');
+    const cancelBlock = document.getElementById('reasonModalCancelBlock');
+    const cancelText = document.getElementById('reasonModalCancelText');
+    const rejectBlock = document.getElementById('reasonModalRejectBlock');
+    const rejectText = document.getElementById('reasonModalRejectText');
+
+    document.querySelectorAll('.js-reason-open').forEach((button) => button.addEventListener('click', () => {
+        const cancelReason = button.dataset.cancelReason;
+        const rejectReason = button.dataset.rejectReason;
+
+        cancelBlock.hidden = !cancelReason;
+        if (cancelReason) cancelText.textContent = cancelReason;
+
+        rejectBlock.hidden = !rejectReason;
+        if (rejectReason) rejectText.textContent = rejectReason;
+
+        modal.hidden = false;
+    }));
+
+    document.querySelectorAll('.js-reason-close').forEach((button) => button.addEventListener('click', () => { modal.hidden = true; }));
+    modal.addEventListener('click', (event) => { if (event.target === modal) modal.hidden = true; });
 })();
 </script>
 </body>

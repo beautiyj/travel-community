@@ -163,7 +163,10 @@
                       <span class="comment-author">${comment.memberName}</span>
                       <%-- 업소 사장님이 자신의 사업장 리뷰에 남긴 댓글이면 뱃지 표시 --%>
                       <c:if test="${comment.ownerComment}">
-                        <span class="badge-owner">사장님</span>
+                        <span class="badge-owner">
+                          <img class="badge-owner-icon" src="${cp}/images/icons/verified-badge.png" alt="">
+                          사장님
+                        </span>
                       </c:if>
                       <span class="comment-date">
                         <fmt:formatDate value="${comment.createdAt}" pattern="yyyy-MM-dd HH:mm" />
@@ -234,7 +237,10 @@
                           <span class="comment-author">${reply.memberName}</span>
                           <%-- 업소 사장님이 자신의 사업장 리뷰에 남긴 대댓글이면 뱃지 표시 --%>
                           <c:if test="${reply.ownerComment}">
-                            <span class="badge-owner">사장님</span>
+                            <span class="badge-owner">
+                              <img class="badge-owner-icon" src="${cp}/images/icons/verified-badge.png" alt="">
+                              사장님
+                            </span>
                           </c:if>
                           <span class="comment-date">
                             <fmt:formatDate value="${reply.createdAt}" pattern="yyyy-MM-dd HH:mm" />

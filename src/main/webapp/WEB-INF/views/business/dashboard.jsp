@@ -153,14 +153,33 @@
                     type: 'linear',
                     position: 'left',
                     beginAtZero: true,
+                    ticks: { precision: 0 },
                     title: { display: true, text: '건' }
                 },
                 yRevenue: {
                     type: 'linear',
                     position: 'right',
                     beginAtZero: true,
+                    ticks: {
+                        precision: 0,
+                        callback: function (value) {
+                            return (value / 10000).toLocaleString('ko-KR');
+                        }
+                    },
                     grid: { drawOnChartArea: false },
-                    title: { display: true, text: '원' }
+                    title: { display: true, text: '만원' }
+                }
+            }
+        },
+        plugins: {
+            tooltip: {
+                callbacks: {
+                    label: function (context) {
+                        if (context.dataset.yAxisID === 'yRevenue') {
+                            return context.dataset.label + ': ' + (context.parsed.y / 10000).toLocaleString('ko-KR') + '만원';
+                        }
+                        return context.dataset.label + ': ' + context.parsed.y.toLocaleString('ko-KR') + '건';
+                    }
                 }
             }
         }

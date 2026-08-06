@@ -77,13 +77,11 @@ public class ReservationService {
         }
 
         // 같은 슬롯(회원·장소·날짜)에 활성 예약이 있으면:
-        //   - PENDING(미결제): 결제하러 갔다가 돌아온 경우이므로 그 예약을 재사용해 결제를 이어가게 한다
+        //   - PENDING(미결제): 결제하러 갔다가 돌아온 경우이므로 그 예약을 재사용해 결제를 이어간다.
+        //     단, 재진입 사이에 체크아웃/인원 등을 다시 골랐을 수 있으니 아래 검증을 통과시킨 뒤 새 값으로 갱신한다.
         //   - PAID(결제완료): 이미 확정된 예약이므로 새 예약을 거부한다
         Reservation existing = reservationMapper.findActiveBySlot(memberId, req.getPlaceId(), req.getVisitDate());
-        if (existing != null) {
-            if (existing.getStatus() == ReservationStatus.PENDING) {
-                return existing.getReservationId();
-            }
+        if (existing != null && existing.getStatus() != ReservationStatus.PENDING) {
             // "마감"이 아니라 본인이 이미 잡아둔 예약이므로, 그 사실이 드러나게 안내한다
             throw new IllegalStateException("이미 예약하신 날짜입니다. 내 예약 내역에서 확인해 주세요.");
         }
@@ -117,6 +115,13 @@ public class ReservationService {
             if (already + req.getHeadcount() > DAILY_CAPACITY) {
                 throw new IllegalStateException("정원이 초과되어 예약할 수 없습니다.");
             }
+        }
+
+        // 재진입(결제 이어가기)한 본인 PENDING이 있으면 새로 고른 값으로 갱신해 그대로 재사용한다
+        if (existing != null) {
+            reservationMapper.updateDetails(existing.getReservationId(), req.getVisitorName(), req.getPhone(),
+                    isStay(placeType) ? req.getCheckOutDate() : null, req.getHeadcount());
+            return existing.getReservationId();
         }
 
         Reservation r = new Reservation();

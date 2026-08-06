@@ -208,7 +208,16 @@
 <script>window.CP = "${cp}";</script>
 <script src="${cp}/js/dropdownSelector.js"></script>
 <script src="${cp}/js/community/categorySelect.js"></script>
-<script src="${cp}/js/community/contentEditor.js"></script>
+<script src="${cp}/js/community/contentEditor/constants.js"></script>
+<script src="${cp}/js/community/contentEditor/dom.js"></script>
+<script src="${cp}/js/community/contentEditor/state.js"></script>
+<script src="${cp}/js/community/contentEditor/range.js"></script>
+<script src="${cp}/js/community/contentEditor/canvasUtils.js"></script>
+<script src="${cp}/js/community/contentEditor/blockChrome.js"></script>
+<script src="${cp}/js/community/contentEditor/singleImage.js"></script>
+<script src="${cp}/js/community/contentEditor/collage.js"></script>
+<script src="${cp}/js/community/contentEditor/slider.js"></script>
+<script src="${cp}/js/community/contentEditor/serialize.js"></script>
 <script src="${cp}/js/common/highlightKeyword.js"></script>
 <script src="${cp}/js/community/placeTag.js"></script>
 <script src="${cp}/js/community/titleValidation.js"></script>

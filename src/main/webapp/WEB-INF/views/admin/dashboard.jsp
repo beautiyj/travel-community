@@ -7,10 +7,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>관리자 대시보드 - 갈래말래</title>
     <c:url var="commonCssUrl" value="/css/common.css"/>
-    <c:url var="adminCssUrl" value="/css/admin/admin.css"/>
+    <c:url var="adminCssUrl" value="/css/admin/admin.css">
+        <c:param name="v" value="auth-admin-css-split-20260806-r7"/>
+    </c:url>
+    <c:url var="dashboardCssUrl" value="/css/admin/dashboard.css">
+        <c:param name="v" value="auth-admin-css-split-20260806-r7"/>
+    </c:url>
     <c:url var="businessApplicationsUrl" value="/admin/business-applications"/>
     <link rel="stylesheet" href="${commonCssUrl}">
     <link rel="stylesheet" href="${adminCssUrl}">
+    <link rel="stylesheet" href="${dashboardCssUrl}">
 </head>
 <body>
 <div class="admin-layout">

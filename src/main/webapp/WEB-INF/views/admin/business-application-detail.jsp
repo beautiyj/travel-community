@@ -7,7 +7,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>사업자 인증 신청 상세 - 갈래말래</title>
     <c:url var="commonCssUrl" value="/css/common.css"/>
-    <c:url var="adminCssUrl" value="/css/admin/admin.css"/>
+    <c:url var="adminCssUrl" value="/css/admin/admin.css">
+        <c:param name="v" value="auth-admin-css-split-20260806-r7"/>
+    </c:url>
+    <c:url var="businessApplicationDetailCssUrl" value="/css/admin/business-application-detail.css">
+        <c:param name="v" value="auth-admin-css-split-20260806-r7"/>
+    </c:url>
     <c:url var="adminBfcacheReloadJsUrl" value="/js/admin/admin-bfcache-reload.js"/>
     <%-- selectedStatus를 목록·처리 URL에 유지해 심사 후에도 관리자가 보던 필터로 돌아간다. --%>
     <c:url var="listUrl" value="/admin/business-applications">
@@ -25,6 +30,7 @@
     </c:url>
     <link rel="stylesheet" href="${commonCssUrl}">
     <link rel="stylesheet" href="${adminCssUrl}">
+    <link rel="stylesheet" href="${businessApplicationDetailCssUrl}">
 </head>
 <body>
 <div class="admin-layout">

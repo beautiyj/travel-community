@@ -1,0 +1,144 @@
+/* 상태 필터와 신청 목록은 사업자 인증 신청 목록 화면에서만 사용한다. */
+.admin-filter-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.admin-filter-tabs__link {
+    padding: 7px 12px;
+}
+
+.admin-filter-tabs__link.is-active,
+.admin-filter-tabs__link.is-active:hover,
+.admin-filter-tabs__link.is-active:focus-visible {
+    background: var(--admin-primary);
+    border-color: var(--admin-primary);
+    color: var(--primary-foreground);
+}
+
+/* 목록은 화면 읽기 도구가 열 구조를 이해할 수 있도록 실제 table 요소를 사용한다. */
+.admin-table-wrap {
+    overflow-x: auto;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.admin-table th,
+.admin-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--admin-border);
+    font-size: 14px;
+    text-align: left;
+    vertical-align: middle;
+}
+
+.admin-table th {
+    background: rgba(2, 132, 199, 0.06);
+    color: var(--admin-muted);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.admin-table th:first-child {
+    border-radius: 10px 0 0 10px;
+}
+
+.admin-table th:last-child {
+    border-radius: 0 10px 10px 0;
+}
+
+.admin-table tbody tr:hover {
+    background: var(--admin-bg);
+}
+
+.admin-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.admin-table__name {
+    font-weight: 700;
+}
+
+.admin-table__action {
+    /* 마지막 열 안에서 버튼을 좌측에 배치해 상태 뱃지와의 불필요한 거리를 줄인다. */
+    padding-left: 12px !important;
+    text-align: left !important;
+}
+
+/* 상태 뱃지의 좌측 기준선은 유지하고, 제목은 58px 뱃지의 중앙에 맞춘다. */
+.admin-table th:nth-child(5),
+.admin-table td:nth-child(5) {
+    padding-left: 12px;
+    text-align: left;
+}
+
+.admin-table th:nth-child(5) {
+    /* '상태' 글자 폭과 58px 뱃지 폭의 차이 절반만큼 들여 중앙을 일치시킨다. */
+    text-indent: 16px;
+}
+
+/* 상세 보기 버튼의 테두리·크기를 재사용해 목록 하단 조작부도 같은 화면 톤으로 맞춘다. */
+.admin-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    /* 기존 24px 간격에서 약 32px 당긴 값으로, 카드와 페이지 버튼 간 거리를 줄인다. */
+    margin-top: -8px;
+}
+
+.admin-pagination__button {
+    min-width: 32px;
+    padding: 6px 9px;
+}
+
+.admin-pagination__button--direction {
+    font-size: 15px;
+    line-height: 1;
+}
+
+.admin-pagination__button.is-active {
+    background: var(--admin-primary);
+    border-color: var(--admin-primary);
+    color: var(--primary-foreground);
+}
+
+.admin-pagination__button.is-active:hover,
+.admin-pagination__button.is-active:focus-visible {
+    background: var(--admin-primary-dark);
+    border-color: var(--admin-primary-dark);
+}
+
+.admin-empty {
+    padding: 48px 16px;
+    text-align: center;
+}
+
+.admin-empty__title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.admin-empty__description {
+    margin: 8px 0 0;
+    color: var(--admin-muted);
+    font-size: 13px;
+}
+
+@media (max-width: 768px) {
+    .admin-pagination {
+        /* 모바일의 18px 콘텐츠 간격까지만 상쇄해 카드와 버튼이 겹치지 않게 한다. */
+        margin-top: -18px;
+    }
+
+    .admin-table {
+        min-width: 760px;
+    }
+}

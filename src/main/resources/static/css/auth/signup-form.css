@@ -1,0 +1,194 @@
+/* 일반·소셜 회원가입 폼은 같은 입력 테마를 공유한다. */
+.auth-page--signup-form,
+.auth-page--social-signup {
+    color: var(--foreground);
+    background: linear-gradient(135deg, #eef8ff 0%, #f8fafc 58%, #eef8ff 100%);
+}
+
+.auth-page--signup-form {
+    align-items: flex-start;
+}
+
+.auth-page--social-signup {
+    align-items: flex-start;
+}
+
+.auth-card--signup-form,
+.auth-card--social-signup {
+    border-color: rgba(148, 163, 184, 0.4);
+    border-radius: 20px;
+    box-shadow: 0 18px 44px rgba(15, 23, 42, 0.08);
+}
+
+.auth-card--signup-form,
+.auth-card--social-signup {
+    width: min(100%, 680px);
+}
+
+.auth-card--signup-form .auth-switch a,
+.auth-card--signup-form .text-button,
+.auth-card--social-signup .auth-switch a,
+.auth-card--social-signup .text-button {
+    color: #0369a1;
+}
+
+.auth-card--signup-form .signup-progress--form {
+    margin-top: 28px;
+}
+
+.auth-card--signup-form .auth-header {
+    margin: 34px 0 30px;
+}
+
+.auth-card--signup-form .auth-header h1,
+.auth-card--social-signup .auth-header h1 {
+    color: var(--foreground);
+}
+
+.auth-card--signup-form .auth-header p,
+.auth-card--social-signup .auth-header p,
+.auth-card--social-signup .field-help,
+.auth-card--social-signup .optional-label {
+    color: var(--muted-foreground);
+}
+
+.auth-card--signup-form .form-field input[type="text"],
+.auth-card--signup-form .form-field input[type="password"],
+.auth-card--signup-form .form-field input[type="email"],
+.auth-card--signup-form .form-field input[type="tel"],
+.auth-card--signup-form .form-field input[type="date"],
+.auth-card--signup-form .form-field input[type="file"],
+.auth-card--social-signup .form-field input[type="text"],
+.auth-card--social-signup .form-field input[type="password"],
+.auth-card--social-signup .form-field input[type="email"],
+.auth-card--social-signup .form-field input[type="tel"],
+.auth-card--social-signup .form-field input[type="date"],
+.auth-card--social-signup .form-field input[type="file"] {
+    border-color: rgba(148, 163, 184, 0.4);
+}
+
+.auth-card--signup-form .form-field input:focus,
+.auth-card--social-signup .form-field input:focus {
+    border-color: var(--primary);
+    outline-color: rgba(2, 132, 199, 0.16);
+}
+
+.auth-card--signup-form .primary-button,
+.auth-card--social-signup .primary-button {
+    min-height: 52px;
+    border-radius: 14px;
+    font-weight: 700;
+    background: #0369a1;
+    box-shadow: 0 10px 15px -3px rgba(2, 132, 199, 0.2);
+}
+
+.auth-card--signup-form .primary-button:hover,
+.auth-card--social-signup .primary-button:hover {
+    background: #075985;
+}
+
+.auth-card--signup-form .secondary-button,
+.auth-card--social-signup .secondary-button {
+    min-height: 46px;
+    padding: 0 16px;
+    font-weight: 700;
+    border-color: var(--primary);
+    color: #0369a1;
+}
+
+.auth-card--signup-form .secondary-button:hover,
+.auth-card--social-signup .secondary-button:hover {
+    background: var(--secondary);
+}
+
+.auth-card--signup-form .primary-button:focus-visible,
+.auth-card--signup-form .secondary-button:focus-visible,
+.auth-card--signup-form .text-button:focus-visible,
+.auth-card--social-signup .primary-button:focus-visible,
+.auth-card--social-signup .secondary-button:focus-visible,
+.auth-card--social-signup .text-button:focus-visible,
+.auth-card--social-signup .auth-switch a:focus-visible {
+    outline: 3px solid rgba(2, 132, 199, 0.28);
+    outline-offset: 2px;
+}
+
+.auth-card--signup-form .primary-button:disabled,
+.auth-card--signup-form .secondary-button:disabled,
+.auth-card--social-signup .primary-button:disabled,
+.auth-card--social-signup .secondary-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.58;
+}
+
+.selected-member-type {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 24px;
+    padding: 14px 16px;
+    border-radius: 8px;
+    background: #f3f7f6;
+}
+
+.selected-member-type span {
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.selected-member-type strong {
+    flex: 1;
+    color: #075c42;
+}
+
+.selected-member-type a {
+    color: #087f5b;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.auth-card--signup-form .selected-member-type {
+    border: 1px solid rgba(2, 132, 199, 0.18);
+    background: var(--secondary);
+}
+
+.auth-card--signup-form .selected-member-type strong,
+.auth-card--signup-form .selected-member-type a {
+    color: #0369a1;
+}
+
+.auth-card--signup-form .agreement-box,
+.auth-card--social-signup .agreement-box {
+    border: 1px solid rgba(2, 132, 199, 0.16);
+    background: var(--secondary);
+}
+
+.auth-card--signup-form .agreement-box strong,
+.auth-card--social-signup .agreement-box strong {
+    color: #0369a1;
+}
+
+.auth-card--signup-form input[type="radio"],
+.auth-card--signup-form input[type="checkbox"],
+.auth-card--social-signup input[type="radio"],
+.auth-card--social-signup input[type="checkbox"] {
+    accent-color: var(--primary);
+}
+
+/* JavaScript가 넣는 초록색 인라인 스타일보다 회원가입 화면의 성공색을 우선한다. */
+.auth-card--signup-form .field-success,
+.auth-card--social-signup .field-success {
+    color: #0369a1 !important;
+}
+
+.auth-card--signup-form .form-alert--success,
+.auth-card--signup-form .form-alert--notice,
+.auth-card--social-signup .form-alert--success,
+.auth-card--social-signup .form-alert--notice {
+    color: #075985;
+    background: #e0f2fe;
+}
+
+.auth-card--social-signup .social-account-summary {
+    border: 1px solid rgba(2, 132, 199, 0.18);
+    background: var(--secondary);
+}

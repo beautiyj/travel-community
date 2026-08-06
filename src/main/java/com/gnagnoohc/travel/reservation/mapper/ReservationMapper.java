@@ -20,8 +20,8 @@ public interface ReservationMapper {
     /** 취소 요청: 상태를 CANCEL_REQUESTED로 바꾸고 사유·요청시각 기록 */
     void requestCancel(@Param("reservationId") Long reservationId, @Param("reason") String reason);
 
-    /** 취소 요청 거절: 상태를 PAID로 원복하고 취소 요청 기록(사유·시각)도 함께 지움 */
-    void rejectCancel(@Param("reservationId") Long reservationId);
+    /** 취소 요청 거절: 상태를 PAID로 원복하고 취소 요청 기록(사유·시각)도 함께 지움. 거절 사유는 reject_reason에 기록 */
+    void rejectCancel(@Param("reservationId") Long reservationId, @Param("reason") String reason);
 
     /** 예약 거절(사업자, PAID 대상): 거절 사유 기록 */
     void reject(@Param("reservationId") Long reservationId, @Param("reason") String reason);

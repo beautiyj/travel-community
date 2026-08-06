@@ -269,15 +269,18 @@ public class ReservationService {
 
     /**
      * 관리자: 취소 요청 거절. CANCEL_REQUESTED → PAID로 원복 (환불 없음).
-     * 거절된 예약에 취소 사유·요청시각이 남아 있으면 혼란스러우므로 함께 지운다.
+     * 거절된 예약에 취소 사유·요청시각이 남아 있으면 혼란스러우므로 함께 지우고, 대신 사업자가 입력한
+     * 거절 사유를 cancel_reject_reason에 남긴다(reject_reason과는 별개 컬럼 — PAID 예약 직접 거절 사유와
+     * 취소요청 거절 사유는 시점·의미가 달라 섞이면 안 됨). 정규화 규칙은 reject()와 동일: 비어있으면 기본 문구, trim해서 저장.
      */
     @Transactional
-    public void rejectCancel(Long reservationId) {
+    public void rejectCancel(Long reservationId, String reason) {
         Reservation r = getById(reservationId);
         if (r.getStatus() != ReservationStatus.CANCEL_REQUESTED) {
             throw new IllegalStateException("취소 요청 상태인 예약만 거절할 수 있습니다. 현재 상태: " + r.getStatus().getLabel());
         }
-        reservationMapper.rejectCancel(reservationId);
+        String finalReason = (reason == null || reason.isBlank()) ? "사업자 거절" : reason.trim();
+        reservationMapper.rejectCancel(reservationId, finalReason);
     }
 
     /** 관리자 목록용: 특정 상태의 예약 조회 */

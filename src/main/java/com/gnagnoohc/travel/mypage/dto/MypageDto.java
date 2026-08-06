@@ -47,6 +47,7 @@ public class MypageDto {
 	private Long reservationId;
 	private Long placeId;
 	private String placeName;
+	private String firstImage;
 	private String visitorName;
 	private LocalDate visitDate;
 	private Integer headcount;

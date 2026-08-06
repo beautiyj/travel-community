@@ -26,8 +26,11 @@
                     <div class="wishlist-grid">
                         <c:forEach var="wish" items="${wishlist}">
                             <article class="wishlist-item">
-                                <div class="wishlist-item__thumbnail" aria-hidden="true">
-                                    <span><c:out value="${wish.placeName}" default="장소" /></span>
+                                <div class="wishlist-item__thumbnail" aria-hidden="true"
+                                     <c:if test="${not empty wish.firstImage}">style="background-image:url('${wish.firstImage}');"</c:if>>
+                                    <c:if test="${empty wish.firstImage}">
+                                        <span><c:out value="${wish.placeName}" default="장소" /></span>
+                                    </c:if>
                                 </div>
                                 <div class="wishlist-item__body">
                                     <h3>

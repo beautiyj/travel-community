@@ -20,7 +20,7 @@ button, input, select, textarea { font: inherit; }
 .mypage-sidebar__menu svg { width: 16px; height: 16px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
 .mypage-sidebar__menu a:hover { background: var(--secondary); }
 .mypage-sidebar__menu .is-active { background: var(--primary-soft); color: var(--primary); }
-.mypage-sidebar__menu .mypage-sidebar__logout { margin-top: 4px; color: var(--danger); }
+.mypage-sidebar__menu .mypage-sidebar__logout { margin-top: 4px; color: var(--danger); border:none }
 .mypage-content__header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
 .mypage-content__header h2 { font-size: var(--text-xl); font-weight: var(--font-weight-bold); }
 .mypage-content__header em { color: var(--muted-foreground); font-size: var(--text-base);  }

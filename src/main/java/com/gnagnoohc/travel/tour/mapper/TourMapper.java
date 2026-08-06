@@ -30,9 +30,18 @@ public interface TourMapper {
     List<PlaceDTO> selectPlaceList(
             @Param("placeType") String placeType,
             @Param("regionId") Integer regionId,
+            @Param("keyword") String keyword,
+            @Param("offset") int offset,
+            @Param("limit") int limit
+    );
+
+    // 목록 페이지네이션용 총 개수 (selectPlaceList와 동일한 필터 조건)
+    int countPlaceList(
+            @Param("placeType") String placeType,
+            @Param("regionId") Integer regionId,
             @Param("keyword") String keyword
     );
-    
+
     List<PlaceImageDTO> getImagesByPlaceId(@Param("placeId") Integer placeId);
 
     // 특정 지역의 현재 적재된 PLACE 건수 조회 (지역별 무작위 샘플링 쿼터 체크용)

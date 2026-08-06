@@ -57,12 +57,16 @@ ex) "120px", "240px", "50%", "100%"
     </button>
 </li>
 <c:forEach var="item" items="${dropdownList}">
+    <%-- RegionDTO(regionId, shortName/regionName)와 기존 DTO(code, name)를 모두 지원하도록 동적 바인딩 --%>
+    <c:set var="itemValue" value="${not empty item.regionId ? item.regionId : item.code}" />
+    <c:set var="itemLabel" value="${not empty item.shortName ? item.shortName : (not empty item.regionName ? item.regionName : item.name)}" />
+
     <li>
         <button type="button"
-        class="dropdown-item drop-menu-item ${selectedValue eq item.code ? 'is-active' : ''}"
-        data-value="${item.code}"
-        data-label="${item.name}">
-        ${item.name}
+        class="dropdown-item drop-menu-item ${selectedValue eq itemValue ? 'is-active' : ''}"
+        data-value="${itemValue}"
+        data-label="${itemLabel}">
+        ${itemLabel}
     </button>
 </li>
 </c:forEach>

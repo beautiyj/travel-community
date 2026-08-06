@@ -40,7 +40,15 @@
         </c:forEach>
       </c:when>
 
-      <%-- 2. 데이터가 없을 때는 기존 메인 페이지용 테스트(더미) 데이터 사용 --%>
+      <%-- 2a. 상세 페이지에서 placeImages가 비어있지만 place.firstImage(대표이미지)가 있으면 대표이미지로 배너를 대체 --%>
+      <c:when test="${empty placeImages and not empty requestScope.place and not empty requestScope.place.firstImage}">
+        <div class="banner-slide">
+          <img class="banner-bg" src="${fn:replace(requestScope.place.firstImage, 'http://', 'https://')}" alt="${requestScope.place.name}" />
+          <%-- 상세 페이지용 배너는 텍스트 캡션을 출력하지 않음 --%>
+        </div>
+      </c:when>
+
+      <%-- 2b. 데이터가 없을 때는 기존 메인 페이지용 테스트(더미) 데이터 사용 --%>
       <c:otherwise>
         <c:set var="testSlides" value="
         https://picsum.photos/id/1036/1600/500^/tour/list?area=부산^stay^해변 여행^부산 해운대 패키지~2인 특별 혜택^숙박 + 레스토랑 결합 시 10% 추가 할인^패키지 보기|
@@ -110,7 +118,16 @@
                   aria-label="${st.count}번째 사진으로 이동"></button>
         </c:forEach>
       </c:when>
-      <%-- 2. 더미 데이터 사용 시 기존 방식대로 인디케이터 닷 생성 --%>
+
+      <%-- 2. 상세 페이지에서 placeImages가 비어있지만 대표이미지가 있을 때 (한 장) --%>
+      <c:when test="${empty placeImages and not empty requestScope.place and not empty requestScope.place.firstImage}">
+        <button type="button"
+                class="banner-dot is-active"
+                data-banner-dot="0"
+                aria-label="1번째 사진으로 이동"></button>
+      </c:when>
+
+      <%-- 3. 더미 데이터 사용 시 기존 방식대로 인디케이터 닷 생성 --%>
       <c:otherwise>
         <c:forEach var="row" items="${fn:split(testSlides, '|')}" varStatus="st">
           <button type="button"

@@ -5,6 +5,7 @@ import com.gnagnoohc.travel.reservation.entity.Reservation;
 import com.gnagnoohc.travel.reservation.entity.ReservationStatus;
 import com.gnagnoohc.travel.reservation.mapper.ReservationMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +17,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ReservationService {
@@ -180,6 +182,21 @@ public class ReservationService {
         return price;
     }
 
+    /**
+     * 관광지·맛집 예약금 조회. PLACE.min_price가 있으면 그 값을 그대로 예약금으로 쓰고,
+     * 아직 사업자가 설정하지 않아 없으면(min_price null) RESERVE_DEPOSIT으로 폴백한다.
+     * 폴백 발생 시 놓치지 않도록 경고 로그를 남긴다.
+     */
+    @Transactional(readOnly = true)
+    public int getDepositAmount(Long placeId) {
+        Integer price = reservationMapper.findMinPrice(placeId);
+        if (price == null) {
+            log.warn("[예약금 폴백] placeId={} min_price 미설정 — RESERVE_DEPOSIT({})으로 대체", placeId, RESERVE_DEPOSIT);
+            return RESERVE_DEPOSIT;
+        }
+        return price;
+    }
+
     @Transactional(readOnly = true)
     public Reservation getById(Long reservationId) {
         Reservation r = reservationMapper.findById(reservationId);
@@ -309,7 +326,7 @@ public class ReservationService {
      */
     public int calculateAmount(Reservation r) {
         if (isPayOnSite(r.getPlaceType())) {
-            return RESERVE_DEPOSIT;
+            return getDepositAmount(r.getPlaceId());
         }
         return nightsOf(r) * r.getHeadcount() * getUnitPrice(r.getPlaceId());
     }

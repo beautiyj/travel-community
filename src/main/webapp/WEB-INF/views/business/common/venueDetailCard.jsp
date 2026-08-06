@@ -35,13 +35,24 @@
     <c:if test="${not empty placeDetail.images}">
         <div class="venue-gallery">
             <c:forEach var="img" items="${placeDetail.images}" varStatus="loop">
-                <div class="venue-gallery__item${loop.index == 0 ? ' venue-gallery__item--main' : ''}">
+                <%-- 클릭 시 아래 라이트박스(#venueImageLightbox)를 큰 이미지로 채워 연다 (business-venue-gallery.js) --%>
+                <div class="venue-gallery__item${loop.index == 0 ? ' venue-gallery__item--main' : ''} js-venue-gallery-trigger">
                     <img src="${img}" alt="업소 사진 ${loop.index + 1}" />
                     <c:if test="${loop.index == 0}">
                         <span class="venue-gallery__badge">대표사진</span>
                     </c:if>
                 </div>
             </c:forEach>
+        </div>
+
+        <%-- 업소 사진 확대보기 라이트박스: confirmModal.css의 .modal-overlay/.modal, common.js의
+             openModal/closeModal(오버레이 클릭·ESC·닫기 버튼 처리 포함)을 그대로 재사용한다 --%>
+        <div id="venueImageLightbox" class="modal-overlay venue-lightbox" data-modal
+             role="dialog" aria-modal="true" aria-label="업소 사진 확대보기">
+            <div class="modal venue-lightbox__modal">
+                <button type="button" class="venue-lightbox__close" data-modal-close aria-label="닫기">&times;</button>
+                <img class="venue-lightbox__img" id="venueLightboxImg" src="" alt="" />
+            </div>
         </div>
     </c:if>
 

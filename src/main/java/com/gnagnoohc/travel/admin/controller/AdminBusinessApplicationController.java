@@ -3,7 +3,7 @@ package com.gnagnoohc.travel.admin.controller;
 import java.util.Locale;
 import java.util.NoSuchElementException;
 
-import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ContentDisposition;
@@ -92,7 +92,7 @@ public class AdminBusinessApplicationController {
 		String extension = getSafeExtension(document.sourceUrl());
 		String downloadName = "business-registration-" + applicationId + extension;
 
-		return ResponseEntity.ok()
+		ResponseEntity.BodyBuilder responseBuilder = ResponseEntity.ok()
 				.contentType(mediaType)
 				.cacheControl(CacheControl.noStore())
 				.header("X-Content-Type-Options", "nosniff")
@@ -101,8 +101,12 @@ public class AdminBusinessApplicationController {
 						ContentDisposition.inline()
 								.filename(downloadName)
 								.build()
-								.toString())
-				.body(new ByteArrayResource(document.content()));
+								.toString());
+		// Cloudinary 응답에 길이가 있으면 그대로 전달해 청크 전송 대신 Content-Length로 응답한다.
+		if (document.contentLength() >= 0) {
+			responseBuilder = responseBuilder.contentLength(document.contentLength());
+		}
+		return responseBuilder.body(new InputStreamResource(document.content()));
 	}
 
 	/**
@@ -192,7 +196,7 @@ public class AdminBusinessApplicationController {
 		response.setDateHeader(HttpHeaders.EXPIRES, 0);
 	}
 
-	// 가입 시 PNG/JPEG만 저장하므로 Cloudinary URL의 확장자만으로 판단해도 충분하다.
+	// 가입 시 PNG/JPEG만 저장하므로 Cloudinary URL의 확장자만으로 판단
 	private MediaType determineMediaType(String documentUrl) {
 		String lowerUrl = documentUrl.toLowerCase(Locale.ROOT);
 		if (lowerUrl.endsWith(".png")) {

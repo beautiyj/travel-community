@@ -1,6 +1,7 @@
 package com.gnagnoohc.travel.admin.service;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -164,6 +165,10 @@ public class AdminBusinessApplicationService {
 
 	// DB 값은 우리가 store() 호출 직후에만 써넣으므로 정상적으로는 항상 https Cloudinary
 	// URL이지만, 다른 값이 잘못 들어오는 경우까지 대비해 스킴을 다시 한 번 확인한다.
+	//
+	// 응답 본문을 byte[]로 한 번에 받지 않고 ofInputStream()으로 스트리밍한다. 문서 하나가
+	// 최대 5MB라 큰 차이는 아니지만, 굳이 서버 메모리에 전체를 올려둘 필요가 없다.
+	// 컨트롤러가 이 스트림을 다 읽어 응답을 마칠 때까지 열려 있어야 하므로 여기서 닫지 않는다.
 	private DocumentContent fetchDocument(String documentUrl) {
 		if (!documentUrl.startsWith("https://")) {
 			throw new NoSuchElementException("사업자등록증 파일 경로가 올바르지 않습니다.");
@@ -180,12 +185,15 @@ public class AdminBusinessApplicationService {
 		}
 
 		try {
-			HttpResponse<byte[]> response =
-					documentHttpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
+			HttpResponse<InputStream> response =
+					documentHttpClient.send(request, HttpResponse.BodyHandlers.ofInputStream());
 			if (response.statusCode() != 200) {
+				// 응답을 안 읽고 버리더라도 커넥션이 남지 않도록 스트림을 닫아준다.
+				closeQuietly(response.body());
 				throw new NoSuchElementException("사업자등록증 파일을 찾을 수 없습니다.");
 			}
-			return new DocumentContent(response.body(), documentUrl);
+			long contentLength = response.headers().firstValueAsLong("content-length").orElse(-1);
+			return new DocumentContent(response.body(), documentUrl, contentLength);
 		} catch (IOException e) {
 			throw new NoSuchElementException("사업자등록증 파일을 불러오지 못했습니다.", e);
 		} catch (InterruptedException e) {
@@ -194,8 +202,19 @@ public class AdminBusinessApplicationService {
 		}
 	}
 
-	/** 관리자 응답용 바이트와, 컨트롤러가 MIME 타입/확장자를 판단할 원본 URL을 함께 담는다. */
-	public record DocumentContent(byte[] content, String sourceUrl) {
+	private void closeQuietly(InputStream stream) {
+		try {
+			stream.close();
+		} catch (IOException ignored) {
+			// 버리는 응답이라 실패해도 상위 로직에 영향 없음
+		}
+	}
+
+	/**
+	 * 관리자 응답용 스트림과, 컨트롤러가 MIME 타입/확장자를 판단할 원본 URL을 함께 담는다.
+	 * contentLength는 Cloudinary 응답에 Content-Length가 없으면 -1(알 수 없음).
+	 */
+	public record DocumentContent(InputStream content, String sourceUrl, long contentLength) {
 	}
 
 	private void validateApplicationId(int applicationId) {

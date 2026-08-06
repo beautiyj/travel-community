@@ -38,6 +38,7 @@
   const fileMap = new Map();   // data-file-id -> File (새로 추가된 이미지만)
   let fileIdSeq = 0;
   let existingImageCount = 0;  // edit.jsp: 이미 저장된(잠금) 이미지 개수, write.jsp: 0
+  let existingImageUrls = [];  // edit.jsp: rehydrateFromServer()가 채움. 제출 시 삭제된 것 계산에 씀
   let savedRange = null;       // 툴바 클릭 직전까지의 캐럿 위치
   let builderFiles = [];       // [{id, file, url, x?, y?}] — 빌더 모달에서 고른 이미지들
   let pendingTextOverflow = false; // contentLimitModal 확인 클릭 시 텍스트를 잘라낼지 여부
@@ -929,10 +930,17 @@
       ? Array.from(listEl.querySelectorAll('li')).map(function (li) { return li.getAttribute('data-url'); })
       : [];
     existingImageCount = imageUrls.length;
+    existingImageUrls = imageUrls;
 
+    // Cloudinary로 저장된 최신 글은 절대 URL이 그대로 들어있고, 예전에 로컬 디스크에
+    // 저장된 글은 파일명만 있어서 /upload/ 접두사를 붙여야 한다. 둘 다 지원한다.
     function imgUrlFor(n) {
+      const url = imageUrls[n];
+      if (/^https?:\/\//.test(url)) {
+        return url;
+      }
       const cp = window.CP || '';
-      return cp + '/upload/' + imageUrls[n];
+      return cp + '/upload/' + url;
     }
 
     const rawContent = dataEl.textContent;
@@ -987,10 +995,13 @@
   function serializeEditor() {
     let text = '';
     const newFiles = []; // 절대 인덱스 = existingImageCount + newFiles.length (순서 그대로)
+    const usedExistingIndices = new Set(); // 본문에 남아있는(=삭제 안 된) 기존 이미지 인덱스
 
     function resolveIndex(el) {
       if (el.hasAttribute('data-existing-index')) {
-        return parseInt(el.getAttribute('data-existing-index'), 10);
+        const idx = parseInt(el.getAttribute('data-existing-index'), 10);
+        usedExistingIndices.add(idx);
+        return idx;
       }
       const fileId = el.getAttribute('data-file-id');
       const idx = existingImageCount + newFiles.length;
@@ -1062,7 +1073,8 @@
 
     return {
       text: text.replace(/\n{3,}/g, '\n\n').trim(),
-      newFiles: newFiles
+      newFiles: newFiles,
+      usedExistingIndices: usedExistingIndices
     };
   }
 
@@ -1158,6 +1170,18 @@
           if (file) dt.items.add(file);
         });
         imagesInput.files = dt.files;
+
+        // 본문 편집 중 지워진(=더 이상 토큰에 안 남은) 기존 이미지는 서버에 명시적으로 알려서
+        // post_image 행과 Cloudinary 파일을 같이 정리하게 한다.
+        form.querySelectorAll('input[name="removeImageUrls"]').forEach(function (el) { el.remove(); });
+        existingImageUrls.forEach(function (url, idx) {
+          if (result.usedExistingIndices.has(idx)) return;
+          const removedInput = document.createElement('input');
+          removedInput.type = 'hidden';
+          removedInput.name = 'removeImageUrls';
+          removedInput.value = url;
+          form.appendChild(removedInput);
+        });
       } catch (err) {
         // 직렬화 중 에러가 나도 최소한 입력한 텍스트라도 저장되게 (이미지 없이라도 게시는 되도록)
         console.error('contentEditor: 본문 직렬화 실패', err);

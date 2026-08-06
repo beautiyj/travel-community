@@ -27,6 +27,7 @@ import com.gnagnoohc.travel.auth.dto.LoginMemberDto;
 import com.gnagnoohc.travel.mypage.dto.MypageDto;
 import com.gnagnoohc.travel.mypage.service.BusinessMediaStorage;
 import com.gnagnoohc.travel.mypage.service.MypageService;
+import com.gnagnoohc.travel.storage.ImageStorage;
 
 import jakarta.servlet.http.HttpSession;
 
@@ -39,6 +40,9 @@ public class MypageController {
 
     @Autowired
     private BusinessMediaStorage mediaStorage;
+
+    @Autowired
+    private ImageStorage imageStorage;
 
     @ModelAttribute("businessAccount")
     public boolean businessAccount() {
@@ -102,9 +106,12 @@ public class MypageController {
             mypageService.updateMember(member);
 
             if (profileImage != null && !profileImage.isEmpty()) {
+                String previousImageUrl =
+                        mypageService.getMemberInfo(memberId).getProfileImgUrl();
                 String imageUrl =
                         mediaStorage.storeProfile(profileImage, memberId);
                 mypageService.updateProfileImage(memberId, imageUrl);
+                imageStorage.delete(previousImageUrl);
             }
 
             redirectAttributes.addFlashAttribute(

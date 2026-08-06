@@ -184,14 +184,14 @@ public class ReservationService {
 
     /**
      * 관광지·맛집 예약금 조회. PLACE.min_price가 있으면 그 값을 그대로 예약금으로 쓰고,
-     * 아직 사업자가 설정하지 않아 없으면(min_price null) RESERVE_DEPOSIT으로 폴백한다.
+     * 아직 사업자가 설정하지 않았거나(min_price null) 0 이하로 잘못 들어간 경우 RESERVE_DEPOSIT으로 폴백한다.
      * 폴백 발생 시 놓치지 않도록 경고 로그를 남긴다.
      */
     @Transactional(readOnly = true)
     public int getDepositAmount(Long placeId) {
         Integer price = reservationMapper.findMinPrice(placeId);
-        if (price == null) {
-            log.warn("[예약금 폴백] placeId={} min_price 미설정 — RESERVE_DEPOSIT({})으로 대체", placeId, RESERVE_DEPOSIT);
+        if (price == null || price <= 0) {
+            log.warn("[예약금 폴백] placeId={} min_price 미설정({}) — RESERVE_DEPOSIT({})으로 대체", placeId, price, RESERVE_DEPOSIT);
             return RESERVE_DEPOSIT;
         }
         return price;
@@ -302,15 +302,16 @@ public class ReservationService {
 
     /**
      * 관리자: 취소 요청 거절. CANCEL_REQUESTED → PAID로 원복 (환불 없음).
-     * 거절된 예약에 취소 사유·요청시각이 남아 있으면 혼란스러우므로 함께 지운다.
+     * 고객이 남긴 취소 사유(cancel_reason)는 보존하고, 사업자가 왜 거절했는지를 reject_reason에 남긴다.
      */
     @Transactional
-    public void rejectCancel(Long reservationId) {
+    public void rejectCancel(Long reservationId, String reason) {
         Reservation r = getById(reservationId);
         if (r.getStatus() != ReservationStatus.CANCEL_REQUESTED) {
             throw new IllegalStateException("취소 요청 상태인 예약만 거절할 수 있습니다. 현재 상태: " + r.getStatus().getLabel());
         }
-        reservationMapper.rejectCancel(reservationId);
+        String finalReason = (reason == null || reason.isBlank()) ? "사업자 거절" : reason.trim();
+        reservationMapper.rejectCancel(reservationId, finalReason);
     }
 
     /** 관리자 목록용: 특정 상태의 예약 조회 */

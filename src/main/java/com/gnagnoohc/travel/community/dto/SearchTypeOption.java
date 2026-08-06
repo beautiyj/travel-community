@@ -10,4 +10,10 @@ import lombok.Getter;
 public class SearchTypeOption {
     private final String code;
     private final String name;
+
+    // dropdownSelector.jsp가 RegionDTO와 공용으로 item.regionId 등을 먼저 평가함(EL은 getter가
+    // 없으면 PropertyNotFoundException을 던지므로, null 반환용 getter로 존재만 시켜서 code/name 폴백을 타게 함)
+    public Integer getRegionId() { return null; }
+    public String getShortName() { return null; }
+    public String getRegionName() { return null; }
 }

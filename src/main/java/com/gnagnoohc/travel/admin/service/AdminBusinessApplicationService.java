@@ -1,13 +1,15 @@
 package com.gnagnoohc.travel.admin.service;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,11 +31,10 @@ import lombok.RequiredArgsConstructor;
 public class AdminBusinessApplicationService {
 
 	private static final int MAX_REJECTION_REASON_LENGTH = 500;
+	private static final Duration DOCUMENT_FETCH_TIMEOUT = Duration.ofSeconds(10);
 
 	private final AdminBusinessApplicationMapper mapper;
-
-	@Value("${file.upload-auth}")
-	private String businessRegistrationUploadPath;
+	private final HttpClient documentHttpClient = HttpClient.newHttpClient();
 
 	@Transactional(readOnly = true)
 	public AdminDashboardSummaryDto getDashboardSummary(int adminMemberId) {
@@ -63,22 +64,23 @@ public class AdminBusinessApplicationService {
 	}
 
 	/**
-	 * DB에 저장된 파일 키만 사용해 등록증 경로를 찾는다.
-	 * 요청에서 파일 경로를 직접 받지 않아 다른 서버 파일을 열람하는 것을 막는다.
+	 * DB에 저장된 Cloudinary URL만 사용해 등록증을 가져온다. 요청에서 URL을 직접 받지 않아
+	 * 다른 주소를 열람하는 것을 막는다. 이 URL은 화면에 절대 노출하지 않고, 서버가 대신
+	 * 가져온 바이트만 관리자 응답으로 흘려보낸다(프록시).
 	 */
 	@Transactional(readOnly = true)
-	public Path getBusinessRegistrationDocument(
+	public DocumentContent getBusinessRegistrationDocument(
 			int applicationId,
 			int adminMemberId) {
 		requireActiveAdmin(adminMemberId);
 		validateApplicationId(applicationId);
 
-		String fileKey = mapper.findBusinessRegistrationFileKey(applicationId);
-		if (fileKey == null || fileKey.isBlank()) {
+		String documentUrl = mapper.findBusinessRegistrationFileKey(applicationId);
+		if (documentUrl == null || documentUrl.isBlank()) {
 			throw new NoSuchElementException("사업자등록증 파일을 찾을 수 없습니다.");
 		}
 
-		return resolveStoredDocument(fileKey);
+		return fetchDocument(documentUrl);
 	}
 
 	/**
@@ -161,45 +163,58 @@ public class AdminBusinessApplicationService {
 		return normalized;
 	}
 
-	private Path resolveStoredDocument(String fileKey) {
-		if (businessRegistrationUploadPath == null
-				|| businessRegistrationUploadPath.isBlank()) {
-			throw new IllegalStateException("사업자등록증 저장 경로가 설정되지 않았습니다.");
-		}
-
-		Path keyPath;
-		try {
-			keyPath = Paths.get(fileKey);
-		} catch (RuntimeException e) {
-			throw new NoSuchElementException("사업자등록증 파일 키가 올바르지 않습니다.", e);
-		}
-		if (keyPath.isAbsolute() || keyPath.getNameCount() != 1) {
-			throw new NoSuchElementException("사업자등록증 파일 키가 올바르지 않습니다.");
-		}
-
-		Path uploadDirectory = Paths.get(businessRegistrationUploadPath)
-				.toAbsolutePath()
-				.normalize();
-		Path storedFile = uploadDirectory.resolve(keyPath).normalize();
-		if (!storedFile.startsWith(uploadDirectory)
-				|| !uploadDirectory.equals(storedFile.getParent())) {
+	// DB 값은 우리가 store() 호출 직후에만 써넣으므로 정상적으로는 항상 https Cloudinary
+	// URL이지만, 다른 값이 잘못 들어오는 경우까지 대비해 스킴을 다시 한 번 확인한다.
+	//
+	// 응답 본문을 byte[]로 한 번에 받지 않고 ofInputStream()으로 스트리밍한다. 문서 하나가
+	// 최대 5MB라 큰 차이는 아니지만, 굳이 서버 메모리에 전체를 올려둘 필요가 없다.
+	// 컨트롤러가 이 스트림을 다 읽어 응답을 마칠 때까지 열려 있어야 하므로 여기서 닫지 않는다.
+	private DocumentContent fetchDocument(String documentUrl) {
+		if (!documentUrl.startsWith("https://")) {
 			throw new NoSuchElementException("사업자등록증 파일 경로가 올바르지 않습니다.");
 		}
 
+		HttpRequest request;
 		try {
-			Path realUploadDirectory = uploadDirectory.toRealPath();
-			Path realStoredFile = storedFile.toRealPath();
-			// 심볼릭 링크가 저장 디렉터리 밖을 가리키는 경우도 열람하지 않는다.
-			if (!realStoredFile.startsWith(realUploadDirectory)
-					|| !realUploadDirectory.equals(realStoredFile.getParent())
-					|| !Files.isRegularFile(realStoredFile)
-					|| !Files.isReadable(realStoredFile)) {
+			request = HttpRequest.newBuilder(URI.create(documentUrl))
+					.timeout(DOCUMENT_FETCH_TIMEOUT)
+					.GET()
+					.build();
+		} catch (IllegalArgumentException e) {
+			throw new NoSuchElementException("사업자등록증 파일 경로가 올바르지 않습니다.", e);
+		}
+
+		try {
+			HttpResponse<InputStream> response =
+					documentHttpClient.send(request, HttpResponse.BodyHandlers.ofInputStream());
+			if (response.statusCode() != 200) {
+				// 응답을 안 읽고 버리더라도 커넥션이 남지 않도록 스트림을 닫아준다.
+				closeQuietly(response.body());
 				throw new NoSuchElementException("사업자등록증 파일을 찾을 수 없습니다.");
 			}
-			return realStoredFile;
-		} catch (IOException | SecurityException e) {
-			throw new NoSuchElementException("사업자등록증 파일을 찾을 수 없습니다.", e);
+			long contentLength = response.headers().firstValueAsLong("content-length").orElse(-1);
+			return new DocumentContent(response.body(), documentUrl, contentLength);
+		} catch (IOException e) {
+			throw new NoSuchElementException("사업자등록증 파일을 불러오지 못했습니다.", e);
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			throw new NoSuchElementException("사업자등록증 파일을 불러오지 못했습니다.", e);
 		}
+	}
+
+	private void closeQuietly(InputStream stream) {
+		try {
+			stream.close();
+		} catch (IOException ignored) {
+			// 버리는 응답이라 실패해도 상위 로직에 영향 없음
+		}
+	}
+
+	/**
+	 * 관리자 응답용 스트림과, 컨트롤러가 MIME 타입/확장자를 판단할 원본 URL을 함께 담는다.
+	 * contentLength는 Cloudinary 응답에 Content-Length가 없으면 -1(알 수 없음).
+	 */
+	public record DocumentContent(InputStream content, String sourceUrl, long contentLength) {
 	}
 
 	private void validateApplicationId(int applicationId) {

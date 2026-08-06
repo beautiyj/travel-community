@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.gnagnoohc.travel.mypage.dto.MypageDto;
 import com.gnagnoohc.travel.mypage.repository.MypageRepository;
+import com.gnagnoohc.travel.storage.ImageStorage;
 
 @Service
 public class MypageServiceImpl implements MypageService {
@@ -18,6 +19,9 @@ public class MypageServiceImpl implements MypageService {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private ImageStorage imageStorage;
 
     @Override
     public MypageDto getMemberInfo(Long memberId) {
@@ -112,9 +116,19 @@ public class MypageServiceImpl implements MypageService {
     	return mypageRepository.getWishlist(memberId);
     }
     
+    // 탈퇴 자체는 소프트 삭제(member_status=WITHDRAWN)라 DB 행과 profile_img_url 컬럼값은
+    // 남지만, Cloudinary 파일은 여기서 지워야 한다 — 안 지우면 재가입 전까지 무료 한도만 갉아먹는다.
+    // (커뮤니티 글/댓글이 탈퇴 회원의 예전 프로필 사진을 여전히 조인해서 보여준다면, 그 자리는
+    // 깨진 이미지로 남는다 — 지금은 그 화면들을 손대지 않았다)
     @Override
     public int withdrawMember(Long memberId) {
-    	return mypageRepository.withdrawMember(memberId);
+        MypageDto member = getMemberInfo(memberId);
+        int result = mypageRepository.withdrawMember(memberId);
+        if (result > 0 && member != null && member.getProfileImgUrl() != null
+                && !member.getProfileImgUrl().isBlank()) {
+            imageStorage.delete(member.getProfileImgUrl());
+        }
+        return result;
     }
     
     @Override

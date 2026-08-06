@@ -17,6 +17,7 @@ import com.gnagnoohc.travel.mypage.service.BusinessService;
 import com.gnagnoohc.travel.mypage.dto.BusinessApplicationDto;
 import com.gnagnoohc.travel.mypage.dto.MypageDto;
 import com.gnagnoohc.travel.mypage.service.MypageService;
+import com.gnagnoohc.travel.storage.ImageStorage;
 
 import jakarta.servlet.http.HttpSession;
 
@@ -28,16 +29,19 @@ public class BusinessMypageController {
     private final MypageService mypageService;
     private final BusinessDocumentStorage documentStorage;
     private final BusinessMediaStorage mediaStorage;
+    private final ImageStorage imageStorage;
 
     public BusinessMypageController(
             BusinessService businessService,
             MypageService mypageService,
             BusinessDocumentStorage documentStorage,
-            BusinessMediaStorage mediaStorage) {
+            BusinessMediaStorage mediaStorage,
+            ImageStorage imageStorage) {
         this.businessService = businessService;
         this.mypageService = mypageService;
         this.documentStorage = documentStorage;
         this.mediaStorage = mediaStorage;
+        this.imageStorage = imageStorage;
     }
 
     @ModelAttribute("businessAccount")
@@ -106,6 +110,7 @@ public class BusinessMypageController {
                         profileImage, member.getMemberId());
                 mypageService.updateProfileImage(
                         member.getMemberId(), imageUrl);
+                imageStorage.delete(member.getProfileImgUrl());
             }
             redirectAttributes.addFlashAttribute(
                     "message", "회원정보를 수정했습니다.");

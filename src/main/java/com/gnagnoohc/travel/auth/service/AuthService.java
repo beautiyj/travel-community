@@ -2,21 +2,13 @@ package com.gnagnoohc.travel.auth.service;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.file.FileAlreadyExistsException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.Iterator;
 import java.util.Locale;
-import java.util.UUID;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +26,7 @@ import com.gnagnoohc.travel.auth.exception.SignupException;
 import com.gnagnoohc.travel.auth.mapper.AuthMapper;
 import com.gnagnoohc.travel.auth.model.Member;
 import com.gnagnoohc.travel.auth.model.MemberLocalAuth;
+import com.gnagnoohc.travel.storage.ImageStorage;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -52,18 +45,12 @@ import lombok.extern.slf4j.Slf4j;
 public class AuthService {
 	private static final int MAX_FAILED_LOGIN_COUNT = 5;
 	private static final long MAX_BUSINESS_REGISTRATION_FILE_SIZE = 5L * 1024 * 1024;
-	private static final int MAX_FILE_NAME_CREATION_ATTEMPTS = 3;
+	private static final String BUSINESS_DOCUMENT_BUCKET = "business-document";
 
 	private final AuthMapper mapper;
 	private final PasswordEncoder passEncoder;
 	private final EmailVerificationService emailVerificationService;
-
-	/*
-	 * 추후 가상 저장소를 사용하면 같은 설정값을 해당 저장소의 마운트 경로로 교체한다.
-	 * 생성자 기반 단위 테스트를 유지하기 위해 설정값은 생성자 주입 대상에서 제외한다.
-	 */
-	@Value("${file.upload-auth}")
-	private String businessRegistrationUploadPath;
+	private final ImageStorage imageStorage;
 
 	/**
 	 * 활성 로컬 회원의 자격 증명을 확인하고 성공·불일치·잠금 중 하나를 반환한다.
@@ -161,8 +148,8 @@ public class AuthService {
 
 	/**
 	 * 공통 회원, 로컬 인증, 선택적인 사업자 신청, 이메일 인증 소비를 하나의 DB 트랜잭션으로 저장한다.
-	 * 사업자등록증은 파일시스템 부작용이라 DB 트랜잭션에 포함되지 않으므로 예외와 최종 롤백 시
-	 * 별도로 삭제한다. 삭제도 실패하면 DB는 롤백되지만 고아 파일은 운영 정리 대상이 된다.
+	 * 사업자등록증은 외부 저장소(Cloudinary) 부작용이라 DB 트랜잭션에 포함되지 않으므로 예외와 최종
+	 * 롤백 시 별도로 삭제한다. 삭제도 실패하면 DB는 롤백되지만 고아 파일은 운영 정리 대상이 된다.
 	 */
 	@Transactional
 	public int memberSignUp(
@@ -170,11 +157,10 @@ public class AuthService {
 			VerifiedSignupEmail sessionVerification) {
 
 		// 입력값 검증부터 이메일 인증 결과를 회원과 연결하는 작업까지 하나의 트랜잭션으로 진행한다.
-		Path storedBusinessRegistrationFile = null;
+		String storedBusinessRegistrationDocumentUrl = null;
 		try {
 			validateSignupRequest(signUpRequest);
-			String businessRegistrationExtension =
-					validateBusinessRegistrationFile(signUpRequest);
+			validateBusinessRegistrationFile(signUpRequest);
 			VerifiedSignupEmail verifiedEmail = emailVerificationService
 					.requireVerifiedSignupEmail(signUpRequest.getEmail(), sessionVerification);
 
@@ -183,19 +169,18 @@ public class AuthService {
 			saveLocalAuth(createLocalAuth(member, signUpRequest.getPassword()));
 
 			if (signUpRequest.getMemberType() == 2) {
-				storedBusinessRegistrationFile = saveBusinessRegistrationFile(
-						signUpRequest.getBusinessRegistrationFile(),
-						businessRegistrationExtension);
-				registerFileCleanupAfterRollback(storedBusinessRegistrationFile);
+				storedBusinessRegistrationDocumentUrl = imageStorage.store(
+						signUpRequest.getBusinessRegistrationFile(), BUSINESS_DOCUMENT_BUCKET);
+				registerDocumentCleanupAfterRollback(storedBusinessRegistrationDocumentUrl);
 				saveBusinessApplication(
 						member.getMemberId(),
-						storedBusinessRegistrationFile.getFileName().toString());
+						storedBusinessRegistrationDocumentUrl);
 			}
 
 			consumeSignupEmailVerification(verifiedEmail, member);
 			return member.getMemberId();
 		} catch (RuntimeException | Error e) {
-			deleteStoredFile(storedBusinessRegistrationFile);
+			deleteStoredDocument(storedBusinessRegistrationDocumentUrl);
 			throw e;
 		}
 	}
@@ -242,9 +227,9 @@ public class AuthService {
 	 * 일반 회원 요청의 파일 필드는 검증하거나 저장하지 않는다.
 	 * 사업자 회원만 파일 존재 여부, 크기, 확장자와 실제 이미지 형식을 모두 검증한다.
 	 */
-	private String validateBusinessRegistrationFile(SignUpRequest signUpRequest) {
+	private void validateBusinessRegistrationFile(SignUpRequest signUpRequest) {
 		if (signUpRequest.getMemberType() != 2) {
-			return null;
+			return;
 		}
 
 		MultipartFile file = signUpRequest.getBusinessRegistrationFile();
@@ -257,7 +242,6 @@ public class AuthService {
 
 		String extension = extractAllowedImageExtension(file.getOriginalFilename());
 		validateActualImageFormat(file, extension);
-		return extension;
 	}
 
 	private String extractAllowedImageExtension(String originalFilename) {
@@ -372,57 +356,8 @@ public class AuthService {
 		}
 	}
 
-	private Path saveBusinessRegistrationFile(MultipartFile file, String extension) {
-		try {
-			if (businessRegistrationUploadPath == null
-					|| businessRegistrationUploadPath.isBlank()) {
-				throw new IllegalStateException("사업자등록증 파일 저장 설정이 올바르지 않습니다.");
-			}
-
-			Path uploadDirectory = Paths.get(businessRegistrationUploadPath)
-					.toAbsolutePath()
-					.normalize();
-			Files.createDirectories(uploadDirectory);
-
-			for (int attempt = 0; attempt < MAX_FILE_NAME_CREATION_ATTEMPTS; attempt++) {
-				String storedFilename = UUID.randomUUID() + "." + extension;
-				Path storedFile = uploadDirectory.resolve(storedFilename).normalize();
-				if (!storedFile.getParent().equals(uploadDirectory)) {
-					throw new IllegalStateException("사업자등록증 파일 저장 경로가 올바르지 않습니다.");
-				}
-
-				OutputStream outputStream;
-				try {
-					outputStream = Files.newOutputStream(
-							storedFile,
-							StandardOpenOption.CREATE_NEW,
-							StandardOpenOption.WRITE);
-				} catch (FileAlreadyExistsException e) {
-					// UUID가 충돌한 기존 파일은 절대 삭제하지 않고 새 이름으로 다시 시도한다.
-					continue;
-				} catch (IOException e) {
-					throw new IllegalStateException("사업자등록증 파일 저장에 실패했습니다.", e);
-				}
-
-				try (outputStream;
-						InputStream inputStream = file.getInputStream()) {
-					inputStream.transferTo(outputStream);
-					return storedFile;
-				} catch (IOException e) {
-					// 출력 스트림 생성 성공 이후의 실패이므로 이번 시도가 만든 파일만 삭제한다.
-					deleteStoredFile(storedFile);
-					throw new IllegalStateException("사업자등록증 파일 저장에 실패했습니다.", e);
-				}
-			}
-
-			throw new IllegalStateException("사업자등록증 파일 이름 생성에 실패했습니다.");
-		} catch (IOException e) {
-			throw new IllegalStateException("사업자등록증 파일 저장에 실패했습니다.", e);
-		}
-	}
-
-	private void saveBusinessApplication(int memberId, String fileKey) {
-		if (mapper.insertBusinessApplication(memberId, fileKey) != 1) {
+	private void saveBusinessApplication(int memberId, String documentUrl) {
+		if (mapper.insertBusinessApplication(memberId, documentUrl) != 1) {
 			throw new SignupException("사업자 가입 신청 저장에 실패했습니다. 다시 시도해주세요.");
 		}
 	}
@@ -431,7 +366,7 @@ public class AuthService {
 	 * 메서드가 정상 반환된 뒤 외부 트랜잭션이 롤백되거나 커밋이 실패하는 경우에도
 	 * DB에 연결되지 않은 파일이 남지 않도록 트랜잭션 최종 상태를 확인한다.
 	 */
-	private void registerFileCleanupAfterRollback(Path storedFile) {
+	private void registerDocumentCleanupAfterRollback(String documentUrl) {
 		if (!TransactionSynchronizationManager.isSynchronizationActive()) {
 			return;
 		}
@@ -441,23 +376,21 @@ public class AuthService {
 					@Override
 					public void afterCompletion(int status) {
 						if (status != TransactionSynchronization.STATUS_COMMITTED) {
-							deleteStoredFile(storedFile);
+							deleteStoredDocument(documentUrl);
 						}
 					}
 				});
 	}
 
-	private void deleteStoredFile(Path storedFile) {
-		if (storedFile == null) {
+	private void deleteStoredDocument(String documentUrl) {
+		if (documentUrl == null) {
 			return;
 		}
 		try {
-			Files.deleteIfExists(storedFile);
-		} catch (IOException | SecurityException ignored) {
+			imageStorage.delete(documentUrl);
+		} catch (RuntimeException e) {
 			// 원래 예외와 롤백을 방해하지 않으며 운영에서는 고아 파일 정리 대상으로 처리한다.
-			Path storedFilename = storedFile.getFileName();
-			log.warn("사업자등록증 파일 삭제에 실패했습니다. storedFilename={}",
-					storedFilename == null ? "unknown" : storedFilename);
+			log.warn("사업자등록증 파일 삭제에 실패했습니다.", e);
 		}
 	}
 

@@ -106,8 +106,10 @@
             </c:otherwise>
         </c:choose>
         <form method="post" action="/auth/logout" class="mypage-sidebar__logout">
-<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l5-5-5-5m5 5H3m10 8h6a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-6"/></svg>
-            <button type="submit" class="mypage-sidebar__menu mypage-sidebar__logout">로그아웃</button>
+            <button type="submit" class="mypage-sidebar__logout">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l5-5-5-5m5 5H3m10 8h6a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-6"/></svg>
+                <span>로그아웃</span>
+            </button>
         </form>
     </nav>
 </aside>

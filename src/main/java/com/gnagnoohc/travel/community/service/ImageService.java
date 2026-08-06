@@ -54,30 +54,41 @@ public class ImageService {
 	/**
 	 * 수정 화면에서 본문 편집 중 빠진 기존 이미지를 정리한다. DB 행을 먼저 지우고 나서
 	 * 저장소 파일을 지운다 — 저장소 삭제가 실패해도 화면에는 이미 안 보이는 게 맞고,
-	 * 반대 순서면 파일은 지웠는데 DB 삭제가 실패해 깨진 이미지 링크가 남을 수 있다.
-	 * 트랜잭션 안에 넣지 않는다: 저장소 삭제는 롤백으로 되돌릴 수 없다.
+
+	 * removeImageUrls는 클라이언트가 보낸 값이라 그대로 신뢰하지 않는다. deleteImageByUrl이
+	 * postId 소속으로 실제 삭제한 행이 있을 때만(반환값 > 0) 스토리지까지 지운다 — 그렇지 않으면
+	 * 이 글 소유자가 아무 Cloudinary url이나 넣어 다른 글/프로필/업소 사진을 지울 수 있게 된다.
 	 */
 	public void removeImages(int postId, List<String> removeImageUrls) {
 		if (removeImageUrls == null || removeImageUrls.isEmpty()) return;
 
 		for (String url : removeImageUrls) {
 			if (url == null || url.isBlank()) continue;
-			dao.deleteImageByUrl(postId, url);
-			deleteStorageQuietly(url);
+			int deleted = dao.deleteImageByUrl(postId, url);
+			if (deleted > 0) {
+				deleteStorageQuietly(url);
+			}
 		}
 	}
 
 	/**
-	 * 게시글을 통째로 삭제할 때 호출. post 테이블 삭제에 딸린 FK CASCADE로 post_image 행이
-	 * 먼저 없어지기 전에, 그 글의 이미지 URL 목록을 미리 읽어 Cloudinary 쪽을 지운다.
-	 * post_image 행 삭제는 CASCADE 여부와 무관하게 여기서도 한 번 더 해준다(중복 삭제라 안전).
+	 * 게시글 삭제 전에 호출. post 테이블 삭제에 딸린 FK CASCADE로 post_image 행이 없어지기 전에
+	 * 그 글의 이미지 URL 목록만 미리 읽어둔다. 부수효과가 없으므로 이 호출 자체는 실패해도
+	 * 안전하다 — 실제 Cloudinary 삭제는 post 행 삭제가 성공한 뒤 deleteFromStorage()로 한다.
 	 */
-	public void removeAllImages(int postId) {
-		List<ImageDto> images = selectImages(postId);
-		for (ImageDto img : images) {
-			deleteStorageQuietly(img.getImageUrl());
-		}
-		dao.deleteImagesByPostId(postId);
+	public List<String> collectImageUrls(int postId) {
+		return selectImages(postId).stream()
+				.map(ImageDto::getImageUrl)
+				.toList();
+	}
+
+	/**
+	 * post 행 삭제가 성공적으로 끝난 뒤에만 호출해야 한다. Cloudinary 삭제는 롤백으로 되돌릴 수
+	 * 없으므로, DB 삭제가 먼저 확정된 걸 확인한 다음에 지워야 "게시글은 남았는데 사진만 사라진"
+	 * 상태를 피할 수 있다.
+	 */
+	public void deleteFromStorage(List<String> urls) {
+		urls.forEach(this::deleteStorageQuietly);
 	}
 
 	private void deleteStorageQuietly(String url) {

@@ -38,7 +38,7 @@
                                                         <span style="font-size: var(--text-lg); color: var(--primary); font-weight: normal;"> ('${keyword}' 검색)</span>
                                                     </c:if>
                                                 </h1>
-                                                <span style="font-size: var(--text-sm); color: var(--muted-foreground);">총 ${placeList.size()}개의 결과</span>
+                                                <span style="font-size: var(--text-sm); color: var(--muted-foreground);">총 ${totalCount}개의 결과</span>
                                             </div>
 
                                             <!-- 검색바 컴포넌트 및 지역 필터 영역 -->
@@ -88,6 +88,34 @@
                                                 </c:otherwise>
                                             </c:choose>
                                         </div>
+
+                                        <%-- 페이지네이션: 결과가 한 페이지(16건)를 넘을 때만 표시. 기존 필터(placeType/regionId/keyword)를 그대로 유지 --%>
+                                        <c:if test="${totalPages > 1}">
+                                            <center>
+                                                <div class="pagination">
+                                                    <c:if test="${startPage > 1}">
+                                                        <a class="page-nav" href="${pageContext.request.contextPath}/tour/list?placeType=${param.placeType}&regionId=${param.regionId}&keyword=${param.keyword}&page=1">&laquo;</a>
+                                                        <a class="page-nav" href="${pageContext.request.contextPath}/tour/list?placeType=${param.placeType}&regionId=${param.regionId}&keyword=${param.keyword}&page=${startPage - 1}">이전</a>
+                                                    </c:if>
+
+                                                    <c:forEach var="p" begin="${startPage}" end="${endPage}">
+                                                        <c:choose>
+                                                            <c:when test="${p == page}">
+                                                                <span class="page-num active">${p}</span>
+                                                            </c:when>
+                                                            <c:otherwise>
+                                                                <a class="page-num" href="${pageContext.request.contextPath}/tour/list?placeType=${param.placeType}&regionId=${param.regionId}&keyword=${param.keyword}&page=${p}">${p}</a>
+                                                            </c:otherwise>
+                                                        </c:choose>
+                                                    </c:forEach>
+
+                                                    <c:if test="${endPage < totalPages}">
+                                                        <a class="page-nav" href="${pageContext.request.contextPath}/tour/list?placeType=${param.placeType}&regionId=${param.regionId}&keyword=${param.keyword}&page=${endPage + 1}">다음</a>
+                                                        <a class="page-nav" href="${pageContext.request.contextPath}/tour/list?placeType=${param.placeType}&regionId=${param.regionId}&keyword=${param.keyword}&page=${totalPages}">&raquo;</a>
+                                                    </c:if>
+                                                </div>
+                                            </center>
+                                        </c:if>
                                     </div>
                                     <!-- 공통 JS 인클루드 -->
                                     <jsp:include page="/WEB-INF/views/common/footer.jsp" />

@@ -19,8 +19,7 @@
             <a href="${cp}/community/list">커뮤니티</a>
         </nav>
 
-        <div>
-
+        <div class="header-actions">
             <%-- 로그인 세션(loginMember) 유무에 따라 UI변경 --%>
             <c:choose>
                 <c:when test="${not empty sessionScope.loginMember}">
@@ -45,7 +44,7 @@
                 </c:otherwise>
             </c:choose>
         </div>
-        </div>
+    </div>
 </header>
 
 <script src="${cp}/js/dropdownSelector.js"></script>

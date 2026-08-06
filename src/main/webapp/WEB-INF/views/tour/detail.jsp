@@ -130,7 +130,7 @@
                                 <jsp:include page="/WEB-INF/views/common/buttonComponent.jsp">
                                     <jsp:param name="text" value="예약하기" />
                                     <jsp:param name="width" value="100%" />
-                                    <jsp:param name="onclick" value="location.href='${pageContext.request.contextPath}/tour/booking?placeId=${place.placeId}'" />
+                                    <jsp:param name="onclick" value="location.href='${pageContext.request.contextPath}/reservations/new?placeId=${place.placeId}'" />
                                 </jsp:include>
 
                                 <div class="booking-wish-box">

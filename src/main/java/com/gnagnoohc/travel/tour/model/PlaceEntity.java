@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-// TODO: 공공데이터 필터링 최종 마무리 후 SQL도 수정 필요함 0730기준 isClosed 자료형 int(0,1)바꾸기 및 공통sql에서 최종 작업 후 테이블생성쿼리 재전달
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
@@ -25,8 +24,7 @@ public class PlaceEntity {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    // TODO: 0803기준 확인 완료, 썸네일이미지의 화질 저하로 오리지널이미지 변환 예정
-    private String firstImage;     // first_image (VARCHAR 500, 대표 이미지 URL - 썸네일 설정)
+    private String firstImage;     // first_image (VARCHAR 500, 대표 이미지 URL - 원본 설정)
 
     private String hashtags;       // hashtags (VARCHAR 300, 가공 해시태그)
     private Integer minPrice;      // 검색/필터링/정렬용 최저가 (숫자 연산용)
@@ -56,7 +54,7 @@ public class PlaceEntity {
                                                 String firstImage, String hashtags, Integer peopleCount, String extraInfo) {
         PlaceEntity place = new PlaceEntity();
 
-        // TODO: 공공데이터의 contentId -> PlaceId설정이므로 비즈니스에선 중복 방지 난수/특수 대역 세팅하여 더미데이터 기입 필요
+        // 공공데이터의 contentId -> PlaceId설정이므로 비즈니스에선 중복 방지 난수/특수 대역 세팅하여 더미데이터 기입 필요
         int dummyPlaceId = 900_000_000 + (int)(Math.random() * 99_999_999);
         place.placeId = dummyPlaceId;
 

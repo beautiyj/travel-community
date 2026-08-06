@@ -38,8 +38,10 @@ public interface TourMapper {
     // 특정 지역의 현재 적재된 PLACE 건수 조회 (지역별 무작위 샘플링 쿼터 체크용)
     int selectPlaceCountByRegion(@Param("regionId") Integer regionId);
 
-    // TODO: 스케줄러 적용로직 브라우저 테스트 필요
+    // 스케줄러 적용 로직 2가지
     int countPlacesByRegionAndType(@Param("regionId") String regionId, @Param("placeType") String placeType);
     List<RegionDTO> selectAllRegions();
+
+    List<RegionDTO> selectParentRegions();
 
 }

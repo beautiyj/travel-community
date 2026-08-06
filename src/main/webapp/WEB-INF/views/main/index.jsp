@@ -71,9 +71,14 @@ https://picsum.photos/id/1028/400/300^108^tour^불국사^경주^4.8^4200^6000^�
             <%-- TODO: tour 도메인 검색 파라미터 확정되면 action/name 값 맞추기 (header.jsp 지역 드롭다운과 동일 사유) --%>
             <form action="${cp}/tour/list" method="get">
                 <jsp:include page="/WEB-INF/views/common/searchbar.jsp">
+                    <jsp:param name="useDropdown" value="true" />
+                    <jsp:param name="listAttr" value="parentRegionList" />
+                    <jsp:param name="selectedAttr" value="selectedRegionId" />
                     <jsp:param name="placeholder" value="여행지, 숙소, 맛집 통합 검색" />
                     <jsp:param name="width" value="600px" />
                 </jsp:include>
+                <!-- index 에서의 검색은 전체 검색이므로 placeType은 빈값으로 전달 (결과적으로 TourController에서 전체조회로 처리됨) -->
+                <input type="hidden" name="placeType" value="" />
             </form>
         </div>
 

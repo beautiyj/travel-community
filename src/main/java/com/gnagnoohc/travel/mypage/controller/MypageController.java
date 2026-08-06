@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -39,9 +40,9 @@ public class MypageController {
     @Autowired
     private BusinessMediaStorage mediaStorage;
 
-    @GetMapping("/test")
-    public String mypageTest() {
-        return "mypage/user/test";
+    @ModelAttribute("businessAccount")
+    public boolean businessAccount() {
+        return false;
     }
 
     @GetMapping("")
@@ -69,11 +70,9 @@ public class MypageController {
         MypageDto member =
                 mypageService.getMemberInfo(getMemberId(session));
 
-        System.out.println("member: " + member);
-
         model.addAttribute("member", member);
 
-        return "mypage/user/info";
+        return "mypage/common/memberInfo";
     }
 
     @GetMapping("/edit")
@@ -83,11 +82,9 @@ public class MypageController {
         MypageDto member =
                 mypageService.getMemberInfo(memberId);
 
-        System.out.println("member: " + member);
-
         model.addAttribute("member", member);
 
-        return "mypage/user/edit";
+        return "mypage/common/memberEdit";
     }
 
     @PostMapping("/edit")
@@ -120,8 +117,10 @@ public class MypageController {
     }
 
     @GetMapping("/password")
-    public String passwordForm() {
-        return "mypage/user/password";
+    public String passwordForm(Model model, HttpSession session) {
+        model.addAttribute("member",
+                mypageService.getMemberInfo(getMemberId(session)));
+        return "mypage/common/password";
     }
 
     @PostMapping("/password")
@@ -233,16 +232,16 @@ public class MypageController {
     }
 
     @GetMapping("/withdraw")
-    public String withdrawForm() {
-        return "mypage/user/withdraw";
+    public String withdrawForm(Model model, HttpSession session) {
+        model.addAttribute("member",
+                mypageService.getMemberInfo(getMemberId(session)));
+        return "mypage/common/withdraw";
     }
 
     @PostMapping("/withdraw")
     public String withdrawMember(HttpSession session) {
 
         int result = mypageService.withdrawMember(getMemberId(session));
-
-        System.out.println("회원 탈퇴 결과: " + result);
 
         session.invalidate();
 
@@ -319,11 +318,7 @@ public class MypageController {
     public String cancelReservation(
             @RequestParam("reservationId") Long reservationId) {
 
-        System.out.println("취소할 reservationId: " + reservationId);
-
         int result = mypageService.cancelReservation(reservationId);
-
-        System.out.println("예약 취소 결과: " + result);
 
         return "redirect:/mypage/reservation";
     }

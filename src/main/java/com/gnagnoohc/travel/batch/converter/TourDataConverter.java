@@ -22,7 +22,6 @@ public class TourDataConverter {
     private final TourApiHelper tourApiHelper;
     private final HashtagGenerator hashtagGenerator;
 
-    // TODO: 2개의 시스템 유령 계정(각각 1개싹 지정) & 그 외 NNNN개 소유 유령계정 1개. 총 2~3개의 유령계정 설정
     // 공공데이터 전용 가상 비즈니스 회원 PK (시스템 유령계정)
     private static final Integer PUBLIC_DATA_MEMBER_ID = 1;
 
@@ -56,7 +55,6 @@ public class TourDataConverter {
 
     // TourLclsSystmCodeDTO -> PlaceDTO 변환
     // 메타데이터인 법정동코드가 아닌, 실제정보가 필요한 동기화 API TourAreaBasedSyncListDTO를 플레이스에 넣어야 함
-    // TODO: 0803 썸네일 이미지의 경우 화질 확인 완료. 조정 필요함, 필터링작업 이후 수정 예정
     // thumbnailImage를 5번째 파라미터로 받도록 변경 - PlaceImage 판단 로직(resolveThumbnailImage)에서 계산된 값을 전달받는 구조로 전환
     public PlaceDTO convertToPlaceDTO(TourAreaBasedSyncListDTO syncItem, TourItemDTO tourItem, TourDetailIntroDTO introDetail, TourDetailInfoDTO infoDetail, String thumbnailImage) {
         // 공공데이터의 contentId -> Place테이블엔 pk로 기입, 더미데이터의 경우 난수처리하여 넣을 것.
@@ -105,9 +103,7 @@ public class TourDataConverter {
                 .useFeeInfo(useFeeInfo)
                 .minPrice(minPrice)
                 .isClosed(isClosedValue)
-                .firstImage(thumbnailImage) // 조인 없는 카드 리스트용 1차 썸네일 세팅
-                // TODO: 0803 썸네일이미지 화질 저하 상태, 테스트 후 원본링크로 대체 로직 필요
-                // .firstImage(item.getOriginimgurl() != null ? item.getOriginimgurl() : thumbnailImage)
+                .firstImage(thumbnailImage)
                 .hashtags(hashtags)
                 .peopleCount(1)
                 .extraInfo(extraInfo)
@@ -138,8 +134,6 @@ public class TourDataConverter {
         return imageDTOs;
     }
 
-    // TODO: 0804 썸네일->원본으로 받아오는 로직 변경, 적용되는 거 테스트 확인 필요
-    // PlaceImage 판단 로직을 여기서 계산해서 convertToPlaceDTO 호출 시 파라미터로 전달하는 구조
     public String resolveThumbnailImage(TourAreaBasedSyncListDTO syncItem) {
         if (StringUtils.hasText(syncItem.getFirstimage())) {
             return syncItem.getFirstimage();
@@ -156,7 +150,8 @@ public class TourDataConverter {
         item.setCreatedtime(syncItem.getCreatedtime());
         item.setModifiedtime(syncItem.getModifiedtime());
         item.setTitle(syncItem.getTitle());
-        // TODO: 이후 지도 API 활용 시 메모리에서 dist 꺼내 쓰는 방식 / dist는 특정 좌표(사용자 위치) 기준 상대적인 거리라서 기본 PlaceDTO엔 넣을 필요 없음
+        //
+        // TODO: 추후예정 - 이후 지도 API 활용 시 메모리에서 dist 꺼내 쓰는 방식 / dist는 특정 좌표(사용자 위치) 기준 상대적인 거리라서 기본 PlaceDTO엔 넣을 필요 없음
         // dist 처리 (문자열로 들어올 경우 Double로 파싱, 없으면 null)
         if (StringUtils.hasText(syncItem.getDist())) {
             try { item.setDist(Double.parseDouble(syncItem.getDist())); }

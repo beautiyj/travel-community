@@ -107,8 +107,8 @@
                                             <center>
                                                 <div class="pagination">
                                                     <c:if test="${startPage > 1}">
-                                                        <a class="page-nav" href="${pageContext.request.contextPath}/tour/list?placeType=${param.placeType}&regionId=${param.regionId}&keyword=${param.keyword}&page=1">&laquo;</a>
-                                                        <a class="page-nav" href="${pageContext.request.contextPath}/tour/list?placeType=${param.placeType}&regionId=${param.regionId}&keyword=${param.keyword}&page=${startPage - 1}">이전</a>
+                                                        <a class="page-nav" href="${pageContext.request.contextPath}/tour/list?placeType=${param.placeType}&regionId=${param.regionId}&keyword=${param.keyword}&sort=${selectedSort}&page=1">&laquo;</a>
+                                                        <a class="page-nav" href="${pageContext.request.contextPath}/tour/list?placeType=${param.placeType}&regionId=${param.regionId}&keyword=${param.keyword}&sort=${selectedSort}&page=${startPage - 1}">이전</a>
                                                     </c:if>
 
                                                     <c:forEach var="p" begin="${startPage}" end="${endPage}">
@@ -123,8 +123,8 @@
                                                     </c:forEach>
 
                                                     <c:if test="${endPage < totalPages}">
-                                                        <a class="page-nav" href="${pageContext.request.contextPath}/tour/list?placeType=${param.placeType}&regionId=${param.regionId}&keyword=${param.keyword}&page=${endPage + 1}">다음</a>
-                                                        <a class="page-nav" href="${pageContext.request.contextPath}/tour/list?placeType=${param.placeType}&regionId=${param.regionId}&keyword=${param.keyword}&page=${totalPages}">&raquo;</a>
+                                                        <a class="page-nav" href="${pageContext.request.contextPath}/tour/list?placeType=${param.placeType}&regionId=${param.regionId}&keyword=${param.keyword}&sort=${selectedSort}&page=${endPage + 1}">다음</a>
+                                                        <a class="page-nav" href="${pageContext.request.contextPath}/tour/list?placeType=${param.placeType}&regionId=${param.regionId}&keyword=${param.keyword}&sort=${selectedSort}&page=${totalPages}">&raquo;</a>
                                                     </c:if>
                                                 </div>
                                             </center>

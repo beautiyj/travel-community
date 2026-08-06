@@ -4,7 +4,8 @@
 
 <aside class="business-sidebar">
     <div class="business-sidebar__logo">
-        <a href="/"><span class="business-sidebar__logo-badge">TA</span> 갈래말래</a>
+        <%-- 메인 헤더(common/header.jsp)와 동일한 로고 표기: common.css의 .brand .name 클래스를 그대로 재사용 --%>
+        <a href="/" class="brand"><span class="name">갈래말래</span></a>
     </div>
 
     <div class="business-sidebar__biz">

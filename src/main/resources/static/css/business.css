@@ -1,4 +1,5 @@
-/* 관리자(업소 대시보드) 전용 스타일. 사이트 공용 CSS가 아직 없어서 business 범위에 한해 별도 파일로 관리합니다. */
+/* 관리자(업소 대시보드) 전용 스타일. 레이아웃 등 대시보드 고유 스타일만 다루며,
+   전역 폰트·색상 등 공통 토큰은 common.css(팀 컨벤션)를 그대로 따릅니다. */
 
 :root {
     --business-primary: #0284c7;
@@ -18,7 +19,7 @@ body {
     margin: 0;
     background: var(--business-bg);
     color: var(--business-text);
-    font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    /* 전역 폰트는 common.css의 body 규칙(Noto Sans KR / Plus Jakarta Sans)을 그대로 상속 */
 }
 
 .business-layout {
@@ -44,28 +45,12 @@ body {
     height: 64px;
     display: flex;
     align-items: center;
-    /*gap: 8px;*/
     padding: 0 20px;
     border-bottom: 1px solid var(--business-border);
-    font-weight: 800;
-    color: var(--business-primary);
 }
 .business-sidebar__logo>a{
     display: flex;
     align-items: center;
-    gap:8px;
-}
-
-.business-sidebar__logo-badge {
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
-    background: var(--business-primary);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
 }
 
 .business-sidebar__biz {

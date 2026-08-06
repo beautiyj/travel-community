@@ -68,10 +68,12 @@ public interface ReservationMapper {
      * 숙박 기간 겹침 판정: 요청 구간과 겹치는 활성 예약 수 (0이면 예약 가능).
      * 반개구간이라 체크아웃 당일에 다음 손님이 체크인하는 것은 겹침이 아니다.
      * 기존 단일날짜 예약(check_out_date IS NULL)은 1박짜리로 취급한다.
+     * excludeMemberId가 있으면 그 회원의 PENDING 건은 겹침 판정에서 제외(결제 이어가기 위해 재선택 가능해야 함).
      */
     int countOverlapping(@Param("placeId") Long placeId,
                          @Param("checkInDate") LocalDate checkInDate,
-                         @Param("checkOutDate") LocalDate checkOutDate);
+                         @Param("checkOutDate") LocalDate checkOutDate,
+                         @Param("excludeMemberId") Integer excludeMemberId);
 
     /**
      * 마감(휴무) 여부 조회. PLACE는 사업자(business) 파트 테이블 — 여기서는 읽기만 한다.

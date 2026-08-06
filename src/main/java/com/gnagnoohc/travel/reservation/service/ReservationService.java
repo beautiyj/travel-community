@@ -100,7 +100,7 @@ public class ReservationService {
             if (!req.getCheckOutDate().isAfter(req.getVisitDate())) {
                 throw new IllegalStateException("체크아웃 날짜는 체크인 다음 날부터 선택할 수 있습니다.");
             }
-            if (reservationMapper.countOverlapping(req.getPlaceId(), req.getVisitDate(), req.getCheckOutDate()) > 0) {
+            if (reservationMapper.countOverlapping(req.getPlaceId(), req.getVisitDate(), req.getCheckOutDate(), memberId) > 0) {
                 throw new IllegalStateException("이미 예약된 기간입니다. 다른 날짜를 선택해 주세요.");
             }
         }

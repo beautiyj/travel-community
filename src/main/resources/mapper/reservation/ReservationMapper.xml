@@ -208,6 +208,9 @@
           AND status IN ('PENDING', 'PAID', 'CONFIRMED')
           AND visit_date &lt; #{checkOutDate}
           AND #{checkInDate} &lt; COALESCE(check_out_date, DATE_ADD(visit_date, INTERVAL 1 DAY))
+          <if test="excludeMemberId != null">
+          AND NOT (member_id = #{excludeMemberId} AND status = 'PENDING')
+          </if>
     </select>
 
     <!-- 휴무 여부 조회: 사업자가 /business/closure에서 설정한 place.is_closed 그대로 참조 (읽기 전용) -->

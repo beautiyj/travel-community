@@ -6,7 +6,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>로그인 | 갈래말래</title>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/auth/auth.css?v=naver-20260729-7">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/common.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/auth/auth.css?v=auth-admin-css-split-20260806-r7">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/auth/login.css?v=auth-admin-css-split-20260806-r9">
     <script defer src="${pageContext.request.contextPath}/js/auth/auth-history-guard.js"></script>
     <script defer src="${pageContext.request.contextPath}/js/auth/login.js"></script>
 </head>
@@ -14,7 +16,7 @@
 <body class="auth-page auth-page--login"
       data-session-status-url="${pageContext.request.contextPath}/auth/api/session-status">
 <main class="auth-card auth-card--small auth-card--login">
-    <a class="auth-brand" href="${pageContext.request.contextPath}/">갈래말래</a>
+    <a class="auth-brand brand" href="${pageContext.request.contextPath}/"><span class="name">갈래말래</span></a>
 
     <header class="auth-header">
         <h1>로그인</h1>

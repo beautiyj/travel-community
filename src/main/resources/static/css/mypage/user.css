@@ -48,7 +48,7 @@
 /* ---------- 찜목록 / 마이페이지 허브 ---------- */
 .wishlist-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 .wishlist-item { position: relative; overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--card); }
-.wishlist-item__thumbnail { display: grid; height: 192px; place-items: center; background: linear-gradient(135deg, #e0f2fe, #bae6fd); color: var(--secondary-foreground); font-size: var(--text-sm); font-weight: var(--font-weight-bold); }
+.wishlist-item__thumbnail { display: grid; height: 192px; place-items: center; background: linear-gradient(135deg, #e0f2fe, #bae6fd); background-size: cover; background-position: center; color: var(--secondary-foreground); font-size: var(--text-sm); font-weight: var(--font-weight-bold); }
 .wishlist-item__body { padding: 14px; }
 .wishlist-item h3 { margin-bottom: 4px; font-size: var(--text-base); font-weight: var(--font-weight-bold); }
 .wishlist-item p { color: var(--muted-foreground); font-size: var(--text-xs); }

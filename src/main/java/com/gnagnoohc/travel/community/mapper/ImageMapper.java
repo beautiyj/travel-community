@@ -12,6 +12,7 @@ public interface ImageMapper {
 
 	List<ImageDto> selectImages(int postId);
 	void insertImage(ImageDto img);
-	void deleteImageByUrl(@Param("postId") int postId, @Param("imageUrl") String imageUrl);
-	void deleteImagesByPostId(int postId);
+
+	//다른글 이미지 삭제 방지
+	int deleteImageByUrl(@Param("postId") int postId, @Param("imageUrl") String imageUrl);
 }

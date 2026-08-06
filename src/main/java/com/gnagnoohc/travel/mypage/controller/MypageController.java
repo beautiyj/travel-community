@@ -255,14 +255,6 @@ public class MypageController {
         return "redirect:/";
     }
 
-    @GetMapping("/logout")
-    public String logout(HttpSession session) {
-
-        session.invalidate();
-
-        return "redirect:/";
-    }
-
     @PostMapping("/wishlist/delete")
     public String deleteWishlist(
             @RequestParam("wishlistId") Long wishlistId,

@@ -192,12 +192,14 @@ public class BusinessController {
                 () -> businessReservationService.approveCancel(reservationId, memberId));
     }
 
-    //예약관리 : 취소 요청 거절 (PAID 원복은 reservation 파트 ReservationService 호출)
+    //예약관리 : 취소 요청 거절 (PAID 원복은 reservation 파트 ReservationService 호출, reason은 사업자가 입력한 거절 사유)
     @PostMapping("/business/reservations/{reservationId}/cancel-reject")
-    public String rejectCancelReservation(@PathVariable Long reservationId, HttpSession session, RedirectAttributes redirectAttributes) {
+    public String rejectCancelReservation(@PathVariable Long reservationId,
+                                           @RequestParam(required = false) String reason,
+                                           HttpSession session, RedirectAttributes redirectAttributes) {
         Long memberId = BusinessSessionSupport.requireBusinessMemberId(session);
         return runReservationAction(redirectAttributes,
-                () -> businessReservationService.rejectCancel(reservationId, memberId));
+                () -> businessReservationService.rejectCancel(reservationId, memberId, reason));
     }
 
     /**

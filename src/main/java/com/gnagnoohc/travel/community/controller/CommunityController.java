@@ -1,6 +1,5 @@
 package com.gnagnoohc.travel.community.controller;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -120,7 +119,7 @@ public class CommunityController {
     @PostMapping("/community/write")
     public String write(CommunityDto dto,
                         @RequestParam(value = "images", required = false) MultipartFile[] images,
-                        HttpSession session) throws IOException {
+                        HttpSession session) {
 
     	// 1) 로그인 회원 확인 → memberId 세팅
         //    ※ "loginMember" key와 타입은 로그인 담당자와 맞춰야 함
@@ -189,7 +188,8 @@ public class CommunityController {
     @PostMapping("/community/update")
     public String update(CommunityDto dto,
                          @RequestParam(value = "images", required = false) MultipartFile[] images,
-                         HttpSession session) throws IOException {
+                         @RequestParam(value = "removeImageUrls", required = false) List<String> removeImageUrls,
+                         HttpSession session) {
 
         // 수정 전 원본으로 소유자 검증
         CommunityDto origin = service.selectOne(dto.getPostId());
@@ -216,6 +216,7 @@ public class CommunityController {
             }
         }
 
+        imageService.removeImages(postId, removeImageUrls); // 본문 편집 중 빠진 기존 이미지 정리
         imageService.saveImages(images, postId);   // 새 이미지가 있으면 추가 (image 부분 분리)
 
         return "redirect:/community/detail?postId=" + dto.getPostId();
@@ -231,7 +232,10 @@ public class CommunityController {
             return "redirect:/community/detail?postId=" + postId;
         }
 
-        service.delete(postId);
+        // 실제 Cloudinary 삭제는 post 삭제 성공적으로 끝난 뒤에만 수행한다.
+        List<String> imageUrls = imageService.collectImageUrls(postId);
+        service.delete(postId);                     // post 삭제 (FK CASCADE로 post_image 등 자동 정리)
+        imageService.deleteFromStorage(imageUrls);   // DB 삭제가 확정된 뒤에만 Cloudinary 정리
 
         return "redirect:/community/list";
     }

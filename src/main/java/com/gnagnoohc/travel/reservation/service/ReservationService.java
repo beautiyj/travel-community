@@ -302,7 +302,9 @@ public class ReservationService {
 
     /**
      * 관리자: 취소 요청 거절. CANCEL_REQUESTED → PAID로 원복 (환불 없음).
-     * 고객이 남긴 취소 사유(cancel_reason)는 보존하고, 사업자가 왜 거절했는지를 reject_reason에 남긴다.
+     * 거절된 예약에 취소 사유·요청시각이 남아 있으면 혼란스러우므로 함께 지우고, 대신 사업자가 입력한
+     * 거절 사유를 cancel_reject_reason에 남긴다(reject_reason과는 별개 컬럼 — PAID 예약 직접 거절 사유와
+     * 취소요청 거절 사유는 시점·의미가 달라 섞이면 안 됨). 정규화 규칙은 reject()와 동일: 비어있으면 기본 문구, trim해서 저장.
      */
     @Transactional
     public void rejectCancel(Long reservationId, String reason) {

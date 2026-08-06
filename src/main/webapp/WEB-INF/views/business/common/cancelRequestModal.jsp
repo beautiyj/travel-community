@@ -8,9 +8,8 @@ CANCEL_REQUESTED 행마다 하나씩 렌더링. 고객이 남긴 취소 사유�
 그 자리에서 바로 취소승인/취소거절까지 처리한다 (사유 확인 -> 판단 -> 처리를 한 모달에서).
 
 거절을 고르면 사유 입력 패널(select+기타직접입력, rejectReasonModal.jsp와 동일한 UX)로 전환된다.
-※ 이 사유는 화면에서만 수집해 cancel-reject로 전송하지만, 서버는 아직 이 값을 저장하지 않는다
-  (RESERVATION.reject_reason에 취소거절 사유까지 저장하려면 reservation 도메인 담당자가
-  ReservationMapper/ReservationService에 별도 메서드를 추가해야 함 - 이번 작업 범위 밖).
+이 사유는 cancel-reject로 전송되어 RESERVATION.cancel_reject_reason에 저장된다 (2026-08-06, 예약 도메인 파일 수정
+ PAID 예약을 직접 거절할 때 쓰는 reject_reason과는 별개 컬럼 — 두 액션은 시점·의미가 달라 같은 컬럼을 쓰면 값이 뒤섞인다.
 
 필수 파라미터:
 - modalId          : 화면 내 고유 식별자

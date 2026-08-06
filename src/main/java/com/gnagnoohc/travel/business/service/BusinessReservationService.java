@@ -55,10 +55,13 @@ public class BusinessReservationService {
         paymentService.approveCancel(reservationId);
     }
 
-    /** 취소 요청 거절 → PAID 원복 (예약 파트 소유 로직, 여기서는 소유자 확인만 담당) */
-    public void rejectCancel(Long reservationId, Long bizMemberId) {
+    /**
+     * 취소 요청 거절 → PAID 원복 + 거절 사유 기록 (예약 파트 소유 로직, 여기서는 소유자 확인만 담당).
+     * reason은 사업자가 입력한 거절 사유.
+     */
+    public void rejectCancel(Long reservationId, Long bizMemberId, String reason) {
         requireOwner(reservationId, bizMemberId);
-        reservationService.rejectCancel(reservationId);
+        reservationService.rejectCancel(reservationId, reason);
     }
 
     private void requireOwner(Long reservationId, Long bizMemberId) {

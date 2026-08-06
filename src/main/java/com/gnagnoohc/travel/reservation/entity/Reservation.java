@@ -34,4 +34,7 @@ public class Reservation {
 
     // 사업자가 결제완료(PAID) 예약을 거절할 때 기록
     private String rejectReason;
+
+    // 사업자가 고객의 취소 요청을 거절할 때 기록(예약 취소 거절)
+    private String cancelRejectReason;
 }

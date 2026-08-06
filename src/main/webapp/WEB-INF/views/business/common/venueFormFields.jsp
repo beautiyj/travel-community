@@ -31,9 +31,9 @@
 </div>
 
 <%--
-가격 설정: 숙박(placeType='stay')일 때만 노출한다. 맛집/관광지는 예약금을 받지 않기로 해서
-서버가 무조건 min_price=0으로 저장하므로 이 영역 자체를 숨긴다. (표시/숨김 토글은 business-venue.js)
+가격 설정: 업종(숙박/맛집/관광지) 구분 없이 모든 업소에 동일하게 노출한다.
 "무료"를 고르면 금액 input이 닫히고 0으로 저장되며, "가격입력"을 고른 경우에만 금액이 열린다.
+(표시/숨김 토글은 business-venue.js)
 --%>
 <c:set var="priceMode" value="${empty param.priceMode ? 'FIXED' : param.priceMode}" />
 <div class="business-form-group js-price-group" id="${param.idPrefix}priceGroup">

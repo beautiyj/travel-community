@@ -65,7 +65,7 @@ public class ReservationController {
         model.addAttribute("placeAddress", reservationService.getPlaceAddress(placeId));
         // 숙박만 min_price를 조회 — 관광지/맛집은 min_price가 항상 null이라 그대로 부르면 예외남
         model.addAttribute("price", ReservationService.isStay(placeType) ? reservationService.getUnitPrice(placeId) : 0);
-        model.addAttribute("deposit", ReservationService.RESERVE_DEPOSIT);
+        model.addAttribute("deposit", ReservationService.isPayOnSite(placeType) ? reservationService.getDepositAmount(placeId) : ReservationService.RESERVE_DEPOSIT);
         return "reservation/reservationForm";
     }
 
@@ -101,7 +101,7 @@ public class ReservationController {
             model.addAttribute("placeImage", reservationService.getPlaceImage(req.getPlaceId()));
             model.addAttribute("placeAddress", reservationService.getPlaceAddress(req.getPlaceId()));
             model.addAttribute("price", ReservationService.isStay(placeType) ? reservationService.getUnitPrice(req.getPlaceId()) : 0);
-            model.addAttribute("deposit", ReservationService.RESERVE_DEPOSIT);
+            model.addAttribute("deposit", ReservationService.isPayOnSite(placeType) ? reservationService.getDepositAmount(req.getPlaceId()) : ReservationService.RESERVE_DEPOSIT);
             return "reservation/reservationForm";
         }
         // 로그인 세션의 회원 식별. 로그인이 "loginMember"(LoginMemberDto)로 저장하므로 그 memberId를 사용
@@ -143,8 +143,15 @@ public class ReservationController {
         }
         Integer memberId = loginMember.getMemberId();
 
-        reservationService.requestCancel(reservationId, memberId, reason);
-        log.info("[취소 요청] reservationId={}, memberId={}, reason={}", reservationId, memberId, reason);
+        paymentService.cancelByCustomer(reservationId, memberId, reason);
+        log.info("[취소 처리] reservationId={}, memberId={}, reason={}", reservationId, memberId, reason);
         return Map.of("result", "OK");
+    }
+
+    /** 취소 요청 전 환불 예상액 미리보기 (방문일 기준 환불 정책 적용) */
+    @GetMapping("/{reservationId}/refund-preview")
+    @ResponseBody
+    public Map<String, Object> refundPreview(@PathVariable("reservationId") Long reservationId) {
+        return Map.of("refundAmount", paymentService.previewRefundAmount(reservationId));
     }
 }

@@ -54,11 +54,14 @@ public class TossPayService {
         return res;
     }
 
-    /** 결제 취소 (전액). tid 대신 paymentKey 사용 */
+    /** 결제 취소. tid 대신 paymentKey 사용. cancelAmount가 null이면 토스가 전액취소로 처리, 값이 있으면 그만큼만 부분취소 */
     @SuppressWarnings("unchecked")
-    public Map<String, Object> cancel(String paymentKey, String cancelReason) {
+    public Map<String, Object> cancel(String paymentKey, String cancelReason, Integer cancelAmount) {
         Map<String, Object> body = new HashMap<>();
         body.put("cancelReason", cancelReason);
+        if (cancelAmount != null) {
+            body.put("cancelAmount", cancelAmount);
+        }
 
         String authHeader = "Basic " + Base64.getEncoder()
                 .encodeToString((secretKey + ":").getBytes(StandardCharsets.UTF_8));

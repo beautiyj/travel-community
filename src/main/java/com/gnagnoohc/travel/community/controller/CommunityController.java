@@ -232,9 +232,10 @@ public class CommunityController {
             return "redirect:/community/detail?postId=" + postId;
         }
 
-        // post 삭제로 post_image가 CASCADE 되기 전에 이미지 URL을 먼저 읽어 Cloudinary를 정리한다.
-        imageService.removeAllImages(postId);
-        service.delete(postId);
+        // 실제 Cloudinary 삭제는 post 삭제 성공적으로 끝난 뒤에만 수행한다.
+        List<String> imageUrls = imageService.collectImageUrls(postId);
+        service.delete(postId);                     // post 삭제 (FK CASCADE로 post_image 등 자동 정리)
+        imageService.deleteFromStorage(imageUrls);   // DB 삭제가 확정된 뒤에만 Cloudinary 정리
 
         return "redirect:/community/list";
     }

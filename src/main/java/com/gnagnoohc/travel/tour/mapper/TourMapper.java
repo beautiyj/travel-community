@@ -30,7 +30,8 @@ public interface TourMapper {
     List<PlaceDTO> selectPlaceList(
             @Param("placeType") String placeType,
             @Param("regionId") Integer regionId,
-            @Param("keyword") String keyword
+            @Param("keyword") String keyword,
+            @Param("sort") String sort
     );
     
     List<PlaceImageDTO> getImagesByPlaceId(@Param("placeId") Integer placeId);

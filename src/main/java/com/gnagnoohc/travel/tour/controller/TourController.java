@@ -27,6 +27,7 @@ public class TourController {
             @RequestParam(value = "placeType", required = false) String placeType,
             @RequestParam(value = "regionId", required = false) Integer regionId,
             @RequestParam(value = "keyword", required = false) String keyword,
+            @RequestParam(value = "sort", defaultValue = "latest") String sort,
             @RequestParam(value = "page", defaultValue = "1") int page,
             Model model) {
 
@@ -34,7 +35,7 @@ public class TourController {
             placeType = null;
         }
 
-        List<PlaceDTO> placeList = tourService.getPlaceList(placeType, regionId, keyword, page);
+        List<PlaceDTO> placeList = tourService.getPlaceList(placeType, regionId, keyword, sort, page);
 
         List<RegionDTO> parentRegionList = tourService.getParentRegionList();
 
@@ -42,11 +43,12 @@ public class TourController {
         model.addAttribute("selectedPlaceType", placeType);
         model.addAttribute("selectedRegionId", regionId);
         model.addAttribute("keyword", keyword);
+        model.addAttribute("selectedSort", sort);
         model.addAttribute("parentRegionList", parentRegionList);
 
         return "tour/list";
     }
-
+    
     // 실제 데이터베이스 연동된 장소 상세 조회 (placeId: Integer로 수정)
     // TODO: 찜버튼해결하RH로그지우기
     @GetMapping("/tour/detail")

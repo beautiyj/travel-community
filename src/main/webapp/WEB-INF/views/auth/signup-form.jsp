@@ -6,7 +6,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${businessMember ? '사업자 회원가입' : '일반 회원가입'} | 갈래말래</title>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/auth/auth.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/common.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/auth/auth.css?v=auth-admin-css-split-20260806-r7">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/auth/signup-form.css?v=auth-admin-css-split-20260806-r9">
     <script defer src="${pageContext.request.contextPath}/js/auth/auth-history-guard.js"></script>
     <%-- 회원가입 검증 모듈을 먼저 로드한 뒤 화면·API 로직을 실행한다. --%>
     <script defer src="${pageContext.request.contextPath}/js/auth/signup-validation.js"></script>
@@ -16,7 +18,7 @@
 <body class="auth-page auth-page--signup-form"
       data-session-status-url="${pageContext.request.contextPath}/auth/api/session-status">
 <main class="auth-card auth-card--signup-form">
-    <a class="auth-brand" href="${pageContext.request.contextPath}/">갈래말래</a>
+    <p class="auth-brand brand"><span class="name">갈래말래</span></p>
 
     <%-- 계정정보와 상세정보를 같은 화면에서 입력하므로 실제 가입 흐름을 2단계로 표시한다. --%>
     <ol class="signup-progress signup-progress--form" aria-label="회원가입 진행 단계">

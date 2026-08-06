@@ -1,0 +1,77 @@
+/* 관리자 홈에는 사업자 인증 신청 집계와 목록 진입점만 제공한다. */
+.admin-dashboard-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.admin-dashboard-kpi {
+    padding: 20px;
+    background: var(--admin-surface);
+    border: 1px solid var(--admin-border);
+    border-radius: 16px;
+}
+
+.admin-dashboard-kpi__label {
+    margin: 0;
+    color: var(--admin-muted);
+    font-size: 14px;
+}
+
+.admin-dashboard-kpi__value {
+    margin: 8px 0 0;
+    font-size: 28px;
+    font-weight: 800;
+}
+
+.admin-dashboard-kpi__unit {
+    margin-left: 4px;
+    color: var(--admin-muted);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.admin-dashboard-kpi--pending .admin-dashboard-kpi__value {
+    color: var(--admin-warning);
+}
+
+.admin-dashboard-kpi--approved .admin-dashboard-kpi__value {
+    color: var(--admin-success);
+}
+
+.admin-dashboard-kpi--rejected .admin-dashboard-kpi__value {
+    color: var(--admin-danger);
+}
+
+.admin-dashboard-cta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+}
+
+.admin-dashboard-cta__link {
+    flex-shrink: 0;
+}
+
+@media (max-width: 1200px) {
+    .admin-dashboard-kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 560px) {
+    .admin-dashboard-kpi-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .admin-dashboard-cta {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .admin-dashboard-cta__link {
+        width: 100%;
+    }
+}

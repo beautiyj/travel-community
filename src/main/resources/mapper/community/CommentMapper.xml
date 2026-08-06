@@ -19,7 +19,10 @@
 		case when pl.member_id = c.member_id then concat(pl.name, '사장')
 		     else m.nickname end as member_name,
 		case when pl.member_id = c.member_id then 1 else 0 end as owner_comment,
-		m.member_type as memberType, m.profile_img_url as profileImgUrl, biz.first_image as businessImage
+		m.member_type as memberType,
+		<!-- 탈퇴 회원은 화면에서 기본 아바타로 대체되도록 null 값 부여 -->
+		case when m.member_status = 'WITHDRAWN' then null else m.profile_img_url end as profileImgUrl,
+		biz.first_image as businessImage
 		from comment c
 		join member m on c.member_id = m.member_id
 		join post p on c.post_id = p.post_id

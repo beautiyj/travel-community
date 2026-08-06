@@ -1,6 +1,8 @@
 package com.gnagnoohc.travel.reservation.controller;
 
 import com.gnagnoohc.travel.auth.dto.LoginMemberDto;
+import com.gnagnoohc.travel.mypage.dto.MypageDto;
+import com.gnagnoohc.travel.mypage.service.MypageService;
 import com.gnagnoohc.travel.reservation.dto.ReservationCreateRequest;
 import com.gnagnoohc.travel.reservation.entity.Payment;
 import com.gnagnoohc.travel.reservation.entity.Reservation;
@@ -25,6 +27,7 @@ public class ReservationController {
 
     private final ReservationService reservationService;
     private final PaymentService paymentService;
+    private final MypageService mypageService;
 
     /** 개발용 테스트 허브. 예약~결제~취소 흐름을 수동으로 확인하는 페이지 */
     @GetMapping("/test")
@@ -42,7 +45,18 @@ public class ReservationController {
     @GetMapping("/new")
     public String form(@RequestParam("placeId") Long placeId,
                        @RequestParam(value = "freeTest", required = false, defaultValue = "false") boolean freeTest,
+                       HttpSession session,
                        Model model) {
+        // 예약 폼도 로그인 필수 — 예약자 정보 자동입력을 위해 회원 조회가 필요해 폼 진입 자체를 로그인 필수로 전환
+        LoginMemberDto loginMember = (LoginMemberDto) session.getAttribute("loginMember");
+        if (loginMember == null) {
+            model.addAttribute("message", "로그인이 필요한 서비스입니다.");
+            return "reservation/loginRequired";
+        }
+        MypageDto member = mypageService.getMemberInfo((long) loginMember.getMemberId());
+        model.addAttribute("loginMemberName", member.getName());
+        model.addAttribute("loginMemberPhone", member.getPhone());
+
         String placeType = freeTest ? "free" : reservationService.getPlaceType(placeId);
         model.addAttribute("placeId", placeId);
         model.addAttribute("placeType", placeType);
@@ -51,7 +65,7 @@ public class ReservationController {
         model.addAttribute("placeAddress", reservationService.getPlaceAddress(placeId));
         // 숙박만 min_price를 조회 — 관광지/맛집은 min_price가 항상 null이라 그대로 부르면 예외남
         model.addAttribute("price", ReservationService.isStay(placeType) ? reservationService.getUnitPrice(placeId) : 0);
-        model.addAttribute("deposit", ReservationService.RESERVE_DEPOSIT);
+        model.addAttribute("deposit", ReservationService.isPayOnSite(placeType) ? reservationService.getDepositAmount(placeId) : ReservationService.RESERVE_DEPOSIT);
         return "reservation/reservationForm";
     }
 
@@ -74,6 +88,12 @@ public class ReservationController {
         // 서버측 검증 실패(폼 조작/직접 요청 등) 시 폼으로 되돌림 — 프론트 검증의 최종 방어선
         if (bindingResult.hasErrors()) {
             log.warn("[예약 생성 검증 실패] {}", bindingResult.getAllErrors());
+            LoginMemberDto sessionMember = (LoginMemberDto) session.getAttribute("loginMember");
+            if (sessionMember != null) {
+                MypageDto member = mypageService.getMemberInfo((long) sessionMember.getMemberId());
+                model.addAttribute("loginMemberName", member.getName());
+                model.addAttribute("loginMemberPhone", member.getPhone());
+            }
             model.addAttribute("placeId", req.getPlaceId());
             String placeType = req.isFreeTest() ? "free" : reservationService.getPlaceType(req.getPlaceId());
             model.addAttribute("placeType", placeType);
@@ -81,7 +101,7 @@ public class ReservationController {
             model.addAttribute("placeImage", reservationService.getPlaceImage(req.getPlaceId()));
             model.addAttribute("placeAddress", reservationService.getPlaceAddress(req.getPlaceId()));
             model.addAttribute("price", ReservationService.isStay(placeType) ? reservationService.getUnitPrice(req.getPlaceId()) : 0);
-            model.addAttribute("deposit", ReservationService.RESERVE_DEPOSIT);
+            model.addAttribute("deposit", ReservationService.isPayOnSite(placeType) ? reservationService.getDepositAmount(req.getPlaceId()) : ReservationService.RESERVE_DEPOSIT);
             return "reservation/reservationForm";
         }
         // 로그인 세션의 회원 식별. 로그인이 "loginMember"(LoginMemberDto)로 저장하므로 그 memberId를 사용
@@ -123,8 +143,15 @@ public class ReservationController {
         }
         Integer memberId = loginMember.getMemberId();
 
-        reservationService.requestCancel(reservationId, memberId, reason);
-        log.info("[취소 요청] reservationId={}, memberId={}, reason={}", reservationId, memberId, reason);
+        paymentService.cancelByCustomer(reservationId, memberId, reason);
+        log.info("[취소 처리] reservationId={}, memberId={}, reason={}", reservationId, memberId, reason);
         return Map.of("result", "OK");
+    }
+
+    /** 취소 요청 전 환불 예상액 미리보기 (방문일 기준 환불 정책 적용) */
+    @GetMapping("/{reservationId}/refund-preview")
+    @ResponseBody
+    public Map<String, Object> refundPreview(@PathVariable("reservationId") Long reservationId) {
+        return Map.of("refundAmount", paymentService.previewRefundAmount(reservationId));
     }
 }

@@ -51,7 +51,7 @@
       <%-- 2b. 데이터가 없을 때는 기존 메인 페이지용 테스트(더미) 데이터 사용 --%>
       <c:otherwise>
         <c:set var="testSlides" value="
-        https://picsum.photos/id/1036/1600/500^/tour/list?area=부산^stay^해변 여행^부산 해운대 패키지~2인 특별 혜택^숙박 + 레스토랑 결합 시 10% 추가 할인^패키지 보기|
+        https://picsum.photos/id/1036/1600/500^/event/busan-haeundae^stay^해변 여행^부산 해운대 패키지~2인 특별 혜택^숙박 + 레스토랑 결합 시 10% 추가 할인^패키지 보기|
         https://picsum.photos/id/1015/1600/500^/tour/list?area=경주^tour^^천년 고도 경주~가을 야경 투어^첨성대·동궁과 월지 야간 개장 중^일정 보러 가기|
         https://picsum.photos/id/292/1600/500^/tour/list?area=제주^food^^제주 미식 로드~현지인 추천 코스^흑돼지부터 해물뚝배기까지 한 번에^맛집 보기|
         https://picsum.photos/id/1039/1600/500^/community/list^^추천^여행자들의 이야기^다녀온 후기와 동행 모집을 한곳에서^커뮤니티 가기

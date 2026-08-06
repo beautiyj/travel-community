@@ -1,0 +1,218 @@
+/* 기존 계정 연동과 계정 찾기·재설정 화면의 파란 시각 체계다. */
+.auth-page--social-link,
+.auth-page--account-recovery {
+    align-items: flex-start;
+    background: linear-gradient(135deg, #eef8ff 0%, #f8fafc 58%, #eef8ff 100%);
+}
+
+.auth-page--social-link {
+    color: var(--foreground);
+}
+
+.auth-card--social-link,
+.auth-card--account-recovery {
+    border-color: rgba(148, 163, 184, 0.4);
+    border-radius: 20px;
+    box-shadow: 0 18px 44px rgba(15, 23, 42, 0.08);
+}
+
+.auth-card--social-link .auth-header h1,
+.auth-card--account-recovery .auth-header h1 {
+    color: var(--foreground);
+}
+
+.auth-card--social-link .auth-header p,
+.auth-card--social-link .field-help {
+    color: var(--muted-foreground);
+    line-height: 1.6;
+}
+
+.auth-card--account-recovery .auth-links a,
+.auth-card--account-recovery .auth-switch a,
+.auth-card--account-recovery .text-button {
+    color: #0369a1;
+}
+
+.auth-card--account-recovery .auth-header p {
+    color: var(--muted-foreground);
+}
+
+.social-link-account-summary {
+    display: grid;
+    gap: 10px;
+    border: 1px solid rgba(2, 132, 199, 0.18);
+    background: var(--secondary);
+}
+
+.social-link-account-details {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+}
+
+.social-link-account-details > div {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.social-link-account-details dt {
+    color: var(--muted-foreground);
+    font-size: 13px;
+}
+
+.social-link-account-details dd {
+    margin: 0;
+    color: #075985;
+    font-size: 16px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+    text-align: right;
+}
+
+.social-link-account-summary > p {
+    margin: 0;
+    color: #475569;
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+.auth-card--social-link .form-field input[type="text"],
+.auth-card--social-link .form-field input[type="password"],
+.auth-card--account-recovery .form-field input[type="text"],
+.auth-card--account-recovery .form-field input[type="password"],
+.auth-card--account-recovery .form-field input[type="email"] {
+    border-color: rgba(148, 163, 184, 0.4);
+}
+
+.auth-card--social-link .form-field input:focus,
+.auth-card--account-recovery .form-field input:focus {
+    border-color: var(--primary);
+    outline-color: rgba(2, 132, 199, 0.16);
+}
+
+.auth-card--social-link .agreement-box {
+    border: 1px solid rgba(2, 132, 199, 0.16);
+    background: var(--secondary);
+}
+
+.auth-card--social-link .agreement-box label {
+    line-height: 1.55;
+}
+
+.auth-card--social-link .agreement-box strong {
+    color: #0369a1;
+}
+
+.auth-card--social-link input[type="checkbox"] {
+    accent-color: var(--primary);
+}
+
+.auth-card--social-link .primary-button,
+.auth-card--account-recovery .primary-button {
+    min-height: 52px;
+    border-radius: 14px;
+    background: #0369a1;
+    box-shadow: 0 10px 15px -3px rgba(2, 132, 199, 0.2);
+}
+
+.auth-card--social-link .primary-button:hover,
+.auth-card--account-recovery .primary-button:hover {
+    background: #075985;
+}
+
+.social-link-alternative {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid #e2e8f0;
+    text-align: center;
+}
+
+.social-link-alternative p {
+    margin: 0 0 10px;
+    color: var(--muted-foreground);
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+.social-link-secondary-action {
+    min-width: 100px;
+    min-height: 44px;
+    padding: 8px 14px;
+    border: 0;
+    border-radius: 8px;
+    color: #0369a1;
+    background: transparent;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.social-link-secondary-action:hover {
+    background: #e0f2fe;
+}
+
+.auth-card--social-link .primary-button:focus-visible,
+.social-link-secondary-action:focus-visible,
+.auth-card--account-recovery .primary-button:focus-visible,
+.auth-card--account-recovery .secondary-button:focus-visible,
+.auth-card--account-recovery .text-button:focus-visible,
+.auth-card--account-recovery .auth-links a:focus-visible,
+.auth-card--account-recovery .auth-switch a:focus-visible {
+    outline: 3px solid rgba(2, 132, 199, 0.28);
+    outline-offset: 2px;
+}
+
+.auth-card--account-recovery .secondary-button {
+    min-height: 46px;
+    padding: 0 16px;
+    border-color: #0369a1;
+    color: #0369a1;
+}
+
+.auth-card--account-recovery .secondary-button:hover {
+    background: var(--secondary);
+}
+
+.auth-card--account-recovery .primary-button:disabled,
+.auth-card--account-recovery .secondary-button:disabled {
+    cursor: not-allowed;
+    color: var(--muted-foreground);
+    border-color: #cbd5e1;
+    background: #e2e8f0;
+    box-shadow: none;
+}
+
+.auth-card--account-recovery .field-success {
+    color: #0369a1;
+}
+
+.auth-card--account-recovery .form-alert--success,
+.auth-card--account-recovery .form-alert--notice {
+    border: 1px solid rgba(2, 132, 199, 0.18);
+    color: #075985;
+    background: #e0f2fe;
+}
+
+.auth-card--account-recovery .form-alert--success p {
+    margin: 0;
+}
+
+.auth-card--account-recovery .form-alert--success strong {
+    display: block;
+    margin-top: 8px;
+    color: #0369a1;
+    font-size: 20px;
+}
+
+@media (max-width: 560px) {
+    .social-link-account-details > div {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .social-link-account-details dd {
+        text-align: left;
+    }
+}

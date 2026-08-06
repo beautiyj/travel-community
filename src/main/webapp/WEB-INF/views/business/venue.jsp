@@ -7,6 +7,8 @@
     <title>업소 관리 - 관리자 - 갈래말래</title>
     <link rel="stylesheet" href="/css/common.css">
     <link rel="stylesheet" href="/css/business.css">
+    <link rel="stylesheet" href="/css/components/confirmModal.css">
+    <link rel="stylesheet" href="/css/common/venueGallery.css">
     <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 </head>
 <body>
@@ -19,6 +21,8 @@
     <div class="business-main">
         <jsp:include page="common/topbar.jsp">
             <jsp:param name="title" value="업소 관리" />
+            <jsp:param name="date" value="${todayLabel}" />
+            <jsp:param name="dateIcon" value="true" />
         </jsp:include>
 
         <div class="business-content">
@@ -89,6 +93,13 @@
 <%-- 사진 그리드·가격 토글·주소 검색은 입력 폼에서만 쓰인다 --%>
 <c:if test="${(empty place && canRegister) || editing}">
     <script src="/js/business/business-venue.js"></script>
+</c:if>
+
+<%-- 업소 사진 갤러리 확대보기(라이트박스)는 읽기 뷰(venueDetailCard.jsp)에서만 쓰인다.
+     openModal/closeModal(common.js)에 기대므로 이 스크립트보다 먼저 로드해야 한다 --%>
+<c:if test="${not empty place && !editing}">
+    <script src="/js/common.js"></script>
+    <script src="/js/business/business-venue-gallery.js"></script>
 </c:if>
 
 </body>

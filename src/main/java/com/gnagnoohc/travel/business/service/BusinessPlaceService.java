@@ -6,35 +6,29 @@ import com.gnagnoohc.travel.business.dto.BusinessPlaceOverviewDto;
 import com.gnagnoohc.travel.business.dto.BusinessPlaceRegisterDto;
 import com.gnagnoohc.travel.business.dto.BusinessPlaceUpdateDto;
 import com.gnagnoohc.travel.business.mapper.BusinessMapper;
+import com.gnagnoohc.travel.storage.ImageCleanup;
+import com.gnagnoohc.travel.storage.ImageStorage;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class BusinessPlaceService {
 
-    private static final Set<String> ALLOWED_IMAGE_EXTENSIONS = Set.of("jpg", "jpeg", "png", "gif", "webp");
     // member_role='BUSINESS'만 업소를 등록할 수 있는 사업자 회원.
     private static final String MEMBER_ROLE_BUSINESS = "BUSINESS";
     // 수정 폼에서 아직 저장 안 된 새 사진 카드를 나타내는 photoOrder 토큰
     private static final String NEW_PHOTO_TOKEN = "new";
-    // 가격 설정 대상은 숙박(place_type='stay')뿐. 맛집/관광지는 예약금을 받지 않는다.
-    private static final String PLACE_TYPE_LODGING = "stay";
+    // 가격 설정은 업종 구분 없이 모든 업소(숙박/맛집/관광지)가 대상이다.
     private static final String PRICE_MODE_FIXED = "FIXED";
     private static final String PRICE_MODE_FREE = "FREE";
     private static final Set<String> ALLOWED_PRICE_MODES = Set.of(PRICE_MODE_FIXED, PRICE_MODE_FREE);
@@ -42,12 +36,13 @@ public class BusinessPlaceService {
     private static final long PLACE_ID_RANGE_START = 900_000_000L;
     private static final long PLACE_ID_RANGE_BOUND = 1_000_000_000L;
     private static final int PLACE_ID_MAX_ATTEMPTS = 20;
+    // app.storage.buckets.place 설정을 쓰는 업소 사진 bucket
+    private static final String IMAGE_BUCKET = "place";
 
     private final BusinessMapper businessMapper;
+    private final ImageStorage imageStorage;
+    private final ImageCleanup imageCleanup;
     private final SecureRandom random = new SecureRandom();
-
-    @Value("${file.upload-dir}")
-    private String uploadDir;
 
     // null이면 미등록. 예외를 던지지 않는 조회용 (venue 화면 분기에만 사용)
     public BusinessPlaceOverviewDto findOverview(Long bizMemberId) {
@@ -78,7 +73,7 @@ public class BusinessPlaceService {
         Integer minPrice = resolveMinPrice(form);
         Long regionId = resolveRegionId(form.getAddress());
 
-        List<String> savedUrls = nonEmpty.stream().map(this::saveImageFile).toList();
+        List<String> savedUrls = nonEmpty.stream().map(this::storeImage).toList();
 
         BusinessPlaceRegisterDto place = BusinessPlaceRegisterDto.builder()
                 .placeId(generateUniquePlaceId())
@@ -101,6 +96,8 @@ public class BusinessPlaceService {
         for (int i = 0; i < savedUrls.size(); i++) {
             businessMapper.insertPlaceImage(place.getPlaceId(), savedUrls.get(i), i);
         }
+
+        imageCleanup.deleteOnRollback(savedUrls);
     }
 
     // venue 읽기뷰/수정폼 공용 상세 조회. venue()에서 findOverview로 이미 존재를 확인한 뒤에만 호출한다.
@@ -135,7 +132,7 @@ public class BusinessPlaceService {
         Set<String> currentImageSet = Set.copyOf(currentImages);
         Set<String> toRemove = removeImageUrls == null ? Set.of() : Set.copyOf(removeImageUrls);
 
-        List<String> newUrls = toNonEmpty(newImages).stream().map(this::saveImageFile).toList();
+        List<String> newUrls = toNonEmpty(newImages).stream().map(this::storeImage).toList();
 
         // photoOrder는 기존/신규 카드를 한 그리드에서 드래그로 섞은 최종 순서.
         // 기존 사진은 URL 그대로, 신규 사진은 "new" 토큰으로 오고, 토큰이 나온 순서대로 newUrls를 하나씩 매칭한다.
@@ -192,6 +189,13 @@ public class BusinessPlaceService {
         if (businessMapper.updatePlace(update) == 0) {
             throw new IllegalStateException("업소 정보를 수정할 권한이 없습니다.");
         }
+
+        // 화면에서 빠진 사진은 DB 행만 지워선 부족하다. 파일이 그대로 남으면 Cloudinary 무료 한도를 갉아먹는다.
+        List<String> removedUrls = currentImages.stream()
+                .filter(url -> !finalOrder.contains(url))
+                .toList();
+        imageCleanup.deleteOnRollback(newUrls);
+        imageCleanup.deleteOnCommit(removedUrls);
     }
 
     // place_id는 AUTO_INCREMENT가 아니라서(공공데이터 contentId와 PK를 공유) 직접 채번한다.
@@ -206,18 +210,8 @@ public class BusinessPlaceService {
         throw new IllegalStateException("업소 ID 생성에 실패했습니다. 잠시 후 다시 시도해주세요.");
     }
 
-    // 원본 파일명은 신뢰하지 않고 확장자만 화이트리스트로 뽑아 서버측 생성 파일명(UUID)으로 저장
-    private String saveImageFile(MultipartFile file) {
-        String extension = extractExtension(file.getOriginalFilename());
-        String filename = UUID.randomUUID() + "." + extension;
-        try {
-            Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
-            Files.createDirectories(uploadPath);
-            file.transferTo(uploadPath.resolve(filename));
-        } catch (IOException e) {
-            throw new IllegalStateException("이미지 저장에 실패했습니다.", e);
-        }
-        return "/uploads/place/" + filename;
+    private String storeImage(MultipartFile file) {
+        return imageStorage.store(file, IMAGE_BUCKET);
     }
 
     // 업소명·주소는 폼에서 required지만 직접 요청으로 우회할 수 있어 서버에서도 확인한다
@@ -250,17 +244,13 @@ public class BusinessPlaceService {
     }
 
     /**
-     * 폼에서 온 가격 입력을 정리한다.
-     * - 숙박이 아니면 무조건 min_price 0 (폼에서 가격 영역 자체가 숨겨져 값이 안 온다)
-     * - 숙박이고 "무료"를 고르면 금액 input 값과 무관하게 0으로 확정한다
-     * - 숙박이고 "가격입력"을 고르면 금액이 필수다
+     * 폼에서 온 가격 입력을 정리한다. 업종(숙박/맛집/관광지) 구분 없이 동일하게 적용한다.
+     * - "무료"를 고르면 금액 input 값과 무관하게 0으로 확정한다
+     * - "가격입력"을 고르면 금액이 필수다
      * 화면 JS가 이미 같은 규칙으로 토글하지만, 폼 조작/직접 요청을 막는 서버측 최종 방어선이라
      * priceMode를 기준으로 판단하고 minPrice 값 자체는 FIXED일 때만 신뢰한다.
      */
     private Integer resolveMinPrice(BusinessPlaceFormDto form) {
-        if (!PLACE_TYPE_LODGING.equals(form.getPlaceType())) {
-            return 0;
-        }
         String priceMode = form.getPriceMode();
         if (priceMode == null || !ALLOWED_PRICE_MODES.contains(priceMode)) {
             throw new IllegalArgumentException("가격을 선택해주세요.");
@@ -298,19 +288,5 @@ public class BusinessPlaceService {
                 .filter(tag -> !tag.isEmpty())
                 .collect(Collectors.joining(","));
         return joined.isEmpty() ? null : joined;
-    }
-
-    private String extractExtension(String originalFilename) {
-        if (originalFilename == null) {
-            throw new IllegalArgumentException("파일 이름이 없습니다.");
-        }
-        String name = originalFilename.replace("\\", "/");
-        name = name.substring(name.lastIndexOf('/') + 1);
-        int dot = name.lastIndexOf('.');
-        String extension = (dot >= 0 ? name.substring(dot + 1) : "").toLowerCase();
-        if (!ALLOWED_IMAGE_EXTENSIONS.contains(extension)) {
-            throw new IllegalArgumentException("허용되지 않는 파일 형식입니다: " + originalFilename);
-        }
-        return extension;
     }
 }

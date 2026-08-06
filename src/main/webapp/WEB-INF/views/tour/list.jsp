@@ -62,14 +62,12 @@
                                             </div>
 
                                             <!-- 카드 그리드 영역 (cardComponent.jsp 재사용) -->
-                                            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px;">
+                                            <div class="place-grid">
                                                 <c:choose>
                                                     <c:when test="${not empty placeList}">
                                                         <c:forEach var="place" items="${placeList}">
                                                             <!-- 카드 전체를 감싸는 링크 태그 추가 -->
-                                                            <a href="${pageContext.request.contextPath}/tour/detail?placeId=${place.placeId}"
-                                                            class="place-card-link"
-                                                            style="text-decoration: none; color: inherit; display: block;">
+                                                            <a href="${pageContext.request.contextPath}/tour/detail?placeId=${place.placeId}" class="place-card-link">
                                                             <%-- isBookmarked, rating, reviewCount는 별도 기능 붙기 전까지 카드 기본값 사용 --%>
                                                             <jsp:include page="/WEB-INF/views/common/cardComponent.jsp">
                                                                 <jsp:param name="firstimage"   value="${place.firstImage}" />

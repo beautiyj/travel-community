@@ -30,20 +30,8 @@
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
 }
-.img-block-thumb-remove {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  width: 20px;
-  height: 20px;
-  border-radius: 9999px;
-  background: var(--destructive);
-  color: var(--destructive-foreground);
-  border: none;
-  cursor: pointer;
-  font-size: 12px;
-  line-height: 1;
-}
+/* 사진 삭제(×) 버튼은 community.css의 .modal-photo-remove 공용 클래스를 사용 */
+
 /* 썸네일 순서 이동(‹/›) - 하단에 걸쳐 항상 보이게 */
 .img-block-thumb-order {
   position: absolute;

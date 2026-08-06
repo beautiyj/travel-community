@@ -8,7 +8,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>사업자 인증 신청 관리 - 갈래말래</title>
     <c:url var="commonCssUrl" value="/css/common.css"/>
-    <c:url var="adminCssUrl" value="/css/admin/admin.css"/>
+    <c:url var="adminCssUrl" value="/css/admin/admin.css">
+        <c:param name="v" value="auth-admin-css-split-20260806-r7"/>
+    </c:url>
+    <c:url var="businessApplicationListCssUrl" value="/css/admin/business-application-list.css">
+        <c:param name="v" value="auth-admin-css-split-20260806-r7"/>
+    </c:url>
     <c:url var="businessApplicationListJsUrl" value="/js/admin/business-application-list.js"/>
     <c:url var="adminBfcacheReloadJsUrl" value="/js/admin/admin-bfcache-reload.js"/>
     <c:url var="allApplicationsUrl" value="/admin/business-applications">
@@ -25,6 +30,7 @@
     </c:url>
     <link rel="stylesheet" href="${commonCssUrl}">
     <link rel="stylesheet" href="${adminCssUrl}">
+    <link rel="stylesheet" href="${businessApplicationListCssUrl}">
 </head>
 <body>
 <div class="admin-layout">

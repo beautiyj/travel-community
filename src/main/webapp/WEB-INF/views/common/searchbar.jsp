@@ -20,6 +20,10 @@
 <c:set var="dropdownListAttr"  value="${empty param.listAttr ? 'categoryList' : param.listAttr}" />
 <c:set var="defaultLabel"      value="${empty param.defaultLabel ? '전체' : param.defaultLabel}" />
 <c:set var="dropdownWidth"     value="${empty param.dropdownWidth ? '' : param.dropdownWidth}" />
+<%-- 드롭다운 선택값 제출/유지용 (선택) --%>
+<c:set var="dropdownHiddenName" value="${param.dropdownHiddenName}" />
+<c:set var="dropdownSelectedAttr" value="${param.selectedAttr}" />
+<c:set var="dropdownSelectedNameAttr" value="${param.selectedNameAttr}" />
 
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/buttonComponent.css">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/dropdownSelector.css">

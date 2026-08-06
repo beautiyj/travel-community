@@ -21,7 +21,8 @@
         r.created_at           AS createdAt,
         r.cancel_reason        AS cancelReason,
         r.cancel_requested_at  AS cancelRequestedAt,
-        r.reject_reason        AS rejectReason
+        r.reject_reason        AS rejectReason,
+        r.cancel_reject_reason AS cancelRejectReason
     </sql>
 
     <insert id="insert" parameterType="com.gnagnoohc.travel.reservation.entity.Reservation"
@@ -76,21 +77,25 @@
         WHERE reservation_id = #{reservationId}
     </update>
 
-    <!-- 취소 요청: 상태 CANCEL_REQUESTED + 사유/요청시각 기록 -->
+    <!-- 취소 요청: 상태 CANCEL_REQUESTED + 사유/요청시각 기록. 재요청 시 지난 라운드의 취소거절 사유는 정리 -->
     <update id="requestCancel">
         UPDATE reservation
         SET status = 'CANCEL_REQUESTED',
             cancel_reason = #{reason},
-            cancel_requested_at = NOW()
+            cancel_requested_at = NOW(),
+            cancel_reject_reason = NULL
         WHERE reservation_id = #{reservationId}
     </update>
 
-    <!-- 취소 요청 거절: 상태 PAID로 원복 + 취소 요청 기록 제거 (requestCancel의 대칭) -->
+    <!--
+      취소 요청 거절: 상태 CONFIRMED로 원복(취소 요청은 항상 CONFIRMED에서만 발생 — PaymentService.cancelByCustomer
+      참고. PAID로 되돌리면 예약거절/즉시환불 경로가 다시 열려버려 취소거절 결과가 무효화됨).
+      고객이 남긴 취소 사유(cancel_reason/cancel_requested_at)는 거절 후에도 이력으로 남겨 거절 사유와 한 쌍으로 보이게 한다.
+    -->
     <update id="rejectCancel">
         UPDATE reservation
-        SET status = 'PAID',
-            cancel_reason = NULL,
-            cancel_requested_at = NULL
+        SET status = 'CONFIRMED',
+            cancel_reject_reason = #{reason}
         WHERE reservation_id = #{reservationId}
     </update>
 

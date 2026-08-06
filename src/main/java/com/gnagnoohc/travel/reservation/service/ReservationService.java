@@ -218,9 +218,9 @@ public class ReservationService {
      * 마감(빨강·선택불가)으로 그린다. (1일 1팀)
      */
     @Transactional(readOnly = true)
-    public Map<String, Object> getAvailability(Long placeId) {
+    public Map<String, Object> getAvailability(Long placeId, Integer memberId) {
         Map<String, Integer> booked = new LinkedHashMap<>();
-        for (Map<String, Object> row : reservationMapper.findActiveRanges(placeId)) {
+        for (Map<String, Object> row : reservationMapper.findActiveRanges(placeId, memberId)) {
             LocalDate from = ((Date) row.get("visitDate")).toLocalDate();
             Date rawTo = (Date) row.get("checkOutDate");
             // 체크아웃이 없으면(맛집/관광지 등 당일) 하루만 막고, 있으면 체크아웃 전날까지 막는다

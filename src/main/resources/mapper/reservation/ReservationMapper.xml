@@ -190,6 +190,9 @@
         WHERE place_id = #{placeId}
           AND status IN ('PENDING', 'PAID', 'CONFIRMED')
           AND COALESCE(check_out_date, visit_date) &gt;= CURDATE()
+          <if test="excludeMemberId != null">
+          AND NOT (member_id = #{excludeMemberId} AND status = 'PENDING')
+          </if>
     </select>
 
     <!--

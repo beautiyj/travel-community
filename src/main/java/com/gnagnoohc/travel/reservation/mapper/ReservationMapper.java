@@ -59,8 +59,10 @@ public interface ReservationMapper {
      * 예약 캘린더용: 장소의 '오늘 이후' 활성 예약 목록(체크인·체크아웃·인원).
      * 숙박은 기간 예약이라 날짜별 GROUP BY로는 중간 날짜를 알 수 없다.
      * 서비스에서 이 목록을 받아 구간을 날짜 단위로 펼쳐 마감일을 계산한다.
+     * excludeMemberId가 있으면 그 회원의 PENDING 건은 마감 계산에서 제외(결제 이어가기 위해 재선택 가능해야 함).
      */
-    List<Map<String, Object>> findActiveRanges(@Param("placeId") Long placeId);
+    List<Map<String, Object>> findActiveRanges(@Param("placeId") Long placeId,
+                                               @Param("excludeMemberId") Integer excludeMemberId);
 
     /**
      * 숙박 기간 겹침 판정: 요청 구간과 겹치는 활성 예약 수 (0이면 예약 가능).

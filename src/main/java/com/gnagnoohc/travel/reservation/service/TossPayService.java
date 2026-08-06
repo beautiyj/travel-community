@@ -44,6 +44,8 @@ public class TossPayService {
         TossConfirmResponse res = restClient.post()
                 .uri("/v1/payments/confirm")
                 .header("Authorization", authHeader)
+                // 같은 orderId로 재시도돼도(네트워크 타임아웃 등) 토스가 같은 요청으로 인식하도록 orderId 기반 고정 키 사용
+                .header("Idempotency-Key", "confirm-" + orderId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(body)
                 .retrieve()
@@ -52,11 +54,14 @@ public class TossPayService {
         return res;
     }
 
-    /** 결제 취소 (전액). tid 대신 paymentKey 사용 */
+    /** 결제 취소. tid 대신 paymentKey 사용. cancelAmount가 null이면 토스가 전액취소로 처리, 값이 있으면 그만큼만 부분취소 */
     @SuppressWarnings("unchecked")
-    public Map<String, Object> cancel(String paymentKey, String cancelReason) {
+    public Map<String, Object> cancel(String paymentKey, String cancelReason, Integer cancelAmount) {
         Map<String, Object> body = new HashMap<>();
         body.put("cancelReason", cancelReason);
+        if (cancelAmount != null) {
+            body.put("cancelAmount", cancelAmount);
+        }
 
         String authHeader = "Basic " + Base64.getEncoder()
                 .encodeToString((secretKey + ":").getBytes(StandardCharsets.UTF_8));
@@ -65,11 +70,28 @@ public class TossPayService {
         Map<String, Object> res = restClient.post()
                 .uri("/v1/payments/" + paymentKey + "/cancel")
                 .header("Authorization", authHeader)
+                // 같은 paymentKey로 재시도돼도 토스가 같은 요청으로 인식하도록 paymentKey 기반 고정 키 사용
+                .header("Idempotency-Key", "cancel-" + paymentKey)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(body)
                 .retrieve()
                 .body(Map.class);
         log.info("[토스 cancel 응답] {}", res);
+        return res;
+    }
+
+    /** 정합성 보정 배치용: orderId로 결제 상태 조회 (주문조회 GET /v1/payments/orders/{orderId}) */
+    public TossConfirmResponse getOrder(String orderId) {
+        String authHeader = "Basic " + Base64.getEncoder()
+                .encodeToString((secretKey + ":").getBytes(StandardCharsets.UTF_8));
+
+        log.info("[토스 주문조회 요청] orderId={}", orderId);
+        TossConfirmResponse res = restClient.get()
+                .uri("/v1/payments/orders/{orderId}", orderId)
+                .header("Authorization", authHeader)
+                .retrieve()
+                .body(TossConfirmResponse.class);
+        log.info("[토스 주문조회 응답] orderId={}, status={}", orderId, res != null ? res.getStatus() : null);
         return res;
     }
 

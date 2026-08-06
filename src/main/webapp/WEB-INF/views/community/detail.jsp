@@ -18,6 +18,7 @@
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/community/community.css">
 </head>
 <body>
+<jsp:include page="/WEB-INF/views/common/header.jsp" />
 <c:set var="cp" value="${pageContext.request.contextPath}" />
 
 <%-- 로그인 회원: 세션엔 LoginMemberDto(memberId, nickname, memberRole)가 통째로 들어있음 --%>
@@ -61,60 +62,66 @@
       </c:if>
     </div>
 
-    <!-- 작성자 / 작성일 / 조회수 (community.css 의 .detail-meta) -->
-    <div class="detail-meta">
-      <span>작성자 ${post.nickname}</span>
-      <span><fmt:formatDate value="${post.createdAt}" pattern="yyyy-MM-dd HH:mm" /></span>
-      <span>조회 <fmt:formatNumber value="${post.readcount}" pattern="#,##0" /></span>
+    <!-- 작성자 프로필 사진 + 닉네임 / 작성일·조회수·댓글수 (community.css 의 .detail-author-row) -->
+    <div class="detail-author-row">
+      <c:choose>
+        <c:when test="${not empty post.avatarUrl}">
+          <img class="detail-avatar" src="${post.avatarUrl}" alt="${post.nickname}">
+        </c:when>
+        <c:otherwise>
+          <img class="detail-avatar" src="${cp}/images/icons/default-avatar.png" alt="${post.nickname}">
+        </c:otherwise>
+      </c:choose>
+      <div>
+        <div class="detail-author-name">${post.nickname}</div>
+        <div class="detail-meta">
+          <span><fmt:formatDate value="${post.createdAt}" pattern="yyyy-MM-dd" /></span>
+          <span class="meta-dot">&middot;</span>
+          <span>
+            <img src="${cp}/images/icons/eye.png" alt="조회수" class="meta-icon">
+            <fmt:formatNumber value="${post.readcount}" pattern="#,##0" />
+          </span>
+          <span class="meta-dot">&middot;</span>
+          <span>
+            <img src="${cp}/images/icons/comment.png" alt="댓글수" class="meta-icon">
+            ${fn:length(post.commentList)}
+          </span>
+        </div>
+      </div>
     </div>
 
-    <!-- 장소 태그: 방문자인증후기로 태그된 장소가 있을 때만 노출 (community.css 의 .place-tag)
-         사진 없이 장소 이름만 다른 색 링크로 표시, 클릭하면 해당 장소 상세페이지로 이동
-         ※ 장소 상세페이지 URL은 place 모듈 담당자 라우팅에 맞춰 조정 필요 (지금은 가정한 경로) -->
+    <!-- 장소 태그 (community.css 의 .place-tag) - 사진 없이 장소 이름만 다른 색 링크로 표시, 클릭하면 tour 모듈의 장소 상세페이지로 이동
+         방문자인증후기: 단일 태그(post.placeId/placeName) / 일반후기: 다중 태그(post.placeTags, 0개~여러 개) -->
     <c:if test="${not empty post.placeId}">
       <div class="place-tag">
-        <a href="${cp}/place/detail?placeId=${post.placeId}" class="place-tag-link">📍 ${post.placeName}</a>
+        <a href="${cp}/tour/detail?placeId=${post.placeId}" class="place-tag-link">📍 ${post.placeName}</a>
+      </div>
+    </c:if>
+    <c:if test="${not empty post.placeTags}">
+      <div class="place-tag place-tag-list">
+        <c:forEach var="tag" items="${post.placeTags}">
+          <a href="${cp}/tour/detail?placeId=${tag.placeId}" class="place-tag-link">📍 ${tag.name}</a>
+        </c:forEach>
       </div>
     </c:if>
 
-    <!-- 본문 (community.css 의 .detail-body, 줄바꿈 유지) -->
-    <p class="detail-body">${post.content}</p>
+    <!-- 본문: postContentRenderer.js 가 아래 postContentData(토큰 포함 텍스트)와 postImageData(이미지 목록)를
+         읽어서 텍스트/단일 이미지(가운데·좌·우)/콜라주/슬라이더를 원래 작성 순서·위치대로 렌더링함.
+         텍스트는 createTextNode로만 삽입되므로 별도 escape 없이도 안전함 (community.css 의 .detail-body) -->
+    <div class="detail-body" id="post-content-root"></div>
 
-    <!-- 이미지: sort_order 순으로 저장되어 있다고 가정 (0번이 대표/썸네일 이미지)
-         1장뿐이면 화살표 없이 사진만, 여러 장이면 배너처럼 좌우 화살표로 넘김
-         ※ 본문 아래로 위치 이동 (원래는 본문 위였음) -->
-    <c:if test="${not empty post.imageList}">
-      <div class="post-gallery" data-gallery>
-        <div class="post-gallery-track" data-gallery-track>
-          <c:forEach var="img" items="${post.imageList}">
-            <div class="post-gallery-slide">
-              <img src="${cp}/upload/${img.imageUrl}" alt="첨부 이미지">
-            </div>
-          </c:forEach>
-        </div>
-
-        <c:if test="${fn:length(post.imageList) gt 1}">
-          <button type="button" class="post-gallery-arrow post-gallery-arrow-prev"
-                  data-gallery-prev aria-label="이전 사진">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <polyline points="15 5 8 12 15 19"></polyline>
-            </svg>
-          </button>
-          <button type="button" class="post-gallery-arrow post-gallery-arrow-next"
-                  data-gallery-next aria-label="다음 사진">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <polyline points="9 5 16 12 9 19"></polyline>
-            </svg>
-          </button>
-          <div class="post-gallery-counter" data-gallery-counter>1 / ${fn:length(post.imageList)}</div>
-        </c:if>
-      </div>
-    </c:if>
+    <!-- 렌더러에 넘길 원본 데이터 (fn:escapeXml 로 안전 인코딩 → 일반 엘리먼트라 브라우저가 다시 복원해줌) -->
+    <div id="postContentData" style="display:none">${fn:escapeXml(post.content)}</div>
+    <ul id="postImageData" style="display:none">
+      <c:forEach var="img" items="${post.imageList}">
+        <li data-url="${fn:escapeXml(img.imageUrl)}"></li>
+      </c:forEach>
+    </ul>
   </div>
 
 
   <!-- ───────── 댓글 영역 (community.css 의 .comments) ───────── -->
-  <div class="comments">
+  <div class="comments" id="comments">
 
     <div class="comments-head">
       <span class="title">댓글</span>
@@ -133,39 +140,54 @@
           <c:if test="${empty comment.parentId}">
 
             <!-- 원댓글 -->
-            <div class="comment">
-              <div class="avatar"></div>
-              <div>
-                <div class="comment-head">
-                  <span class="comment-author">${comment.memberName}</span>
-                  <%-- 업소 사장님이 자신의 사업장 리뷰에 남긴 댓글이면 뱃지 표시 --%>
-                  <c:if test="${comment.ownerComment}">
-                    <span class="badge-owner">사장님</span>
-                  </c:if>
-                  <span class="comment-date">
-                    <fmt:formatDate value="${comment.createdAt}" pattern="yyyy-MM-dd HH:mm" />
-                  </span>
+            <c:choose>
+              <c:when test="${not empty comment.deletedAt}">
+                <div class="comment">
+                  <div>
+                    <p class="comment-text deleted">삭제된 댓글입니다</p>
+                  </div>
                 </div>
-                <p class="comment-text">${comment.content}</p>
+              </c:when>
+              <c:otherwise>
+                <div class="comment">
+                  <c:choose>
+                    <c:when test="${not empty comment.avatarUrl}">
+                      <img class="avatar" src="${comment.avatarUrl}" alt="${comment.memberName}">
+                    </c:when>
+                    <c:otherwise>
+                      <img class="avatar" src="${cp}/images/icons/default-avatar.png" alt="${comment.memberName}">
+                    </c:otherwise>
+                  </c:choose>
+                  <div>
+                    <div class="comment-head">
+                      <span class="comment-author">${comment.memberName}</span>
+                      <%-- 업소 사장님이 자신의 사업장 리뷰에 남긴 댓글이면 뱃지 표시 --%>
+                      <c:if test="${comment.ownerComment}">
+                        <span class="badge-owner">사장님</span>
+                      </c:if>
+                      <span class="comment-date">
+                        <fmt:formatDate value="${comment.createdAt}" pattern="yyyy-MM-dd HH:mm" />
+                      </span>
+                    </div>
+                    <p class="comment-text">${comment.content}</p>
 
-                <div class="comment-actions">
-                  <!-- 답글 달기 (로그인 시) -->
-                  <c:if test="${isLoggedIn}">
-                    <span class="reply-link" role="button" tabindex="0"
-                          onclick="toggleReply(${comment.commentId})">답글 달기</span>
-                  </c:if>
+                    <div class="comment-actions">
+                      <!-- 답글 달기 (로그인 시) -->
+                      <c:if test="${isLoggedIn}">
+                        <span class="reply-link" role="button" tabindex="0"
+                              onclick="toggleReply(${comment.commentId})">답글 달기</span>
+                      </c:if>
 
-                  <!-- 삭제: 본인 댓글일 때만, 확인창 없이 바로 삭제 (comment/delete 는 서버에서 본인 확인 후 처리) -->
-                  <c:if test="${isLoggedIn and loginMember.memberId == comment.memberId}">
-                    <form action="${cp}/community/comment/delete" method="post" class="comment-delete-form">
-                      <input type="hidden" name="commentId" value="${comment.commentId}">
-                      <input type="hidden" name="postId" value="${post.postId}">
-                      <button type="submit" class="comment-delete-btn">삭제</button>
-                    </form>
-                  </c:if>
+                      <!-- 삭제: 본인 댓글일 때만, commentDeleteModal 로 확인 후 삭제 (comment/delete 는 서버에서 본인 확인 후 처리) -->
+                      <c:if test="${isLoggedIn and loginMember.memberId == comment.memberId}">
+                        <button type="button" class="comment-delete-btn"
+                                onclick="openModal('commentDeleteModal', ${comment.commentId})">삭제</button>
+                      </c:if>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
+              </c:otherwise>
+            </c:choose>
 
             <!-- 답글 입력창 (기본 숨김, community.css 대상 아님) -->
             <c:if test="${isLoggedIn}">
@@ -189,33 +211,48 @@
             <!-- 이 원댓글에 달린 대댓글들: .comment.reply 로 평평하게 이어짐 -->
             <c:forEach var="reply" items="${post.commentList}">
               <c:if test="${reply.parentId == comment.commentId}">
-                <div class="comment reply">
-                  <div class="avatar sm"></div>
-                  <div>
-                    <div class="comment-head">
-                      <span class="comment-author">${reply.memberName}</span>
-                      <%-- 업소 사장님이 자신의 사업장 리뷰에 남긴 대댓글이면 뱃지 표시 --%>
-                      <c:if test="${reply.ownerComment}">
-                        <span class="badge-owner">사장님</span>
-                      </c:if>
-                      <span class="comment-date">
-                        <fmt:formatDate value="${reply.createdAt}" pattern="yyyy-MM-dd HH:mm" />
-                      </span>
-                    </div>
-                    <p class="comment-text">${reply.content}</p>
-
-                    <!-- 삭제: 본인 답글일 때만, 확인창 없이 바로 삭제 -->
-                    <c:if test="${isLoggedIn and loginMember.memberId == reply.memberId}">
-                      <div class="comment-actions">
-                        <form action="${cp}/community/comment/delete" method="post" class="comment-delete-form">
-                          <input type="hidden" name="commentId" value="${reply.commentId}">
-                          <input type="hidden" name="postId" value="${post.postId}">
-                          <button type="submit" class="comment-delete-btn">삭제</button>
-                        </form>
+                <c:choose>
+                  <c:when test="${not empty reply.deletedAt}">
+                    <div class="comment reply">
+                      <div>
+                        <p class="comment-text deleted">삭제된 댓글입니다</p>
                       </div>
-                    </c:if>
-                  </div>
-                </div>
+                    </div>
+                  </c:when>
+                  <c:otherwise>
+                    <div class="comment reply">
+                      <c:choose>
+                        <c:when test="${not empty reply.avatarUrl}">
+                          <img class="avatar sm" src="${reply.avatarUrl}" alt="${reply.memberName}">
+                        </c:when>
+                        <c:otherwise>
+                          <img class="avatar sm" src="${cp}/images/icons/default-avatar.png" alt="${reply.memberName}">
+                        </c:otherwise>
+                      </c:choose>
+                      <div>
+                        <div class="comment-head">
+                          <span class="comment-author">${reply.memberName}</span>
+                          <%-- 업소 사장님이 자신의 사업장 리뷰에 남긴 대댓글이면 뱃지 표시 --%>
+                          <c:if test="${reply.ownerComment}">
+                            <span class="badge-owner">사장님</span>
+                          </c:if>
+                          <span class="comment-date">
+                            <fmt:formatDate value="${reply.createdAt}" pattern="yyyy-MM-dd HH:mm" />
+                          </span>
+                        </div>
+                        <p class="comment-text">${reply.content}</p>
+
+                        <!-- 삭제: 본인 답글일 때만, commentDeleteModal 로 확인 후 삭제 -->
+                        <c:if test="${isLoggedIn and loginMember.memberId == reply.memberId}">
+                          <div class="comment-actions">
+                            <button type="button" class="comment-delete-btn"
+                                    onclick="openModal('commentDeleteModal', ${reply.commentId})">삭제</button>
+                          </div>
+                        </c:if>
+                      </div>
+                    </div>
+                  </c:otherwise>
+                </c:choose>
               </c:if>
             </c:forEach>
 
@@ -245,7 +282,7 @@
 
           <jsp:include page="../common/smallButton.jsp">
             <jsp:param name="text" value="로그인하기" />
-            <jsp:param name="onclick" value="location.href='${cp}/member/login'" />
+            <jsp:param name="onclick" value="location.href='${cp}/auth/login'" />
           </jsp:include>
         </div>
       </c:otherwise>
@@ -254,6 +291,7 @@
   </div>
 </div>
 
+<jsp:include page="/WEB-INF/views/common/footer.jsp" />
 
 <!-- ───────── 삭제 확인 모달 (조각 파일) ───────── -->
 <c:if test="${isOwner}">
@@ -263,6 +301,21 @@
     <jsp:param name="title"       value="게시글 삭제" />
     <jsp:param name="message"     value="삭제 후 복구할 수 없습니다. 정말 삭제하시겠습니까?" />
     <jsp:param name="confirmText" value="삭제" />
+    <jsp:param name="hiddenName"  value="postId" />
+    <jsp:param name="hiddenValue" value="${post.postId}" />
+  </jsp:include>
+</c:if>
+
+<!-- ───────── 댓글 삭제 확인 모달 (댓글마다 다른 commentId를 openModal 로 동적 주입해서 재사용) ───────── -->
+<c:if test="${isLoggedIn}">
+  <jsp:include page="../common/confirmModal.jsp">
+    <jsp:param name="modalId"     value="commentDeleteModal" />
+    <jsp:param name="action"      value="/community/comment/delete" />
+    <jsp:param name="title"       value="댓글 삭제" />
+    <jsp:param name="message"     value="삭제 후 복구할 수 없습니다. 정말 삭제하시겠습니까?" />
+    <jsp:param name="confirmText" value="삭제" />
+    <jsp:param name="hiddenName"  value="commentId" />
+    <jsp:param name="hiddenValue" value="" />
     <jsp:param name="hiddenName"  value="postId" />
     <jsp:param name="hiddenValue" value="${post.postId}" />
   </jsp:include>
@@ -287,7 +340,8 @@
 </c:if>
 
 
-<script src="${cp}/js/common.js"></script>
+<script>window.CP = "${cp}";</script>
+<script src="${cp}/js/community/postContentRenderer.js"></script>
 <script src="${cp}/js/community/postDetail.js"></script>
 <script src="${cp}/js/community/commentDeniedModal.js"></script>
 </body>

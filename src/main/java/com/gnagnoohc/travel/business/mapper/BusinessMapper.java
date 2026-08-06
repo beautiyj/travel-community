@@ -6,7 +6,6 @@ import com.gnagnoohc.travel.business.dto.BusinessPlaceDetailDto;
 import com.gnagnoohc.travel.business.dto.BusinessPlaceOverviewDto;
 import com.gnagnoohc.travel.business.dto.BusinessPlaceRegisterDto;
 import com.gnagnoohc.travel.business.dto.BusinessPlaceUpdateDto;
-//import com.gnagnoohc.travel.business.dto.BusinessRegionOptionDto;
 import com.gnagnoohc.travel.business.dto.BusinessReservationDto;
 import com.gnagnoohc.travel.business.dto.BusinessReservationStatusCountsDto;
 import com.gnagnoohc.travel.business.dto.BusinessReviewDto;
@@ -49,7 +48,7 @@ public interface BusinessMapper {
     int updatePlaceClosed(
             @Param("placeId") Long placeId,
             @Param("bizMemberId") Long bizMemberId,
-            @Param("isClosed") boolean isClosed
+            @Param("isClosed") Integer isClosed
     );
 
     // ── 날짜별 예약 마감 (PLACE_CLOSED_DATE) ──
@@ -71,9 +70,13 @@ public interface BusinessMapper {
             @Param("endDate") LocalDate endDate
     );
 
-//    List<BusinessRegionOptionDto> selectRegionOptions();
+    // 도로명/지번주소 접두어로 최상위 지역(parent_region_id IS NULL)을 매칭한다. 못 찾으면 null
+    Long selectRegionIdByAddressPrefix(@Param("address") String address);
 
     String selectMemberRole(@Param("memberId") Long memberId);
+
+    // place_id는 AUTO_INCREMENT가 아니라 서비스가 난수로 채번하므로, 채번 전 충돌 여부 확인용
+    boolean existsPlace(@Param("placeId") Long placeId);
 
     int insertOwnerPlace(BusinessPlaceRegisterDto place);
 

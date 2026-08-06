@@ -10,6 +10,7 @@ import com.gnagnoohc.travel.reservation.service.KakaoPayService;
 import com.gnagnoohc.travel.reservation.service.PaymentService;
 import com.gnagnoohc.travel.reservation.service.ReservationService;
 import com.gnagnoohc.travel.reservation.service.TossPayService;
+import com.gnagnoohc.travel.reservation.service.VirtualPaymentService;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -35,7 +36,8 @@ public class PaymentController {
     private final PaymentService paymentService;
     private final KakaoPayService kakaoPayService;
     private final TossPayService tossPayService;
-    
+    private final VirtualPaymentService virtualPaymentService;
+
     @Value("${toss.client-key}")
     private String tossClientKey;
     
@@ -44,6 +46,7 @@ public class PaymentController {
     public String checkout(@PathVariable("reservationId") Long reservationId, Model model) {
         Reservation r = reservationService.getById(reservationId);
         model.addAttribute("reservation", r);
+        model.addAttribute("placeName", reservationService.getPlaceName(r.getPlaceId()));
         model.addAttribute("amount", reservationService.calculateAmount(r));
         model.addAttribute("tossClientKey", tossClientKey);
         return "reservation/checkout";
@@ -71,6 +74,10 @@ public class PaymentController {
         session.setAttribute("KAKAO_AMOUNT", amount);
         session.setAttribute("KAKAO_MEMBER_ID", r.getMemberId());
 
+        // 정합성 보정 배치가 나중에 조회할 수 있도록 orderId·tid를 예약 행에 기록 (세션은 콜백 놓치면 유실)
+        // 카카오 주문조회는 tid가 키라서 ready 응답의 tid를 함께 저장한다
+        reservationService.markPaymentReady(reservationId, orderId, Payment.TYPE_KAKAO, ready.getTid());
+
         return Map.of("redirectUrl", ready.getNextRedirectPcUrl());
     }
 
@@ -81,7 +88,7 @@ public class PaymentController {
         String tid = (String) session.getAttribute("KAKAO_TID");
         String orderId = (String) session.getAttribute("KAKAO_ORDER_ID");
         Integer amount = (Integer) session.getAttribute("KAKAO_AMOUNT");
-        Long memberId = (Long) session.getAttribute("KAKAO_MEMBER_ID");
+        Integer memberId = (Integer) session.getAttribute("KAKAO_MEMBER_ID");
 
         log.info("[카카오 success 콜백] reservationId={}, 세션값 tid={}, orderId={}, amount={}",
                 reservationId, tid, orderId, amount);
@@ -90,9 +97,28 @@ public class PaymentController {
             return bridgeToFail(model, "결제 정보가 만료되었습니다. 다시 시도해 주세요.");
         }
 
-        KakaoApproveResponse approve = kakaoPayService.approve(tid, orderId, memberId, pgToken);
-        Payment payment = paymentService.saveSuccess(
-                reservationId, amount, approve.getTid(), orderId, Payment.TYPE_KAKAO);
+        // 카카오 승인(=이체) 전 마감 재검증 — 여기서 걸리면 카카오에 승인 요청 자체를 보내지 않는다
+        try {
+            reservationService.assertStillAvailable(reservationId);
+        } catch (IllegalStateException e) {
+            return bridgeToFail(model, e.getMessage());
+        }
+
+        KakaoApproveResponse approve;
+        try {
+            approve = kakaoPayService.approve(tid, orderId, memberId, pgToken);
+        } catch (Exception e) {
+            log.error("[카카오 approve 실패] tid={}, orderId={}", tid, orderId, e);
+            return bridgeToFail(model, "카카오페이 결제 승인에 실패했습니다.");
+        }
+
+        Payment payment;
+        try {
+            payment = paymentService.saveSuccess(
+                    reservationId, amount, approve.getTid(), orderId, Payment.TYPE_KAKAO);
+        } catch (IllegalStateException e) {
+            return bridgeToFail(model, e.getMessage());
+        }
 
         session.removeAttribute("KAKAO_TID");
         session.removeAttribute("KAKAO_ORDER_ID");
@@ -123,12 +149,22 @@ public class PaymentController {
     public Map<String, Object> tossReady(@PathVariable("reservationId") Long reservationId,
                                          HttpSession session) {
         Reservation r = reservationService.getById(reservationId);
+
+        // 이중결제 방지: kakaoReady()와 동일하게 PENDING 예약만 결제창을 열 수 있다
+        if (r.getStatus() != ReservationStatus.PENDING) {
+            throw new IllegalStateException("결제 대기 중인 예약만 결제할 수 있습니다. 현재 상태: " + r.getStatus().getLabel());
+        }
+
         int amount = reservationService.calculateAmount(r);
         String orderId = paymentService.generateOrderId(reservationId);
 
         session.setAttribute("TOSS_ORDER_ID", orderId);
         session.setAttribute("TOSS_AMOUNT", amount);
         session.setAttribute("TOSS_RESERVATION_ID", reservationId);
+
+        // 정합성 보정 배치가 나중에 조회할 수 있도록 orderId를 예약 행에 기록 (세션은 콜백 놓치면 유실)
+        // 토스 주문조회는 orderId가 키라 카카오와 달리 tid 저장이 필요 없다
+        reservationService.markPaymentReady(reservationId, orderId, Payment.TYPE_TOSS, null);
 
         return Map.of("orderId", orderId, "amount", amount);
     }
@@ -151,9 +187,28 @@ public class PaymentController {
             return bridgeToFail(model, "결제 정보가 일치하지 않습니다. 다시 시도해 주세요.");
         }
 
-        TossConfirmResponse confirm = tossPayService.confirm(paymentKey, orderId, amount);
-        Payment payment = paymentService.saveSuccess(
-                reservationId, amount, paymentKey, orderId, Payment.TYPE_TOSS);
+        // 토스 승인(confirm) 전 마감 재검증 — 여기서 걸리면 토스에 승인 요청 자체를 보내지 않는다
+        try {
+            reservationService.assertStillAvailable(reservationId);
+        } catch (IllegalStateException e) {
+            return bridgeToFail(model, e.getMessage());
+        }
+
+        TossConfirmResponse confirm;
+        try {
+            confirm = tossPayService.confirm(paymentKey, orderId, amount);
+        } catch (Exception e) {
+            log.error("[토스 confirm 실패] paymentKey={}, orderId={}", paymentKey, orderId, e);
+            return bridgeToFail(model, "토스페이먼츠 결제 승인에 실패했습니다.");
+        }
+
+        Payment payment;
+        try {
+            payment = paymentService.saveSuccess(
+                    reservationId, amount, paymentKey, orderId, Payment.TYPE_TOSS);
+        } catch (IllegalStateException e) {
+            return bridgeToFail(model, e.getMessage());
+        }
 
         session.removeAttribute("TOSS_ORDER_ID");
         session.removeAttribute("TOSS_AMOUNT");
@@ -167,6 +222,50 @@ public class PaymentController {
     public String tossFail(@RequestParam(value = "message", required = false) String message,
                            Model model) {
         return bridgeToFail(model, message != null ? message : "토스페이먼츠 결제에 실패했습니다.");
+    }
+
+    /* ------------------- 가상카드 (실제 API 없음, 규칙 판정) ------------------- */
+
+    /** 가상카드 결제: 카드번호가 성공 테스트값이면 즉시 결제완료. 실패 시 400 + 메시지(JSON) */
+    @PostMapping("/vcard/pay/{reservationId}")
+    @ResponseBody
+    public Map<String, String> vcardPay(@PathVariable("reservationId") Long reservationId,
+                                        @RequestParam("cardNumber") String cardNumber) {
+        Payment p = virtualPaymentService.payByVirtualCard(reservationId, cardNumber);
+        return Map.of("target", "/payments/complete/" + p.getPaymentId());
+    }
+
+    /* ------------------- 무통장입금 (실제 API 없음, 셀프 입금확인) ------------------- */
+
+    /** 무통장 결제 준비: orderId 발급·기록 후 가상계좌 안내 페이지로 이동할 URL 반환 */
+    @PostMapping("/bank/ready/{reservationId}")
+    @ResponseBody
+    public Map<String, String> bankReady(@PathVariable("reservationId") Long reservationId) {
+        Reservation r = reservationService.getById(reservationId);
+        if (r.getStatus() != ReservationStatus.PENDING) {
+            throw new IllegalStateException("결제 대기 중인 예약만 결제할 수 있습니다. 현재 상태: " + r.getStatus().getLabel());
+        }
+        String orderId = paymentService.generateOrderId(reservationId);
+        reservationService.markPaymentReady(reservationId, orderId, Payment.TYPE_BANK, null);
+        return Map.of("target", "/payments/bank/guide/" + reservationId);
+    }
+
+    /** 가상계좌 안내 + 입금자명 확인 폼 페이지 */
+    @GetMapping("/bank/guide/{reservationId}")
+    public String bankGuide(@PathVariable("reservationId") Long reservationId, Model model) {
+        Reservation r = reservationService.getById(reservationId);
+        model.addAttribute("reservation", r);
+        model.addAttribute("amount", reservationService.calculateAmount(r));
+        return "reservation/bankGuide";
+    }
+
+    /** 무통장 입금확인(셀프): 입금자명이 예약자명과 일치하면 결제완료 */
+    @PostMapping("/bank/confirm/{reservationId}")
+    @ResponseBody
+    public Map<String, String> bankConfirm(@PathVariable("reservationId") Long reservationId,
+                                           @RequestParam("depositorName") String depositorName) {
+        Payment p = virtualPaymentService.confirmBankTransfer(reservationId, depositorName);
+        return Map.of("target", "/payments/complete/" + p.getPaymentId());
     }
 
     /* ------------------- 결제 취소(환불) ------------------- */
@@ -185,7 +284,14 @@ public class PaymentController {
     public String complete(@PathVariable("paymentId") Long paymentId, Model model) {
         Payment payment = paymentService.getById(paymentId);
         model.addAttribute("payment", payment);
-        model.addAttribute("method", payment.getPaymentType() == Payment.TYPE_TOSS ? "토스페이먼츠" : "카카오페이");
+        model.addAttribute("method", switch (payment.getPaymentType()) {
+            case Payment.TYPE_TOSS -> "토스페이먼츠";
+            case Payment.TYPE_KAKAO -> "카카오페이";
+            case Payment.TYPE_BANK -> "무통장입금";
+            case Payment.TYPE_VIRTUAL_CARD -> "가상카드";
+            case Payment.TYPE_FREE -> "무료 예약";
+            default -> "결제";
+        });
         return "reservation/success";
     }
 

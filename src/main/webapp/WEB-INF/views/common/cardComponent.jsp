@@ -8,7 +8,7 @@
 <%-- 평점 및 리뷰 수 기본값 처리 (평점은 삭제 가능) --%>
 <c:set var="cardRating" value="${empty param.rating ? '0.0' : param.rating}" />
 <c:set var="cardReviewCount" value="${empty param.reviewCount ? '0' : param.reviewCount}" />
-<c:set var="cardPrice" value="${empty param.price ? '정보 없음' : param.price}" />
+<c:set var="cardPrice" value="${empty param.price ? '가격 변동' : param.price}" />
 
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/tagButton.css">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/wishButton.css">
@@ -66,7 +66,7 @@
                         <c:set var="tagArray" value="${fn:split(param.hashTags, ',')}" />
                         <c:forEach var="tag" items="${tagArray}">
                             <div class="card-badge-sky">
-                                <span class="card-txt-accent">#${fn:trim(tag)}</span>
+                                <span class="card-txt-accent">${fn:trim(tag)}</span>
                             </div>
                         </c:forEach>
                     </c:when>

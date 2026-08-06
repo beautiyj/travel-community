@@ -1,4 +1,5 @@
-/* 관리자(업소 대시보드) 전용 스타일. 사이트 공용 CSS가 아직 없어서 business 범위에 한해 별도 파일로 관리합니다. */
+/* 관리자(업소 대시보드) 전용 스타일. 레이아웃 등 대시보드 고유 스타일만 다루며,
+   전역 폰트·색상 등 공통 토큰은 common.css(팀 컨벤션)를 그대로 따릅니다. */
 
 :root {
     --business-primary: #0284c7;
@@ -18,7 +19,7 @@ body {
     margin: 0;
     background: var(--business-bg);
     color: var(--business-text);
-    font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    /* 전역 폰트는 common.css의 body 규칙(Noto Sans KR / Plus Jakarta Sans)을 그대로 상속 */
 }
 
 .business-layout {
@@ -44,23 +45,12 @@ body {
     height: 64px;
     display: flex;
     align-items: center;
-    gap: 8px;
     padding: 0 20px;
     border-bottom: 1px solid var(--business-border);
-    font-weight: 800;
-    color: var(--business-primary);
 }
-
-.business-sidebar__logo-badge {
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
-    background: var(--business-primary);
-    color: #fff;
+.business-sidebar__logo>a{
     display: flex;
     align-items: center;
-    justify-content: center;
-    font-size: 12px;
 }
 
 .business-sidebar__biz {
@@ -172,6 +162,19 @@ body {
     color: var(--business-danger);
 }
 
+.business-sidebar__logout-form {
+    width: 100%;
+}
+
+.business-sidebar__logout-form .business-nav-item--danger {
+    width: 100%;
+    background: transparent;
+    border: 0;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
 .business-badge {
     margin-left: auto;
     background: var(--business-danger);
@@ -209,6 +212,9 @@ body {
     align-items: center;
     justify-content: space-between;
     padding: 0 32px;
+    position: sticky;
+    top: 0;
+    z-index: 5;
 }
 
 .business-topbar__title {
@@ -322,6 +328,98 @@ body {
     color: var(--business-muted);
     font-size: 14px;
     padding: 24px 0;
+}
+
+/* ── 예약 관리 액션 실패 안내 (예: 이미 처리된 예약을 다시 승인/거절 시도) ── */
+.business-alert {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 16px;
+}
+
+.business-alert--error {
+    background: #fee2e2;
+    color: var(--business-danger);
+    border: 1px solid #fecaca;
+}
+
+/* ── 예약 거절 사유 입력 (rejectReasonModal.jsp) ──
+   고객 취소요청 모달(reservation/success.jsp의 cancelModal)과 동일한 select+기타직접입력 UX */
+.business-modal-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.business-modal-select {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid var(--business-border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+.business-modal-select:focus {
+    outline: none;
+    border-color: var(--business-primary);
+}
+
+.business-modal-textarea {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid var(--business-border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: 14px;
+    resize: vertical;
+    min-height: 70px;
+    margin-top: -12px;
+    margin-bottom: 20px;
+}
+
+.business-modal-textarea:focus {
+    outline: none;
+    border-color: var(--business-primary);
+}
+
+/* ── 취소 요청 확인/처리 (cancelRequestModal.jsp) ── */
+.business-modal-cancel-reason {
+    background: var(--muted);
+    color: var(--foreground);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    white-space: pre-wrap;
+}
+
+.business-cancel-actions {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.business-cancel-request-modal {
+    position: relative;
+}
+
+.business-modal-close-x {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 22px;
+    line-height: 1;
+    color: var(--muted-foreground);
+    padding: 4px;
 }
 
 /* ── Closure (즉시 예약 마감 토글) ── */
@@ -665,6 +763,8 @@ body {
     border: none;
     border-radius: 8px;
     font-weight: 700;
+    font-size: 14px;
+    padding: 10px 16px;
     cursor: pointer;
 }
 .business-btn--sm {
@@ -688,12 +788,19 @@ body {
 }
 .business-btn--outline {
     background: #fff;
-    color: var(--business-muted);
-    border: 1px solid var(--business-border);
+    color: var(--business-primary-dark);
+    border: 1px solid var(--business-primary);
 }
 .business-btn--outline:hover {
-    background: var(--business-bg);
-    color: var(--business-text);
+    background: #f0f9ff;
+    color: var(--business-primary-dark);
+}
+
+/* 주소 검색 버튼 전용 사이즈. .business-btn--outline을 같이 쓰는 다른 버튼(마감 관리의 편집 취소 등)에는
+   영향 주지 않도록 .js-address-search에만 스코프해서 패딩/radius를 좁힌다 */
+.js-address-search {
+    border-radius: 6px;
+    padding: 7px 10px;
 }
 
 /* ── Filter row ── */
@@ -745,7 +852,7 @@ body {
 
 .business-reservation-table__row {
     display: grid;
-    grid-template-columns: 1.3fr 1.3fr 1fr 0.6fr 1fr 1.8fr;
+    grid-template-columns: 1.3fr 1.3fr 1fr 0.6fr 1fr 0.8fr 1.4fr;
     align-items: center;
     gap: 12px;
     padding: 14px 16px;
@@ -805,6 +912,21 @@ body {
     gap: 6px;
 }
 
+.business-form-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.business-form-row .business-form-input {
+    flex: 1;
+    min-width: 0;
+}
+
+.business-form-row .business-btn {
+    flex-shrink: 0;
+}
+
 .business-form-group--row {
     flex-direction: row;
     gap: 16px;
@@ -836,6 +958,55 @@ body {
 
 .business-form-textarea {
     resize: vertical;
+}
+
+/* 해시태그 칩 입력 (등록/수정 폼) */
+.venue-tag-input {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    padding: 8px 10px;
+    border: 1px solid var(--business-border);
+    border-radius: 8px;
+}
+
+.venue-tag-input:focus-within {
+    border-color: var(--business-primary);
+}
+
+.venue-tag-input__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 6px 4px 10px;
+    border-radius: 999px;
+    background: #f0f9ff;
+    color: var(--business-primary);
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.venue-tag-input__chip-remove {
+    border: none;
+    background: none;
+    padding: 0 2px;
+    color: inherit;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.venue-tag-input__field {
+    flex: 1;
+    min-width: 140px;
+    border: none;
+    outline: none;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--business-text);
 }
 
 /* 가격 설정 (숙박 업소 등록/수정 폼) */
@@ -884,8 +1055,181 @@ body {
 }
 
 .business-price-input.is-hidden,
-.business-form-group.is-hidden {
+.business-form-group.is-hidden,
+.venue-extra-group.is-hidden,
+.venue-extra-row.is-hidden,
+.venue-extra-empty.is-hidden {
     display: none;
+}
+
+/* ── 부가정보 입력 (업종별 항목 + 반려동물 공통 항목) ──
+   위쪽 picker에서 칩으로 항목을 고르면 아래 rows에 해당 입력칸이 나타난다 */
+.venue-extra-group {
+    margin-top: 12px;
+    padding: 16px;
+    border: 1px solid var(--business-border);
+    border-radius: 10px;
+    background: #fafbfc;
+}
+
+.venue-extra-picker__section + .venue-extra-picker__section {
+    margin-top: 12px;
+}
+
+/* 관광지 세부유형(관광지/문화시설/레포츠) 소제목 */
+.venue-extra-picker__title {
+    margin: 0 0 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--business-muted);
+}
+
+.venue-extra-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.venue-extra-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border: 1px solid var(--business-border);
+    border-radius: 999px;
+    background: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--business-muted);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+/* 체크 상태는 칩 모양으로만 보여주고 실제 체크박스는 숨긴다 */
+.venue-extra-chip input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.venue-extra-chip span::before {
+    content: "+ ";
+    font-weight: 700;
+}
+
+.venue-extra-chip:hover {
+    border-color: var(--business-primary);
+    color: var(--business-primary);
+}
+
+/* 선택 상태는 business-venue.js가 붙이는 is-picked로 표시한다
+   (:has() 대신 클래스를 쓰는 이유는 칩 표시가 브라우저의 :has() 지원 여부에 좌우되지 않게 하기 위함) */
+.venue-extra-chip.is-picked {
+    border-color: var(--business-primary);
+    background: #f0f9ff;
+    color: var(--business-primary);
+}
+
+.venue-extra-chip.is-picked span::before {
+    content: "✓ ";
+}
+
+/* 키보드 포커스가 칩에 왔을 때도 보이게 (체크박스 자체는 숨겨져 있다) */
+.venue-extra-chip:focus-within {
+    outline: 2px solid var(--business-primary);
+    outline-offset: 2px;
+}
+
+.venue-extra-empty {
+    margin: 12px 0 0;
+    font-size: 12px;
+    color: var(--business-muted);
+}
+
+/* 고르지 않은 행은 display:none이라 아무것도 안 골랐을 때는 높이가 0이 된다 */
+.venue-extra-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.venue-extra-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.venue-extra-row__label {
+    width: 112px;
+    flex-shrink: 0;
+    padding-top: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--business-muted);
+}
+
+.venue-extra-row__field {
+    flex: 1;
+    min-width: 0;
+}
+
+.venue-extra-row__desc {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--business-muted);
+}
+
+.venue-extra-row__remove {
+    flex-shrink: 0;
+    margin-top: 6px;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--business-muted);
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.venue-extra-row__remove:hover {
+    background: #f1f5f9;
+    color: var(--business-text);
+}
+
+/* 반려동물 동반 정보 섹션을 여는 체크박스 */
+.venue-extra-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* ── 부가정보 읽기 뷰 목록 ── */
+.venue-detail-row__value--list {
+    white-space: normal;
+}
+
+.venue-extra-list {
+    margin: 0;
+    padding-left: 18px;
+}
+
+.venue-extra-list li {
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+
+.venue-extra-list__label {
+    margin-right: 6px;
+    font-weight: 700;
+    color: var(--business-muted);
 }
 
 .business-form-actions {
@@ -978,6 +1322,17 @@ body {
     font-size: 14px;
     font-weight: 600;
     white-space: pre-line;
+}
+
+.venue-hashtag {
+    display: inline-block;
+    margin: 0 6px 6px 0;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #f0f9ff;
+    color: var(--business-primary);
+    font-size: 13px;
+    font-weight: 600;
 }
 
 /* ── Photo edit grid (기존 사진 + 새 사진 카드를 함께 드래그로 순서 변경) ── */

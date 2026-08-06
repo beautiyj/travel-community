@@ -1,6 +1,19 @@
 /* ============= 1. 외부 리소스 및 폰트 정의 =================*/
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@font-face {
+  font-family: 'Gunhamimalmunteuyeot';
+  src: url('https://cdn.jsdelivr.net/gh/Project-Noonnu/2607131613@gfcgunhamitalks/gfcgunhamitalks/GFCGunhamiTalks.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
 
+.brand .name {
+  font-family: 'Gunhamimalmunteuyeot', 'Noto Sans KR', sans-serif;
+  color: var(--primary);
+  font-size: var(--text-xl);
+  font-weight: var(--font-weight-bold);
+  letter-spacing:3px;
+}
 /* ============= 2. 디자인 토큰 (Design Tokens) - 전역 변수 중앙 제어 ======================*/
 
 /* ── 디자인 토큰 (색·모서리) ── */
@@ -86,6 +99,17 @@ body {
   color: var(--foreground);
   font-family: 'Noto Sans KR', 'Plus Jakarta Sans', -apple-system, sans-serif;
   line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* body가 flex container가 되면서 직계 자식(페이지별 콘텐츠 래퍼)이 flex item이 됨.
+   flex item은 기본 min-width:auto라 자식 콘텐츠(이미지 등)의 원본 크기가
+   레이아웃에 그대로 반영돼 페이지 폭이 흔들릴 수 있어 전부 min-width:0으로 해제 */
+body > * {
+  min-width: 0;
+  width: 100%;
 }
 
 /* 글로벌 타이포그래피 */
@@ -132,6 +156,10 @@ a {
   top: 0;
   z-index: 10;
 } /* ── 상단 헤더 / 내비게이션 ── */
+
+.site-footer {
+  margin-top: auto;
+} /* ── 하단 고정 푸터: body가 flex column이므로 남는 공간을 흡수해 화면 하단에 붙음 ── */
 
 .header-inner {
   margin: 0 auto;
@@ -210,25 +238,58 @@ a {
   font-size: var(--text-sm);
   font-weight: var(--font-weight-bold);
   cursor: pointer;
-} /* 헤더 텍스트 링크 (기본: 흐린 글자). 페이지별로 색 override 가능 */
+}
 
 /* 회원가입버튼 컴포넌트 수정*/
 .header .btn-main {
-  padding: 8px 16px;
+  padding: 8px 14px;
   border-radius: 8px;
   box-shadow: none;
+  margin-left:5px;
 }
 
-/*헤더부분*/
-.header .drop-select-trigger {
-  padding: 6px 12px;
+
+/* 위시버튼 클릭 안내 토스트 팝업 (Toast Notification) */
+.wish-toast {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  z-index: 9999;
+
+  display: flex;
+  align-items: center;
+  gap: 16px;
+
+  padding: 12px 24px;
+  background: var(--foreground, #0f172a);
+  color: var(--white, #ffffff);
+  border-radius: var(--radius-full, 9999px);
+  box-shadow: 0px 10px 25px rgba(0, 0, 0, 0.25);
+
+  font-size: var(--text-sm, 14px);
+  font-weight: var(--font-weight-medium, 500);
+
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
 }
 
-.header .drop-select-text {
-  font-size: 13px;
+.wish-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
 }
 
-.header .drop-menu-item.dropdown-item {
-  padding: 6px 10px !important;
-  font-size: 13px;
+/* "내 찜하기 보러가기 >" 링크 버튼 스타일 */
+.wish-toast-link {
+  color: var(--accent, #bae6fd);
+  font-weight: var(--font-weight-bold, 700);
+  text-decoration: underline;
+  font-size: var(--text-xs, 12px);
+  transition: color 0.15s ease;
+}
+
+.wish-toast-link:hover {
+  color: var(--primary-foreground, #ffffff);
 }

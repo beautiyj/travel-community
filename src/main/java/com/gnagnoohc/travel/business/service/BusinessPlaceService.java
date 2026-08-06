@@ -1,56 +1,54 @@
 package com.gnagnoohc.travel.business.service;
 
 import com.gnagnoohc.travel.business.dto.BusinessPlaceDetailDto;
+import com.gnagnoohc.travel.business.dto.BusinessPlaceFormDto;
 import com.gnagnoohc.travel.business.dto.BusinessPlaceOverviewDto;
 import com.gnagnoohc.travel.business.dto.BusinessPlaceRegisterDto;
 import com.gnagnoohc.travel.business.dto.BusinessPlaceUpdateDto;
-//import com.gnagnoohc.travel.business.dto.BusinessRegionOptionDto;
 import com.gnagnoohc.travel.business.mapper.BusinessMapper;
+import com.gnagnoohc.travel.storage.ImageCleanup;
+import com.gnagnoohc.travel.storage.ImageStorage;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class BusinessPlaceService {
 
-    private static final Set<String> ALLOWED_IMAGE_EXTENSIONS = Set.of("jpg", "jpeg", "png", "gif", "webp");
     // member_role='BUSINESS'만 업소를 등록할 수 있는 사업자 회원.
     private static final String MEMBER_ROLE_BUSINESS = "BUSINESS";
     // 수정 폼에서 아직 저장 안 된 새 사진 카드를 나타내는 photoOrder 토큰
     private static final String NEW_PHOTO_TOKEN = "new";
-    // 가격 설정 대상은 숙박(place_type=1)뿐. 맛집/관광지는 예약금을 받지 않는다.
-    private static final int PLACE_TYPE_LODGING = 1;
-    private static final String PRICE_TYPE_FIXED = "FIXED";
-    private static final String PRICE_TYPE_VARIABLE = "VARIABLE";
-    private static final String PRICE_TYPE_FREE = "FREE";
-    private static final Set<String> ALLOWED_PRICE_TYPES =
-            Set.of(PRICE_TYPE_FIXED, PRICE_TYPE_VARIABLE, PRICE_TYPE_FREE);
+    // 가격 설정 대상은 숙박(place_type='stay')뿐. 맛집/관광지는 예약금을 받지 않는다.
+    private static final String PLACE_TYPE_LODGING = "stay";
+    private static final String PRICE_MODE_FIXED = "FIXED";
+    private static final String PRICE_MODE_FREE = "FREE";
+    private static final Set<String> ALLOWED_PRICE_MODES = Set.of(PRICE_MODE_FIXED, PRICE_MODE_FREE);
+    // place_id 채번용 난수 범위. 공공데이터 contentId(보통 7자리 이하)와 겹치지 않도록 9자리 대역을 쓴다
+    private static final long PLACE_ID_RANGE_START = 900_000_000L;
+    private static final long PLACE_ID_RANGE_BOUND = 1_000_000_000L;
+    private static final int PLACE_ID_MAX_ATTEMPTS = 20;
+    // app.storage.buckets.place 설정을 쓰는 업소 사진 bucket
+    private static final String IMAGE_BUCKET = "place";
 
     private final BusinessMapper businessMapper;
-
-    @Value("${file.upload-dir}")
-    private String uploadDir;
+    private final ImageStorage imageStorage;
+    private final ImageCleanup imageCleanup;
+    private final SecureRandom random = new SecureRandom();
 
     // null이면 미등록. 예외를 던지지 않는 조회용 (venue 화면 분기에만 사용)
     public BusinessPlaceOverviewDto findOverview(Long bizMemberId) {
         return businessMapper.selectPlaceOverviewByMember(bizMemberId);
     }
-
-//    public List<BusinessRegionOptionDto> getRegionOptions() {
-//        return businessMapper.selectRegionOptions();
-//    }
 
     // venue 화면에서 등록 폼을 보여줄지(사업자) 안내 문구만 보여줄지(일반 유저) 분기용
     public boolean isBusinessMember(Long memberId) {
@@ -59,9 +57,8 @@ public class BusinessPlaceService {
     }
 
     @Transactional
-    public void registerPlace(Long bizMemberId, String name, Integer placeType, String priceType,
-                               Integer minPrice, Long regionId,
-                               String address, String description, List<MultipartFile> images) {
+    public void registerPlace(Long bizMemberId, BusinessPlaceFormDto form, List<MultipartFile> images) {
+        requireRequiredFields(form);
         if (!isBusinessMember(bizMemberId)) {
             throw new IllegalStateException("사업자 회원만 업소를 등록할 수 있습니다.");
         }
@@ -69,28 +66,30 @@ public class BusinessPlaceService {
             throw new IllegalStateException("이미 등록된 업소가 있습니다.");
         }
 
-        List<MultipartFile> nonEmpty = images == null ? List.of()
-                : images.stream().filter(f -> !f.isEmpty()).toList();
+        List<MultipartFile> nonEmpty = toNonEmpty(images);
         if (nonEmpty.isEmpty()) {
             throw new IllegalArgumentException("사진을 최소 1장 등록해야 합니다.");
         }
 
-        PriceSetting price = resolvePrice(placeType, priceType, minPrice);
+        Integer minPrice = resolveMinPrice(form);
+        Long regionId = resolveRegionId(form.getAddress());
 
-        List<String> savedUrls = nonEmpty.stream().map(this::saveImageFile).toList();
+        List<String> savedUrls = nonEmpty.stream().map(this::storeImage).toList();
 
         BusinessPlaceRegisterDto place = BusinessPlaceRegisterDto.builder()
-                .placeType(placeType)
-                .priceType(price.priceType())
-                .minPrice(price.minPrice())
-//                .regionId(regionId)
+                .placeId(generateUniquePlaceId())
+                .placeType(form.getPlaceType())
+                .minPrice(minPrice)
+                .regionId(regionId)
                 .memberId(bizMemberId)
-                .name(name)
-                .description(description)
-                .address(address)
+                .name(form.getName())
+                .description(form.getDescription())
+                .extraInfo(resolveExtraInfo(form))
+                .address(form.getAddress())
 //                .mapx(null)
 //                .mapy(null)
                 .firstImage(savedUrls.get(0))
+                .hashtags(normalizeHashtags(form.getHashtags()))
                 .build();
 
         businessMapper.insertOwnerPlace(place);
@@ -98,20 +97,27 @@ public class BusinessPlaceService {
         for (int i = 0; i < savedUrls.size(); i++) {
             businessMapper.insertPlaceImage(place.getPlaceId(), savedUrls.get(i), i);
         }
+
+        imageCleanup.deleteOnRollback(savedUrls);
     }
 
     // venue 읽기뷰/수정폼 공용 상세 조회. venue()에서 findOverview로 이미 존재를 확인한 뒤에만 호출한다.
     public BusinessPlaceDetailDto findDetail(Long bizMemberId) {
         BusinessPlaceDetailDto detail = businessMapper.selectPlaceDetailByMember(bizMemberId);
         detail.setImages(businessMapper.selectPlaceImages(detail.getPlaceId()));
+        // 읽기뷰는 목록으로, 수정 폼은 입력칸 기존값으로 쓰기 위해 "[라벨] 값" 덩어리를 미리 풀어둔다
+        detail.setExtraInfoMap(BusinessExtraInfoCatalog.parse(detail.getExtraInfo()));
+        // "기본주소,상세주소"로 저장된 한 컬럼을 수정 폼의 두 입력칸에 맞게 분리한다
+        String[] addressParts = detail.getAddress() == null ? new String[0] : detail.getAddress().split(",", 2);
+        detail.setAddress(addressParts.length > 0 ? addressParts[0] : "");
+        detail.setAddressDetail(addressParts.length > 1 ? addressParts[1] : "");
         return detail;
     }
 
     @Transactional
-    public void updatePlace(Long bizMemberId, String name, Integer placeType, String priceType,
-                             Integer minPrice, Long regionId,
-                             String address, String description, List<String> photoOrder,
+    public void updatePlace(Long bizMemberId, BusinessPlaceFormDto form, List<String> photoOrder,
                              List<String> removeImageUrls, List<MultipartFile> newImages) {
+        requireRequiredFields(form);
         BusinessPlaceOverviewDto overview = businessMapper.selectPlaceOverviewByMember(bizMemberId);
         if (overview == null) {
             throw new IllegalStateException("등록된 업소가 없습니다.");
@@ -119,15 +125,15 @@ public class BusinessPlaceService {
         Long placeId = overview.getPlaceId();
 
         // 사진을 지우고 다시 넣기 전에 먼저 검증해야 실패 시 기존 사진이 날아가지 않는다
-        PriceSetting price = resolvePrice(placeType, priceType, minPrice);
+        Integer minPrice = resolveMinPrice(form);
+        Long regionId = resolveRegionId(form.getAddress());
+        String extraInfo = resolveExtraInfo(form);
 
         List<String> currentImages = businessMapper.selectPlaceImages(placeId);
         Set<String> currentImageSet = Set.copyOf(currentImages);
         Set<String> toRemove = removeImageUrls == null ? Set.of() : Set.copyOf(removeImageUrls);
 
-        List<MultipartFile> nonEmptyNewImages = newImages == null ? List.of()
-                : newImages.stream().filter(f -> !f.isEmpty()).toList();
-        List<String> newUrls = nonEmptyNewImages.stream().map(this::saveImageFile).toList();
+        List<String> newUrls = toNonEmpty(newImages).stream().map(this::storeImage).toList();
 
         // photoOrder는 기존/신규 카드를 한 그리드에서 드래그로 섞은 최종 순서.
         // 기존 사진은 URL 그대로, 신규 사진은 "new" 토큰으로 오고, 토큰이 나온 순서대로 newUrls를 하나씩 매칭한다.
@@ -170,70 +176,122 @@ public class BusinessPlaceService {
         BusinessPlaceUpdateDto update = BusinessPlaceUpdateDto.builder()
                 .placeId(placeId)
                 .memberId(bizMemberId)
-                .name(name)
-                .placeType(placeType)
-                .priceType(price.priceType())
-                .minPrice(price.minPrice())
-//                .regionId(regionId)
-                .address(address)
-                .description(description)
+                .name(form.getName())
+                .placeType(form.getPlaceType())
+                .minPrice(minPrice)
+                .regionId(regionId)
+                .address(form.getAddress())
+                .description(form.getDescription())
+                .extraInfo(extraInfo)
                 .firstImage(firstImage)
+                .hashtags(normalizeHashtags(form.getHashtags()))
                 .build();
 
         if (businessMapper.updatePlace(update) == 0) {
             throw new IllegalStateException("업소 정보를 수정할 권한이 없습니다.");
         }
+
+        // 화면에서 빠진 사진은 DB 행만 지워선 부족하다. 파일이 그대로 남으면 Cloudinary 무료 한도를 갉아먹는다.
+        List<String> removedUrls = currentImages.stream()
+                .filter(url -> !finalOrder.contains(url))
+                .toList();
+        imageCleanup.deleteOnRollback(newUrls);
+        imageCleanup.deleteOnCommit(removedUrls);
     }
 
-    // 원본 파일명은 신뢰하지 않고 확장자만 화이트리스트로 뽑아 서버측 생성 파일명(UUID)으로 저장
-    private String saveImageFile(MultipartFile file) {
-        String extension = extractExtension(file.getOriginalFilename());
-        String filename = UUID.randomUUID() + "." + extension;
-        try {
-            Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
-            Files.createDirectories(uploadPath);
-            file.transferTo(uploadPath.resolve(filename));
-        } catch (IOException e) {
-            throw new IllegalStateException("이미지 저장에 실패했습니다.", e);
+    // place_id는 AUTO_INCREMENT가 아니라서(공공데이터 contentId와 PK를 공유) 직접 채번한다.
+    // 9자리 대역에서 뽑고, 이미 쓰인 값이면 다시 뽑는다.
+    private Long generateUniquePlaceId() {
+        for (int attempt = 0; attempt < PLACE_ID_MAX_ATTEMPTS; attempt++) {
+            long candidate = PLACE_ID_RANGE_START + (long) (random.nextDouble() * (PLACE_ID_RANGE_BOUND - PLACE_ID_RANGE_START));
+            if (!businessMapper.existsPlace(candidate)) {
+                return candidate;
+            }
         }
-        return "/uploads/place/" + filename;
+        throw new IllegalStateException("업소 ID 생성에 실패했습니다. 잠시 후 다시 시도해주세요.");
+    }
+
+    private String storeImage(MultipartFile file) {
+        return imageStorage.store(file, IMAGE_BUCKET);
+    }
+
+    // 업소명·주소는 폼에서 required지만 직접 요청으로 우회할 수 있어 서버에서도 확인한다
+    // (DB NOT NULL 제약에 걸려 500이 나기 전에 어떤 값이 빠졌는지 알려주기 위함)
+    private void requireRequiredFields(BusinessPlaceFormDto form) {
+        if (form.getName() == null || form.getName().isBlank()) {
+            throw new IllegalArgumentException("업소명을 입력해주세요.");
+        }
+        if (form.getAddress() == null || form.getAddress().isBlank()) {
+            throw new IllegalArgumentException("주소를 입력해주세요.");
+        }
+        if (form.getPlaceType() == null || form.getPlaceType().isBlank()) {
+            throw new IllegalArgumentException("업종을 선택해주세요.");
+        }
+    }
+
+    // region_id는 폼에서 받지 않고 주소로 자동 매핑한다. 카카오 우편번호 API가 시/도명을 축약형으로
+    // 내려주므로(서울특별시 -> 서울 등) 최상위 지역(parent_region_id IS NULL)과 축약형 매핑표로 대응한다.
+    private Long resolveRegionId(String address) {
+        Long regionId = businessMapper.selectRegionIdByAddressPrefix(address);
+        if (regionId == null) {
+            throw new IllegalArgumentException("주소에 해당하는 지역을 찾을 수 없습니다. 주소를 다시 확인해주세요.");
+        }
+        return regionId;
+    }
+
+    // 파일 input은 선택 없이 제출해도 빈 파트가 실려올 수 있어 걸러낸다
+    private List<MultipartFile> toNonEmpty(List<MultipartFile> files) {
+        return files == null ? List.of() : files.stream().filter(f -> !f.isEmpty()).toList();
     }
 
     /**
-     * 폼에서 온 가격 입력을 DB 제약(CK_PLACE_PRICE_TYPE / CK_PLACE_MIN_PRICE)에 맞게 정리한다.
-     * - 숙박이 아니면 무조건 FREE + min_price null (폼에서 가격 영역 자체가 숨겨져 값이 안 온다)
-     * - FIXED면 금액 필수, 그 외에는 금액을 버린다
-     * 화면 JS가 이미 같은 규칙으로 토글하지만, 폼 조작/직접 요청을 막는 서버측 최종 방어선이다.
+     * 폼에서 온 가격 입력을 정리한다.
+     * - 숙박이 아니면 무조건 min_price 0 (폼에서 가격 영역 자체가 숨겨져 값이 안 온다)
+     * - 숙박이고 "무료"를 고르면 금액 input 값과 무관하게 0으로 확정한다
+     * - 숙박이고 "가격입력"을 고르면 금액이 필수다
+     * 화면 JS가 이미 같은 규칙으로 토글하지만, 폼 조작/직접 요청을 막는 서버측 최종 방어선이라
+     * priceMode를 기준으로 판단하고 minPrice 값 자체는 FIXED일 때만 신뢰한다.
      */
-    private PriceSetting resolvePrice(Integer placeType, String priceType, Integer minPrice) {
-        if (placeType == null || placeType != PLACE_TYPE_LODGING) {
-            return new PriceSetting(PRICE_TYPE_FREE, null);
+    private Integer resolveMinPrice(BusinessPlaceFormDto form) {
+        if (!PLACE_TYPE_LODGING.equals(form.getPlaceType())) {
+            return 0;
         }
-        if (priceType == null || !ALLOWED_PRICE_TYPES.contains(priceType)) {
-            throw new IllegalArgumentException("가격 유형을 선택해주세요.");
+        String priceMode = form.getPriceMode();
+        if (priceMode == null || !ALLOWED_PRICE_MODES.contains(priceMode)) {
+            throw new IllegalArgumentException("가격을 선택해주세요.");
         }
-        if (!PRICE_TYPE_FIXED.equals(priceType)) {
-            return new PriceSetting(priceType, null);
+        if (PRICE_MODE_FREE.equals(priceMode)) {
+            return 0;
         }
+        Integer minPrice = form.getMinPrice();
         if (minPrice == null || minPrice < 0) {
-            throw new IllegalArgumentException("가격입력을 선택한 경우 금액을 0원 이상으로 입력해야 합니다.");
+            throw new IllegalArgumentException("가격입력을 선택한 경우 금액을 0원 이상으로 입력해주세요.");
         }
-        return new PriceSetting(PRICE_TYPE_FIXED, minPrice);
+        return minPrice;
     }
 
-    private record PriceSetting(String priceType, Integer minPrice) {}
+    /**
+     * 부가정보 입력칸(라벨/값 병렬 리스트)을 extra_info에 저장할 한 덩어리로 조립한다.
+     * 값이 빈 항목은 빠지고, 하나도 입력하지 않았으면 null(컬럼 비움)이다.
+     *
+     * 라벨은 폼의 hidden input으로 오므로 조작될 수 있다. 공공데이터와 표기가 어긋난 라벨이 저장되면
+     * 같은 유형의 장소가 화면에서 다르게 보이므로, 업종별 허용 라벨 목록으로 서버에서 다시 확인한다.
+     * (가격 처리 resolvePrice와 같은 이유의 서버측 최종 방어선)
+     */
+    private String resolveExtraInfo(BusinessPlaceFormDto form) {
+        return BusinessExtraInfoCatalog.assemble(
+                form.getPlaceType(), form.getExtraLabels(), form.getExtraValues());
+    }
 
-    private String extractExtension(String originalFilename) {
-        if (originalFilename == null) {
-            throw new IllegalArgumentException("파일 이름이 없습니다.");
+    // 폼에서 콤마로 구분해 받은 해시태그를 빈 항목/앞뒤 공백 없이 정리한다.
+    private String normalizeHashtags(String rawHashtags) {
+        if (rawHashtags == null || rawHashtags.isBlank()) {
+            return null;
         }
-        String name = originalFilename.replace("\\", "/");
-        name = name.substring(name.lastIndexOf('/') + 1);
-        int dot = name.lastIndexOf('.');
-        String extension = (dot >= 0 ? name.substring(dot + 1) : "").toLowerCase();
-        if (!ALLOWED_IMAGE_EXTENSIONS.contains(extension)) {
-            throw new IllegalArgumentException("허용되지 않는 파일 형식입니다: " + originalFilename);
-        }
-        return extension;
+        String joined = Arrays.stream(rawHashtags.split(","))
+                .map(String::trim)
+                .filter(tag -> !tag.isEmpty())
+                .collect(Collectors.joining(","));
+        return joined.isEmpty() ? null : joined;
     }
 }

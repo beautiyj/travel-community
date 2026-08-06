@@ -7,8 +7,8 @@
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   padding: 2px;
-  margin-right: 25px;
-  width: 320px;
+  margin: 0; /* 그리드 셀에서 간격은 그리드의 gap으로 처리 */
+  width: 100%; /* 그리드 셀을 채우도록 변경 (고정 px 제거) */
   box-sizing: border-box;
 }
 
@@ -198,3 +198,39 @@
   padding-left: 7px;
   padding-right: 7px;
 }
+
+/* 카드 레이아웃: flex 기반, 중앙 정렬 및 반응형 축소 (4단위 기준) */
+.place-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center; /* 내부 아이템 중앙 정렬 */
+  gap: 24px;
+  width: 100%;
+  max-width: calc(320px * 4 + 24px * 3); /* 4장 최대 너비(갭 포함): 320*4 + 24*3 */
+  margin: 0 auto; /* 뷰포트/컨테이너 내에서 중앙 정렬 */
+  box-sizing: border-box;
+  padding: 0 16px; /* 작은 좌우 여백으로 모바일에서 여유 */
+}
+
+/* 카드 크기: 기본적으로 4열 기준으로 계산, 최대 너비는 디자인 기준 유지(320px) */
+.card-col {
+  /* 기타 속성은 위에서 이미 정의됨; 너비만 재정의 */
+  width: calc((100% - 72px) / 4); /* (전체 - 총 gap) / 4 */
+  max-width: 320px; /* 기존 디자인 사이즈 유지 */
+}
+
+/* 반응형: 뷰포트에 따라 열 수 조정 (계산식으로 카드 비율 축소) */
+@media (max-width: 1200px) {
+  .card-col { width: calc((100% - 48px) / 3); } /* 3열 */
+}
+
+@media (max-width: 900px) {
+  .card-col { width: calc((100% - 24px) / 2); } /* 2열 */
+}
+
+@media (max-width: 600px) {
+  .card-col { width: 100%; } /* 1열 */
+}
+
+/* 카드 링크가 셀 전체를 채우도록 보장 */
+.place-card-link { display: block; width: 100%; text-decoration: none; color: inherit; }

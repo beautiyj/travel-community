@@ -14,45 +14,6 @@ java {
 	}
 }
 
-// tour & batch 전용 실행 빌드 (yun)
-// todo: 개발완료되면 해당 코드 전체 삭제
-// sourceSets {
-// 	main {
-// 		java {
-// 			exclude 'com/gnagnoohc/travel/auth/**'
-// 			exclude 'com/gnagnoohc/travel/mypage/**'
-// 			exclude 'com/gnagnoohc/travel/config/SecurityConfig.java'
-// 		}
-// 		resources {
-// 			// tour와 batch 관련 매퍼나 리소스를 제외한 나머지를 막거나 조정
-// 			exclude 'mapper/auth/**'
-// 			exclude 'mapper/mypage/**'
-// 		}
-// 	}
-// }
-
-// tour 도메인과 관광공사 API 배치를 빌드에서 제외 (개발 진행중이라 컴파일이 통과하지 않음)
-// batch/payment(결제 정합성 보정)는 reservation의 ReservationExpireScheduler가 참조하므로 반드시 포함한다.
-// tour 배치 하위 패키지가 서로를 참조해서 일부만 빼면 "package does not exist"가 나므로 payment를 뺀 batch 전체를 제외한다.
-// TODO: 개발완료되면 해당 코드 전체 삭제
-//sourceSets {
-//	main {
-//		java {
-//			exclude 'com/gnagnoohc/travel/tour/**'
-//			exclude 'com/gnagnoohc/travel/batch/client/**'
-//			exclude 'com/gnagnoohc/travel/batch/controller/**'
-//			exclude 'com/gnagnoohc/travel/batch/converter/**'
-//			exclude 'com/gnagnoohc/travel/batch/dto/**'
-//			exclude 'com/gnagnoohc/travel/batch/helper/**'
-//			exclude 'com/gnagnoohc/travel/batch/scheduler/**'
-//			exclude 'com/gnagnoohc/travel/batch/service/**'
-//		}
-//		resources {
-//			exclude 'mapper/tour/**'
-//		}
-//	}
-//}
-
 repositories {
 	mavenCentral()
 	maven { url 'https://jitpack.io' } // Komoran (형태소분석기, 후기 감성분석용)
@@ -96,6 +57,9 @@ dependencies {
 	
 	// Email
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+	// Resilience4j - batch scheduler 전용 속도 제어 + 지터
+	implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.2.0'
 
 	// 업소 사진 외부 저장소
 	implementation 'com.cloudinary:cloudinary-http5:2.3.0'

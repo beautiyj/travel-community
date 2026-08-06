@@ -9,6 +9,7 @@
   padding: 2px;
   margin: 0; /* 그리드 셀에서 간격은 그리드의 gap으로 처리 */
   width: 100%; /* 그리드 셀을 채우도록 변경 (고정 px 제거) */
+  min-height: 400px; /* 높이값 고정 */
   box-sizing: border-box;
 }
 
@@ -114,6 +115,13 @@
   color: var(--foreground);
   font-size: var(--text-lg);
   font-weight: var(--font-weight-bold);
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* 제목은 항상 최대 2줄까지만, 넘치면 말줄임 */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: calc(1.3em * 2); /* 1줄 제목이어도 2줄 분량 공간을 항상 확보 */
+  word-break: break-word;
 }
 
 .card-txt-muted {

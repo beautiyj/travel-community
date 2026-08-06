@@ -1,0 +1,115 @@
+/* views/event/busan-haeundae.jsp 전용 스타일 */
+
+.event-hero {
+  position: relative;
+  height: 360px;
+  display: flex;
+  align-items: flex-end;
+  background-size: cover;
+  background-position: center;
+}
+
+.event-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(15, 23, 42, 0.75), rgba(15, 23, 42, 0.15));
+}
+
+.event-hero-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 1101px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 32px 40px;
+  color: var(--white);
+}
+
+.event-hero-title {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-weight-bold);
+  line-height: 1.35;
+  margin: 16px 0 8px;
+}
+
+.event-hero-subtitle {
+  font-size: var(--text-base);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.event-container {
+  max-width: 1101px;
+  margin: 0 auto;
+  padding: 40px 32px 64px;
+}
+
+.event-section {
+  margin-bottom: 32px;
+}
+
+.event-section-title {
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--foreground);
+  margin-bottom: 16px;
+}
+
+.event-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.event-info-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+
+.event-info-card-label {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+
+.event-info-card-value {
+  font-size: var(--text-sm);
+  color: var(--foreground);
+  line-height: 1.6;
+}
+
+.event-list {
+  list-style: none;
+  padding: 0;
+}
+
+.event-list li {
+  position: relative;
+  padding-left: 18px;
+  font-size: var(--text-sm);
+  color: var(--foreground);
+  line-height: 1.8;
+}
+
+.event-list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 12px;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--primary);
+}
+
+.event-notice {
+  background: var(--muted);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+  line-height: 1.8;
+}

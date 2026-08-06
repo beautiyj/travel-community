@@ -7,58 +7,65 @@
   cursor: not-allowed;
 }
 
-/* 고정 캔버스 위에 사진을 자유롭게 드래그해서 배치(겹침 허용) */
-.collage-builder-canvas {
-  position: relative;
+/* 고정 2×2 격자(4칸)에 사진을 순서대로 채워 넣는다 */
+.collage-builder-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 4px;
   width: 100%;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 4 / 3;
   margin-top: 12px;
+}
+.collage-builder-slot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: var(--muted);
   border: 1px dashed var(--border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-}
-.collage-builder-item {
-  position: absolute;
-  width: 38%;
-  transform: translate(-50%, -50%);
   border-radius: var(--radius-md);
-  overflow: visible;
+  overflow: hidden;
+  color: var(--muted-foreground);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+.collage-builder-slot.is-filled {
   cursor: grab;
 }
-.collage-builder-item img {
-  display: block;
+.collage-builder-slot.is-dragging {
+  opacity: 0.4;
+}
+.collage-builder-slot.is-drop-target {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+.collage-builder-slot img {
   width: 100%;
-  height: auto;
-  border-radius: var(--radius-md);
-  border: 3px solid var(--card);
-  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.18);
+  height: 100%;
+  object-fit: cover;
   pointer-events: none;
 }
-.collage-builder-item-resize-handle {
+/* 칸 안 삭제 버튼: 모서리 × 버튼(overflow:hidden에 잘려 잘 안 보이는 문제) 대신
+   칸 하단에 항상 보이는 삭제 바를 쓴다(슬라이더의 .img-block-thumb-order pill과 톤 통일) */
+.collage-builder-remove {
   position: absolute;
-  right: -6px;
-  bottom: -6px;
-  width: 18px;
-  height: 18px;
-  border-radius: 3px;
-  background: var(--card);
-  border: 2px solid var(--primary);
-  cursor: nwse-resize;
-  z-index: 2;
-}
-.collage-builder-item-remove {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  width: 20px;
-  height: 20px;
-  border-radius: 9999px;
-  background: var(--destructive);
-  color: var(--destructive-foreground);
+  left: 50%;
+  bottom: 6px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(15, 23, 42, 0.75);
+  color: #fff;
   border: none;
-  cursor: pointer;
+  border-radius: 9999px;
+  padding: 4px 10px;
   font-size: 12px;
   line-height: 1;
+  cursor: pointer;
   z-index: 2;
+}
+.collage-builder-remove:hover {
+  background: rgba(15, 23, 42, 0.9);
 }

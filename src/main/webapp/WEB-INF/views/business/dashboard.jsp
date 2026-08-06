@@ -26,6 +26,7 @@
         <jsp:include page="common/topbar.jsp">
             <jsp:param name="title" value="대시보드" />
             <jsp:param name="date" value="${todayLabel}" />
+            <jsp:param name="dateIcon" value="true" />
         </jsp:include>
 
         <div class="business-content">

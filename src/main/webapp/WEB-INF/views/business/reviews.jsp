@@ -18,6 +18,8 @@
     <div class="business-main">
         <jsp:include page="common/topbar.jsp">
             <jsp:param name="title" value="후기 확인" />
+            <jsp:param name="date" value="${todayLabel}" />
+            <jsp:param name="dateIcon" value="true" />
         </jsp:include>
 
         <div class="business-content">

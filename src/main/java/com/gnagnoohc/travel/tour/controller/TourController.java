@@ -34,11 +34,9 @@ public class TourController {
             placeType = null;
         }
 
-        List<PlaceDTO> placeList = tourService.getPlaceList(placeType, regionId, keyword, page);
-
         List<RegionDTO> parentRegionList = tourService.getParentRegionList();
 
-        model.addAttribute("placeList", placeList);
+        model.addAllAttributes(tourService.getPlacePage(placeType, regionId, keyword, page));
         model.addAttribute("selectedPlaceType", placeType);
         model.addAttribute("selectedRegionId", regionId);
         model.addAttribute("keyword", keyword);

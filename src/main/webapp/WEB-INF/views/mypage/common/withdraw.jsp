@@ -44,7 +44,7 @@
                         <li>탈퇴 후 동일 이메일로 재가입이 제한될 수 있습니다.</li>
                     </ul>
                 </div>
-                <form action="${cp}${basePath}/withdraw" method="post" onsubmit="return confirm('정말 회원 탈퇴하시겠습니까?');">
+                <form action="${cp}${basePath}/withdraw" method="post">
                     <div class="withdraw-password">
                         <label for="currentPassword">비밀번호 확인</label>
                         <input id="currentPassword" type="password" name="currentPassword" placeholder="현재 비밀번호를 입력하세요" required>
@@ -56,5 +56,6 @@
         </section>
     </div>
 </main>
+<script src="${cp}/js/mypage/common/withdraw.js"></script>
 </body>
 </html>

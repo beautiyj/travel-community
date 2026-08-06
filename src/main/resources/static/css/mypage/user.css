@@ -46,7 +46,7 @@
 .mypage-reservation-actions .mypage-outline-danger { min-height: 38px; padding: 0 13px; }
 
 /* ---------- 찜목록 / 마이페이지 허브 ---------- */
-.wishlist-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.wishlist-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
 .wishlist-item { position: relative; overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--card); }
 .wishlist-item__thumbnail { display: grid; height: 192px; place-items: center; background: linear-gradient(135deg, #e0f2fe, #bae6fd); background-size: cover; background-position: center; color: var(--secondary-foreground); font-size: var(--text-sm); font-weight: var(--font-weight-bold); }
 .wishlist-item__body { padding: 14px; }

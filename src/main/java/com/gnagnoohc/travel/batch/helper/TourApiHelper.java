@@ -4,6 +4,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gnagnoohc.travel.batch.client.TourApiClient;
 import com.gnagnoohc.travel.batch.dto.*;
+
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -11,6 +14,8 @@ import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /* TourApiHelper.java - 공공데이터 API 연쇄 호출 및 데이터 원문 파싱/가공 전용 헬퍼
  * - converter 변환 패키지에서 사용하기 위한 헬퍼 메소드 모음
@@ -39,28 +44,78 @@ import java.util.List;
 public class TourApiHelper {
     private final TourApiClient tourApiClient;
     private final ObjectMapper objectMapper;
+    
+    // 배치 프로세스 진행 동안 동일 contentId 중복 요청을 방지하는 메모리 캐시
+    private final Map<String, Object> controlledCache = new ConcurrentHashMap<>();
+
+    // TODO: 리질포제
+    // CompletableFuture / inFlight 맵 제거 가능: 동일한 배치 내 단순 반복 호출 차단은 ConcurrentHashMap 캐시 하나로 충분하며, 재시도는 Resilience4j의 @Retry가 담당
+    // 어노테이션 설정만으로 QPS 제한, 429 감지, 지수 백오프, Jitter가 자동 작동함
+    @RateLimiter(name = "tourApiLimiter")
+    @Retry(name = "tourApiRetry")
+    public TourItemDTO fetchDetailCommonControlled(String contentId) {
+        if (!StringUtils.hasText(contentId)) { return null; }
+        
+        // 1) 캐시 체크
+        String cacheKey = "detailCommon:" + contentId;
+        if (controlledCache.containsKey(cacheKey)) {
+            return (TourItemDTO) controlledCache.get(cacheKey);
+        }
+
+        // 2) 실제 API 호출 및 파싱 (실패 시 Resilience4j가 알아서 재시도 및 속도제어)
+        try {
+            String commonJson = tourApiClient.fetchDetailCommon(contentId);
+            if (!StringUtils.hasText(commonJson)) return null;
+
+            TourApiResponseDTO<TourItemDTO> response = objectMapper.readValue(
+                commonJson, new TypeReference<TourApiResponseDTO<TourItemDTO>>() {}
+            );
+            if (response != null && response.getResponse() != null
+                && response.getResponse().getBody() != null
+                && response.getResponse().getBody().getItems() != null
+                && !response.getResponse().getBody().getItems().getItem().isEmpty()) {
+
+            TourItemDTO result = response.getResponse().getBody().getItems().getItem().get(0);
+            controlledCache.put(cacheKey, result);
+            return result;
+            }
+        } catch (Exception e) {
+            log.error("detailCommon 호출 중 오류 발생 - contentId: {}", contentId, e);
+            return null;
+        }
+        return null;
+    }
 
     public void enrichTourItemDetails(TourItemDTO masterItem) {
         String contentId = masterItem.getContentid();
         try {
-            String commonJson = tourApiClient.fetchDetailCommon(contentId);
-            if (StringUtils.hasText(commonJson)) {
-                TourApiResponseDTO<TourItemDTO> commonResponse = objectMapper.readValue(
-                        commonJson, new TypeReference<TourApiResponseDTO<TourItemDTO>>() {}
-                );
-
-                if (commonResponse != null && commonResponse.getResponse() != null
-                        && commonResponse.getResponse().getBody() != null
-                        && commonResponse.getResponse().getBody().getItems() != null
-                        && !commonResponse.getResponse().getBody().getItems().getItem().isEmpty()) {
-
-                    TourItemDTO commonDetail = commonResponse.getResponse().getBody().getItems().getItem().get(0);
-                    masterItem.setOverview(commonDetail.getOverview());
-                    if (!StringUtils.hasText(masterItem.getTel())) {
-                        masterItem.setTel(commonDetail.getTel());
-                    }
+            // TODO: 리질리언스적용 - 0806 제어 메서드 호출 (내부에서 JSON 파싱 및 캐싱/백오프까지 완료되어 DTO로 리턴됨)
+            TourItemDTO commonDetail = fetchDetailCommonControlled(contentId);
+            if (commonDetail != null) {
+                masterItem.setOverview(commonDetail.getOverview());
+                if (!StringUtils.hasText(masterItem.getTel())) {
+                    masterItem.setTel(commonDetail.getTel());
                 }
             }
+
+            // String commonJson = tourApiClient.fetchDetailCommon(contentId);
+            // if (StringUtils.hasText(commonJson)) {
+            //     TourApiResponseDTO<TourItemDTO> commonResponse = objectMapper.readValue(
+            //             commonJson, new TypeReference<TourApiResponseDTO<TourItemDTO>>() {}
+            //     );
+
+            //     if (commonResponse != null && commonResponse.getResponse() != null
+            //             && commonResponse.getResponse().getBody() != null
+            //             && commonResponse.getResponse().getBody().getItems() != null
+            //             && !commonResponse.getResponse().getBody().getItems().getItem().isEmpty()) {
+
+            //         TourItemDTO commonDetail = commonResponse.getResponse().getBody().getItems().getItem().get(0);
+            //         masterItem.setOverview(commonDetail.getOverview());
+            //         if (!StringUtils.hasText(masterItem.getTel())) {
+            //             masterItem.setTel(commonDetail.getTel());
+            //         }
+            //     }
+            // }
 
             String petJson = tourApiClient.fetchDetailPetTour(contentId);
             if (StringUtils.hasText(petJson)) {
@@ -188,6 +243,8 @@ public class TourApiHelper {
         return null;
     }
 
+    @RateLimiter(name = "tourApiLimiter")
+    @Retry(name = "tourApiRetry")
     // 헬퍼 메서드 - processSinglePlace 사용 용도의 소개정보(/detailIntro2) 조회
     public TourDetailIntroDTO fetchDetailIntro(String contentId, String contentTypeId) {
         try {
@@ -209,6 +266,8 @@ public class TourApiHelper {
         return null;
     }
 
+    @RateLimiter(name = "tourApiLimiter")
+    @Retry(name = "tourApiRetry")
     // 헬퍼 메서드 - processSinglePlace 사용 용도의 반복정보(/detailInfo2) 조회
     public TourDetailInfoDTO fetchDetailInfo(String contentId, String contentTypeId) {
         try {
@@ -230,6 +289,8 @@ public class TourApiHelper {
         return null;
     }
 
+    @RateLimiter(name = "tourApiLimiter")
+    @Retry(name = "tourApiRetry")
     // 헬퍼 메서드 - processSinglePlace 사용 용도의 이미지 정보(/detailImage2) 조회
     public List<TourDetailImageDTO> fetchDetailImages(String contentId) {
         try {

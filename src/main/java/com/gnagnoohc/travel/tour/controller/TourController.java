@@ -44,6 +44,7 @@ public class TourController {
     }
 
     // 실제 데이터베이스 연동된 장소 상세 조회 (placeId: Integer로 수정)
+    // TODO: 찜버튼해결하고 스케줄러조정완료하고로그지우기
     @GetMapping("/tour/detail")
     public String tourDetail(@RequestParam("placeId") Integer placeId, Model model) {
         PlaceDTO place = tourService.getPlaceDetail(placeId);

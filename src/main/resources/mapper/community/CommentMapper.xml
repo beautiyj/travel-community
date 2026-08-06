@@ -4,7 +4,7 @@
 <mapper namespace="com.gnagnoohc.travel.community.mapper.CommentMapper">
 	<!-- 게시글의 댓글 목록
 	     - 작성자 이름: 기본은 member.nickname, 단 댓글 작성자가 그 게시글에 태그된 place의 소유주(사장님)면
-	       "업체명(title)+사장"으로 오버라이드
+	       "업체명(name)+사장"으로 오버라이드
 	     - owner_comment: 사장님 댓글 여부 (화면 뱃지 표시용)
 	     - 정렬: "방문자인증 후기" 카테고리 글에 한해서만 사장님 댓글을 맨 위로 고정.
 	       그 외 카테고리는 place가 우연히 태그되어 있어도 고정하지 않고 comment_id asc 그대로.
@@ -14,15 +14,20 @@
 	        여기서는 원댓글들의 상대 순서만 정확하면 됨)
 	     ※ 카테고리 저장값은 PostCategory.VERIFIED_REVIEW의 value인 "방문자인증후기"(공백 없음) 기준 -->
 	<select id="selectComments" parameterType="int" resultType="comment">
-		select c.comment_id, c.content, c.depth, c.created_at, c.updated_at,
+		select c.comment_id, c.content, c.depth, c.created_at, c.updated_at, c.deleted_at,
 		c.parent_id, c.post_id, c.member_id,
-		case when pl.member_id = c.member_id then concat(pl.title, '사장')
+		case when pl.member_id = c.member_id then concat(pl.name, '사장')
 		     else m.nickname end as member_name,
-		case when pl.member_id = c.member_id then 1 else 0 end as owner_comment
+		case when pl.member_id = c.member_id then 1 else 0 end as owner_comment,
+		m.member_type as memberType,
+		<!-- 탈퇴 회원은 화면에서 기본 아바타로 대체되도록 null 값 부여 -->
+		case when m.member_status = 'WITHDRAWN' then null else m.profile_img_url end as profileImgUrl,
+		biz.first_image as businessImage
 		from comment c
 		join member m on c.member_id = m.member_id
 		join post p on c.post_id = p.post_id
 		left join place pl on p.place_id = pl.place_id
+		left join place biz on biz.member_id = c.member_id
 		where c.post_id = #{postId}
 		order by
 		case when c.parent_id is null
@@ -35,25 +40,20 @@
 	</select>
 	
 	<select id="selectComment" parameterType="int" resultType="comment">
-    	select c.comment_id, c.content, c.depth, c.created_at, c.updated_at,
-    	c.parent_id, c.post_id, c.member_id, m.nickname as member_name 
-    	from comment c join member m on c.member_id = m.member_id 
+    	select c.comment_id, c.content, c.depth, c.created_at, c.updated_at, c.deleted_at,
+    	c.parent_id, c.post_id, c.member_id, m.nickname as member_name
+    	from comment c join member m on c.member_id = m.member_id
     	where c.comment_id = #{commentId}
 	</select>
-	
+
 	<!-- 댓글 등록 -->
-	<insert id="insertComment" parameterType="comment" useGeneratedKeys="true" keyProperty="commentId"> 
-		insert into comment (content, depth, parent_id, post_id, member_id) 
-		values (#{content}, #{depth}, #{parentId}, #{postId}, #{memberId}) 
+	<insert id="insertComment" parameterType="comment" useGeneratedKeys="true" keyProperty="commentId">
+		insert into comment (content, depth, parent_id, post_id, member_id)
+		values (#{content}, #{depth}, #{parentId}, #{postId}, #{memberId})
 	</insert>
-	
-	<!-- 댓글 삭제 -->
-	<delete id="deleteComment" parameterType="int"> 
-		delete from comment where comment_id = #{commentId} 
-	</delete>
-	
-	<!-- 원댓글 삭제 시 딸린 대댓글 일괄 삭제 (원댓글 자체보다 먼저 호출) -->
-	<delete id="deleteReplies" parameterType="int">
-		delete from comment where parent_id = #{parentId}
-	</delete>
+
+	<!-- 댓글 삭제 (소프트 삭제: 대댓글이 딸려 있어도 함께 지우지 않기 위해 물리 삭제 대신 deleted_at만 채움) -->
+	<update id="deleteComment" parameterType="int">
+		update comment set deleted_at = current_timestamp where comment_id = #{commentId}
+	</update>
 </mapper>

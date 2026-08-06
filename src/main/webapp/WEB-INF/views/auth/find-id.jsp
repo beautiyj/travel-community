@@ -4,25 +4,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>아이디 찾기 | Travel Community</title>
+    <title>아이디 찾기 | 갈래말래</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/auth/auth.css">
     <script defer src="${pageContext.request.contextPath}/js/auth/find-id.js"></script>
 </head>
-<body class="auth-page">
-<main class="auth-card auth-card--small">
-    <a class="auth-brand" href="${pageContext.request.contextPath}/">Travel Community</a>
+<body class="auth-page auth-page--account-recovery">
+<main class="auth-card auth-card--small auth-card--account-recovery">
+    <a class="auth-brand" href="${pageContext.request.contextPath}/">갈래말래</a>
 
     <header class="auth-header">
         <h1>아이디 찾기</h1>
         <p>회원가입 시 등록한 이름과 이메일을 입력해주세요.</p>
     </header>
 
-    <%-- 추후 아이디 조회 컨트롤러와 연결할 입력 항목만 구성한다. --%>
+    <%--
+      이름과 이메일을 현재 아이디 조회 컨트롤러에 POST로 전달한다.
+      novalidate는 브라우저 기본 문구 대신 find-id.js의 안내를 쓰기 위한 것이며 서버 검증을 생략한다는 뜻이 아니다.
+      조회 결과가 계정 존재 여부를 노출할 수 있으므로 서버는 응답 정책과 요청 남용 방지를 책임진다.
+    --%>
     <form id="findIdForm" action="${pageContext.request.contextPath}/auth/find-id" method="post" novalidate>
         <div class="form-field">
             <label for="findIdName">이름</label>
             <input id="findIdName" name="name" type="text" autocomplete="name"
                    maxlength="20" placeholder="이름을 입력하세요" required autofocus>
+            <%-- 서버가 다시 렌더링한 오류 메시지를 표시한다. 화면 출력 전 안전한 메시지만 모델에 담는 것을 전제로 한다. --%>
             <p id="findIdNameError" class="field-error" aria-live="polite">${nameError}</p>
         </div>
 

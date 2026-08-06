@@ -85,6 +85,10 @@
   transform: translateY(-1px);
 }
 
+.banner-cta-wrap .btn-small-row:hover .btn-small-text {
+  color: var(--foreground);   /* 배경이 밝아지므로 글자도 어둡게 바꿔 대비 확보 */
+}
+
 .banner-cta-wrap .btn-small-row:focus-visible {
   outline: 2px solid var(--card);
   outline-offset: 3px;
@@ -98,6 +102,12 @@
   top: 50%;
   transform: translateY(-50%);
   z-index: 2;
+}
+
+/* .btn-wish-trigger:hover의 scale(1.05)가 transform을 통째로 덮어써서*/
+.banner-arrow-prev.btn-wish-trigger:hover,
+.banner-arrow-next.btn-wish-trigger:hover {
+  transform: translateY(-50%) scale(1.05);
 }
 
 .banner-arrow-prev { left: 12px; }

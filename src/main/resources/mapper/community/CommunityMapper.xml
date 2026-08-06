@@ -2,34 +2,64 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.gnagnoohc.travel.community.mapper.CommunityMapper">
-	<!-- 목록: 검색어(q)와 카테고리로 동적 필터 -->
-	<select id="selectAll" resultType="community">
-    	select p.post_id, p.member_id, p.place_id, p.title, p.content,
-        p.created_at, p.updated_at, p.readcount, p.category, m.nickname as nickname
-		from post p 
-		join member m on p.member_id = m.member_id
-		left join image i on i.post_id = p.post_id and i.sort_order = 0
+	<!-- 목록: 검색어(q)와 카테고리로 동적 필터 (selectAll/countAll 공용)
+	     searchType: title(제목) / writer(작성자) / content(내용). 미지정(기본 "전체")이면 제목+작성자 OR 검색 유지 -->
+	<sql id="listFilter">
     	<where>
         <if test="category != null and category != '' and category != '전체'">
             and p.category = #{category}
         </if>
         <if test="q != null and q != ''">
-            and (p.title like concat('%', #{q}, '%')
-                 or m.nickname like concat('%', #{q}, '%'))
+            <choose>
+                <when test="searchType == 'title'">
+                    and p.title like concat('%', #{q}, '%')
+                </when>
+                <when test="searchType == 'writer'">
+                    and m.nickname like concat('%', #{q}, '%')
+                </when>
+                <when test="searchType == 'content'">
+                    and p.content like concat('%', #{q}, '%')
+                </when>
+                <otherwise>
+                    and (p.title like concat('%', #{q}, '%')
+                         or m.nickname like concat('%', #{q}, '%'))
+                </otherwise>
+            </choose>
         </if>
     </where>
+	</sql>
+
+	<select id="selectAll" resultType="community">
+    	select p.post_id, p.member_id, p.place_id, p.title, p.content,
+        p.created_at, p.updated_at, p.readcount, p.category, m.nickname as nickname
+		from post p
+		join member m on p.member_id = m.member_id
+    	<include refid="listFilter" />
     	order by p.post_id desc
+    	limit #{limit} offset #{offset}
 	</select>
-	
+
+	<!-- 목록 페이지네이션용 총 개수 (selectAll과 동일한 필터 조건 재사용) -->
+	<select id="countAll" resultType="int">
+		select count(*)
+		from post p
+		join member m on p.member_id = m.member_id
+		<include refid="listFilter" />
+	</select>
+
 	<!-- 단건 조회 (place 테이블 LEFT JOIN: place_id가 NULL인 글도 조회되어야 하므로 LEFT JOIN 사용)
-	     ※ place 상호명 컬럼은 title (기존 pl.name 참조는 스키마와 안 맞아서 수정함) -->
-	<select id="selectOne" parameterType="int" resultType="community"> 
-		select p.post_id, p.member_id, p.place_id, p.title, p.content, p.created_at, p.updated_at, p.readcount, 
-		p.category, m.nickname as nickname, pl.title as placeName
-		from post p 
-		join member m on p.member_id = m.member_id 
+	     ※ place 상호명 컬럼은 name (title -> name 으로 컬럼명 변경됨) -->
+	<select id="selectOne" parameterType="int" resultType="community">
+		select p.post_id, p.member_id, p.place_id, p.title, p.content, p.created_at, p.updated_at, p.readcount,
+		p.category, m.nickname as nickname, m.member_type as memberType,
+		<!-- 탈퇴 회원은 Cloudinary에서 이미 지워진 URL이라, 화면에서 기본 아바타로 대체되도록 null로 내려준다 -->
+		case when m.member_status = 'WITHDRAWN' then null else m.profile_img_url end as profileImgUrl,
+		biz.first_image as businessImage, pl.name as placeName, pl.place_type as placeType
+		from post p
+		join member m on p.member_id = m.member_id
 		left join place pl on p.place_id = pl.place_id
-		where p.post_id = #{postId} 
+		left join place biz on biz.member_id = p.member_id
+		where p.post_id = #{postId}
 	</select>
 	
 	<!-- 조회수 증가 -->
@@ -50,7 +80,30 @@
 	</update>
 	
 	<!-- 삭제 -->
-	<delete id="delete" parameterType="int"> 
-		delete from post where post_id = #{postId} 
+	<delete id="delete" parameterType="int">
+		delete from post where post_id = #{postId}
 	</delete>
+
+	<!-- 일반후기 다중 장소 태그 (post_place_tag). placeIds가 비어있으면 컨트롤러에서 아예 호출하지 않음 -->
+	<insert id="insertPlaceTags">
+		insert into post_place_tag (post_id, place_id)
+		values
+		<foreach collection="placeIds" item="placeId" separator=",">
+			(#{postId}, #{placeId})
+		</foreach>
+	</insert>
+
+	<!-- 수정 시 전체 교체 방식으로 기존 태그를 먼저 지움 -->
+	<delete id="deletePlaceTags" parameterType="int">
+		delete from post_place_tag where post_id = #{postId}
+	</delete>
+
+	<!-- 일반후기 상세/수정 화면에 표시할 태그된 장소 목록 -->
+	<select id="selectPlaceTags" parameterType="int" resultType="com.gnagnoohc.travel.community.dto.PlaceTagDto">
+		select pl.place_id as placeId, pl.name as name, pl.place_type as placeType
+		from post_place_tag ppt
+		join place pl on ppt.place_id = pl.place_id
+		where ppt.post_id = #{postId}
+		order by pl.name asc
+	</select>
 </mapper>

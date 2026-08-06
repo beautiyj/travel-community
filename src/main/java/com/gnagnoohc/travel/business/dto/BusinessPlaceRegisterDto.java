@@ -10,24 +10,21 @@ import java.math.BigDecimal;
 @Builder
 public class BusinessPlaceRegisterDto {
 
-    private Integer placeType;
-    // 가격 유형 FIXED(가격입력)/VARIABLE(가격변동)/FREE(무료). 숙박이 아니면 항상 FREE
-    private String priceType;
-    // FIXED일 때만 값이 있고 나머지는 null (DB CHECK 제약과 동일한 규칙)
+    private String placeType;
+    // 숙박(placeType='stay')일 때만 값이 있고, 비어 있으면 무료. 숙박이 아니면 항상 null
     private Integer minPrice;
-//    private Long regionId;
+    private Long regionId;
     private Long memberId;
     private String name;
     private String description;
+    // "[라벨] 값"을 줄바꿈으로 이어붙인 부가정보 한 덩어리 (공공데이터 배치와 동일 포맷). 입력이 없으면 null
+    private String extraInfo;
     private String address;
 //    private BigDecimal mapx;
 //    private BigDecimal mapy;
     private String firstImage;
+    private String hashtags;
 
-    // INSERT 시 MyBatis useGeneratedKeys로 채워 받는 값. 빌더 대상 아님.
+    // place_id는 AUTO_INCREMENT가 아니라 수동 채번(공공데이터는 contentId, 직접등록은 난수). INSERT 전에 서비스가 채워 넣는다.
     private Long placeId;
-
-    public void setPlaceId(Long placeId) {
-        this.placeId = placeId;
-    }
 }

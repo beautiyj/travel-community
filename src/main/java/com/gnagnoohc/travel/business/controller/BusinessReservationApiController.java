@@ -1,6 +1,6 @@
 package com.gnagnoohc.travel.business.controller;
 
-import com.gnagnoohc.travel.auth.dto.LoginMemberDto;
+import com.gnagnoohc.travel.business.exception.BusinessAuthException;
 import com.gnagnoohc.travel.business.service.BusinessReservationService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -23,17 +23,11 @@ public class BusinessReservationApiController {
     @PatchMapping("/place/closed")
     public ResponseEntity<Void> setPlaceClosed(
             @RequestParam Long placeId,
-            @RequestParam boolean isClosed,
+            @RequestParam Integer isClosed,
             HttpSession session
     ) {
-        LoginMemberDto login = BusinessSessionSupport.getLogin(session);
-        if (login == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        if (!BusinessSessionSupport.isBusiness(login)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-        businessReservationService.setPlaceClosed(placeId, (long) login.getMemberId(), isClosed);
+        Long bizMemberId = BusinessSessionSupport.requireBusinessMemberId(session);
+        businessReservationService.setPlaceClosed(placeId, bizMemberId, isClosed);
         return ResponseEntity.ok().build();
     }
 
@@ -41,12 +35,8 @@ public class BusinessReservationApiController {
 
     @GetMapping("/place/closed-dates")
     public ResponseEntity<List<LocalDate>> getClosedDates(@RequestParam Long placeId, HttpSession session) {
-        LoginMemberDto login = requireBusinessLogin(session);
-        if (login == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        return ResponseEntity.ok(
-                businessReservationService.getClosedDates(placeId, (long) login.getMemberId()));
+        Long bizMemberId = BusinessSessionSupport.requireBusinessMemberId(session);
+        return ResponseEntity.ok(businessReservationService.getClosedDates(placeId, bizMemberId));
     }
 
     // endDate를 안 보내면 하루짜리 마감(startDate=endDate)으로 처리한다.
@@ -57,12 +47,8 @@ public class BusinessReservationApiController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             HttpSession session
     ) {
-        LoginMemberDto login = requireBusinessLogin(session);
-        if (login == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        businessReservationService.addClosedDateRange(
-                placeId, (long) login.getMemberId(), startDate, endDate != null ? endDate : startDate);
+        Long bizMemberId = BusinessSessionSupport.requireBusinessMemberId(session);
+        businessReservationService.addClosedDateRange(placeId, bizMemberId, startDate, endOrStart(startDate, endDate));
         return ResponseEntity.ok().build();
     }
 
@@ -74,12 +60,8 @@ public class BusinessReservationApiController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             HttpSession session
     ) {
-        LoginMemberDto login = requireBusinessLogin(session);
-        if (login == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        businessReservationService.removeClosedDateRange(
-                placeId, (long) login.getMemberId(), startDate, endDate != null ? endDate : startDate);
+        Long bizMemberId = BusinessSessionSupport.requireBusinessMemberId(session);
+        businessReservationService.removeClosedDateRange(placeId, bizMemberId, startDate, endOrStart(startDate, endDate));
         return ResponseEntity.ok().build();
     }
 
@@ -93,19 +75,23 @@ public class BusinessReservationApiController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate newEndDate,
             HttpSession session
     ) {
-        LoginMemberDto login = requireBusinessLogin(session);
-        if (login == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
+        Long bizMemberId = BusinessSessionSupport.requireBusinessMemberId(session);
         businessReservationService.updateClosedDateRange(
-                placeId, (long) login.getMemberId(), oldStartDate, oldEndDate, newStartDate, newEndDate);
+                placeId, bizMemberId, oldStartDate, oldEndDate, newStartDate, newEndDate);
         return ResponseEntity.ok().build();
     }
 
-    // 로그인/권한 확인 공통 처리. 통과하면 로그인 정보를, 아니면 null을 돌려준다.
-    // (기존 setPlaceClosed는 401/403을 구분해 응답하므로 그대로 두었다)
-    private LoginMemberDto requireBusinessLogin(HttpSession session) {
-        LoginMemberDto login = BusinessSessionSupport.getLogin(session);
-        return (login != null && BusinessSessionSupport.isBusiness(login)) ? login : null;
+    // 종료일을 생략하면 하루짜리 구간으로 본다
+    private static LocalDate endOrStart(LocalDate startDate, LocalDate endDate) {
+        return endDate != null ? endDate : startDate;
+    }
+
+    // 미로그인 401 / 사업자 아님 403. 화면 컨트롤러는 같은 예외를 리다이렉트로 처리한다.
+    @ExceptionHandler(BusinessAuthException.class)
+    public ResponseEntity<Void> handleBusinessAuth(BusinessAuthException e) {
+        HttpStatus status = e.getReason() == BusinessAuthException.Reason.NOT_LOGGED_IN
+                ? HttpStatus.UNAUTHORIZED
+                : HttpStatus.FORBIDDEN;
+        return ResponseEntity.status(status).build();
     }
 }

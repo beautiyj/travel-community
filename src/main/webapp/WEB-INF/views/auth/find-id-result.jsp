@@ -5,19 +5,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>아이디 찾기 결과 | Travel Community</title>
+    <title>아이디 찾기 결과 | 갈래말래</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/auth/auth.css">
 </head>
-<body class="auth-page">
-<main class="auth-card auth-card--small">
-    <a class="auth-brand" href="${pageContext.request.contextPath}/">Travel Community</a>
+<body class="auth-page auth-page--account-recovery">
+<main class="auth-card auth-card--small auth-card--account-recovery">
+    <a class="auth-brand" href="${pageContext.request.contextPath}/">갈래말래</a>
 
     <header class="auth-header">
         <h1>아이디 찾기 결과</h1>
         <p>입력하신 정보로 조회한 결과입니다.</p>
     </header>
 
-    <%-- 아이디 조회 로직은 모델의 loginId 속성에 조회된 아이디를 담아 전달한다. --%>
+    <%--
+      아이디 조회 로직은 모델의 loginId 속성에 조회된 아이디를 담아 전달한다.
+      값이 없으면 실패 화면으로 분기하며, 성공 값은 c:out으로 HTML 이스케이프해 출력한다.
+    --%>
     <c:choose>
         <c:when test="${not empty loginId}">
             <div class="form-alert form-alert--success" role="status">

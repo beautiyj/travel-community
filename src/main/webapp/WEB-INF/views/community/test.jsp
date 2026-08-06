@@ -1,17 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8"%>
-<%@ page import="com.gnagnoohc.travel.auth.dto.LoginMemberDto" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<%
-    // ============================================================
-    // ⚠ 테스트 전용 세팅 - 실제 배포 시 반드시 삭제할 것!
-    // 로그인 담당자 세션 구조: loginMember = LoginMemberDto(memberId, nickname, memberRole)
-    // ※ 실제 로그인(AuthController)이 세션에 넣는 것과 동일한 타입으로 맞춰야
-    //    CommunityController.getMemberId()/isOwner() 의 (LoginMemberDto) 캐스팅이 안 깨진다.
-    //    (예전엔 여기서 Long 하나만 넣어서 캐스팅 에러가 났었음)
-    LoginMemberDto testLoginMember = new LoginMemberDto(1, "테스트유저", "USER");
-    session.setAttribute("loginMember", testLoginMember);
-%>
+
 <c:set var="testMemberId" value="${sessionScope.loginMember.memberId}" />
 <c:set var="testPlaceId" value="1" />
 <!DOCTYPE html>

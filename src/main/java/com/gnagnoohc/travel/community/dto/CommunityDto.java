@@ -1,6 +1,6 @@
 package com.gnagnoohc.travel.community.dto;
 
-import java.sql.Date;
+import java.sql.Timestamp;
 import java.util.List;
 
 import org.apache.ibatis.type.Alias;
@@ -12,20 +12,34 @@ import lombok.Data;
 public class CommunityDto {
 	private int postId;               // post_id      INT           PK, AUTO_INCREMENT
     private int memberId;             // member_id    INT           NOT NULL
-    private Integer placeId;          // place_id     INT           NULL (NULL 가능이라 int 대신 Integer 유지)
+    private Integer placeId;          // place_id     INT           NULL (방문자인증후기 전용 단일 태그, NULL 가능이라 int 대신 Integer 유지)
+    private List<Integer> placeIds;   // 일반후기 전용 다중 태그 (폼에서 바인딩, post_place_tag에 저장) - post 테이블 컬럼 아님
     private String title;             // title        VARCHAR(200) NOT NULL
     private String content;           // content      TEXT         NOT NULL
-    private Date createdAt;  		// created_at   DATETIME     DEFAULT CURRENT_TIMESTAMP
-    private Date updatedAt;  		// updated_at   DATETIME     ON UPDATE CURRENT_TIMESTAMP
+    private Timestamp createdAt;  	// created_at   DATETIME     DEFAULT CURRENT_TIMESTAMP
+    private Timestamp updatedAt;  	// updated_at   DATETIME     ON UPDATE CURRENT_TIMESTAMP
     private Integer readcount;        // readcount    INT          DEFAULT 0
     private String category;          // category     VARCHAR(200) NULL
     
     // ── 화면 표시용 (post 테이블에 없는 조인/조립 값) ──
     private String nickname;               // 작성자 이름 (member 테이블 JOIN으로 채움)
-    private String placeName;              // 태그된 장소 이름 (place 테이블 JOIN, place_id 없으면 null)
-    private String thumbnailUrl;           // 목록 썸네일 (image 테이블에서 sort_order=0 인 이미지, 없으면 null)
+    private Integer memberType;            // 작성자 회원 유형 (1: 일반, 2: 사업자, member 테이블 JOIN)
+    private String profileImgUrl;          // 일반 회원 프로필 사진 (member 테이블 JOIN)
+    private String businessImage;          // 사업자 회원의 업소 대표사진 (place.first_image, member_id로 JOIN)
+    private String placeName;              // 태그된 장소 이름 (place 테이블 JOIN, place_id 없으면 null) - 방문자인증후기 단일 태그용
+    private String placeType;              // 태그된 장소 유형 ("stay"/"food"/"tour", place 테이블 JOIN) - 방문자인증후기 단일 태그 배지용
+    private List<PlaceTagDto> placeTags;   // 일반후기 다중 태그 목록 (post_place_tag join place 로 조회, 상세/수정 화면 표시용)
     private List<ImageDto> imageList;       // 이미지 목록
     private List<CommentDto> commentList;   // 댓글 목록
+
+    // 작성자 아바타로 표시할 이미지 URL 결정
+    // 사업자면 업소 대표사진, 일반 회원이면 개인 프로필 사진, 둘 다 없으면 null(→ JSP에서 기본 아바타 표시)
+    public String getAvatarUrl() {
+        if (memberType != null && memberType == 2) {
+            return businessImage;
+        }
+        return profileImgUrl;
+    }
 
     // ── 카테고리 화면 표시용 (community.css 의 .badge 클래스와 매칭) ──
     // JSP 에서 postCategoryTag.jsp 같은 별도 컴포넌트 없이 이 getter들을 바로 사용

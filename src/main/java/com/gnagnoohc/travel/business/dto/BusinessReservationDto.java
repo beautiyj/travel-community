@@ -21,4 +21,8 @@ public class BusinessReservationDto {
     private String placeName;
     private Integer amount;             // PAYMENT.amount (없으면 null)
     private PaymentStatus paymentStatus; // PAYMENT.payment_status (선결제 여부, 없으면 null)
+    private String cancelReason;        // RESERVATION.cancel_reason (CANCEL_REQUESTED 외 상태면 null)
+    private LocalDateTime cancelRequestedAt; // RESERVATION.cancel_requested_at
+    private String rejectReason;        // RESERVATION.reject_reason (사업자가 PAID 예약을 직접 거절한 사유)
+    private String cancelRejectReason;  // RESERVATION.cancel_reject_reason (사업자가 취소 요청을 거절한 사유)
 }

@@ -2,17 +2,24 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.gnagnoohc.travel.community.mapper.ImageMapper">
-	<!-- ── 이미지 (image 테이블) ── -->
+	<!-- ── 이미지 (post_image 테이블) ── -->
 	<!-- 이미지 저장 -->
-	<insert id="insertImage" parameterType="image"> 
-		insert into image (post_id, image_url, sort_order) 
-		values (#{postId}, #{imageUrl}, #{sortOrder}) 
+	<insert id="insertImage" parameterType="image">
+		insert into post_image (post_id, image_url, sort_order)
+		values (#{postId}, #{imageUrl}, #{sortOrder})
 	</insert>
-	
+
 	<!-- 게시글의 이미지 목록 (정렬 순서대로) -->
-	<select id="selectImages" parameterType="int" resultType="image"> 
-		select image_id, post_id, image_url, sort_order, created_at 
-		from image where post_id = #{postId} 
-		order by sort_order asc, image_id asc 
+	<select id="selectImages" parameterType="int" resultType="image">
+		select image_id, post_id, image_url, sort_order, created_at
+		from post_image where post_id = #{postId}
+		order by sort_order asc, image_id asc
 	</select>
+
+	<!-- 수정 화면에서 본문에서 빠진 기존 이미지 삭제 (postId로 다른 글의 행을 못 건드리게 함께 확인)
+	     메서드 리턴 타입이 int라 별도 select 없이도 영향받은 행 수가 그대로 호출부에 돌아간다. -->
+	<delete id="deleteImageByUrl">
+		delete from post_image
+		where post_id = #{postId} and image_url = #{imageUrl}
+	</delete>
 </mapper>

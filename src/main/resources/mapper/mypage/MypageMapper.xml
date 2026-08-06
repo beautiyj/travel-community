@@ -1,24 +1,211 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.gnagnoohc.travel.mypage.repository.MypageRepository">
 
-    <select id="getMemberInfo" parameterType="long" resultType="com.gnagnoohc.travel.mypage.dto.MypageDto">
-        select * from member where member_id = #{memberId}
+    <!-- 회원 정보 조회 -->
+    <select id="getMemberInfo"
+            parameterType="long"
+            resultType="com.gnagnoohc.travel.mypage.dto.MypageDto">
+
+        select member_id, login_id, name, nickname, email, member_type,
+               phone, gender, birth, profile_img_url, signup_type,
+               member_status, member_role, email_verified,
+               email_verified_at, last_login_at,
+               created_at, updated_at, deleted_at
+        from member
+        where member_id = #{memberId}
+
     </select>
 
-    <update id="updateMember" parameterType="com.gnagnoohc.travel.mypage.dto.MypageDto">
-        update member set name = #{name}, nickname = #{nickname}, phone = #{phone} where member_id = #{memberId}
+    <!-- 회원 정보 수정 -->
+    <update id="updateMember"
+            parameterType="com.gnagnoohc.travel.mypage.dto.MypageDto">
+
+        update member
+        set
+            name = #{name},
+            nickname = #{nickname},
+            phone = #{phone},
+            gender = #{gender}
+        where member_id = #{memberId}
+
     </update>
 
-    <!-- 비밀번호 저장 구조 확정 후 사용
-    <update id="changePassword" parameterType="com.gnagnoohc.travel.mypage.dto.MypageDto">
-        update member set password = #{newPassword} where member_id = #{memberId}
+    <update id="updateProfileImage" parameterType="map">
+        update member
+        set profile_img_url = #{profileImgUrl},
+            updated_at = now()
+        where member_id = #{memberId}
     </update>
-    -->
-    
-    <select id="getReservationList" parameterType="long" resultType="com.gnagnoohc.travel.mypage.dto.MypageDto">
-    select * from reservation where member_id = #{memberId} order by created_at desc
-	</select>
+
+    <!-- 비밀번호 변경 -->
+<!--
+    <update id="changePassword"
+            parameterType="com.gnagnoohc.travel.mypage.dto.MypageDto">
+
+        update member_local_auth
+        set
+            password_hash = #{newPassword},
+            password_updated_at = now()
+        where member_id = #{memberId}
+
+    </update>
+-->
+
+    <!-- 예약 목록 조회 -->
+    <select id="getPasswordHash" parameterType="long" resultType="string">
+        select password_hash
+        from member_local_auth
+        where member_id = #{memberId}
+    </select>
+
+    <update id="updatePassword" parameterType="map">
+        update member_local_auth
+        set password_hash = #{passwordHash},
+            password_updated_at = now(),
+            failed_login_count = 0,
+            locked_until = null
+        where member_id = #{memberId}
+    </update>
+
+    <select id="getReservationList"
+            parameterType="long"
+            resultType="com.gnagnoohc.travel.mypage.dto.MypageDto">
+
+        select r.reservation_id,
+               r.member_id,
+               r.place_id,
+               p.name as place_name,
+               r.visitor_name,
+               r.phone,
+               r.visit_date,
+               r.headcount,
+               r.status,
+               r.created_at,
+               pay.amount
+        from reservation r
+        left join place p on p.place_id = r.place_id
+        left join payment pay on pay.reservation_id = r.reservation_id
+        where r.member_id = #{memberId}
+        order by r.created_at desc
+
+    </select>
+
+    <!-- 찜 목록 조회 -->
+    <select id="getWishlist"
+            parameterType="long"
+            resultType="com.gnagnoohc.travel.mypage.dto.MypageDto">
+
+        select w.wishlist_id,
+               w.member_id,
+               w.place_id,
+               p.name as place_name,
+               w.created_at
+        from wishlist w
+        left join place p on p.place_id = w.place_id
+        where w.member_id = #{memberId}
+        order by w.created_at desc
+
+    </select>
+
+    <!-- 회원 탈퇴 -->
+    <update id="withdrawMember"
+            parameterType="long">
+
+        update member
+        set
+            member_status = 'WITHDRAWN',
+            deleted_at = now(),
+            updated_at = now()
+        where member_id = #{memberId}
+
+    </update>
+
+    <!-- 찜 삭제 -->
+    <delete id="deleteWishlist"
+            parameterType="map">
+
+        delete
+        from wishlist
+        where wishlist_id = #{wishlistId}
+          and member_id = #{memberId}
+
+    </delete>
+
+    <select id="countWishlist" parameterType="map" resultType="int">
+        select count(*)
+        from wishlist
+        where member_id = #{memberId}
+          and place_id = #{placeId}
+    </select>
+
+    <select id="getMemberByLoginId"
+            parameterType="string"
+            resultType="com.gnagnoohc.travel.mypage.dto.MypageDto">
+        select member_id, login_id, name, nickname, email, member_type,
+               phone, gender, birth, profile_img_url, signup_type,
+               member_status, member_role, email_verified,
+               email_verified_at, last_login_at,
+               created_at, updated_at, deleted_at
+        from member
+        where login_id = #{loginId}
+          and member_status = 'ACTIVE'
+    </select>
+
+    <insert id="addWishlist" parameterType="map">
+        insert into wishlist (member_id, place_id, created_at)
+        values (#{memberId}, #{placeId}, now())
+    </insert>
+
+    <delete id="deleteWishlistByPlace" parameterType="map">
+        delete
+        from wishlist
+        where member_id = #{memberId}
+          and place_id = #{placeId}
+    </delete>
+
+    <!-- 예약 취소 -->
+    <update id="cancelReservation"
+            parameterType="long">
+
+        update reservation
+        set
+            status = 'CANCELLED',
+            cancel_requested_at = now()
+        where reservation_id = #{reservationId}
+
+    </update>
+
+    <!-- 예약중 목록 -->
+    <select id="getReservationCompleteList"
+            parameterType="long"
+            resultType="com.gnagnoohc.travel.mypage.dto.MypageDto">
+
+        select reservation_id, member_id, place_id, visitor_name,
+               phone, visit_date, headcount, status, created_at
+        from reservation
+        where member_id = #{memberId}
+          and status = 'PENDING'
+        order by created_at desc
+
+    </select>
+
+    <!-- 결제 완료 목록 -->
+    <select id="getPaymentCompleteList"
+            parameterType="long"
+            resultType="com.gnagnoohc.travel.mypage.dto.MypageDto">
+
+        select reservation_id, member_id, place_id, visitor_name,
+               phone, visit_date, headcount, status, created_at
+        from reservation
+        where member_id = #{memberId}
+          and status = 'PAID'
+        order by created_at desc
+
+    </select>
 
 </mapper>

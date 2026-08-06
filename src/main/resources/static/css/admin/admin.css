@@ -1,0 +1,946 @@
+/* 관리자 화면에서 공유하는 상태색·표면색 토큰이다. 상태 뱃지와 버튼이 같은 의미의 색을 재사용한다. */
+:root {
+    --admin-primary: #0284c7;
+    --admin-primary-dark: #0369a1;
+    --admin-bg: #f8fafc;
+    --admin-surface: #ffffff;
+    --admin-border: #e2e8f0;
+    --admin-text: #1e293b;
+    --admin-muted: #64748b;
+    --admin-success: #15803d;
+    --admin-success-bg: #f0fdf4;
+    --admin-warning: #b45309;
+    --admin-warning-bg: #fffbeb;
+    --admin-danger: #dc2626;
+    --admin-danger-dark: #b91c1c;
+    --admin-danger-bg: #fef2f2;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: var(--admin-bg);
+    color: var(--admin-text);
+    font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+}
+
+/* BFCache 복원 중에는 이전 심사 상태가 보이지 않도록, 새 목록을 받기 전 화면을 숨긴다. */
+html.admin-bfcache-refreshing body {
+    visibility: hidden;
+}
+
+/* 사업자 대시보드와 같은 224px 사이드바 및 64px 상단바 구조 */
+.admin-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* 데스크톱에서는 사이드바를 고정하고, 본문은 같은 너비만큼 여백을 확보한다. */
+.admin-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 10;
+    display: flex;
+    width: 224px;
+    flex-direction: column;
+    background: var(--admin-surface);
+    border-right: 1px solid var(--admin-border);
+}
+
+.admin-sidebar__logo {
+    display: flex;
+    height: 64px;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 9px;
+    padding: 0 20px;
+    color: var(--admin-primary);
+    border-bottom: 1px solid var(--admin-border);
+    font-size: 15px;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.admin-sidebar__logo-badge {
+    display: inline-flex;
+    width: 28px;
+    height: 28px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: var(--admin-primary);
+    color: #fff;
+    font-size: 12px;
+}
+
+.admin-sidebar__profile {
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--admin-border);
+}
+
+.admin-sidebar__profile-label {
+    margin: 0;
+    color: var(--admin-muted);
+    font-size: 12px;
+}
+
+.admin-sidebar__profile-name {
+    margin: 4px 0 0;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.admin-sidebar__nav {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+    padding: 12px;
+}
+
+.admin-sidebar__footer {
+    padding: 12px;
+    border-top: 1px solid var(--admin-border);
+}
+
+.admin-sidebar__footer form {
+    margin: 0;
+}
+
+.admin-sidebar__logout {
+    width: 100%;
+    padding: 10px 12px;
+    background: transparent;
+    border: 0;
+    border-radius: 12px;
+    color: var(--admin-danger);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+}
+
+.admin-sidebar__logout:hover,
+.admin-sidebar__logout:focus-visible {
+    background: var(--admin-danger-bg);
+}
+
+.admin-nav-item {
+    padding: 10px 12px;
+    border-radius: 12px;
+    color: var(--admin-muted);
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.admin-nav-item:hover,
+.admin-nav-item:focus-visible {
+    background: var(--admin-bg);
+    color: var(--admin-text);
+}
+
+.admin-nav-item.is-active {
+    background: rgba(2, 132, 199, 0.1);
+    color: var(--admin-primary);
+}
+
+.admin-main {
+    min-width: 0;
+    min-height: 100vh;
+    flex: 1;
+    margin-left: 224px;
+}
+
+.admin-topbar {
+    display: flex;
+    height: 64px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    background: var(--admin-surface);
+    border-bottom: 1px solid var(--admin-border);
+}
+
+.admin-topbar__title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.admin-topbar__caption {
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: rgba(2, 132, 199, 0.1);
+    color: var(--admin-primary);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+}
+
+/* 관리자 각 화면은 같은 세로 간격을 공유하고 상세·목록 화면만 읽기 폭을 좁힌다. */
+.admin-content {
+    display: flex;
+    width: 100%;
+    max-width: 1440px;
+    flex-direction: column;
+    gap: 24px;
+    padding: 32px;
+}
+
+.admin-content--detail {
+    max-width: 1120px;
+}
+
+/* 사업자 인증 목록만 대시보드보다 좁은 읽기 폭을 사용한다. */
+.admin-content--business-applications {
+    max-width: 1120px;
+}
+
+.admin-page-heading,
+.admin-detail-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.admin-page-heading__title {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 800;
+}
+
+.admin-page-heading__description {
+    margin: 8px 0 0;
+    color: var(--admin-muted);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+/* 기존 관리자 버튼 스타일을 재사용해 상태 필터의 활성 항목만 명확히 구분한다. */
+.admin-filter-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.admin-filter-tabs__link {
+    padding: 7px 12px;
+}
+
+.admin-filter-tabs__link.is-active,
+.admin-filter-tabs__link.is-active:hover,
+.admin-filter-tabs__link.is-active:focus-visible {
+    background: var(--admin-primary);
+    border-color: var(--admin-primary);
+    color: #fff;
+}
+
+.admin-detail-heading__title-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.admin-back-link {
+    color: var(--admin-muted);
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.admin-back-link:hover,
+.admin-back-link:focus-visible {
+    color: var(--admin-primary);
+}
+
+/* PRG 처리 결과와 서버 오류처럼 화면 전체에 해당하는 메시지를 상태별로 표시한다. */
+.admin-alert {
+    padding: 13px 16px;
+    border: 1px solid;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.admin-alert--success {
+    background: var(--admin-success-bg);
+    border-color: #bbf7d0;
+    color: var(--admin-success);
+}
+
+.admin-alert--error {
+    background: var(--admin-danger-bg);
+    border-color: #fecaca;
+    color: var(--admin-danger);
+}
+
+/* 대시보드·목록·상세 정보를 같은 표면과 헤더 구조로 묶는 공통 카드다. */
+.admin-card {
+    overflow: hidden;
+    padding: 24px;
+    background: var(--admin-surface);
+    border: 1px solid var(--admin-border);
+    border-radius: 16px;
+}
+
+.admin-card__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.admin-card__title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 800;
+}
+
+.admin-card__description {
+    margin: 6px 0 0;
+    color: var(--admin-muted);
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+.admin-card__count {
+    flex-shrink: 0;
+    color: var(--admin-muted);
+    font-size: 13px;
+}
+
+.admin-card__count strong {
+    color: var(--admin-primary);
+}
+
+/* 관리자 홈에는 현재 구현된 사업자 인증 신청 집계와 진입점만 제공한다. */
+.admin-dashboard-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.admin-dashboard-kpi {
+    padding: 20px;
+    background: var(--admin-surface);
+    border: 1px solid var(--admin-border);
+    border-radius: 16px;
+}
+
+.admin-dashboard-kpi__label {
+    margin: 0;
+    color: var(--admin-muted);
+    font-size: 14px;
+}
+
+.admin-dashboard-kpi__value {
+    margin: 8px 0 0;
+    font-size: 28px;
+    font-weight: 800;
+}
+
+.admin-dashboard-kpi__unit {
+    margin-left: 4px;
+    color: var(--admin-muted);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.admin-dashboard-kpi--pending .admin-dashboard-kpi__value {
+    color: var(--admin-warning);
+}
+
+.admin-dashboard-kpi--approved .admin-dashboard-kpi__value {
+    color: var(--admin-success);
+}
+
+.admin-dashboard-kpi--rejected .admin-dashboard-kpi__value {
+    color: var(--admin-danger);
+}
+
+.admin-dashboard-cta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+}
+
+.admin-dashboard-cta__link {
+    flex-shrink: 0;
+}
+
+/* 목록은 화면 읽기 도구가 열 구조를 이해할 수 있도록 실제 table 요소를 사용한다. */
+.admin-table-wrap {
+    overflow-x: auto;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.admin-table th,
+.admin-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--admin-border);
+    font-size: 14px;
+    text-align: left;
+    vertical-align: middle;
+}
+
+.admin-table th {
+    background: rgba(2, 132, 199, 0.06);
+    color: var(--admin-muted);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.admin-table th:first-child {
+    border-radius: 10px 0 0 10px;
+}
+
+.admin-table th:last-child {
+    border-radius: 0 10px 10px 0;
+}
+
+.admin-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.admin-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.admin-table__name {
+    font-weight: 700;
+}
+
+.admin-table__action {
+    /* 마지막 열 안에서 버튼을 좌측에 배치해 상태 뱃지와의 불필요한 거리를 줄인다. */
+    padding-left: 12px !important;
+    text-align: left !important;
+}
+
+/* 상태 뱃지의 좌측 기준선은 유지하고, 제목은 58px 뱃지의 중앙에 맞춥니다. */
+.admin-table th:nth-child(5),
+.admin-table td:nth-child(5) {
+    padding-left: 12px;
+    text-align: left;
+}
+
+.admin-table th:nth-child(5) {
+    /* '상태' 글자 폭과 58px 뱃지 폭의 차이 절반만큼 들여 중앙을 일치시킵니다. */
+    text-indent: 16px;
+}
+
+/* 상세 보기 버튼의 테두리·크기를 재사용해 목록 하단 조작부도 같은 화면 톤으로 맞춥니다. */
+.admin-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    /* 기존 24px 간격에서 약 32px 당긴 값으로, 카드와 페이지 버튼 간 거리를 줄인다. */
+    margin-top: -8px;
+}
+
+.admin-pagination__button {
+    min-width: 32px;
+    padding: 6px 9px;
+}
+
+.admin-pagination__button--direction {
+    font-size: 15px;
+    line-height: 1;
+}
+
+.admin-pagination__button.is-active {
+    background: var(--admin-primary);
+    border-color: var(--admin-primary);
+    color: #fff;
+}
+
+.admin-pagination__button.is-active:hover,
+.admin-pagination__button.is-active:focus-visible {
+    background: var(--admin-primary-dark);
+    border-color: var(--admin-primary-dark);
+}
+
+/* 신청 상태를 표·상세 어디서든 같은 크기와 색상 의미로 표시하는 뱃지다. */
+.admin-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 58px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #f1f5f9;
+    color: var(--admin-muted);
+    font-size: 12px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.admin-status--pending {
+    background: var(--admin-warning-bg);
+    color: var(--admin-warning);
+}
+
+.admin-status--approved {
+    background: var(--admin-success-bg);
+    color: var(--admin-success);
+}
+
+.admin-status--rejected {
+    background: var(--admin-danger-bg);
+    color: var(--admin-danger);
+}
+
+/* 링크와 button 요소가 같은 관리자 작업 컨트롤 모양을 공유하도록 만든 기본 버튼이다. */
+.admin-btn {
+    display: inline-flex;
+    min-height: 36px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 800;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.admin-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.admin-btn--sm {
+    min-height: 32px;
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+.admin-btn--outline {
+    background: #fff;
+    border-color: var(--admin-border);
+    color: var(--admin-text);
+}
+
+.admin-btn--outline:hover,
+.admin-btn--outline:focus-visible {
+    background: var(--admin-bg);
+    border-color: #cbd5e1;
+}
+
+.admin-btn--approve {
+    padding: 11px 16px;
+    background: var(--admin-primary);
+    color: #fff;
+}
+
+.admin-btn--approve:hover,
+.admin-btn--approve:focus-visible {
+    background: var(--admin-primary-dark);
+}
+
+.admin-btn--reject {
+    padding: 11px 16px;
+    background: var(--admin-danger);
+    color: #fff;
+}
+
+.admin-btn--reject:hover,
+.admin-btn--reject:focus-visible {
+    background: var(--admin-danger-dark);
+}
+
+.admin-review-actions .admin-btn:disabled,
+.admin-review-actions .admin-btn:disabled:hover,
+.admin-review-actions .admin-btn:disabled:focus-visible {
+    background: #94a3b8;
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.admin-btn--block {
+    width: 100%;
+}
+
+.admin-empty {
+    padding: 48px 16px;
+    text-align: center;
+}
+
+.admin-empty__title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.admin-empty__description {
+    margin: 8px 0 0;
+    color: var(--admin-muted);
+    font-size: 13px;
+}
+
+/* 상세 정보는 용어(dt)와 값(dd)의 대응을 유지하면서 두 열 카드 형태로 배치한다. */
+.admin-info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+    margin: 0;
+    border-top: 1px solid var(--admin-border);
+}
+
+.admin-info-item {
+    display: grid;
+    grid-template-columns: 112px minmax(0, 1fr);
+    gap: 16px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--admin-border);
+}
+
+.admin-info-item:nth-child(odd) {
+    padding-right: 24px;
+}
+
+.admin-info-item:nth-child(even) {
+    padding-left: 24px;
+    border-left: 1px solid var(--admin-border);
+}
+
+.admin-info-item dt {
+    color: var(--admin-muted);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.admin-info-item dd {
+    min-width: 0;
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+/* 등록증 원본 비율을 유지하되 큰 이미지는 카드 안의 제한된 높이에서 확인하도록 한다. */
+.admin-document {
+    display: flex;
+    min-height: 420px;
+    max-height: 720px;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 16px;
+    background: #f1f5f9;
+    border: 1px solid var(--admin-border);
+    border-radius: 12px;
+}
+
+.admin-document img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-height: 688px;
+    object-fit: contain;
+}
+
+.admin-review-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+/* 반려 사유를 먼저 표시하고, 승인·반려 버튼은 그 아래 같은 행에 배치한다. */
+.admin-review-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px 16px;
+}
+
+.admin-review-actions > .admin-review-form:first-child {
+    grid-column: 1;
+    grid-row: 4;
+}
+
+.admin-review-actions > .admin-review-form:last-child {
+    /* 폼의 요청 범위는 유지하면서 자식 요소를 바깥 Grid에 직접 배치한다. */
+    display: contents;
+}
+
+.admin-review-actions > .admin-review-form:last-child .admin-btn {
+    grid-column: 2;
+    grid-row: 4;
+}
+
+.admin-review-actions > .admin-review-form:last-child .admin-form-label,
+.admin-review-actions > .admin-review-form:last-child .admin-form-textarea,
+.admin-review-actions > .admin-review-form:last-child .admin-form-help-row {
+    grid-column: 1 / -1;
+}
+
+.admin-review-actions > .admin-review-form:last-child .admin-form-label {
+    margin-top: 4px;
+    /* 기존 13px 라벨 크기에 2pt를 더한다. */
+    font-size: calc(13px + 2pt);
+}
+
+.admin-review-panel {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    border: 1px solid var(--admin-border);
+    border-radius: 12px;
+}
+
+.admin-review-panel--approve {
+    background: var(--admin-success-bg);
+    border-color: #bbf7d0;
+}
+
+.admin-review-panel--reject {
+    background: var(--admin-danger-bg);
+    border-color: #fecaca;
+}
+
+.admin-review-panel__title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.admin-review-panel__description {
+    min-height: 44px;
+    margin: 6px 0 18px;
+    color: var(--admin-muted);
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+.admin-review-form {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+}
+
+.admin-review-panel--approve .admin-review-form {
+    justify-content: flex-end;
+}
+
+.admin-form-label {
+    margin-bottom: 7px;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.admin-form-textarea {
+    width: 100%;
+    min-height: 132px;
+    padding: 11px 12px;
+    resize: vertical;
+    background: #fff;
+    border: 1px solid var(--admin-border);
+    border-radius: 8px;
+    color: var(--admin-text);
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.55;
+}
+
+.admin-form-textarea:focus {
+    outline: 2px solid rgba(2, 132, 199, 0.22);
+    border-color: var(--admin-primary);
+}
+
+.admin-form-help-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 7px 0 14px;
+    color: var(--admin-muted);
+    font-size: 12px;
+}
+
+.admin-rejection-result {
+    margin-top: 20px;
+    padding: 16px;
+    background: var(--admin-danger-bg);
+    border: 1px solid #fecaca;
+    border-radius: 12px;
+}
+
+.admin-rejection-result__title {
+    margin: 0 0 8px;
+    color: var(--admin-danger);
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.admin-rejection-result__reason {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.65;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.admin-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+@media (max-width: 1200px) {
+    .admin-dashboard-kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* 작은 화면에서는 사이드바를 상단 메뉴로 바꾸고 표는 수평 스크롤로 확인한다. */
+@media (max-width: 768px) {
+    .admin-layout {
+        display: block;
+    }
+
+    .admin-sidebar {
+        position: static;
+        width: 100%;
+        border-right: 0;
+        border-bottom: 1px solid var(--admin-border);
+    }
+
+    .admin-sidebar__profile {
+        display: none;
+    }
+
+    .admin-sidebar__nav {
+        flex: none;
+        flex-direction: row;
+        overflow-x: auto;
+        padding: 8px 16px;
+    }
+
+    .admin-nav-item {
+        flex-shrink: 0;
+    }
+
+    .admin-sidebar__footer {
+        padding: 0 16px 12px;
+        border-top: 0;
+    }
+
+    .admin-sidebar__logout {
+        width: auto;
+        padding: 8px 12px;
+    }
+
+    .admin-main {
+        margin-left: 0;
+    }
+
+    .admin-topbar {
+        height: 56px;
+        padding: 0 20px;
+    }
+
+    .admin-content {
+        gap: 18px;
+        padding: 20px 16px 32px;
+    }
+
+    .admin-page-heading__title {
+        font-size: 21px;
+    }
+
+    .admin-card {
+        padding: 18px;
+        border-radius: 14px;
+    }
+
+    .admin-card__header {
+        flex-direction: column;
+        margin-bottom: 16px;
+    }
+
+    .admin-pagination {
+        /* 모바일의 18px 콘텐츠 간격까지만 상쇄해 카드와 버튼이 겹치지 않게 한다. */
+        margin-top: -18px;
+    }
+
+    .admin-table {
+        min-width: 760px;
+    }
+
+    .admin-info-grid,
+    .admin-review-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-review-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-review-actions > .admin-review-form:first-child,
+    .admin-review-actions > .admin-review-form:last-child .admin-btn {
+        grid-column: 1;
+    }
+
+    .admin-review-actions > .admin-review-form:first-child {
+        grid-row: 4;
+    }
+
+    .admin-review-actions > .admin-review-form:last-child .admin-btn {
+        grid-row: 5;
+    }
+
+    .admin-info-item,
+    .admin-info-item:nth-child(odd),
+    .admin-info-item:nth-child(even) {
+        grid-template-columns: 96px minmax(0, 1fr);
+        padding: 14px 0;
+        border-left: 0;
+    }
+
+    .admin-document {
+        min-height: 280px;
+        padding: 10px;
+    }
+
+    .admin-review-panel__description {
+        min-height: 0;
+    }
+}
+
+@media (max-width: 560px) {
+    .admin-dashboard-kpi-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .admin-dashboard-cta {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .admin-dashboard-cta__link {
+        width: 100%;
+    }
+}

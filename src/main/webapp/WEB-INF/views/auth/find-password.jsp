@@ -5,26 +5,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>비밀번호 찾기 | Travel Community</title>
+    <title>비밀번호 찾기 | 갈래말래</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/auth/auth.css">
     <script defer src="${pageContext.request.contextPath}/js/auth/find-password.js"></script>
 </head>
-<body class="auth-page">
-<main class="auth-card auth-card--small">
-    <a class="auth-brand" href="${pageContext.request.contextPath}/">Travel Community</a>
+<body class="auth-page auth-page--account-recovery">
+<main class="auth-card auth-card--small auth-card--account-recovery">
+    <a class="auth-brand" href="${pageContext.request.contextPath}/">갈래말래</a>
 
     <header class="auth-header">
         <h1>비밀번호 찾기</h1>
         <p>아이디와 가입 이메일로 본인 확인을 진행합니다.</p>
     </header>
 
+    <%-- 재설정 화면에서 인증 세션이 만료·소비된 경우 서버가 이 쿼리 파라미터로 되돌려 보낸다. --%>
     <c:if test="${param.error eq 'verification'}">
         <div class="form-alert form-alert--error" role="alert">
             이메일 인증이 만료되었거나 이미 사용되었습니다. 다시 인증해주세요.
         </div>
     </c:if>
 
-    <%-- 인증 성공 여부는 브라우저 값이 아니라 서버 세션과 DB 인증 이력으로 확인한다. --%>
+    <%--
+      이 form에는 action이 없고 find-password.js가 제출을 가로채 발송/검증 API를 순서대로 호출한다.
+      data-* 속성은 컨텍스트 경로와 성공 후 이동 주소를 JavaScript에 전달할 뿐 인증 정보가 아니다.
+      인증 성공 여부와 재설정 대상은 브라우저 값이 아니라 서버 세션과 DB 인증 이력으로 확인한다.
+    --%>
     <form id="findPasswordForm" novalidate
           data-context-path="${pageContext.request.contextPath}"
           data-reset-password-url="${pageContext.request.contextPath}/auth/reset-password">

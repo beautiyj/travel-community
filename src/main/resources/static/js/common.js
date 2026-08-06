@@ -11,13 +11,13 @@ function toggleWishLocal(buttonElement, isActive) {
     const iconElement = buttonElement.querySelector('.wish-icon');
 
     if (isActive) {
-        iconElement.classList.remove('is-active');
-        buttonElement.setAttribute('data-active', 'false');
-        buttonElement.setAttribute('aria-pressed', 'false');
-    } else {
         iconElement.classList.add('is-active');
         buttonElement.setAttribute('data-active', 'true');
         buttonElement.setAttribute('aria-pressed', 'true');
+    } else {
+        iconElement.classList.remove('is-active');
+        buttonElement.setAttribute('data-active', 'false');
+        buttonElement.setAttribute('aria-pressed', 'false');
     }
 }
 

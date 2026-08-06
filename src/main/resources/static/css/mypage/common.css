@@ -23,7 +23,7 @@ button, input, select, textarea { font: inherit; }
 .mypage-sidebar__menu .mypage-sidebar__logout { margin-top: 4px; color: var(--danger); }
 .mypage-content__header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
 .mypage-content__header h2 { font-size: var(--text-xl); font-weight: var(--font-weight-bold); }
-.mypage-content__header em { color: var(--muted-foreground); font-size: var(--text-base); font-style: normal; }
+.mypage-content__header em { color: var(--muted-foreground); font-size: var(--text-base);  }
 .mypage-primary-link { padding: 9px 16px; border-radius: 8px; background: var(--primary); color: #fff; font-size: var(--text-sm); font-weight: var(--font-weight-bold); }
 .mypage-primary-link:hover { filter: brightness(.95); }
 .member-info-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
@@ -323,7 +323,6 @@ button, input, select, textarea { font: inherit; }
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
 }
 
 .mypage-page {

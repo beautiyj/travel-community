@@ -301,10 +301,11 @@ public class ReservationService {
     }
 
     /**
-     * 관리자: 취소 요청 거절. CANCEL_REQUESTED → PAID로 원복 (환불 없음).
-     * 거절된 예약에 취소 사유·요청시각이 남아 있으면 혼란스러우므로 함께 지우고, 대신 사업자가 입력한
-     * 거절 사유를 cancel_reject_reason에 남긴다(reject_reason과는 별개 컬럼 — PAID 예약 직접 거절 사유와
-     * 취소요청 거절 사유는 시점·의미가 달라 섞이면 안 됨). 정규화 규칙은 reject()와 동일: 비어있으면 기본 문구, trim해서 저장.
+     * 관리자: 취소 요청 거절. CANCEL_REQUESTED → CONFIRMED로 원복 (환불 없음, 취소 요청은 항상
+     * CONFIRMED에서만 발생하므로 대칭도 CONFIRMED). 고객이 남긴 취소 사유·요청시각(cancel_reason/
+     * cancel_requested_at)은 이력으로 남기고, 사업자가 입력한 거절 사유는 cancel_reject_reason에 저장한다
+     * (reject_reason과는 별개 컬럼 — PAID 예약 직접 거절 사유와 취소요청 거절 사유는 시점·의미가 달라 섞이면 안 됨).
+     * 정규화 규칙은 reject()와 동일: 비어있으면 기본 문구, trim해서 저장.
      */
     @Transactional
     public void rejectCancel(Long reservationId, String reason) {

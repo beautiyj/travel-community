@@ -54,6 +54,7 @@ public class MypageDto {
 	private Integer amount;
 	private String cancelReason;
 	private String rejectReason;
+	private String cancelRejectReason;
 	
 	private Long wishlistId;
 	

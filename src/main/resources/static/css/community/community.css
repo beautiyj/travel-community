@@ -187,30 +187,6 @@
   width: auto;
   padding: 8px 0;
 }
-/* ---------- 게시글 목록 페이지네이션 (list.jsp, <center> 태그로 가운데 정렬) ---------- */
-.pagination {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin: 24px 0;
-}
-.pagination a,
-.pagination span {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 32px;
-  height: 32px;
-  padding: 0 8px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: bold;
-  color: var(--muted-foreground);
-  text-decoration: none;
-}
-.pagination a:hover { background: var(--background); }
-.pagination .page-num.active { background: var(--primary); color: var(--primary-foreground); }
-
 /* ---------- 글쓰기/수정 폼 하단 버튼 (buttonComponent 재사용) ---------- */
 .form-actions { display: flex; gap: 8px; padding-top: 8px; }
  

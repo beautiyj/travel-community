@@ -43,7 +43,7 @@ public interface TourMapper {
             @Param("regionId") Integer regionId,
             @Param("keyword") String keyword
     );
-    
+
     List<PlaceImageDTO> getImagesByPlaceId(@Param("placeId") Integer placeId);
 
     // 특정 지역의 현재 적재된 PLACE 건수 조회 (지역별 무작위 샘플링 쿼터 체크용)

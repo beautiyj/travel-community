@@ -20,32 +20,38 @@ public class TourService {
 
     private final TourMapper tourMapper;
 
-    private static final int PAGE_SIZE = 16; // 페이지당 출력할 카드 개수 상수 선언
+    private static final int PAGE_SIZE = 16;   // 카드 4열 x 4줄
+    private static final int PAGE_BLOCK = 10;  // 페이지 번호 블록 단위 (1~10, 11~20)
 
-    // 통합 검색용 keyword 파라미터 추가 + offset, limit 계산 로직 추가한 단순 목록 조회
+    // 통합 검색용 keyword + sort(정렬) 파라미터가 포함된 목록 조회
     public List<PlaceDTO> getPlaceList(String placeType, Integer regionId, String keyword, String sort, int page) {
+        // 페이지 범위 검증 - 재하는 총 페이지 수를 초과하여 요청했을 때 방어하기 위해 1부터 totalPages 사이의 안전한 범위로 보정
         int currentPage = Math.max(page, 1);
         int offset = (currentPage - 1) * PAGE_SIZE;
         return tourMapper.selectPlaceList(placeType, regionId, keyword, sort, offset, PAGE_SIZE);
     }
 
-    // Controller 전용 목록 + 페이징 정보 패키징 메서드
+    // Controller 전용: 장소 목록 + 페이징 블록(startPage, endPage 등) + 정렬을 한 번에 계산하여 반환
     public Map<String, Object> getPlacePage(String placeType, Integer regionId, String keyword, String sort, int page) {
-        int currentPage = Math.max(page, 1);
-        
-        // 목록 데이터 조회 (위의 getPlaceList 재사용)
-        List<PlaceDTO> placeList = getPlaceList(placeType, regionId, keyword, sort, currentPage);
-
-        // 전체 건수 조회 및 총 페이지 수 계산
         int totalCount = tourMapper.countPlaceList(placeType, regionId, keyword);
-        int totalPages = (int) Math.ceil((double) totalCount / PAGE_SIZE);
+        int totalPages = (int) Math.ceil(totalCount / (double) PAGE_SIZE);
+
+        int currentPage = Math.max(1, Math.min(page, Math.max(totalPages, 1)));
+        int offset = (currentPage - 1) * PAGE_SIZE;
+        
+        List<PlaceDTO> placeList = tourMapper.selectPlaceList(placeType, regionId, keyword, sort, offset, PAGE_SIZE);
+
+        int startPage = ((currentPage - 1) / PAGE_BLOCK) * PAGE_BLOCK + 1;
+        int endPage = Math.min(startPage + PAGE_BLOCK - 1, totalPages);
 
         Map<String, Object> result = new HashMap<>();
         result.put("placeList", placeList);
-        result.put("currentPage", currentPage);
-        result.put("totalPages", totalPages);
         result.put("totalCount", totalCount);
-
+        result.put("page", currentPage);
+        result.put("totalPages", totalPages);
+        result.put("startPage", startPage);
+        result.put("endPage", endPage);
+        
         return result;
     }
 

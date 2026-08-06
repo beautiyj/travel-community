@@ -293,3 +293,27 @@ a {
 .wish-toast-link:hover {
   color: var(--primary-foreground, #ffffff);
 }
+
+/* ============= 5. 목록 페이지 공용 페이지네이션 (community/tour 등 list.jsp 공용) ============= */
+.pagination {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 24px 0;
+}
+.pagination a,
+.pagination span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--muted-foreground);
+  text-decoration: none;
+}
+.pagination a:hover { background: var(--background); }
+.pagination .page-num.active { background: var(--primary); color: var(--primary-foreground); }

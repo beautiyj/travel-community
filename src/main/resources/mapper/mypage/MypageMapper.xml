@@ -87,6 +87,7 @@
                r.status,
                r.cancel_reason,
                r.reject_reason,
+               r.cancel_reject_reason,
                r.created_at,
                pay.amount
         from reservation r

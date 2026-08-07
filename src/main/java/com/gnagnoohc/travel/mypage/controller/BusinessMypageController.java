@@ -7,8 +7,10 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.http.ResponseEntity;
 
 import com.gnagnoohc.travel.auth.dto.LoginMemberDto;
 import com.gnagnoohc.travel.mypage.service.BusinessDocumentStorage;
@@ -197,35 +199,48 @@ public class BusinessMypageController {
         return "redirect:/mypage/business-info/approval";
     }
 
-    @GetMapping("/withdraw")
-    public String withdrawForm(HttpSession session, Model model) {
+    @PostMapping("/withdraw/check-password")
+    @ResponseBody
+    public ResponseEntity<WithdrawResponse> checkWithdrawPassword(
+            @RequestParam("currentPassword") String currentPassword,
+            HttpSession session) {
         MypageDto member = getBusinessMember(session);
         if (member == null) {
-            return redirectBySession(session);
+            return ResponseEntity.status(401)
+                    .body(new WithdrawResponse(false, "로그인이 필요합니다."));
         }
-        model.addAttribute("member", member);
-        return "mypage/common/withdraw";
+        try {
+            mypageService.verifyCurrentPassword(member.getMemberId(), currentPassword);
+            return ResponseEntity.ok(new WithdrawResponse(true, null));
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest()
+                    .body(new WithdrawResponse(false, e.getMessage()));
+        }
     }
 
     @PostMapping("/withdraw")
-    public String withdraw(
+    @ResponseBody
+    public ResponseEntity<WithdrawResponse> withdraw(
             @RequestParam("currentPassword") String currentPassword,
-            HttpSession session,
-            RedirectAttributes redirectAttributes) {
+            HttpSession session) {
         MypageDto member = getBusinessMember(session);
         if (member == null) {
-            return redirectBySession(session);
+            return ResponseEntity.status(401)
+                    .body(new WithdrawResponse(false, "로그인이 필요합니다."));
         }
         try {
             mypageService.verifyCurrentPassword(
                     member.getMemberId(), currentPassword);
             mypageService.withdrawMember(member.getMemberId());
             session.invalidate();
-            return "redirect:/";
+            return ResponseEntity.ok(new WithdrawResponse(true, "탈퇴되었습니다."));
         } catch (IllegalArgumentException | IllegalStateException e) {
-            redirectAttributes.addFlashAttribute("error", e.getMessage());
-            return "redirect:/mypage/business-info/withdraw";
+            return ResponseEntity.badRequest()
+                    .body(new WithdrawResponse(false, e.getMessage()));
         }
+    }
+
+    public record WithdrawResponse(boolean success, String message) {
     }
 
     private MypageDto getBusinessMember(HttpSession session) {

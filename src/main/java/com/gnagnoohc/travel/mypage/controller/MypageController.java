@@ -238,29 +238,38 @@ public class MypageController {
         return "mypage/user/wishlist";
     }
 
-    @GetMapping("/withdraw")
-    public String withdrawForm(Model model, HttpSession session) {
-        model.addAttribute("member",
-                mypageService.getMemberInfo(getMemberId(session)));
-        return "mypage/common/withdraw";
+    @PostMapping("/withdraw/check-password")
+    @ResponseBody
+    public ResponseEntity<WithdrawResponse> checkWithdrawPassword(
+            @RequestParam("currentPassword") String currentPassword,
+            HttpSession session) {
+        try {
+            mypageService.verifyCurrentPassword(getMemberId(session), currentPassword);
+            return ResponseEntity.ok(new WithdrawResponse(true, null));
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest()
+                    .body(new WithdrawResponse(false, e.getMessage()));
+        }
     }
 
     @PostMapping("/withdraw")
-    public String withdrawMember(HttpSession session) {
-
-        int result = mypageService.withdrawMember(getMemberId(session));
-
-        session.invalidate();
-
-        return "redirect:/";
+    @ResponseBody
+    public ResponseEntity<WithdrawResponse> withdrawMember(
+            @RequestParam("currentPassword") String currentPassword,
+            HttpSession session) {
+        Long memberId = getMemberId(session);
+        try {
+            mypageService.verifyCurrentPassword(memberId, currentPassword);
+            mypageService.withdrawMember(memberId);
+            session.invalidate();
+            return ResponseEntity.ok(new WithdrawResponse(true, "탈퇴되었습니다."));
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest()
+                    .body(new WithdrawResponse(false, e.getMessage()));
+        }
     }
 
-    @GetMapping("/logout")
-    public String logout(HttpSession session) {
-
-        session.invalidate();
-
-        return "redirect:/";
+    public record WithdrawResponse(boolean success, String message) {
     }
 
     @PostMapping("/wishlist/delete")

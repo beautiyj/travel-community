@@ -105,10 +105,12 @@
                 </a>
             </c:otherwise>
         </c:choose>
-        <a class="mypage-sidebar__logout" href="${cp}/mypage/logout">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l5-5-5-5m5 5H3m10 8h6a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-6"/></svg>
-            <span>로그아웃</span>
-        </a>
+        <form method="post" action="/auth/logout" class="mypage-sidebar__logout">
+            <button type="submit" class="mypage-sidebar__logout">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l5-5-5-5m5 5H3m10 8h6a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-6"/></svg>
+                <span>로그아웃</span>
+            </button>
+        </form>
     </nav>
 </aside>
 <c:if test="${isBusinessAccessBlocked}">
@@ -122,54 +124,5 @@
         <jsp:param name="method" value="get"/>
         <jsp:param name="action" value="/mypage/business-info"/>
     </jsp:include>
-    <script>
-        (function () {
-            var accessLink = document.querySelector('[data-business-rejected-access]');
-            var modal = document.getElementById('businessRejectedModal');
-            if (!accessLink || !modal) return;
-
-            var dialog = modal.querySelector('.modal');
-            var cancelButton = modal.querySelector('.modal-btn-cancel');
-            if (cancelButton) cancelButton.remove();
-
-            var closeButton = document.createElement('button');
-            closeButton.type = 'button';
-            closeButton.className = 'business-rejected-modal__close';
-            closeButton.setAttribute('aria-label', '닫기');
-            closeButton.textContent = '×';
-            dialog.insertBefore(closeButton, dialog.firstChild);
-
-            var closeModal = function () {
-                modal.classList.remove('is-open');
-                document.body.classList.remove('modal-open');
-            };
-
-            accessLink.addEventListener('click', function (event) {
-                event.preventDefault();
-                modal.classList.add('is-open');
-                document.body.classList.add('modal-open');
-                closeButton.focus();
-            });
-
-            closeButton.addEventListener('click', closeModal);
-
-            var form = modal.querySelector('form');
-            if (form) {
-                form.addEventListener('submit', function (event) {
-                    event.preventDefault();
-                    closeModal();
-                });
-            }
-
-            modal.addEventListener('click', function (event) {
-                if (event.target === modal) closeModal();
-            });
-
-            document.addEventListener('keydown', function (event) {
-                if (event.key === 'Escape' && modal.classList.contains('is-open')) {
-                    closeModal();
-                }
-            });
-        }());
-    </script>
+    <script src="${cp}/js/mypage/common/sidebar.js"></script>
 </c:if>

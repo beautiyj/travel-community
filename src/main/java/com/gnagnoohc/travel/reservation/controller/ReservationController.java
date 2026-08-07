@@ -53,6 +53,11 @@ public class ReservationController {
             model.addAttribute("message", "로그인이 필요한 서비스입니다.");
             return "reservation/loginRequired";
         }
+        if ("BUSINESS".equalsIgnoreCase(loginMember.getMemberRole())) {
+            model.addAttribute("message", "사업자 계정은 예약을 이용하실 수 없습니다.");
+            return "reservation/accessDenied";
+        }
+
         MypageDto member = mypageService.getMemberInfo((long) loginMember.getMemberId());
         model.addAttribute("loginMemberName", member.getName());
         model.addAttribute("loginMemberPhone", member.getPhone());

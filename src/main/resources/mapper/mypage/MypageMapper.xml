@@ -150,6 +150,12 @@
           and place_id = #{placeId}
     </select>
 
+    <select id="getWishlistedPlaceIds" parameterType="long" resultType="long">
+        select place_id
+        from wishlist
+        where member_id = #{memberId}
+    </select>
+
     <select id="getMemberByLoginId"
             parameterType="string"
             resultType="com.gnagnoohc.travel.mypage.dto.MypageDto">

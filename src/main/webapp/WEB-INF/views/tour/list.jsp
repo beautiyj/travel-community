@@ -82,9 +82,11 @@
                                                 <c:choose>
                                                     <c:when test="${not empty placeList}">
                                                         <c:forEach var="place" items="${placeList}">
+                                                            <%-- 로그인 회원이 이미 찜한 장소인지 wishlistedPlaceIds(TourWishlistModelAdvice 주입)와 대조 --%>
+                                                            <c:set var="isCardBookmarked" value="${not empty wishlistedPlaceIds and wishlistedPlaceIds.contains(place.placeId)}" />
                                                             <!-- 카드 전체를 감싸는 링크 태그 추가 -->
                                                             <a href="${pageContext.request.contextPath}/tour/detail?placeId=${place.placeId}" class="place-card-link">
-                                                                <%-- isBookmarked, rating, reviewCount는 별도 기능 붙기 전까지 카드 기본값 사용 --%>
+                                                                <%-- rating, reviewCount는 별도 기능 붙기 전까지 카드 기본값 사용 --%>
                                                                 <jsp:include page="/WEB-INF/views/common/cardComponent.jsp">
                                                                     <jsp:param name="firstimage"   value="${place.firstImage}" />
                                                                     <jsp:param name="name"         value="${place.name}" />
@@ -93,6 +95,7 @@
                                                                     <jsp:param name="hashTags"     value="${place.hashtags}" />
                                                                     <jsp:param name="regionName"   value="${place.regionName}" />
                                                                     <jsp:param name="price"        value="${place.displayPrice}" />
+                                                                    <jsp:param name="isBookmarked" value="${isCardBookmarked}" />
                                                                 </jsp:include>
                                                             </a>
                                                         </c:forEach>

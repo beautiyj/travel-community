@@ -36,6 +36,8 @@ public interface MypageRepository {
     int countWishlist(@Param("memberId") Long memberId,
                       @Param("placeId") Long placeId);
 
+    List<Long> getWishlistedPlaceIds(Long memberId);
+
     int addWishlist(@Param("memberId") Long memberId,
                     @Param("placeId") Long placeId);
 

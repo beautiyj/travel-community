@@ -40,6 +40,16 @@ public interface ReservationMapper {
                                  @Param("placeId") Long placeId,
                                  @Param("visitDate") LocalDate visitDate);
 
+    /**
+     * 슬롯 재사용(결제 이어가기) 시: findActiveBySlot으로 찾은 본인 PENDING 건을 새로 고른 값으로 갱신한다.
+     * 체크인 날짜(visit_date)는 그대로, 체크아웃/인원/예약자 정보만 덮어쓴다. status='PENDING'일 때만 적용(안전장치).
+     */
+    void updateDetails(@Param("reservationId") Long reservationId,
+                       @Param("visitorName") String visitorName,
+                       @Param("phone") String phone,
+                       @Param("checkOutDate") LocalDate checkOutDate,
+                       @Param("headcount") int headcount);
+
     /** 결제 준비 시: 발급한 orderId·시도 PG·(카카오)tid를 예약 행에 기록 (정합성 보정 배치의 조회 키 확보) */
     void markPaymentReady(@Param("reservationId") Long reservationId,
                           @Param("orderId") String orderId,
@@ -59,17 +69,21 @@ public interface ReservationMapper {
      * 예약 캘린더용: 장소의 '오늘 이후' 활성 예약 목록(체크인·체크아웃·인원).
      * 숙박은 기간 예약이라 날짜별 GROUP BY로는 중간 날짜를 알 수 없다.
      * 서비스에서 이 목록을 받아 구간을 날짜 단위로 펼쳐 마감일을 계산한다.
+     * excludeMemberId가 있으면 그 회원의 PENDING 건은 마감 계산에서 제외(결제 이어가기 위해 재선택 가능해야 함).
      */
-    List<Map<String, Object>> findActiveRanges(@Param("placeId") Long placeId);
+    List<Map<String, Object>> findActiveRanges(@Param("placeId") Long placeId,
+                                               @Param("excludeMemberId") Integer excludeMemberId);
 
     /**
      * 숙박 기간 겹침 판정: 요청 구간과 겹치는 활성 예약 수 (0이면 예약 가능).
      * 반개구간이라 체크아웃 당일에 다음 손님이 체크인하는 것은 겹침이 아니다.
      * 기존 단일날짜 예약(check_out_date IS NULL)은 1박짜리로 취급한다.
+     * excludeMemberId가 있으면 그 회원의 PENDING 건은 겹침 판정에서 제외(결제 이어가기 위해 재선택 가능해야 함).
      */
     int countOverlapping(@Param("placeId") Long placeId,
                          @Param("checkInDate") LocalDate checkInDate,
-                         @Param("checkOutDate") LocalDate checkOutDate);
+                         @Param("checkOutDate") LocalDate checkOutDate,
+                         @Param("excludeMemberId") Integer excludeMemberId);
 
     /**
      * 마감(휴무) 여부 조회. PLACE는 사업자(business) 파트 테이블 — 여기서는 읽기만 한다.
@@ -85,6 +99,13 @@ public interface ReservationMapper {
 
     /** 숙박 1인 단가 조회. PLACE.min_price를 읽기 전용으로 참조 (price_type은 안 보고 값만 그대로 씀) */
     Integer findMinPrice(@Param("placeId") Long placeId);
+
+    /**
+     * 업소 소유 회원의 member_role 조회. PLACE.member_id로 MEMBER를 조인해 읽기만 한다.
+     * min_price=0이 "사업자가 무료로 지정"인지 판별하는 데 쓴다 —
+     * 사업자가 직접 등록한 업소만 role='BUSINESS'이고, 공공데이터 배치 등록분은 아니다.
+     */
+    String findPlaceOwnerRole(@Param("placeId") Long placeId);
 
     /** 장소 대표 이미지 URL 조회. PLACE.first_image를 읽기 전용으로 참조 (예약 폼 카드 썸네일용) */
     String findPlaceImage(@Param("placeId") Long placeId);

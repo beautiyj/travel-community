@@ -10,6 +10,12 @@
 <c:set var="cardReviewCount" value="${empty param.reviewCount ? '0' : param.reviewCount}" />
 <c:set var="cardPrice" value="${empty param.price ? '가격 변동' : param.price}" />
 
+<%-- 외부에서 전달하는 showWish 옵션 (기본값: true) --%>
+<c:set var="showWishParam" value="${empty param.showWish ? true : param.showWish}" />
+<c:set var="isBusiness" value="${not empty sessionScope.loginMember and sessionScope.loginMember.memberRole eq 'BUSINESS'}" />
+<%-- 최종 위시버튼 노출 여부 (showWish가 true이고 사업자가 아닐 때만 true) --%>
+<c:set var="canShowWish" value="${showWishParam and not isBusiness}" />
+
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/tagButton.css">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/wishButton.css">
 
@@ -20,11 +26,12 @@
             <jsp:include page="/WEB-INF/views/common/tagButton.jsp">
                 <jsp:param name="place_type" value="${param.place_type}" />
             </jsp:include>
-            <jsp:include page="/WEB-INF/views/common/wishButton.jsp">
-                <jsp:param name="placeId" value="${param.placeId}" />
-                <jsp:param name="isBookmarked" value="${param.isBookmarked}" />
-            </jsp:include>
-
+            <c:if test="${canShowWish}">
+                <jsp:include page="/WEB-INF/views/common/wishButton.jsp">
+                    <jsp:param name="placeId" value="${param.placeId}" />
+                    <jsp:param name="isBookmarked" value="${param.isBookmarked}" />
+                </jsp:include>
+            </c:if>
         </div>
     </div>
 

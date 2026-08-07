@@ -189,14 +189,20 @@ public class ReservationService {
 
     /**
      * 관광지·맛집 예약금 조회. PLACE.min_price가 있으면 그 값을 그대로 예약금으로 쓰고,
-     * 아직 사업자가 설정하지 않았거나(min_price null) 0 이하로 잘못 들어간 경우 RESERVE_DEPOSIT으로 폴백한다.
+     * 아직 사업자가 설정하지 않았거나(min_price null) 음수로 잘못 들어간 경우 RESERVE_DEPOSIT으로 폴백한다.
+     * min_price=0은 업소 소유자가 실제 사업자(member_role='BUSINESS')일 때만 무료로 인정한다 —
+     * 공공데이터 배치 등록분은 요금 텍스트 파싱 실패로도 0이 들어올 수 있어 그대로 믿을 수 없다.
      * 폴백 발생 시 놓치지 않도록 경고 로그를 남긴다.
      */
     @Transactional(readOnly = true)
     public int getDepositAmount(Long placeId) {
         Integer price = reservationMapper.findMinPrice(placeId);
-        if (price == null || price <= 0) {
-            log.warn("[예약금 폴백] placeId={} min_price 미설정({}) — RESERVE_DEPOSIT({})으로 대체", placeId, price, RESERVE_DEPOSIT);
+        if (price == null || price < 0) {
+            log.warn("[예약금 폴백] placeId={} min_price 미설정/이상({}) — RESERVE_DEPOSIT({})으로 대체", placeId, price, RESERVE_DEPOSIT);
+            return RESERVE_DEPOSIT;
+        }
+        if (price == 0 && !"BUSINESS".equalsIgnoreCase(reservationMapper.findPlaceOwnerRole(placeId))) {
+            log.warn("[예약금 폴백] placeId={} min_price=0이지만 사업자 등록분이 아님 — RESERVE_DEPOSIT({})으로 대체", placeId, RESERVE_DEPOSIT);
             return RESERVE_DEPOSIT;
         }
         return price;

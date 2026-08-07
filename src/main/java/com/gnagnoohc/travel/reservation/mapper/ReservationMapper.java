@@ -100,6 +100,13 @@ public interface ReservationMapper {
     /** 숙박 1인 단가 조회. PLACE.min_price를 읽기 전용으로 참조 (price_type은 안 보고 값만 그대로 씀) */
     Integer findMinPrice(@Param("placeId") Long placeId);
 
+    /**
+     * 업소 소유 회원의 member_role 조회. PLACE.member_id로 MEMBER를 조인해 읽기만 한다.
+     * min_price=0이 "사업자가 무료로 지정"인지 판별하는 데 쓴다 —
+     * 사업자가 직접 등록한 업소만 role='BUSINESS'이고, 공공데이터 배치 등록분은 아니다.
+     */
+    String findPlaceOwnerRole(@Param("placeId") Long placeId);
+
     /** 장소 대표 이미지 URL 조회. PLACE.first_image를 읽기 전용으로 참조 (예약 폼 카드 썸네일용) */
     String findPlaceImage(@Param("placeId") Long placeId);
 

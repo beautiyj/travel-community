@@ -77,13 +77,11 @@ public class ReservationService {
         }
 
         // 같은 슬롯(회원·장소·날짜)에 활성 예약이 있으면:
-        //   - PENDING(미결제): 결제하러 갔다가 돌아온 경우이므로 그 예약을 재사용해 결제를 이어가게 한다
+        //   - PENDING(미결제): 결제하러 갔다가 돌아온 경우이므로 그 예약을 재사용해 결제를 이어간다.
+        //     단, 재진입 사이에 체크아웃/인원 등을 다시 골랐을 수 있으니 아래 검증을 통과시킨 뒤 새 값으로 갱신한다.
         //   - PAID(결제완료): 이미 확정된 예약이므로 새 예약을 거부한다
         Reservation existing = reservationMapper.findActiveBySlot(memberId, req.getPlaceId(), req.getVisitDate());
-        if (existing != null) {
-            if (existing.getStatus() == ReservationStatus.PENDING) {
-                return existing.getReservationId();
-            }
+        if (existing != null && existing.getStatus() != ReservationStatus.PENDING) {
             // "마감"이 아니라 본인이 이미 잡아둔 예약이므로, 그 사실이 드러나게 안내한다
             throw new IllegalStateException("이미 예약하신 날짜입니다. 내 예약 내역에서 확인해 주세요.");
         }
@@ -100,7 +98,7 @@ public class ReservationService {
             if (!req.getCheckOutDate().isAfter(req.getVisitDate())) {
                 throw new IllegalStateException("체크아웃 날짜는 체크인 다음 날부터 선택할 수 있습니다.");
             }
-            if (reservationMapper.countOverlapping(req.getPlaceId(), req.getVisitDate(), req.getCheckOutDate()) > 0) {
+            if (reservationMapper.countOverlapping(req.getPlaceId(), req.getVisitDate(), req.getCheckOutDate(), memberId) > 0) {
                 throw new IllegalStateException("이미 예약된 기간입니다. 다른 날짜를 선택해 주세요.");
             }
         }
@@ -117,6 +115,13 @@ public class ReservationService {
             if (already + req.getHeadcount() > DAILY_CAPACITY) {
                 throw new IllegalStateException("정원이 초과되어 예약할 수 없습니다.");
             }
+        }
+
+        // 재진입(결제 이어가기)한 본인 PENDING이 있으면 새로 고른 값으로 갱신해 그대로 재사용한다
+        if (existing != null) {
+            reservationMapper.updateDetails(existing.getReservationId(), req.getVisitorName(), req.getPhone(),
+                    isStay(placeType) ? req.getCheckOutDate() : null, req.getHeadcount());
+            return existing.getReservationId();
         }
 
         Reservation r = new Reservation();
@@ -184,14 +189,20 @@ public class ReservationService {
 
     /**
      * 관광지·맛집 예약금 조회. PLACE.min_price가 있으면 그 값을 그대로 예약금으로 쓰고,
-     * 아직 사업자가 설정하지 않았거나(min_price null) 0 이하로 잘못 들어간 경우 RESERVE_DEPOSIT으로 폴백한다.
+     * 아직 사업자가 설정하지 않았거나(min_price null) 음수로 잘못 들어간 경우 RESERVE_DEPOSIT으로 폴백한다.
+     * min_price=0은 업소 소유자가 실제 사업자(member_role='BUSINESS')일 때만 무료로 인정한다 —
+     * 공공데이터 배치 등록분은 요금 텍스트 파싱 실패로도 0이 들어올 수 있어 그대로 믿을 수 없다.
      * 폴백 발생 시 놓치지 않도록 경고 로그를 남긴다.
      */
     @Transactional(readOnly = true)
     public int getDepositAmount(Long placeId) {
         Integer price = reservationMapper.findMinPrice(placeId);
-        if (price == null || price <= 0) {
-            log.warn("[예약금 폴백] placeId={} min_price 미설정({}) — RESERVE_DEPOSIT({})으로 대체", placeId, price, RESERVE_DEPOSIT);
+        if (price == null || price < 0) {
+            log.warn("[예약금 폴백] placeId={} min_price 미설정/이상({}) — RESERVE_DEPOSIT({})으로 대체", placeId, price, RESERVE_DEPOSIT);
+            return RESERVE_DEPOSIT;
+        }
+        if (price == 0 && !"BUSINESS".equalsIgnoreCase(reservationMapper.findPlaceOwnerRole(placeId))) {
+            log.warn("[예약금 폴백] placeId={} min_price=0이지만 사업자 등록분이 아님 — RESERVE_DEPOSIT({})으로 대체", placeId, RESERVE_DEPOSIT);
             return RESERVE_DEPOSIT;
         }
         return price;
@@ -218,9 +229,9 @@ public class ReservationService {
      * 마감(빨강·선택불가)으로 그린다. (1일 1팀)
      */
     @Transactional(readOnly = true)
-    public Map<String, Object> getAvailability(Long placeId) {
+    public Map<String, Object> getAvailability(Long placeId, Integer memberId) {
         Map<String, Integer> booked = new LinkedHashMap<>();
-        for (Map<String, Object> row : reservationMapper.findActiveRanges(placeId)) {
+        for (Map<String, Object> row : reservationMapper.findActiveRanges(placeId, memberId)) {
             LocalDate from = ((Date) row.get("visitDate")).toLocalDate();
             Date rawTo = (Date) row.get("checkOutDate");
             // 체크아웃이 없으면(맛집/관광지 등 당일) 하루만 막고, 있으면 체크아웃 전날까지 막는다

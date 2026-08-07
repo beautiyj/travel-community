@@ -17,6 +17,7 @@ import com.gnagnoohc.travel.auth.dto.VerifiedMemberReactivation;
 import com.gnagnoohc.travel.auth.exception.EmailVerificationException;
 import com.gnagnoohc.travel.auth.mapper.AuthMapper;
 import com.gnagnoohc.travel.auth.model.EmailVerification;
+import com.gnagnoohc.travel.auth.validation.LocalUsernamePolicy;
 
 import jakarta.mail.internet.AddressException;
 import jakarta.mail.internet.InternetAddress;
@@ -439,8 +440,8 @@ public class EmailVerificationService {
 	}
 
 	private String validateUsername(String rawUsername) {
-		if (rawUsername == null || !rawUsername.matches("^[A-Za-z0-9]{5,20}$")) {
-			throw new EmailVerificationException("아이디는 영문 또는 숫자 5~20자로 입력해주세요.");
+		if (!LocalUsernamePolicy.isValid(rawUsername)) {
+			throw new EmailVerificationException(LocalUsernamePolicy.MESSAGE);
 		}
 		return rawUsername;
 	}

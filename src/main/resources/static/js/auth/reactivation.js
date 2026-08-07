@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
         sendButton.disabled = true;
         try {
             const result = await postForm("/auth/api/reactivation/send", {
-                username: username.value.trim()
+                username: username.value
             });
             if (!result.success) {
                 showError("reactivationUsernameError", result.message);
@@ -62,7 +62,7 @@ document.addEventListener("DOMContentLoaded", () => {
         verifyButton.disabled = true;
         try {
             const result = await postForm("/auth/api/reactivation/verify", {
-                username: username.value.trim(),
+                username: username.value,
                 code: code.value.trim()
             });
             if (!result.success) {
@@ -100,11 +100,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function validateUsername() {
-        if (/^[A-Za-z0-9]{5,20}$/.test(username.value.trim())) {
+        if (/^[a-z0-9]{5,20}$/.test(username.value)) {
             return true;
         }
 
-        showError("reactivationUsernameError", "아이디는 영문 또는 숫자 5~20자로 입력해 주세요.");
+        showError("reactivationUsernameError", "아이디는 소문자 영문 또는 숫자 5~20자로 입력해주세요.");
         return false;
     }
 

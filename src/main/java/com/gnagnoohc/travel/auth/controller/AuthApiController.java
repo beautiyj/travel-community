@@ -23,6 +23,7 @@ import com.gnagnoohc.travel.auth.dto.VerifiedMemberReactivation;
 import com.gnagnoohc.travel.auth.exception.EmailVerificationException;
 import com.gnagnoohc.travel.auth.service.AuthService;
 import com.gnagnoohc.travel.auth.service.EmailVerificationService;
+import com.gnagnoohc.travel.auth.validation.LocalUsernamePolicy;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -74,7 +75,13 @@ public class AuthApiController {
 	// 회원가입 입력값 중복 확인
 	@GetMapping("/check-login-id")
 	public ResponseEntity<Map<String, Object>> checkLoginId(
-			@RequestParam("loginId") String loginId) {
+			@RequestParam(value = "loginId", required = false) String loginId) {
+		if (!LocalUsernamePolicy.isValid(loginId)) {
+			return ResponseEntity.badRequest().body(Map.of(
+					"success", false,
+					"message", LocalUsernamePolicy.MESSAGE
+			));
+		}
 
 		boolean available = service.checkLoginId(loginId) == 0;
 

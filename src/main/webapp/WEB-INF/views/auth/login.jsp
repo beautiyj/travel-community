@@ -82,7 +82,7 @@
     <form id="loginForm" class="login-form" action="${pageContext.request.contextPath}/auth/login" method="post" novalidate>
         <div class="form-field">
             <label for="username">아이디</label>
-            <input id="username" name="username" type="text" autocomplete="username"
+            <input id="username" name="username" type="text" autocomplete="username" pattern="^[a-z0-9]{5,20}$"
                    maxlength="20" placeholder="아이디를 입력하세요" required autofocus>
             <p id="usernameError" class="field-error" aria-live="polite">${usernameError}</p>
         </div>

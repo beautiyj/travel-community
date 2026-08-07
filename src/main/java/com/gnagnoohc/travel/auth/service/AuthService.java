@@ -6,6 +6,7 @@ import com.gnagnoohc.travel.auth.exception.SignupException;
 import com.gnagnoohc.travel.auth.mapper.AuthMapper;
 import com.gnagnoohc.travel.auth.model.Member;
 import com.gnagnoohc.travel.auth.model.MemberLocalAuth;
+import com.gnagnoohc.travel.auth.validation.LocalUsernamePolicy;
 import com.gnagnoohc.travel.storage.ImageStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -54,13 +55,16 @@ public class AuthService {
 	 */
 	@Transactional
 	public LocalLoginResult authenticateLocal(String username, String rawPassword) {
-		if (username == null || username.isBlank()
+		if (username == null || username.isEmpty()
 				|| rawPassword == null || rawPassword.isBlank()) {
+			return LocalLoginResult.invalidCredentials();
+		}
+		if (!LocalUsernamePolicy.isValid(username)) {
 			return LocalLoginResult.invalidCredentials();
 		}
 
 		// 같은 아이디의 요청이 실패 횟수를 동시에 바꾸지 않도록 로그인 인증 정보를 잠가 조회한다.
-		MemberLocalAuth localAuth = mapper.findLocalLoginAuthForUpdate(username.trim());
+		MemberLocalAuth localAuth = mapper.findLocalLoginAuthForUpdate(username);
 		if (localAuth == null) {
 			return LocalLoginResult.invalidCredentials();
 		}
@@ -78,15 +82,14 @@ public class AuthService {
 			String username,
 			String rawPassword) {
 		if (candidateMemberId <= 0
-				|| username == null
-				|| !username.trim().matches("^[a-z0-9]{5,20}$")
+				|| !LocalUsernamePolicy.isValid(username)
 				|| rawPassword == null
 				|| rawPassword.isBlank()) {
 			return LocalLoginResult.invalidCredentials();
 		}
 
 		MemberLocalAuth localAuth = mapper.findSocialLinkCandidateAuthForUpdate(
-				candidateMemberId, username.trim());
+				candidateMemberId, username);
 		if (localAuth == null) {
 			return LocalLoginResult.invalidCredentials();
 		}
@@ -183,8 +186,8 @@ public class AuthService {
 	}
 
 	// 회원가입 입력값 중복 확인
-	public int checkLoginId(String loginId) {
-		return mapper.checkLoginId(loginId);
+	public int checkLoginId(String username) {
+		return mapper.checkLoginId(username);
 	}
 
 	public int checkNickname(String nickname) {
@@ -194,6 +197,9 @@ public class AuthService {
 	// 회원가입 입력값 검증
 	private void validateSignupRequest(SignUpRequest signUpRequest) {
 		// 사용자에게 안내 가능한 회원가입 오류를 전용 예외로 전달한다.
+		if (!LocalUsernamePolicy.isValid(signUpRequest.getLoginId())) {
+			throw new SignupException(LocalUsernamePolicy.MESSAGE);
+		}
 		validateNoWhitespace("아이디", signUpRequest.getLoginId());
 		validateNoWhitespace("닉네임", signUpRequest.getNickname());
 		validateNoWhitespace("이름", signUpRequest.getName());

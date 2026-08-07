@@ -4,6 +4,7 @@ import com.gnagnoohc.travel.auth.dto.*;
 import com.gnagnoohc.travel.auth.exception.EmailVerificationException;
 import com.gnagnoohc.travel.auth.exception.SignupException;
 import com.gnagnoohc.travel.auth.service.AuthService;
+import com.gnagnoohc.travel.auth.validation.LocalUsernamePolicy;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
@@ -57,15 +58,24 @@ public class AuthController {
 			@RequestParam(value = "password", required = false) String password, HttpServletRequest request,
 			Model model) {
 		// 입력하지 않은 항목은 로그인 처리 전에 확인해 해당 입력칸에 안내한다.
-		boolean usernameBlank = username == null || username.isBlank();
+		boolean usernameMissing = username == null || username.isEmpty();
 		boolean passwordBlank = password == null || password.isBlank();
-		if (usernameBlank || passwordBlank) {
-			if (usernameBlank) {
-				model.addAttribute("usernameError", "아이디를 입력해주세요.");
-			}
+		if (usernameMissing) {
+			model.addAttribute("usernameError", "아이디를 입력해주세요.");
 			if (passwordBlank) {
 				model.addAttribute("passwordError", "비밀번호를 입력해주세요.");
 			}
+			return "auth/login";
+		}
+		if (!LocalUsernamePolicy.isValid(username)) {
+			model.addAttribute("usernameError", LocalUsernamePolicy.MESSAGE);
+			if (passwordBlank) {
+				model.addAttribute("passwordError", "비밀번호를 입력해주세요.");
+			}
+			return "auth/login";
+		}
+		if (passwordBlank) {
+			model.addAttribute("passwordError", "비밀번호를 입력해주세요.");
 			return "auth/login";
 		}
 

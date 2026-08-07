@@ -81,8 +81,10 @@ public class ReservationController {
      */
     @GetMapping("/availability")
     @ResponseBody
-    public Map<String, Object> availability(@RequestParam("placeId") Long placeId) {
-        return reservationService.getAvailability(placeId);
+    public Map<String, Object> availability(@RequestParam("placeId") Long placeId, HttpSession session) {
+        LoginMemberDto loginMember = (LoginMemberDto) session.getAttribute("loginMember");
+        Integer memberId = (loginMember != null) ? loginMember.getMemberId() : null;
+        return reservationService.getAvailability(placeId, memberId);
     }
 
     /** 예약 생성 -> 결제 수단 선택 페이지로 이동 */

@@ -238,6 +238,26 @@
         ORDER BY sort_order ASC
     </select>
 
+    <!-- 특정 장소에 연결된 커뮤니티 후기 개수 조회 (post.place_id + post_place_tag 양쪽에서 post_id 합쳐서 중복 제거하여 카운트) -->
+    <select id="countCommunityReviewPostsByPlaceId" parameterType="int" resultType="int">
+        SELECT COUNT(*)
+        FROM (
+            SELECT post_id FROM post WHERE place_id = #{placeId}
+            UNION
+            SELECT post_id FROM post_place_tag WHERE place_id = #{placeId}
+        ) t
+    </select>
+
+    <!-- 특정 장소에 직접 태그된(visit-verified) 최신 후기의 post_id 조회 -->
+    <!-- 요구대로 최신은 post.place_id에서만 조회 (post_place_tag는 최신 대표글 판단에 포함하지 않음) -->
+    <select id="selectLatestCommunityReviewPostIdByPlaceId" parameterType="int" resultType="int">
+        SELECT post_id
+        FROM post
+        WHERE place_id = #{placeId}
+        ORDER BY created_at DESC
+        LIMIT 1
+    </select>
+
     <!-- 특정 지역의 현재 적재된 place 건수 조회 (지역별 무작위 샘플링 쿼터 체크용) -->
     <select id="selectPlaceCountByRegion" resultType="int">
         SELECT COUNT(*)

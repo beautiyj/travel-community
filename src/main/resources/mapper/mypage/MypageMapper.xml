@@ -124,8 +124,11 @@
         set
             member_status = 'WITHDRAWN',
             deleted_at = now(),
+			profile_img_url = null,
             updated_at = now()
         where member_id = #{memberId}
+		  and member_status = 'ACTIVE'
+		  and deleted_at is null
 
     </update>
 

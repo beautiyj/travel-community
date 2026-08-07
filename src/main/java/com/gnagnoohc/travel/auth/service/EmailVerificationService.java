@@ -12,6 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.gnagnoohc.travel.auth.dto.VerifiedSignupEmail;
 import com.gnagnoohc.travel.auth.dto.VerifiedPasswordReset;
+import com.gnagnoohc.travel.auth.dto.PendingMemberReactivation;
+import com.gnagnoohc.travel.auth.dto.VerifiedMemberReactivation;
 import com.gnagnoohc.travel.auth.exception.EmailVerificationException;
 import com.gnagnoohc.travel.auth.mapper.AuthMapper;
 import com.gnagnoohc.travel.auth.model.EmailVerification;
@@ -36,6 +38,7 @@ public class EmailVerificationService {
 	// 인증 목적을 분리해 추후 비밀번호 찾기 등의 인증 용도와 섞이지 않게 한다.
 	private static final String SIGNUP_PURPOSE = "SIGNUP";
 	private static final String FIND_PASSWORD_PURPOSE = "FIND_PASSWORD";
+	private static final String MEMBER_REACTIVATE_PURPOSE = "MEMBER_REACTIVATE";
 	// 인증번호 수명, 재발송 간격, 시도/발송 제한은 정책값으로 한 곳에서 관리한다.
 	private static final Duration CODE_VALIDITY = Duration.ofMinutes(5);
 	private static final Duration RESEND_COOLDOWN = Duration.ofSeconds(60);
@@ -123,6 +126,59 @@ public class EmailVerificationService {
 		return passwordReset;
 	}
 
+	/**
+	 * 재활성화는 브라우저가 보낸 이메일이 아니라 탈퇴 로컬 회원 행에 저장된 이메일로만 진행한다.
+	 * 대상이 아니면 null을 반환해 Controller가 계정 존재·상태를 드러내지 않는 동일 응답을 만들 수 있게 한다.
+	 */
+	@Transactional
+	public PendingMemberReactivation sendMemberReactivationVerificationCode(
+			String rawUsername, String rawRequestIp) {
+		String username = validateUsername(rawUsername);
+		String requestIp = normalizeAndValidateRequestIp(rawRequestIp);
+		PendingMemberReactivation target = mapper.findWithdrawnLocalMemberForReactivation(username);
+		if (target == null || target.getMemberId() == null || target.getEmail() == null) {
+			if (mapper.existsNonWithdrawnLocalMemberByUsername(username)) {
+				throw new EmailVerificationException(
+						EmailVerificationException.NOT_WITHDRAWN_MEMBER,
+						"탈퇴한 계정이 아닙니다.");
+			}
+			throw new EmailVerificationException(
+					EmailVerificationException.NOT_FOUND_MEMBER,
+					"존재하지 않는 계정입니다.");
+		}
+
+		String email = normalizeAndValidateEmail(target.getEmail());
+		sendVerificationCode(
+				email, MEMBER_REACTIVATE_PURPOSE, target.getMemberId().longValue(), requestIp);
+		target.setEmail(email);
+		return target;
+	}
+
+	/**
+	 * 인증번호 검증 대상은 send 단계에서 서버 세션에 저장한 대상뿐이다.
+	 * 사용자 입력 아이디·이메일을 다시 받아 대상 회원을 바꾸는 경로를 만들지 않는다.
+	 */
+	@Transactional
+	public VerifiedMemberReactivation verifyMemberReactivationCode(
+			PendingMemberReactivation pendingReactivation, String rawCode) {
+		validatePendingMemberReactivation(pendingReactivation);
+		String email = normalizeAndValidateEmail(pendingReactivation.getEmail());
+		EmailVerification verification = verifyCode(
+				email,
+				rawCode,
+				MEMBER_REACTIVATE_PURPOSE,
+				pendingReactivation.getMemberId().longValue());
+		if (verification == null) {
+			return null;
+		}
+
+		VerifiedMemberReactivation verifiedReactivation = new VerifiedMemberReactivation();
+		verifiedReactivation.setEmailVerificationId(verification.getEmailVerificationId());
+		verifiedReactivation.setMemberId(pendingReactivation.getMemberId());
+		verifiedReactivation.setEmail(email);
+		return verifiedReactivation;
+	}
+
 	// 회원가입 직전 이메일 인증 상태 확인
 	@Transactional
 	public VerifiedSignupEmail requireVerifiedSignupEmail(
@@ -171,6 +227,39 @@ public class EmailVerificationService {
 		}
 	}
 
+	/**
+	 * 최종 상태 변경 직전에 최신 재활성화 인증 행을 잠가 검증한다.
+	 * 세션 증표만 신뢰하면 재발송 후 이전 코드나 다른 회원의 코드를 재사용할 수 있다.
+	 */
+	@Transactional
+	public void requireVerifiedMemberReactivation(
+			VerifiedMemberReactivation sessionVerification) {
+		if (sessionVerification == null
+				|| sessionVerification.getEmailVerificationId() == null
+				|| sessionVerification.getMemberId() == null
+				|| sessionVerification.getEmail() == null) {
+			throw memberReactivationReverificationRequired();
+		}
+
+		String email = normalizeAndValidateEmail(sessionVerification.getEmail());
+		EmailVerification latestVerification = mapper.findLatestMemberEmailVerificationForUpdate(
+				email,
+				MEMBER_REACTIVATE_PURPOSE,
+				sessionVerification.getMemberId());
+		if (latestVerification == null
+				|| !sessionVerification.getEmailVerificationId()
+						.equals(latestVerification.getEmailVerificationId())
+				|| latestVerification.getVerifiedAt() == null
+				|| latestVerification.getConsumedAt() != null) {
+			throw memberReactivationReverificationRequired();
+		}
+
+		if (latestVerification.getVerifiedAt().toInstant()
+				.plus(VERIFIED_VALIDITY).isBefore(Instant.now())) {
+			throw memberReactivationReverificationRequired();
+		}
+	}
+
 	// 회원가입과 비밀번호 찾기가 같은 발송 제한과 해시 저장 정책을 사용한다.
 	private void sendVerificationCode(
 			String email, String purpose, Long memberId, String requestIp) {
@@ -197,6 +286,10 @@ public class EmailVerificationService {
 	// 인증 목적과 회원 귀속 여부에 맞는 최신 행을 잠가 동시 발송·검증을 막는다.
 	private EmailVerification findLatestVerificationForUpdate(
 			String email, String purpose, Long memberId) {
+		if (MEMBER_REACTIVATE_PURPOSE.equals(purpose) && memberId != null) {
+			return mapper.findLatestMemberEmailVerificationForUpdate(
+					email, purpose, memberId.intValue());
+		}
 		if (FIND_PASSWORD_PURPOSE.equals(purpose) && memberId != null) {
 			return mapper.findLatestPasswordResetVerificationForUpdate(email, memberId.intValue());
 		}
@@ -353,6 +446,21 @@ public class EmailVerificationService {
 	}
 
 	private EmailVerificationException passwordResetReverificationRequired() {
+		return new EmailVerificationException(
+				EmailVerificationException.EMAIL_REVERIFICATION_REQUIRED,
+				"이메일 인증이 만료되었거나 이미 사용되었습니다. 다시 인증해주세요.");
+	}
+
+	private void validatePendingMemberReactivation(PendingMemberReactivation pendingReactivation) {
+		if (pendingReactivation == null
+				|| pendingReactivation.getMemberId() == null
+				|| pendingReactivation.getMemberId() <= 0
+				|| pendingReactivation.getEmail() == null) {
+			throw memberReactivationReverificationRequired();
+		}
+	}
+
+	private EmailVerificationException memberReactivationReverificationRequired() {
 		return new EmailVerificationException(
 				EmailVerificationException.EMAIL_REVERIFICATION_REQUIRED,
 				"이메일 인증이 만료되었거나 이미 사용되었습니다. 다시 인증해주세요.");

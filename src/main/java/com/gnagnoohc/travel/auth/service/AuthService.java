@@ -1,14 +1,14 @@
 package com.gnagnoohc.travel.auth.service;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Iterator;
-import java.util.Locale;
-
-import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
-import javax.imageio.stream.ImageInputStream;
-
+import com.gnagnoohc.travel.auth.dto.*;
+import com.gnagnoohc.travel.auth.exception.EmailVerificationException;
+import com.gnagnoohc.travel.auth.exception.SignupException;
+import com.gnagnoohc.travel.auth.mapper.AuthMapper;
+import com.gnagnoohc.travel.auth.model.Member;
+import com.gnagnoohc.travel.auth.model.MemberLocalAuth;
+import com.gnagnoohc.travel.storage.ImageStorage;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -17,20 +17,13 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.gnagnoohc.travel.auth.dto.LoginMemberDto;
-import com.gnagnoohc.travel.auth.dto.LocalLoginResult;
-import com.gnagnoohc.travel.auth.dto.SignUpRequest;
-import com.gnagnoohc.travel.auth.dto.VerifiedPasswordReset;
-import com.gnagnoohc.travel.auth.dto.VerifiedSignupEmail;
-import com.gnagnoohc.travel.auth.exception.EmailVerificationException;
-import com.gnagnoohc.travel.auth.exception.SignupException;
-import com.gnagnoohc.travel.auth.mapper.AuthMapper;
-import com.gnagnoohc.travel.auth.model.Member;
-import com.gnagnoohc.travel.auth.model.MemberLocalAuth;
-import com.gnagnoohc.travel.storage.ImageStorage;
-
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Iterator;
+import java.util.Locale;
 
 /**
  * 로컬 인증과 로컬 회원가입 유스케이스의 트랜잭션 경계를 담당한다.
@@ -86,7 +79,7 @@ public class AuthService {
 			String rawPassword) {
 		if (candidateMemberId <= 0
 				|| username == null
-				|| !username.trim().matches("^[A-Za-z0-9]{5,20}$")
+				|| !username.trim().matches("^[a-z0-9]{5,20}$")
 				|| rawPassword == null
 				|| rawPassword.isBlank()) {
 			return LocalLoginResult.invalidCredentials();
@@ -442,6 +435,29 @@ public class AuthService {
 		// 비밀번호 변경 후에는 잠금과 실패 횟수를 초기화해 새 비밀번호로 로그인할 수 있게 한다.
 		if (mapper.updatePasswordByMemberId(sessionVerification.getMemberId(), passwordHash) != 1) {
 			throw new IllegalStateException("비밀번호 변경에 실패했습니다.");
+		}
+	}
+
+	/**
+	 * 재활성화 인증 소비와 회원 상태 전이를 하나의 DB 트랜잭션으로 묶는다.
+	 * 인증 행을 먼저 잠그고 한 번 소비한 뒤 조건부 UPDATE까지 모두 성공해야 하므로,
+	 * 두 브라우저의 완료 요청이나 중간 관리자 상태 변경이 성공으로 오인되지 않는다.
+	 */
+	@Transactional
+	public void reactivateMember(VerifiedMemberReactivation sessionVerification) {
+		emailVerificationService.requireVerifiedMemberReactivation(sessionVerification);
+
+		if (mapper.consumeMemberReactivationVerification(
+				sessionVerification.getEmailVerificationId(),
+				sessionVerification.getMemberId()) != 1) {
+			throw new EmailVerificationException(
+					EmailVerificationException.EMAIL_REVERIFICATION_REQUIRED,
+					"이메일 인증이 만료되었거나 이미 사용되었습니다. 다시 인증해주세요.");
+		}
+
+		// 재활성화는 로그인 성공이 아니므로 last_login_at은 변경하지 않는다.
+		if (mapper.reactivateWithdrawnLocalMember(sessionVerification.getMemberId()) != 1) {
+			throw new IllegalStateException("재활성화 가능한 탈퇴 계정을 찾을 수 없습니다.");
 		}
 	}
 

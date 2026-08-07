@@ -34,6 +34,7 @@ import java.util.Map;
 public class AuthController {
 
 	private static final Logger log = LoggerFactory.getLogger(AuthController.class);
+	private static final String VERIFIED_MEMBER_REACTIVATION = "verifiedMemberReactivation";
 
 	private final AuthService service;
 
@@ -286,6 +287,53 @@ public class AuthController {
 		return "auth/find-password";
 	}
 
+	// 아이디·비밀번호 찾기 화면의 정적 링크에서만 진입하는 탈퇴 로컬 회원 재활성화 시작 화면이다.
+	@GetMapping("/reactivation")
+	public String memberReactivationPage(HttpServletRequest request) {
+		String authenticatedRedirect = resolveAuthenticatedRedirect(request.getSession(false));
+		if (authenticatedRedirect != null) {
+			return authenticatedRedirect;
+		}
+		return "auth/reactivation";
+	}
+
+	// 인증 성공 세션 증표가 없는 직접 접근은 아이디 입력 단계로 되돌린다.
+	@GetMapping("/reactivation/complete")
+	public String memberReactivationCompletePage(HttpServletRequest request) {
+		String authenticatedRedirect = resolveAuthenticatedRedirect(request.getSession(false));
+		if (authenticatedRedirect != null) {
+			return authenticatedRedirect;
+		}
+		if (getVerifiedMemberReactivation(request.getSession(false)) == null) {
+			return "redirect:/auth/reactivation";
+		}
+		return "auth/reactivation-complete";
+	}
+
+	/**
+	 * 완료 요청은 로그인 세션을 만들지 않고 상태 전이만 수행한다.
+	 * 성공·실패 모두 증표를 제거해 같은 인증 결과의 재시도를 막는다.
+	 */
+	@PostMapping("/reactivation/complete")
+	public String completeMemberReactivation(HttpServletRequest request) {
+		HttpSession session = request.getSession(false);
+		VerifiedMemberReactivation sessionVerification = getVerifiedMemberReactivation(session);
+		if (sessionVerification == null) {
+			return "redirect:/auth/reactivation";
+		}
+
+		try {
+			service.reactivateMember(sessionVerification);
+			return "redirect:/auth/login?reactivated";
+		} catch (EmailVerificationException | IllegalStateException e) {
+			return "redirect:/auth/reactivation?error=verification";
+		} finally {
+			if (session != null) {
+				session.removeAttribute(VERIFIED_MEMBER_REACTIVATION);
+			}
+		}
+	}
+
 	// 인증 성공 세션이 없는 직접 접근은 비밀번호 찾기 첫 화면으로 돌려보낸다.
 	@GetMapping("/reset-password")
 	public String resetPasswordPage(HttpServletRequest request) {
@@ -346,6 +394,18 @@ public class AuthController {
 		Object sessionValue = session.getAttribute("verifiedPasswordReset");
 		if (sessionValue instanceof VerifiedPasswordReset verifiedPasswordReset) {
 			return verifiedPasswordReset;
+		}
+		return null;
+	}
+
+	private VerifiedMemberReactivation getVerifiedMemberReactivation(HttpSession session) {
+		if (session == null) {
+			return null;
+		}
+
+		Object sessionValue = session.getAttribute(VERIFIED_MEMBER_REACTIVATION);
+		if (sessionValue instanceof VerifiedMemberReactivation verifiedMemberReactivation) {
+			return verifiedMemberReactivation;
 		}
 		return null;
 	}

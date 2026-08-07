@@ -74,7 +74,7 @@
         <jsp:param name="dropdownId"         value="community_search_type" />
         <jsp:param name="listAttr"           value="searchTypeList" />
         <jsp:param name="defaultLabel"       value="전체" />
-        <jsp:param name="dropdownWidth"      value="88px" />
+        <jsp:param name="dropdownWidth"      value="110px" />
         <jsp:param name="dropdownHiddenName" value="searchType" />
         <jsp:param name="selectedAttr"       value="searchType" />
         <jsp:param name="selectedNameAttr"   value="searchTypeName" />

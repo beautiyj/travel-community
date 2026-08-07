@@ -97,8 +97,8 @@ document.addEventListener("DOMContentLoaded", () => {
     function validateAccountInput() {
         // 화면 검증은 요청 횟수를 줄이는 편의 기능이며 서버의 형식·계정 일치 검증을 대체하지 않는다.
         let valid = true;
-        if (!/^[A-Za-z0-9]{5,20}$/.test(username.value)) {
-            showError("findPasswordUsernameError", "아이디는 영문 또는 숫자 5~20자로 입력해주세요.");
+        if (!/^[a-z0-9]{5,20}$/.test(username.value)) {
+            showError("findPasswordUsernameError", "아이디는 소문자 영문 또는 숫자 5~20자로 입력해주세요.");
             valid = false;
         }
         if (email.value.length > 100 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {

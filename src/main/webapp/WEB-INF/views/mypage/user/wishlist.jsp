@@ -26,8 +26,11 @@
                     <div class="wishlist-grid">
                         <c:forEach var="wish" items="${wishlist}">
                             <article class="wishlist-item">
-                                <div class="wishlist-item__thumbnail" aria-hidden="true">
-                                    <span><c:out value="${wish.placeName}" default="장소" /></span>
+                                <div class="wishlist-item__thumbnail" aria-hidden="true"
+                                     <c:if test="${not empty wish.firstImage}">style="background-image:url('${wish.firstImage}');"</c:if>>
+                                    <c:if test="${empty wish.firstImage}">
+                                        <span><c:out value="${wish.placeName}" default="장소" /></span>
+                                    </c:if>
                                 </div>
                                 <div class="wishlist-item__body">
                                     <h3>
@@ -89,35 +92,6 @@
     </div>
 </div>
 
-<script>
-(() => {
-    const modal = document.getElementById("wishlistDeleteModal");
-    const wishlistIdInput = document.getElementById("wishlistDeleteId");
-    const placeLabel = document.getElementById("wishlistDeletePlace");
-    const closeModal = () => {
-        modal.hidden = true;
-    };
-
-    document.querySelectorAll(".js-wishlist-delete-open").forEach((button) => {
-        button.addEventListener("click", () => {
-            wishlistIdInput.value = button.dataset.wishlistId;
-            placeLabel.textContent = "장소 #" + button.dataset.placeId;
-            modal.hidden = false;
-        });
-    });
-
-    document.querySelectorAll(".js-wishlist-delete-close").forEach((button) => {
-        button.addEventListener("click", closeModal);
-    });
-
-    modal.addEventListener("click", (event) => {
-        if (event.target === modal) closeModal();
-    });
-
-    document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape" && !modal.hidden) closeModal();
-    });
-})();
-</script>
+<script src="/js/mypage/user/wishlist.js"></script>
 </body>
 </html>

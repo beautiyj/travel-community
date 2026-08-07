@@ -107,6 +107,7 @@
                w.member_id,
                w.place_id,
                p.name as place_name,
+               p.first_image as firstImage,
                w.created_at
         from wishlist w
         left join place p on p.place_id = w.place_id

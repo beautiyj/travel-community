@@ -15,7 +15,7 @@
         <nav class="nav">
             <a href="${cp}/tour/list?placeType=stay">숙박</a>
             <a href="${cp}/tour/list?placeType=food">맛집</a>
-            <a href="${cp}/tour/list?placeType=tour">여행지</a>
+            <a href="${cp}/tour/list?placeType=tour">관광지</a>
             <a href="${cp}/community/list">커뮤니티</a>
         </nav>
 

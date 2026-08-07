@@ -124,7 +124,11 @@ public class MypageServiceImpl implements MypageService {
     public int withdrawMember(Long memberId) {
         MypageDto member = getMemberInfo(memberId);
         int result = mypageRepository.withdrawMember(memberId);
-        if (result > 0 && member != null && member.getProfileImgUrl() != null
+        // 재활성화·관리자 변경 뒤에 늦게 도착한 탈퇴 요청은 성공으로 처리하지 않는다.
+        if (result != 1) {
+            throw new IllegalStateException("탈퇴 가능한 활성 계정을 찾을 수 없습니다.");
+        }
+        if (member != null && member.getProfileImgUrl() != null
                 && !member.getProfileImgUrl().isBlank()) {
             imageStorage.delete(member.getProfileImgUrl());
         }

@@ -48,6 +48,12 @@
         </div>
     </c:if>
 
+    <c:if test="${param.reactivated != null}">
+        <div class="form-alert form-alert--success" role="status">
+            계정이 재활성화되었습니다. 아이디와 비밀번호로 로그인해 주세요.
+        </div>
+    </c:if>
+
     <%-- 아래 쿼리 파라미터는 인증 처리 후 서버가 redirect할 때 붙이는 화면 상태이며, 인증 판단 근거로 사용하지 않는다. --%>
     <c:choose>
         <c:when test="${param.socialNotLinked != null}">

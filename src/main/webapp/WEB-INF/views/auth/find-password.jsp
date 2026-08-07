@@ -64,10 +64,11 @@
         <button id="verifyPasswordCodeButton" class="primary-button" type="submit" disabled>본인 확인</button>
     </form>
 
-    <p class="auth-switch">
-        로그인 화면으로 돌아가시겠어요?
+    <div class="auth-links">
+        <a href="${pageContext.request.contextPath}/auth/reactivation">탈퇴 계정 재활성화</a>
+        <span aria-hidden="true">|</span>
         <a href="${pageContext.request.contextPath}/auth/login">로그인</a>
-    </p>
+    </div>
 </main>
 </body>
 </html>

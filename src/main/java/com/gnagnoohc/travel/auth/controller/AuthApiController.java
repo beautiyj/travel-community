@@ -1,5 +1,10 @@
 package com.gnagnoohc.travel.auth.controller;
 
+import java.time.Duration;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.springframework.http.CacheControl;
@@ -13,6 +18,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.gnagnoohc.travel.auth.dto.VerifiedSignupEmail;
 import com.gnagnoohc.travel.auth.dto.VerifiedPasswordReset;
+import com.gnagnoohc.travel.auth.dto.PendingMemberReactivation;
+import com.gnagnoohc.travel.auth.dto.VerifiedMemberReactivation;
 import com.gnagnoohc.travel.auth.exception.EmailVerificationException;
 import com.gnagnoohc.travel.auth.service.AuthService;
 import com.gnagnoohc.travel.auth.service.EmailVerificationService;
@@ -32,6 +39,21 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @RequestMapping("/auth/api")
 public class AuthApiController {
+
+	private static final String PENDING_MEMBER_REACTIVATION = "pendingMemberReactivation";
+	private static final String VERIFIED_MEMBER_REACTIVATION = "verifiedMemberReactivation";
+	private static final String REACTIVATION_SEND_MESSAGE =
+			"입력한 정보로 재활성화 가능한 계정이 있으면 인증번호를 발송했습니다.";
+	private static final Duration REACTIVATION_IP_BURST_WINDOW = Duration.ofSeconds(60);
+	private static final Duration REACTIVATION_IP_DAILY_WINDOW = Duration.ofDays(1);
+	private static final int MAX_REACTIVATION_SENDS_PER_IP_PER_BURST = 5;
+	private static final int MAX_REACTIVATION_SENDS_PER_IP_PER_DAY = 20;
+	private static final int MAX_REACTIVATION_IP_THROTTLE_ENTRIES = 1_000;
+
+	// 단일 서버 프로젝트에서 세션 flood와 비대상 아이디 반복 요청을 줄이는 최소 보호 장치다.
+	private final Object reactivationSendThrottleLock = new Object();
+	private final Map<String, Deque<Long>> reactivationIpSendThrottle =
+			new LinkedHashMap<>(16, 0.75f, true);
 
 	private final AuthService service;
 	private final EmailVerificationService emailVerificationService;
@@ -195,5 +217,147 @@ public class AuthApiController {
 		} catch (EmailVerificationException e) {
 			return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
 		}
+	}
+
+	/**
+	 * 계정 존재·탈퇴 여부를 응답 차이로 노출하지 않는 재활성화 인증번호 발송 API다.
+	 * 이전 단계 증표를 먼저 지워 무효 아이디 요청 뒤에 과거 유효 증표를 쓰지 못하게 한다.
+	 */
+	@PostMapping("/reactivation/send")
+	public ResponseEntity<Map<String, Object>> sendMemberReactivationCode(
+			@RequestParam(value = "username", required = false) String username,
+			HttpServletRequest request) {
+		// IP 제한은 세션 생성보다 먼저 적용한다. 제한된 요청은 대상 상태와 무관하므로 쿠키를 만들지 않아도 된다.
+		if (!tryAcquireReactivationIpSendPermit(request.getRemoteAddr())) {
+			// 기존 세션이 있을 때만 이전 재활성화 증표를 무효화한다. 제한 응답 때문에 새 세션은 만들지 않는다.
+			clearMemberReactivationProofs(request.getSession(false));
+			return reactivationSendAccepted();
+		}
+		// IP 제한을 통과한 요청은 대상 여부와 무관하게 같은 세션 생성·증표 제거 과정을 거친다.
+		HttpSession session = request.getSession(true);
+		clearMemberReactivationProofs(session);
+
+		try {
+			PendingMemberReactivation pendingReactivation = emailVerificationService
+					.sendMemberReactivationVerificationCode(username, request.getRemoteAddr());
+			if (pendingReactivation != null) {
+				request.getSession(true)
+						.setAttribute(PENDING_MEMBER_REACTIVATION, pendingReactivation);
+			}
+			return reactivationSendAccepted();
+		} catch (EmailVerificationException e) {
+			if (EmailVerificationException.NOT_WITHDRAWN_MEMBER.equals(e.getErrorCode())
+					|| EmailVerificationException.NOT_FOUND_MEMBER.equals(e.getErrorCode())) {
+				return ResponseEntity.badRequest().body(Map.of(
+						"success", false,
+						"message", e.getMessage()));
+			}
+			// 발송 제한·대상 상태를 구분하지 않아 계정 열거와 제한 우회 단서를 남기지 않는다.
+			return reactivationSendAccepted();
+		}
+	}
+
+	/**
+	 * 브라우저가 보낸 아이디·이메일은 인증 대상 선택에 사용하지 않는다.
+	 * send 단계에서 만든 서버 세션 증표와 인증번호만으로 다음 단계로 이동한다.
+	 */
+	@PostMapping("/reactivation/verify")
+	public ResponseEntity<Map<String, Object>> verifyMemberReactivationCode(
+			@RequestParam(value = "code", required = false) String code,
+			HttpServletRequest request) {
+		HttpSession session = request.getSession(false);
+		PendingMemberReactivation pendingReactivation = getPendingMemberReactivation(session);
+		if (pendingReactivation == null) {
+			return ResponseEntity.badRequest().body(Map.of(
+					"success", false,
+					"message", "처음 단계부터 다시 진행해주세요."));
+		}
+
+		try {
+			VerifiedMemberReactivation verifiedReactivation = emailVerificationService
+					.verifyMemberReactivationCode(pendingReactivation, code);
+			if (verifiedReactivation == null) {
+				return ResponseEntity.badRequest().body(Map.of(
+						"success", false,
+						"message", "인증번호가 일치하지 않습니다."));
+			}
+
+			// 인증 성공 직전에 세션 ID를 바꿔 기존 세션 ID를 아는 공격자의 고정을 막는다.
+			request.changeSessionId();
+			session.removeAttribute(PENDING_MEMBER_REACTIVATION);
+			session.setAttribute(VERIFIED_MEMBER_REACTIVATION, verifiedReactivation);
+			return ResponseEntity.ok(Map.of("success", true, "message", "이메일 인증이 완료되었습니다."));
+		} catch (EmailVerificationException e) {
+			return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+		}
+	}
+
+	private ResponseEntity<Map<String, Object>> reactivationSendAccepted() {
+		return ResponseEntity.status(HttpStatus.ACCEPTED).body(Map.of(
+				"success", true,
+				"message", REACTIVATION_SEND_MESSAGE));
+	}
+
+	private PendingMemberReactivation getPendingMemberReactivation(HttpSession session) {
+		if (session == null) {
+			return null;
+		}
+		Object sessionValue = session.getAttribute(PENDING_MEMBER_REACTIVATION);
+		return sessionValue instanceof PendingMemberReactivation pendingReactivation
+				? pendingReactivation : null;
+	}
+
+	private void clearMemberReactivationProofs(HttpSession session) {
+		if (session == null) {
+			return;
+		}
+		session.removeAttribute(PENDING_MEMBER_REACTIVATION);
+		session.removeAttribute(VERIFIED_MEMBER_REACTIVATION);
+	}
+
+	/**
+	 * 매칭 전 모든 요청에 서버 관찰 IP 기준 5회/60초와 기존 메일 정책의 20회/일 상한을 적용한다.
+	 * LRU map이 포화되면 가장 오래 접근하지 않은 IP를 퇴출해 신규 IP를 전역 fail-closed로 막지 않는다.
+	 */
+	private boolean tryAcquireReactivationIpSendPermit(String rawRequestIp) {
+		long now = System.currentTimeMillis();
+		String requestIp = normalizeReactivationRequestIp(rawRequestIp);
+		synchronized (reactivationSendThrottleLock) {
+			Deque<Long> requestTimes = reactivationIpSendThrottle.get(requestIp);
+			if (requestTimes == null) {
+				if (reactivationIpSendThrottle.size() >= MAX_REACTIVATION_IP_THROTTLE_ENTRIES) {
+					Iterator<String> oldestIps = reactivationIpSendThrottle.keySet().iterator();
+					if (oldestIps.hasNext()) {
+						oldestIps.next();
+						oldestIps.remove();
+					}
+				}
+				requestTimes = new ArrayDeque<>();
+				reactivationIpSendThrottle.put(requestIp, requestTimes);
+			}
+
+			removeExpiredReactivationIpRequestTimes(requestTimes, now);
+			long burstStart = now - REACTIVATION_IP_BURST_WINDOW.toMillis();
+			long burstCount = requestTimes.stream().filter(requestTime -> requestTime > burstStart).count();
+			if (burstCount >= MAX_REACTIVATION_SENDS_PER_IP_PER_BURST
+					|| requestTimes.size() >= MAX_REACTIVATION_SENDS_PER_IP_PER_DAY) {
+				return false;
+			}
+			requestTimes.addLast(now);
+			return true;
+		}
+	}
+
+	private void removeExpiredReactivationIpRequestTimes(Deque<Long> requestTimes, long now) {
+		long dailyStart = now - REACTIVATION_IP_DAILY_WINDOW.toMillis();
+		while (!requestTimes.isEmpty() && requestTimes.peekFirst() <= dailyStart) {
+			requestTimes.removeFirst();
+		}
+	}
+
+	private String normalizeReactivationRequestIp(String rawRequestIp) {
+		return rawRequestIp == null || rawRequestIp.isBlank()
+				? "unknown"
+				: rawRequestIp.trim();
 	}
 }

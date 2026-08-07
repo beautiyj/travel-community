@@ -238,27 +238,47 @@
   padding: 10px 14px;
   border-radius: var(--radius-md);
 }
-
+/* 버튼 그룹 가로 1줄 배치 (2:8 비율) */
 .booking-action-group {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
 }
 
+/* 찜하기 박스 (가로 비율 약 20% / 원형 아이콘 보정) */
 .booking-wish-box {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: var(--card);
-  height: 48px;
+    flex: 0 0 48px;            /* 고정 48px 너비로 딱 깔끔하게 20% 수준 원형 보장 */
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--card);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
 }
 
-.booking-wish-text {
-  font-weight: var(--font-weight-bold);
-  font-size: var(--text-sm);
-  margin-left: 8px;
+.booking-wish-box:hover {
+    background-color: var(--muted);
+}
+
+/* wishButton 찌그러짐 방지 및 정중앙 정렬 */
+.booking-wish-box .btn-wish-trigger {
+    transform: scale(0.9);
+    margin: 0;
+    padding: 0;
+    box-shadow: none;           /* 테두리가 이미 감싸고 있으므로 자체 그림자 제거 */
+}
+
+/* 예약하기 박스 (나머지 80% 채우기) */
+.booking-submit-box {
+    flex: 1;                    /* 남은 공간을 꽉 채움 */
+}
+
+.booking-submit-box .btn-component {
+    height: 48px;               /* 찜하기 박스와 세로 높이 동일하게 일치 */
 }
 
 /* 상세 페이지 내부의 배너(tourDetailBanner)만 사이즈와 비율을 큼직하게 조정 */
@@ -297,3 +317,74 @@
 
 #tourDetailBanner .banner-arrow-prev { left: 20px; }
 #tourDetailBanner .banner-arrow-next { right: 20px; }
+/* 배너 래퍼 및 크게 보기 버튼 포지셔닝 */
+.detail-top-banner-wrapper {
+    position: relative;
+    width: 100%;
+    margin-bottom: 24px;
+}
+
+.btn-banner-zoom {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    z-index: 15; /* 화살표, 인디케이터보다 위에 뜨도록 설정 */
+    background: rgba(15, 23, 42, 0.75);
+    color: #ffffff;
+    font-size: var(--text-xs, 12px);
+    font-weight: var(--font-weight-bold, 700);
+    padding: 8px 14px;
+    border-radius: var(--radius-full, 9999px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+    transition: background 0.2s ease, transform 0.1s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-banner-zoom:hover {
+    background: rgba(15, 23, 42, 0.9);
+    transform: scale(1.03);
+}
+
+/* 대형 이미지 모달 팝업 */
+.img-modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.88);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+}
+
+.img-modal-overlay.show {
+    display: flex;
+    opacity: 1;
+}
+
+.img-modal-content {
+    max-width: 90vw;
+    max-height: 85vh;
+    border-radius: var(--radius-lg, 8px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    object-fit: contain;
+}
+
+.img-modal-close {
+    position: absolute;
+    top: 24px;
+    right: 32px;
+    color: #ffffff;
+    font-size: 36px;
+    font-weight: bold;
+    cursor: pointer;
+    user-select: none;
+}

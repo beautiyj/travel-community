@@ -150,6 +150,12 @@ public class MypageServiceImpl implements MypageService {
     }
 
     @Override
+    public List<Long> getWishlistedPlaceIds(Long memberId) {
+        requirePositive(memberId, "memberId");
+        return mypageRepository.getWishlistedPlaceIds(memberId);
+    }
+
+    @Override
     @Transactional
     public boolean toggleWishlist(Long memberId, Long placeId) {
         requirePositive(memberId, "memberId");

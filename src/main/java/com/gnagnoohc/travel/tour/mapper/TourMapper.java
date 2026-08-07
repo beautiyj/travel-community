@@ -27,15 +27,17 @@ public interface TourMapper {
     List<com.gnagnoohc.travel.tour.model.PlaceEntity> selectByAreaCode(@Param("areaCode") String areaCode);
 
     // 키워드 파라미터 추가 - 타입별 및 지역별 장소 목록 통합 조회 (TourController의 getPlaceList 에러 해결용)
+    // 타입별/지역별/키워드/정렬 및 페이징 적용된 장소 목록 조회 용도(정렬)
     List<PlaceDTO> selectPlaceList(
             @Param("placeType") String placeType,
             @Param("regionId") Integer regionId,
             @Param("keyword") String keyword,
+            @Param("sort") String sort,
             @Param("offset") int offset,
             @Param("limit") int limit
     );
 
-    // 목록 페이지네이션용 총 개수 (selectPlaceList와 동일한 필터 조건)
+    // 페이징 처리를 위한 전체 개수 조회
     int countPlaceList(
             @Param("placeType") String placeType,
             @Param("regionId") Integer regionId,
@@ -43,6 +45,9 @@ public interface TourMapper {
     );
 
     List<PlaceImageDTO> getImagesByPlaceId(@Param("placeId") Integer placeId);
+
+    Integer countCommunityReviewPostsByPlaceId(@Param("placeId") int placeId);
+    Integer selectLatestCommunityReviewPostIdByPlaceId(@Param("placeId") int placeId);
 
     // 특정 지역의 현재 적재된 PLACE 건수 조회 (지역별 무작위 샘플링 쿼터 체크용)
     int selectPlaceCountByRegion(@Param("regionId") Integer regionId);

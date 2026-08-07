@@ -53,6 +53,11 @@ public class ReservationController {
             model.addAttribute("message", "로그인이 필요한 서비스입니다.");
             return "reservation/loginRequired";
         }
+        if ("BUSINESS".equalsIgnoreCase(loginMember.getMemberRole())) {
+            model.addAttribute("message", "사업자 계정은 예약을 이용하실 수 없습니다.");
+            return "reservation/accessDenied";
+        }
+
         MypageDto member = mypageService.getMemberInfo((long) loginMember.getMemberId());
         model.addAttribute("loginMemberName", member.getName());
         model.addAttribute("loginMemberPhone", member.getPhone());
@@ -76,8 +81,10 @@ public class ReservationController {
      */
     @GetMapping("/availability")
     @ResponseBody
-    public Map<String, Object> availability(@RequestParam("placeId") Long placeId) {
-        return reservationService.getAvailability(placeId);
+    public Map<String, Object> availability(@RequestParam("placeId") Long placeId, HttpSession session) {
+        LoginMemberDto loginMember = (LoginMemberDto) session.getAttribute("loginMember");
+        Integer memberId = (loginMember != null) ? loginMember.getMemberId() : null;
+        return reservationService.getAvailability(placeId, memberId);
     }
 
     /** 예약 생성 -> 결제 수단 선택 페이지로 이동 */

@@ -31,6 +31,8 @@ public interface MypageService {
 
 	boolean isWishlisted(Long memberId, Long placeId);
 
+	List<Long> getWishlistedPlaceIds(Long memberId);
+
 	boolean toggleWishlist(Long memberId, Long placeId);
 
 	int cancelReservation(Long reservationId);

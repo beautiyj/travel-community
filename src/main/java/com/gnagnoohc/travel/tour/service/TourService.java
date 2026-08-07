@@ -96,6 +96,20 @@ public class TourService {
         return filteredImages.isEmpty() ? images : filteredImages;
     }
 
+    // 특정 장소에 연결된 커뮤니티 후기 개수 조회 (post.place_id + post_place_tag의 post_id 합집합으로 중복 제거하여 계산)
+    public int getCommunityReviewCount(Integer placeId) {
+        if (placeId == null) return 0;
+        Integer count = tourMapper.countCommunityReviewPostsByPlaceId(placeId);
+        return count == null ? 0 : count;
+    }
+
+    // 특정 장소에 직접 태그된 최신 후기(post.place_id 기준) 게시글 ID 조회
+    // (요구대로 최신 대표글은 post.place_id에서만 판단)
+    public Integer getLatestCommunityReviewPostId(Integer placeId) {
+        if (placeId == null) return null;
+        return tourMapper.selectLatestCommunityReviewPostIdByPlaceId(placeId);
+    }
+
     // 부가정보를 줄바꿈 기준("\n")으로 미리 쪼개서 리스트로 반환해주는 편의 메서드
     public List<String> getExtraInfoLines(String extraInfo) {
         if (extraInfo == null || extraInfo.trim().isEmpty()) {

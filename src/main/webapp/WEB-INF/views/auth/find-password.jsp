@@ -38,7 +38,7 @@
         <div class="form-field">
             <label for="findPasswordUsername">아이디</label>
             <input id="findPasswordUsername" name="username" type="text" autocomplete="username"
-                   maxlength="20" pattern="[A-Za-z0-9]{5,20}" placeholder="아이디를 입력하세요" required autofocus>
+                   maxlength="20" pattern="^[a-z0-9]{5,20}$" placeholder="아이디를 입력하세요" required autofocus>
             <p id="findPasswordUsernameError" class="field-error" aria-live="polite"></p>
         </div>
 

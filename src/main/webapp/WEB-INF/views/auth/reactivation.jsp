@@ -26,7 +26,7 @@
             <label for="reactivationUsername">아이디</label>
             <div class="input-action-row">
                 <input id="reactivationUsername" name="username" type="text" autocomplete="username"
-                       maxlength="20" pattern="[A-Za-z0-9]{5,20}" placeholder="아이디를 입력하세요" required autofocus>
+                       maxlength="20" pattern="^[a-z0-9]{5,20}$" placeholder="아이디를 입력하세요" required autofocus>
                 <button id="sendReactivationCodeButton" class="secondary-button" type="button">인증번호 발송</button>
             </div>
             <p id="reactivationUsernameError" class="field-error" aria-live="polite"></p>

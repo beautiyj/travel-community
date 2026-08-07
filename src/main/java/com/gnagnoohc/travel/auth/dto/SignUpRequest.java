@@ -1,5 +1,6 @@
 package com.gnagnoohc.travel.auth.dto;
 
+import com.gnagnoohc.travel.auth.validation.LocalUsernamePolicy;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -34,8 +35,8 @@ public class SignUpRequest {
 	private String name;
 
 	// 로그인 정보
-	@NotBlank(message = "아이디를 입력해주세요.")
-	@Pattern(regexp = "^[a-z0-9]{5,20}$", message = "아이디는 영문 또는 숫자 5~20자로 입력해주세요.")
+	@NotNull(message = "아이디를 입력해주세요.")
+	@Pattern(regexp = LocalUsernamePolicy.REGEX, message = LocalUsernamePolicy.MESSAGE)
 	private String loginId;
 
 	@NotBlank(message = "비밀번호를 입력해주세요.")

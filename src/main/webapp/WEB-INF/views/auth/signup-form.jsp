@@ -71,7 +71,7 @@
         <div class="form-field">
             <label for="login_id">아이디</label>
             <div class="input-action-row">
-                <input id="login_id" name="loginId" type="text" maxlength="20"
+                <input id="login_id" name="loginId" type="text" maxlength="20" pattern="^[a-z0-9]{5,20}$"
                        autocomplete="username" placeholder="영문 또는 숫자 5~20자" required>
                 <button id="checkUsernameButton" class="secondary-button" type="button">중복 확인</button>
             </div>

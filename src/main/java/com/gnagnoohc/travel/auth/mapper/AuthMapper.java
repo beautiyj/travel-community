@@ -19,7 +19,7 @@ import com.gnagnoohc.travel.auth.model.MemberLocalAuth;
 public interface AuthMapper {
 
 	// 회원가입
-	int checkLoginId(@Param("loginId") String loginId);
+	int checkLoginId(@Param("username") String username);
 
 	int checkNickname(@Param("nickname") String nickname);
 

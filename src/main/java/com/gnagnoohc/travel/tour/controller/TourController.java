@@ -70,12 +70,18 @@ public class TourController {
         PlaceDTO place = tourService.getPlaceDetail(placeId);
         List<PlaceImageDTO> placeImages = tourService.getPlaceImages(placeId);
 
+        // community 연동: 후기 개수(포함된 post_id 집합)와 대표 최신 postId (직접 태그된 post에서만 최신 판단)
+        int communityReviewCount = tourService.getCommunityReviewCount(placeId);
+        Integer communityReviewPostId = tourService.getLatestCommunityReviewPostId(placeId);
+
         List<String> extraInfoLines = (place != null)
                 ? tourService.getExtraInfoLines(place.getExtraInfo())
                 : List.of();
 
         model.addAttribute("place", place);
         model.addAttribute("placeImages", placeImages);
+        model.addAttribute("communityReviewCount", communityReviewCount);
+        model.addAttribute("communityReviewPostId", communityReviewPostId);
         model.addAttribute("extraInfoLines", extraInfoLines);
 
         return "tour/detail";

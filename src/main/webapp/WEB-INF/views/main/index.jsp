@@ -48,13 +48,19 @@ https://picsum.photos/id/1024/560/360^전주^전통과 현대가 어우러진 �
                 <div class="main-hero-search">
                     <form action="${cp}/tour/list" method="get">
                         <jsp:include page="/WEB-INF/views/common/searchbar.jsp">
-                            <jsp:param name="useDropdown"   value="true" />
-                            <jsp:param name="listAttr"      value="parentRegionList" />
-                            <jsp:param name="selectedAttr"  value="selectedRegionId" />
+                            <jsp:param name="useDropdown"       value="true" />
+                            <jsp:param name="listAttr"          value="parentRegionList" />
+                            <jsp:param name="selectedAttr"      value="selectedRegionId" />
+                            <jsp:param name="selectedNameAttr"    value="selectedRegionName" />
+                            <jsp:param name="dropdownHiddenName"  value="regionId" />
+                            <jsp:param name="value"             value="${keyword}" />
+                            <jsp:param name="defaultLabel"        value="전체" />
                             <jsp:param name="placeholder"   value="어디로 떠나고 싶으신가요?" />
                         </jsp:include>
                     </form>
                 </div>
+
+
             </div>
         </div>
 

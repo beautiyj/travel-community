@@ -37,10 +37,12 @@
 				<jsp:param name="listAttr"     value="${dropdownListAttr}" />
 				<jsp:param name="defaultLabel" value="${defaultLabel}" />
 				<jsp:param name="width"        value="${dropdownWidth}" />
+				<jsp:param name="hiddenInputName"  value="${dropdownHiddenName}" />
+				<jsp:param name="selectedAttr"     value="${dropdownSelectedAttr}" />
+				<jsp:param name="selectedNameAttr" value="${dropdownSelectedNameAttr}" />
 			</jsp:include>
 		</div>
 		<div class="search-divider"></div>
-		<input type="hidden" name="regionId" id="regionId_${dropdownId}" value="${requestScope[selectedAttr]}" />
 
 	</c:if>
 

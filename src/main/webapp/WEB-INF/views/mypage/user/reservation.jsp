@@ -11,7 +11,38 @@
     <link rel="stylesheet" href="/css/mypage/common.css">
     <link rel="stylesheet" href="/css/components/tagButton.css">
     <link rel="stylesheet" href="/css/mypage/user.css">
-    <link rel="stylesheet" href="/css/mypage/modal.css">
+    <link rel="stylesheet" href="/css/mypage/modal.css?v=reservation-detail-v3">
+    <style>
+        /* IDE가 이전 정적 CSS를 유지해도 예약 상세 UI는 현재 JSP 기준으로 표시한다. */
+        .detail-modal__dialog { max-width: 560px; border-radius: 20px; }
+        .detail-modal__header { align-items: center; padding: 30px 32px 14px; border-bottom: 0; }
+        .detail-modal__header h2 { font-size: 24px; }
+        .detail-modal__body { gap: 18px; padding: 16px 32px 24px; }
+        .detail-modal__summary { padding: 8px 16px; }
+        .detail-modal__summary p { padding: 9px 0; border-bottom: 1px solid var(--border); }
+        .detail-modal__summary p:last-child { border-bottom: 0; }
+        .detail-modal__summary strong { max-width: 260px; overflow-wrap: anywhere; text-align: right; }
+        .detail-modal__section { display: grid; overflow: hidden; border: 1px solid var(--border); border-radius: 12px; background: var(--card); }
+        .detail-modal__section h3 { margin: 0; padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--secondary); font-size: var(--text-sm); font-weight: var(--font-weight-bold); }
+        .detail-modal__processing { padding: 5px 16px; }
+        .detail-modal__processing p { display: grid; grid-template-columns: 76px minmax(0, 1fr); align-items: center; gap: 12px; padding: 8px 0; font-size: var(--text-sm); }
+        .detail-modal__processing p + p { border-top: 1px solid var(--border); }
+        .detail-modal__processing p > span:first-child { color: var(--muted-foreground); }
+        .detail-modal__processing strong { min-width: 0; text-align: left; }
+        .detail-modal__status { display: inline-flex; align-items: center; min-height: 26px; padding: 2px 9px; border-radius: 999px; font-size: var(--text-xs); font-weight: var(--font-weight-bold); }
+        .detail-modal__status--paid, .detail-modal__status--pending { background: #fef3c7; color: #92400e; }
+        .detail-modal__status--requested { background: #ffedd5; color: #9a3412; }
+        .detail-modal__status--confirmed { background: #dbeafe; color: #1d4ed8; }
+        .detail-modal__status--completed { background: #dcfce7; color: #166534; }
+        .detail-modal__status--cancelled, .detail-modal__status--rejected { background: #fee2e2; color: #b91c1c; }
+        .detail-modal__status--expired { background: #e5e7eb; color: #4b5563; }
+        .detail-modal__reason, .detail-modal__empty { padding: 14px 16px; background: var(--card); }
+        .detail-modal__reason + .detail-modal__reason, .detail-modal__reason + .detail-modal__empty { border-top: 1px solid var(--border); }
+        .detail-modal__reason-label { margin: 0 0 6px; color: var(--muted-foreground); font-size: 13px; font-weight: 700; }
+        .detail-modal__reason-text, .detail-modal__empty { margin: 0; color: var(--foreground); font-size: 15px; line-height: 1.6; overflow-wrap: anywhere; white-space: pre-line; }
+        .detail-modal__empty { color: var(--muted-foreground); }
+        .detail-modal__actions { grid-template-columns: 1fr; padding: 0 32px 30px; }
+    </style>
 </head>
 <body>
 <main class="mypage-page mypage-reservation-page">
@@ -68,7 +99,7 @@
                                 <div role="columnheader">방문일</div>
                                 <div role="columnheader">인원</div>
                                 <div role="columnheader">금액</div>
-                                <div role="columnheader">사유</div>
+                                <div role="columnheader">상세보기</div>
                                 <div role="columnheader">상태 / 처리</div>
                             </div>
                             <c:forEach var="reservation" items="${reservationList}">
@@ -85,13 +116,18 @@
                                         </c:choose>
                                     </div>
                                     <div role="cell">
-                                        <c:if test="${not empty reservation.cancelReason or not empty reservation.rejectReason}">
-                                            <button type="button" class="js-reason-open"
-                                                    data-cancel-reason="<c:out value='${reservation.cancelReason}'/>"
-                                                    data-reject-reason="<c:out value='${reservation.rejectReason}'/>"
-                                                    style="background:none;border:none;color:var(--primary);text-decoration:underline;cursor:pointer;padding:0;font-size:inherit;">자세히</button>
-                                        </c:if>
-                                        <c:if test="${empty reservation.cancelReason and empty reservation.rejectReason}">-</c:if>
+                                        <button type="button" class="js-detail-open"
+                                                data-place-name="<c:out value='${reservation.placeName}' default='장소 정보 없음'/>"
+                                                data-visitor-name="<c:out value='${reservation.visitorName}' default='-'/>"
+                                                data-phone="<c:out value='${reservation.phone}' default='-'/>"
+                                                data-visit-date="<c:out value='${reservation.visitDate}' default='-'/>"
+                                                data-headcount="<c:out value='${reservation.headcount}' default='0'/>"
+                                                data-amount="<c:out value='${reservation.amount}' default='0'/>"
+                                                data-status="<c:out value='${reservation.status}'/>"
+                                                data-cancel-reason="<c:out value='${reservation.cancelReason}'/>"
+                                                data-cancel-reject-reason="<c:out value='${reservation.cancelRejectReason}'/>"
+                                                data-reject-reason="<c:out value='${reservation.rejectReason}'/>"
+                                                style="background:none;border: 1px solid var(--border);border-radius:10px;color:#000;cursor:pointer;padding:8px 10px;font-size:inherit;">상세보기</button>
                                     </div>
                                     <div class="mypage-reservation-actions" role="cell">
                                         <jsp:include page="/WEB-INF/views/mypage/common/reservationStatusBadge.jsp">
@@ -194,21 +230,47 @@
     </div>
 </div>
 
-<div class="cancel-modal" id="reasonModal" hidden>
-    <div class="cancel-modal__dialog reason-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="reason-modal-title">
-        <div class="cancel-modal__header reason-modal__header">
-            <div><h2 id="reason-modal-title">취소 사유</h2></div>
-            <button class="cancel-modal__close js-reason-close" type="button" aria-label="닫기">×</button>
+<div class="cancel-modal" id="detailModal" hidden>
+    <div class="cancel-modal__dialog detail-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="detail-modal-title">
+        <div class="cancel-modal__header detail-modal__header">
+            <div><h2 id="detail-modal-title">예약 상세</h2><p id="detailPlaceName">장소</p></div>
+            <button class="cancel-modal__close js-detail-close" type="button" aria-label="닫기">×</button>
         </div>
-        <div class="cancel-modal__body reason-modal__body">
-            <div class="reason-modal__block" id="reasonModalCancelBlock" hidden>
-                <p class="reason-modal__label">내가 취소 요청한 사유</p>
-                <p class="reason-modal__text" id="reasonModalCancelText">-</p>
-            </div>
-            <div class="reason-modal__block" id="reasonModalRejectBlock" hidden>
-                <p class="reason-modal__label">업체 거절 사유</p>
-                <p class="reason-modal__text" id="reasonModalRejectText">-</p>
-            </div>
+        <div class="cancel-modal__body detail-modal__body">
+            <section class="cancel-modal__summary detail-modal__summary" aria-label="예약 기본 정보">
+                <p><span>장소</span><strong id="detailPlace">-</strong></p>
+                <p><span>예약자</span><strong id="detailVisitorName">-</strong></p>
+                <p><span>연락처</span><strong id="detailPhone">-</strong></p>
+                <p><span>방문일</span><strong id="detailVisitDate">-</strong></p>
+                <p><span>인원</span><strong id="detailHeadcount">-</strong></p>
+                <p><span>금액</span><strong class="cancel-modal__price" id="detailAmount">-</strong></p>
+            </section>
+            <section class="detail-modal__section detail-modal__section--processing" aria-label="예약 상태와 처리">
+                <h3>상태 / 처리</h3>
+                <div class="detail-modal__processing">
+                    <p><span>상태</span><strong><span class="detail-modal__status" id="detailStatus">-</span></strong></p>
+                    <p><span>처리</span><strong id="detailProcess">-</strong></p>
+                </div>
+            </section>
+            <section class="detail-modal__section detail-modal__section--reason" aria-label="사유">
+                <h3>사유</h3>
+                <div class="detail-modal__reason" id="detailCancelReasonBlock" hidden>
+                    <p class="detail-modal__reason-label">내가 남긴 취소 사유</p>
+                    <p class="detail-modal__reason-text" id="detailCancelReason">-</p>
+                </div>
+                <div class="detail-modal__reason" id="detailCancelRejectReasonBlock" hidden>
+                    <p class="detail-modal__reason-label">업체가 취소 요청을 거절한 사유</p>
+                    <p class="detail-modal__reason-text" id="detailCancelRejectReason">-</p>
+                </div>
+                <div class="detail-modal__reason" id="detailRejectReasonBlock" hidden>
+                    <p class="detail-modal__reason-label">업체가 예약을 거절한 사유</p>
+                    <p class="detail-modal__reason-text" id="detailRejectReason">-</p>
+                </div>
+                <p class="detail-modal__empty" id="detailNoReason">등록된 사유가 없습니다.</p>
+            </section>
+        </div>
+        <div class="cancel-modal__actions detail-modal__actions">
+            <button class="cancel-modal__back js-detail-close" type="button">닫기</button>
         </div>
     </div>
 </div>
@@ -239,7 +301,7 @@
 
         const cancelRefundAmount = document.getElementById('cancelRefundAmount');
         cancelRefundAmount.textContent = '조회 중...';
-        fetch('/reservations/' + button.dataset.reservationId + '/refund-preview')
+        fetch(form.dataset.endpointPrefix + encodeURIComponent(button.dataset.reservationId) + '/refund-preview')
             .then((res) => res.json())
             .then((data) => { cancelRefundAmount.textContent = formatAmount(data.refundAmount); })
             .catch(() => { cancelRefundAmount.textContent = '-'; });
@@ -332,26 +394,80 @@
 })();
 
 (() => {
-    const modal = document.getElementById('reasonModal');
-    const cancelBlock = document.getElementById('reasonModalCancelBlock');
-    const cancelText = document.getElementById('reasonModalCancelText');
-    const rejectBlock = document.getElementById('reasonModalRejectBlock');
-    const rejectText = document.getElementById('reasonModalRejectText');
+    const modal = document.getElementById('detailModal');
+    const statusElement = document.getElementById('detailStatus');
+    const processElement = document.getElementById('detailProcess');
+    const cancelReasonBlock = document.getElementById('detailCancelReasonBlock');
+    const cancelRejectReasonBlock = document.getElementById('detailCancelRejectReasonBlock');
+    const rejectReasonBlock = document.getElementById('detailRejectReasonBlock');
+    const noReason = document.getElementById('detailNoReason');
 
-    document.querySelectorAll('.js-reason-open').forEach((button) => button.addEventListener('click', () => {
-        const cancelReason = button.dataset.cancelReason;
-        const rejectReason = button.dataset.rejectReason;
+    const hasText = (value) => Boolean(value && value.trim());
+    const formatAmount = (amount) => Number(amount || 0).toLocaleString('ko-KR') + '원';
 
-        cancelBlock.hidden = !cancelReason;
-        if (cancelReason) cancelText.textContent = cancelReason;
+    const getDetailState = ({status, cancelReason, cancelRejectReason, rejectReason}) => {
+        const isCancelled = status === 'CANCELED' || status === 'CANCELLED';
+        const hasCancelReason = hasText(cancelReason);
+        const hasCancelRejectReason = hasText(cancelRejectReason);
+        const hasRejectReason = hasText(rejectReason);
 
-        rejectBlock.hidden = !rejectReason;
-        if (rejectReason) rejectText.textContent = rejectReason;
+        if (isCancelled && hasCancelReason && !hasCancelRejectReason && !hasRejectReason) {
+            return {label: '예약 취소', process: '예약 취소 처리 완료', type: 'cancelled'};
+        }
+        if (isCancelled && hasRejectReason && !hasCancelReason && !hasCancelRejectReason) {
+            return {label: '예약 거절', process: '업체 예약 거절 처리 완료', type: 'rejected'};
+        }
+        if (status === 'CONFIRMED' && hasCancelReason && hasCancelRejectReason) {
+            return {label: '예약 확정', process: '취소 요청 거절 · 예약 확정 유지', type: 'confirmed'};
+        }
 
+        const states = {
+            PAID: {label: '결제완료', process: '업체 확인 대기', type: 'paid'},
+            CANCEL_REQUESTED: {label: '취소요청', process: '업체의 취소 요청 확인 대기', type: 'requested'},
+            CONFIRMED: {label: '예약 확정', process: '예약 확정', type: 'confirmed'},
+            COMPLETED: {label: '이용 완료', process: '이용 완료', type: 'completed'},
+            CANCELED: {label: '예약취소', process: '예약취소', type: 'cancelled'},
+            CANCELLED: {label: '예약취소', process: '예약취소', type: 'cancelled'},
+            EXPIRED: {label: '예약만료', process: '예약만료', type: 'expired'}
+        };
+
+        return states[status] || {label: '예약대기', process: '예약 대기', type: 'pending'};
+    };
+
+    document.querySelectorAll('.js-detail-open').forEach((button) => button.addEventListener('click', () => {
+        const {dataset} = button;
+        const state = getDetailState(dataset);
+
+        document.getElementById('detailPlaceName').textContent = dataset.placeName || '장소 정보 없음';
+        document.getElementById('detailPlace').textContent = dataset.placeName || '-';
+        document.getElementById('detailVisitorName').textContent = dataset.visitorName || '-';
+        document.getElementById('detailPhone').textContent = dataset.phone || '-';
+        document.getElementById('detailVisitDate').textContent = dataset.visitDate || '-';
+        document.getElementById('detailHeadcount').textContent = (dataset.headcount || '0') + '명';
+        document.getElementById('detailAmount').textContent = formatAmount(dataset.amount);
+        statusElement.textContent = state.label;
+        statusElement.className = 'detail-modal__status detail-modal__status--' + state.type;
+        processElement.textContent = state.process;
+
+        const reasonBlocks = [
+            {block: cancelReasonBlock, text: document.getElementById('detailCancelReason'), value: dataset.cancelReason},
+            {block: cancelRejectReasonBlock, text: document.getElementById('detailCancelRejectReason'), value: dataset.cancelRejectReason},
+            {block: rejectReasonBlock, text: document.getElementById('detailRejectReason'), value: dataset.rejectReason}
+        ];
+        let hasReason = false;
+        reasonBlocks.forEach(({block, text, value}) => {
+            const visible = hasText(value);
+            block.hidden = !visible;
+            if (visible) {
+                text.textContent = value;
+                hasReason = true;
+            }
+        });
+        noReason.hidden = hasReason;
         modal.hidden = false;
     }));
 
-    document.querySelectorAll('.js-reason-close').forEach((button) => button.addEventListener('click', () => { modal.hidden = true; }));
+    document.querySelectorAll('.js-detail-close').forEach((button) => button.addEventListener('click', () => { modal.hidden = true; }));
     modal.addEventListener('click', (event) => { if (event.target === modal) modal.hidden = true; });
 })();
 </script>

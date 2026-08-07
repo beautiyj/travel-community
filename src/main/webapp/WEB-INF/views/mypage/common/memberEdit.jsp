@@ -34,9 +34,14 @@
                     <div class="profile-edit__profile-image">
                         <c:choose>
                             <c:when test="${not empty member.profileImgUrl}">
-                                <img src="${cp}<c:out value='${member.profileImgUrl}'/>" alt="현재 프로필 이미지">
+                                <img id="profileImagePreview"
+                                     src="${cp}<c:out value='${member.profileImgUrl}'/>"
+                                     alt="현재 프로필 이미지">
                             </c:when>
-                            <c:otherwise><span>프로필</span></c:otherwise>
+                            <c:otherwise>
+                                <img id="profileImagePreview" alt="프로필 이미지 미리보기" hidden>
+                                <span id="profileImageFallback">프로필</span>
+                            </c:otherwise>
                         </c:choose>
                     </div>
                     <div class="profile-edit__profile-controls">

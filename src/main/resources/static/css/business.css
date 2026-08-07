@@ -1212,7 +1212,7 @@ body {
 }
 
 /* ── 부가정보 읽기 뷰 목록 ── */
-.venue-detail-row__value--list {
+.venue-detail-row__value.venue-detail-row__value--list {
     white-space: normal;
 }
 

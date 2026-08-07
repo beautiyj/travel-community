@@ -35,11 +35,12 @@
     <!-- 어떤 글을 수정하는지 서버에 전달 -->
     <input type="hidden" name="postId" value="${post.postId}">
 
-    <!-- 카테고리: dropdownSelector 와 동일한 마크업, 기존 값(post.category)으로 초기 선택 표시 -->
+    <!-- 카테고리: dropdownSelector 와 동일한 마크업, 기존 값(post.category)으로 초기 선택 표시.
+         디자인/열고닫기/숨은 라디오 동기화까지 전부 dropdownSelector.js(data-radio-name="category")가 처리함. -->
     <div class="field">
       <label class="field-label">카테고리</label>
 
-      <div class="drop-select-container dropdown category-dropdown" id="categoryDropdown">
+      <div class="drop-select-container dropdown category-dropdown" id="categoryDropdown" data-radio-name="category">
         <button type="button" id="categoryDropdownTrigger" class="drop-select-trigger is-selected" aria-expanded="false">
           <div class="drop-select-left-box">
             <span class="drop-select-text" id="categoryDropdownLabel">${post.categoryLabel}</span>
@@ -206,8 +207,6 @@
 </jsp:include>
 
 <script>window.CP = "${cp}";</script>
-<script src="${cp}/js/dropdownSelector.js"></script>
-<script src="${cp}/js/community/categorySelect.js"></script>
 <script src="${cp}/js/community/contentEditor/constants.js"></script>
 <script src="${cp}/js/community/contentEditor/dom.js"></script>
 <script src="${cp}/js/community/contentEditor/state.js"></script>

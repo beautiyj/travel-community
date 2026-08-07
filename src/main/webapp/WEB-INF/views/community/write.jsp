@@ -33,12 +33,12 @@
   <form action="${cp}/community/write" method="post" enctype="multipart/form-data">
 
     <!-- 카테고리: dropdownSelector 와 동일한 마크업/클래스(drop-select-*, dropdown-*)를 그대로 써서
-         디자인/열고닫기 동작은 dropdownSelector.js 가 처리하고, categorySelect.js 는 숨은 라디오만 동기화함.
+         디자인/열고닫기/숨은 라디오 동기화까지 전부 dropdownSelector.js(data-radio-name="category")가 처리함.
          목록은 컨트롤러가 내려준 categoryList(PostCategory enum) 로 렌더링 - JSP 하드코딩 없음 -->
     <div class="field">
       <label class="field-label">카테고리</label>
 
-      <div class="drop-select-container dropdown category-dropdown" id="categoryDropdown">
+      <div class="drop-select-container dropdown category-dropdown" id="categoryDropdown" data-radio-name="category">
         <button type="button" id="categoryDropdownTrigger" class="drop-select-trigger is-selected" aria-expanded="false">
           <div class="drop-select-left-box">
             <span class="drop-select-text" id="categoryDropdownLabel">${categoryList[0].displayLabel}</span>
@@ -61,7 +61,7 @@
       </div>
 
       <!-- 실제 서버로 전송되는 값. 화면에서만 숨김 - placeTag.js 가 이 라디오들의 change 이벤트로 동작하므로
-           name/value 는 그대로 유지 (categorySelect.js 가 드롭다운 클릭 시 이 라디오를 체크 + change 발생시킴) -->
+           name/value 는 그대로 유지 (dropdownSelector.js 가 드롭다운 클릭 시 이 라디오를 체크 + change 발생시킴) -->
       <div class="category-radio-group" aria-hidden="true">
         <c:forEach var="cat" items="${categoryList}" varStatus="st">
           <input type="radio" name="category" value="${cat.value}" ${st.first ? 'checked' : ''}>
@@ -176,8 +176,6 @@
 </jsp:include>
 
 <script>window.CP = "${cp}";</script>
-<script src="${cp}/js/dropdownSelector.js"></script>
-<script src="${cp}/js/community/categorySelect.js"></script>
 <script src="${cp}/js/community/contentEditor/constants.js"></script>
 <script src="${cp}/js/community/contentEditor/dom.js"></script>
 <script src="${cp}/js/community/contentEditor/state.js"></script>

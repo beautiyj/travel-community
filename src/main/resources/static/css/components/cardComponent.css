@@ -211,7 +211,7 @@
 .place-grid {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center; /* 내부 아이템 중앙 정렬 */
+  justify-content: left; /* 내부 아이템 중앙 정렬 */
   gap: 24px;
   width: 100%;
   max-width: calc(320px * 4 + 24px * 3); /* 4장 최대 너비(갭 포함): 320*4 + 24*3 */
@@ -229,9 +229,6 @@
 
 /* 반응형: 뷰포트에 따라 열 수 조정 (계산식으로 카드 비율 축소) */
 @media (max-width: 1200px) {
-  .place-grid{
-    justify-content: left;
-  }
   .place-card-link { width: calc((100% - 48px) / 3); } /* 3열 */
 }
 

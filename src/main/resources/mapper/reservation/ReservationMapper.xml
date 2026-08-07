@@ -33,6 +33,17 @@
             (#{memberId}, #{placeId}, #{visitorName}, #{phone}, #{visitDate}, #{checkOutDate}, #{headcount}, #{status})
     </insert>
 
+    <!-- 슬롯 재사용(결제 이어가기) 갱신: 새로 고른 체크아웃/인원/예약자 정보로 기존 PENDING 행을 덮어쓴다 -->
+    <update id="updateDetails">
+        UPDATE reservation
+        SET visitor_name   = #{visitorName},
+            phone          = #{phone},
+            check_out_date = #{checkOutDate},
+            headcount      = #{headcount}
+        WHERE reservation_id = #{reservationId}
+          AND status = 'PENDING'
+    </update>
+
     <!-- 장소 타입 조회: place.place_type(tour/food/stay)을 그대로 참조 (읽기 전용) -->
     <select id="findPlaceType" resultType="string">
         SELECT place_type FROM place WHERE place_id = #{placeId}
@@ -44,6 +55,14 @@
 
     <select id="findMinPrice" resultType="int">
         SELECT min_price FROM place WHERE place_id = #{placeId}
+    </select>
+
+    <!-- 업소 소유 회원의 role 조회. member_role='BUSINESS'만 사업자가 직접 등록한 업소로 신뢰한다 -->
+    <select id="findPlaceOwnerRole" resultType="string">
+        SELECT m.member_role
+        FROM place p
+        JOIN member m ON m.member_id = p.member_id
+        WHERE p.place_id = #{placeId}
     </select>
 
     <!-- 장소 대표 이미지 조회. place.first_image를 읽기 전용으로 참조 (예약 폼 카드 썸네일용) -->
@@ -190,6 +209,9 @@
         WHERE place_id = #{placeId}
           AND status IN ('PENDING', 'PAID', 'CONFIRMED')
           AND COALESCE(check_out_date, visit_date) &gt;= CURDATE()
+          <if test="excludeMemberId != null">
+          AND NOT (member_id = #{excludeMemberId} AND status = 'PENDING')
+          </if>
     </select>
 
     <!--
@@ -205,6 +227,9 @@
           AND status IN ('PENDING', 'PAID', 'CONFIRMED')
           AND visit_date &lt; #{checkOutDate}
           AND #{checkInDate} &lt; COALESCE(check_out_date, DATE_ADD(visit_date, INTERVAL 1 DAY))
+          <if test="excludeMemberId != null">
+          AND NOT (member_id = #{excludeMemberId} AND status = 'PENDING')
+          </if>
     </select>
 
     <!-- 휴무 여부 조회: 사업자가 /business/closure에서 설정한 place.is_closed 그대로 참조 (읽기 전용) -->

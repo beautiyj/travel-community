@@ -38,6 +38,7 @@
             <dl class="member-info-list">
                 <div><dt>아이디</dt><dd><c:out value="${member.loginId}" default="-"/></dd></div>
                 <div><dt>이름</dt><dd><c:out value="${member.name}" default="-"/></dd></div>
+                <div><dt>닉네임</dt><dd><c:out value="${member.nickname}" default="-"/></dd></div>
                 <div><dt>이메일</dt><dd><c:out value="${member.email}" default="-"/></dd></div>
                 <div><dt>연락처</dt><dd><c:out value="${member.phone}" default="-"/></dd></div>
                 <div><dt>생일</dt><dd><c:out value="${member.birth}" default="-"/></dd></div>

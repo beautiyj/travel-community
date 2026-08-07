@@ -38,10 +38,9 @@
                                                         <span style="font-size: var(--text-lg); color: var(--primary); font-weight: normal;"> ('${keyword}' 검색)</span>
                                                     </c:if>
                                                 </h1>
-                                                <span style="font-size: var(--text-sm); color: var(--muted-foreground);">총 ${placeList.size()}개의 결과</span>
+                                                <span style="font-size: var(--text-sm); color: var(--muted-foreground);">총 ${totalCount}개의 결과</span>
                                             </div>
 
-                                            <!-- 검색바 컴포넌트 및 지역 필터 영역 -->
                                             <!-- 검색바 컴포넌트 및 지역 필터 영역 -->
                                             <div style="margin-bottom: 24px;">
                                                 <!-- 제출용 form 태그 생성 및 searchbar.jsp 기존 내장 드롭다운 옵션(useDropdown) 활성화 -->
@@ -58,7 +57,21 @@
                                                     <c:if test="${not empty selectedPlaceType}">
                                                         <input type="hidden" name="placeType" value="${selectedPlaceType}" />
                                                     </c:if>
+
+                                                    <!-- 검색어 변경 시에도 기존 선택된 정렬 기준 유지 -->
+                                                    <c:if test="${not empty selectedSort}">
+                                                        <input type="hidden" name="sort" value="${selectedSort}" />
+                                                    </c:if>
                                                 </form>
+                                            </div>
+
+                                            <div style="display: flex; justify: flex-end; margin-bottom: 16px;">
+                                                <select id="sortSelect" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border, #ccc); font-size: 14px; background-color: #fff; cursor: pointer;">
+                                                    <option value="latest" ${selectedSort eq 'latest' ? 'selected' : ''}>최신순</option>
+                                                    <option value="name" ${selectedSort eq 'name' ? 'selected' : ''}>가나다순</option>
+                                                    <option value="priceAsc" ${selectedSort eq 'priceAsc' ? 'selected' : ''}>낮은 가격순</option>
+                                                    <option value="priceDesc" ${selectedSort eq 'priceDesc' ? 'selected' : ''}>높은 가격순</option>
+                                                </select>
                                             </div>
 
                                             <!-- 카드 그리드 영역 (cardComponent.jsp 재사용) -->
@@ -88,9 +101,38 @@
                                                 </c:otherwise>
                                             </c:choose>
                                         </div>
+
+                                        <%-- 페이지네이션: 결과가 한 페이지(16건)를 넘을 때만 표시. 기존 필터(placeType/regionId/keyword)를 그대로 유지 --%>
+                                        <c:if test="${totalPages > 1}">
+                                            <center>
+                                                <div class="pagination">
+                                                    <c:if test="${startPage > 1}">
+                                                        <a class="page-nav" href="${pageContext.request.contextPath}/tour/list?placeType=${param.placeType}&regionId=${param.regionId}&keyword=${param.keyword}&sort=${selectedSort}&page=1">&laquo;</a>
+                                                        <a class="page-nav" href="${pageContext.request.contextPath}/tour/list?placeType=${param.placeType}&regionId=${param.regionId}&keyword=${param.keyword}&sort=${selectedSort}&page=${startPage - 1}">이전</a>
+                                                    </c:if>
+
+                                                    <c:forEach var="p" begin="${startPage}" end="${endPage}">
+                                                        <c:choose>
+                                                            <c:when test="${p == page}">
+                                                                <span class="page-num active">${p}</span>
+                                                            </c:when>
+                                                            <c:otherwise>
+                                                                <a class="page-num" href="${pageContext.request.contextPath}/tour/list?placeType=${param.placeType}&regionId=${param.regionId}&keyword=${param.keyword}&sort=${selectedSort}&page=${p}">${p}</a>
+                                                            </c:otherwise>
+                                                        </c:choose>
+                                                    </c:forEach>
+
+                                                    <c:if test="${endPage < totalPages}">
+                                                        <a class="page-nav" href="${pageContext.request.contextPath}/tour/list?placeType=${param.placeType}&regionId=${param.regionId}&keyword=${param.keyword}&sort=${selectedSort}&page=${endPage + 1}">다음</a>
+                                                        <a class="page-nav" href="${pageContext.request.contextPath}/tour/list?placeType=${param.placeType}&regionId=${param.regionId}&keyword=${param.keyword}&sort=${selectedSort}&page=${totalPages}">&raquo;</a>
+                                                    </c:if>
+                                                </div>
+                                            </center>
+                                        </c:if>
                                     </div>
                                     <!-- 공통 JS 인클루드 -->
                                     <jsp:include page="/WEB-INF/views/common/footer.jsp" />
                                     <script src="${pageContext.request.contextPath}/js/dropdownSelector.js"></script>
+                                    <script src="${pageContext.request.contextPath}/js/tour/tourList.js"></script>
                                 </body>
                             </html>

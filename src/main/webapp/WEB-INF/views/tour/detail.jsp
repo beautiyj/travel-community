@@ -102,10 +102,24 @@
 
                     <!-- 리뷰 영역 -->
                     <div class="review-section">
-                        <div class="review-title">여행 후기 (0)</div>
-                        <div class="review-empty-box">
-                            아직 후기가 없습니다. 첫 번째 후기를 남겨보세요!
-                        </div>
+                        <c:choose>
+                            <c:when test="${communityReviewCount != null && communityReviewCount > 0}">
+                                <div class="review-title">
+                                    <a href="${pageContext.request.contextPath}/community/detail?postId=${communityReviewPostId}">
+                                        여행 후기 (${communityReviewCount})
+                                    </a>
+                                </div>
+                                <div class="review-empty-box">
+                                    커뮤니티에 작성된 후기 보기(추후 확장 예정)
+                                </div>
+                            </c:when>
+                            <c:otherwise>
+                                <div class="review-title">여행 후기 (0)</div>
+                                <div class="review-empty-box">
+                                    아직 후기가 없습니다. 첫 번째 후기를 남겨보세요!
+                                </div>
+                            </c:otherwise>
+                        </c:choose>
                     </div>
                 </div>
 

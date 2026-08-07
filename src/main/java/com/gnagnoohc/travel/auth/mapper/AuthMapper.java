@@ -22,6 +22,8 @@ public interface AuthMapper {
 
 	int checkNickname(@Param("nickname") String nickname);
 
+	boolean existsMemberByEmail(@Param("email") String email);
+
 	int memberSignUp(Member member);
 
 	int localMemberJoin(MemberLocalAuth memberLocalAuth);

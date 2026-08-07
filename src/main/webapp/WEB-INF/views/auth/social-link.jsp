@@ -63,6 +63,7 @@
                    name="username"
                    type="text"
                    maxlength="20"
+                   pattern="^[a-z0-9]{5,20}$"
                    autocomplete="username"
                    value="<c:out value='${socialLinkRequest.username}' />"
                    aria-describedby="usernameHelp usernameError"

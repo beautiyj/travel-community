@@ -6,12 +6,20 @@
 	<!-- 회원가입 -->
 	<!-- 아이디 중복 사전 확인은 사용자 안내용이며 동시 가입의 최종 보장은 DB UNIQUE 제약이다. -->
 	<select id="checkLoginId" parameterType="String" resultType="int">
-		select count(*) from member where login_id=#{loginId}
+		select count(*) from member_local_auth where username=#{username}
 	</select>
 
 	<!-- 닉네임 중복 사전 확인은 사용자 안내용이며 동시 가입의 최종 보장은 DB UNIQUE 제약이다. -->
 	<select id="checkNickname" parameterType="String" resultType="int">
 		select count(*) from member where nickname=#{nickname}
+	</select>
+
+	<select id="existsMemberByEmail" resultType="boolean">
+		select exists(
+			select 1
+			from member
+			where email = #{email}
+		)
 	</select>
 
 	<!-- 회원 공통 정보 저장 및 생성된 member_id 반환 -->
@@ -162,6 +170,18 @@
 		for update
 	</select>
 
+	<!-- 이메일 주소가 같아도 다른 회원·다른 목적의 인증 결과는 재사용할 수 없도록 함께 잠근다. -->
+	<select id="findLatestMemberEmailVerificationForUpdate" resultMap="emailVerificationResultMap">
+		select *
+		from email_verification
+		where email = #{email}
+			and purpose = #{purpose}
+			and member_id = #{memberId}
+		order by email_verification_id desc
+		limit 1
+		for update
+	</select>
+
 	<!-- 이메일별 최근 24시간 발송 횟수 조회 -->
 	<select id="countEmailVerificationRequestsInLastDay" resultType="int">
 		select count(*)
@@ -256,6 +276,31 @@
 		limit 1
 	</select>
 
+	<!-- 클라이언트가 보낸 아이디로 가입 이메일을 조회하지 않고, 재활성화 가능한 상태인지 한 번에 판별한다. -->
+	<select id="findWithdrawnLocalMemberForReactivation" resultType="pendingmemberreactivation">
+		select member_info.member_id AS memberId,
+			member_info.email AS email
+		from member member_info
+		inner join member_local_auth local_auth
+			on local_auth.member_id = member_info.member_id
+		where local_auth.username = #{username}
+			and member_info.signup_type = 'LOCAL'
+			and member_info.member_status = 'WITHDRAWN'
+			and member_info.deleted_at is not null
+		limit 1
+	</select>
+
+	<select id="existsNonWithdrawnLocalMemberByUsername" resultType="boolean">
+		select exists(
+			select 1 from member member_info
+			inner join member_local_auth local_auth on local_auth.member_id = member_info.member_id
+			where local_auth.username = #{username}
+				and member_info.signup_type = 'LOCAL'
+				and member_info.member_status &lt;&gt; 'WITHDRAWN'
+				and member_info.deleted_at is null
+		)
+	</select>
+
 	<!-- 인증 완료 후 한 번만 비밀번호를 바꿀 수 있도록 인증 결과를 소비한다. -->
 	<update id="consumePasswordResetVerification">
 		update email_verification
@@ -265,6 +310,29 @@
 			and purpose = 'FIND_PASSWORD'
 			and verified_at is not null
 			and consumed_at is null
+	</update>
+
+	<!-- 같은 인증 행을 두 완료 요청이 함께 쓸 수 없도록 미소비 조건으로 한 번만 소비한다. -->
+	<update id="consumeMemberReactivationVerification">
+		update email_verification
+		set consumed_at = now()
+		where email_verification_id = #{emailVerificationId}
+			and member_id = #{memberId}
+			and purpose = 'MEMBER_REACTIVATE'
+			and verified_at is not null
+			and consumed_at is null
+	</update>
+
+	<!-- 상태 확인과 갱신을 분리하지 않아 탈퇴·관리자 상태 변경과 경합해도 허용된 상태 전이만 남긴다. -->
+	<update id="reactivateWithdrawnLocalMember">
+		update member
+		set member_status = 'ACTIVE',
+			deleted_at = null,
+			updated_at = now()
+		where member_id = #{memberId}
+			and signup_type = 'LOCAL'
+			and member_status = 'WITHDRAWN'
+			and deleted_at is not null
 	</update>
 
 	<!-- 비밀번호 변경 시 잠금과 실패 횟수도 함께 초기화한다. -->
@@ -290,7 +358,9 @@
 			on local_auth.member_id = member_info.member_id
 		where member_info.name = #{name}
 			and member_info.email = #{email}
-			and member_info.member_status = 'ACTIVE'
-			and member_info.deleted_at is null
+			and (
+				(member_info.member_status = 'ACTIVE' and member_info.deleted_at is null)
+				or (member_info.member_status = 'WITHDRAWN' and member_info.deleted_at is not null)
+			)
 	</select>
 </mapper>

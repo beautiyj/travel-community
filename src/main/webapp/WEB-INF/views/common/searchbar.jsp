@@ -36,7 +36,7 @@
 				<jsp:param name="dropdownId"   value="${dropdownId}" />
 				<jsp:param name="listAttr"     value="${dropdownListAttr}" />
 				<jsp:param name="defaultLabel" value="${defaultLabel}" />
-				<jsp:param name="width"        value="120px" />
+				<jsp:param name="width"        value="135px" />
 			</jsp:include>
 		</div>
 		<div class="search-divider"></div>

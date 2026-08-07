@@ -53,7 +53,7 @@
 
                     <div class="place-rating-area">
                         <span class="star-icon">⭐</span>
-                        <span class="place-rating-count">리뷰 0개</span>
+                        <span class="place-rating-count">리뷰 ${communityReviewCount}개</span>
                     </div>
 
                     <div class="place-desc">

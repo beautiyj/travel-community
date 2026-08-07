@@ -21,16 +21,25 @@ public class TourService {
     private final TourMapper tourMapper;
 
     private static final int PAGE_SIZE = 16;   // 카드 4열 x 4줄
-    private static final int PAGE_BLOCK = 10;  // 페이지 번호 블록 단위 (커뮤니티와 동일)
+    private static final int PAGE_BLOCK = 10;  // 페이지 번호 블록 단위 (1~10, 11~20)
 
-    // 목록 페이지 조회: 장소 목록 + 페이지네이션 정보(현재 페이지/총 페이지/번호 블록 범위)를 한 번에 계산해서 반환
-    public Map<String, Object> getPlacePage(String placeType, Integer regionId, String keyword, int page) {
+    // 통합 검색용 keyword + sort(정렬) 파라미터가 포함된 목록 조회
+    public List<PlaceDTO> getPlaceList(String placeType, Integer regionId, String keyword, String sort, int page) {
+        // 페이지 범위 검증 - 재하는 총 페이지 수를 초과하여 요청했을 때 방어하기 위해 1부터 totalPages 사이의 안전한 범위로 보정
+        int currentPage = Math.max(page, 1);
+        int offset = (currentPage - 1) * PAGE_SIZE;
+        return tourMapper.selectPlaceList(placeType, regionId, keyword, sort, offset, PAGE_SIZE);
+    }
+
+    // Controller 전용: 장소 목록 + 페이징 블록(startPage, endPage 등) + 정렬을 한 번에 계산하여 반환
+    public Map<String, Object> getPlacePage(String placeType, Integer regionId, String keyword, String sort, int page) {
         int totalCount = tourMapper.countPlaceList(placeType, regionId, keyword);
         int totalPages = (int) Math.ceil(totalCount / (double) PAGE_SIZE);
 
         int currentPage = Math.max(1, Math.min(page, Math.max(totalPages, 1)));
         int offset = (currentPage - 1) * PAGE_SIZE;
-        List<PlaceDTO> placeList = tourMapper.selectPlaceList(placeType, regionId, keyword, offset, PAGE_SIZE);
+        
+        List<PlaceDTO> placeList = tourMapper.selectPlaceList(placeType, regionId, keyword, sort, offset, PAGE_SIZE);
 
         int startPage = ((currentPage - 1) / PAGE_BLOCK) * PAGE_BLOCK + 1;
         int endPage = Math.min(startPage + PAGE_BLOCK - 1, totalPages);
@@ -42,6 +51,7 @@ public class TourService {
         result.put("totalPages", totalPages);
         result.put("startPage", startPage);
         result.put("endPage", endPage);
+        
         return result;
     }
 

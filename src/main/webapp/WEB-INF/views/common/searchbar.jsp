@@ -19,7 +19,7 @@
 <c:set var="dropdownId"        value="${empty param.dropdownId ? 'search_dropdown' : param.dropdownId}" />
 <c:set var="dropdownListAttr"  value="${empty param.listAttr ? 'categoryList' : param.listAttr}" />
 <c:set var="defaultLabel"      value="${empty param.defaultLabel ? '전체' : param.defaultLabel}" />
-<c:set var="dropdownWidth"     value="${empty param.dropdownWidth ? '120px' : param.dropdownWidth}" />
+<c:set var="dropdownWidth"     value="${empty param.dropdownWidth ? '135px' : param.dropdownWidth}" />
 <%-- 드롭다운 선택값 제출/유지용 (선택) --%>
 <c:set var="dropdownHiddenName" value="${param.dropdownHiddenName}" />
 <c:set var="dropdownSelectedAttr" value="${param.selectedAttr}" />
@@ -37,10 +37,12 @@
 				<jsp:param name="listAttr"     value="${dropdownListAttr}" />
 				<jsp:param name="defaultLabel" value="${defaultLabel}" />
 				<jsp:param name="width"        value="${dropdownWidth}" />
+				<jsp:param name="hiddenInputName"  value="${dropdownHiddenName}" />
+				<jsp:param name="selectedAttr"     value="${dropdownSelectedAttr}" />
+				<jsp:param name="selectedNameAttr" value="${dropdownSelectedNameAttr}" />
 			</jsp:include>
 		</div>
 		<div class="search-divider"></div>
-		<input type="hidden" name="regionId" id="regionId_${dropdownId}" value="${requestScope[selectedAttr]}" />
 
 	</c:if>
 

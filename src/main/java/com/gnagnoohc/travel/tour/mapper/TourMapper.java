@@ -46,6 +46,9 @@ public interface TourMapper {
 
     List<PlaceImageDTO> getImagesByPlaceId(@Param("placeId") Integer placeId);
 
+    Integer countCommunityReviewPostsByPlaceId(@Param("placeId") int placeId);
+    Integer selectLatestCommunityReviewPostIdByPlaceId(@Param("placeId") int placeId);
+
     // 특정 지역의 현재 적재된 PLACE 건수 조회 (지역별 무작위 샘플링 쿼터 체크용)
     int selectPlaceCountByRegion(@Param("regionId") Integer regionId);
 

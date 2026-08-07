@@ -9,6 +9,7 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -179,6 +180,9 @@ public class AuthService {
 
 			consumeSignupEmailVerification(verifiedEmail, member);
 			return member.getMemberId();
+		} catch (DuplicateKeyException e) {
+			deleteStoredDocument(storedBusinessRegistrationDocumentUrl);
+			throw new SignupException("아이디, 닉네임 또는 이메일 중 이미 사용 중인 정보가 있습니다.");
 		} catch (RuntimeException | Error e) {
 			deleteStoredDocument(storedBusinessRegistrationDocumentUrl);
 			throw e;

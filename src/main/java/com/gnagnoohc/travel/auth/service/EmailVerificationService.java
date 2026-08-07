@@ -59,7 +59,14 @@ public class EmailVerificationService {
 	@Transactional
 	public void sendSignupVerificationCode(String rawEmail, String rawRequestIp) {
 		String email = normalizeAndValidateEmail(rawEmail);
+		// 요청 IP 형식 오류는 DB 조회 전에 차단한다.
 		String requestIp = normalizeAndValidateRequestIp(rawRequestIp);
+		// 가입된 이메일에는 인증 행과 메일 발송이라는 부작용을 만들지 않는다.
+		if (mapper.existsMemberByEmail(email)) {
+			throw new EmailVerificationException(
+					EmailVerificationException.DUPLICATE_EMAIL,
+					"이미 가입된 이메일입니다.");
+		}
 		sendVerificationCode(email, SIGNUP_PURPOSE, null, requestIp);
 	}
 

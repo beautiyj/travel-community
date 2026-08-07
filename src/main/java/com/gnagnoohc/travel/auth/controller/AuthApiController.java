@@ -3,6 +3,7 @@ package com.gnagnoohc.travel.auth.controller;
 import java.util.Map;
 
 import org.springframework.http.CacheControl;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -94,6 +95,14 @@ public class AuthApiController {
 					"message", "인증번호를 발송했습니다."
 			));
 		} catch (EmailVerificationException e) {
+			if (EmailVerificationException.DUPLICATE_EMAIL.equals(e.getErrorCode())) {
+				return ResponseEntity.status(HttpStatus.CONFLICT)
+						.body(Map.of(
+								"success", false,
+								"code", EmailVerificationException.DUPLICATE_EMAIL,
+								"message", e.getMessage()
+						));
+			}
 			return ResponseEntity.badRequest()
 					.body(Map.of(
 							"success", false,

@@ -6,6 +6,7 @@ public class EmailVerificationException extends RuntimeException {
 
 	// 이메일 인증을 다시 받아야 하는 경우를 하나의 오류 코드로 전달한다.
 	public static final String EMAIL_REVERIFICATION_REQUIRED = "EMAIL_REVERIFICATION_REQUIRED";
+	public static final String DUPLICATE_EMAIL = "DUPLICATE_EMAIL";
 
 	private final String errorCode;
 

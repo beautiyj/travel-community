@@ -57,6 +57,14 @@
         SELECT min_price FROM place WHERE place_id = #{placeId}
     </select>
 
+    <!-- 업소 소유 회원의 role 조회. member_role='BUSINESS'만 사업자가 직접 등록한 업소로 신뢰한다 -->
+    <select id="findPlaceOwnerRole" resultType="string">
+        SELECT m.member_role
+        FROM place p
+        JOIN member m ON m.member_id = p.member_id
+        WHERE p.place_id = #{placeId}
+    </select>
+
     <!-- 장소 대표 이미지 조회. place.first_image를 읽기 전용으로 참조 (예약 폼 카드 썸네일용) -->
     <select id="findPlaceImage" resultType="string">
         SELECT first_image FROM place WHERE place_id = #{placeId}

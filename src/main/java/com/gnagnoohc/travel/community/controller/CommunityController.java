@@ -35,12 +35,6 @@ public class CommunityController {
 
     private static final int MAX_PLACE_TAGS = 5;    // 일반후기 다중 장소 태그 최대 개수
 
-    // 커뮤니티 테스트 파일 실행
-    @GetMapping("/community/test")
-    public String index() {
-        return "community/test";
-    }
-
     // 검색 타입 드롭다운(제목/작성자/내용) 목록. 값이 없으면(기본 "전체") 제목+작성자 OR 검색 유지 (CommunityMapper.xml listFilter 참고)
     private static final List<SearchTypeOption> SEARCH_TYPE_OPTIONS = List.of(
             new SearchTypeOption("title", "제목"),

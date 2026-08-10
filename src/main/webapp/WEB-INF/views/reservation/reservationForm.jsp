@@ -30,7 +30,6 @@
 
         <!-- 서버로 넘길 식별/금액 값. placeType은 서버가 PLACE 조회로 다시 판단하므로 폼으로 넘기지 않는다 -->
         <input type="hidden" name="placeId" value="${placeId}">
-        <input type="hidden" name="freeTest" value="${placeType eq 'free'}">
         <input type="hidden" name="amount" id="amount" value="${payOnSite ? deposit : price * 2}">
 
         <div class="booking-grid">

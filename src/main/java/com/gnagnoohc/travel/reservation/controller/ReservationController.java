@@ -29,22 +29,12 @@ public class ReservationController {
     private final PaymentService paymentService;
     private final MypageService mypageService;
 
-    /** 개발용 테스트 허브. 예약~결제~취소 흐름을 수동으로 확인하는 페이지 */
-    @GetMapping("/test")
-    public String testPage(Model model) {
-        // 개발용 임시 memberId=1. 로그인 연동 후 세션값으로 교체
-        model.addAttribute("reservations", reservationService.getMyReservations(1));
-        return "reservation/test";
-    }
-
     /**
      * 예약 폼 페이지. 숙박/맛집 상세 페이지에서 /reservations/new?placeId=1 로 진입.
      * placeType(tour/food/stay)은 PLACE 조회로 결정한다 — tour/food면 예약금(만나서결제), stay면 정가.
-     * freeTest=true면 0원 즉시완료 테스트 플래그로 취급(예약 테스트 허브 전용, PLACE.place_type엔 없는 값).
      */
     @GetMapping("/new")
     public String form(@RequestParam("placeId") Long placeId,
-                       @RequestParam(value = "freeTest", required = false, defaultValue = "false") boolean freeTest,
                        HttpSession session,
                        Model model) {
         // 예약 폼도 로그인 필수 — 예약자 정보 자동입력을 위해 회원 조회가 필요해 폼 진입 자체를 로그인 필수로 전환
@@ -62,7 +52,7 @@ public class ReservationController {
         model.addAttribute("loginMemberName", member.getName());
         model.addAttribute("loginMemberPhone", member.getPhone());
 
-        String placeType = freeTest ? "free" : reservationService.getPlaceType(placeId);
+        String placeType = reservationService.getPlaceType(placeId);
         model.addAttribute("placeId", placeId);
         model.addAttribute("placeType", placeType);
         model.addAttribute("placeName", reservationService.getPlaceName(placeId));
@@ -102,7 +92,7 @@ public class ReservationController {
                 model.addAttribute("loginMemberPhone", member.getPhone());
             }
             model.addAttribute("placeId", req.getPlaceId());
-            String placeType = req.isFreeTest() ? "free" : reservationService.getPlaceType(req.getPlaceId());
+            String placeType = reservationService.getPlaceType(req.getPlaceId());
             model.addAttribute("placeType", placeType);
             model.addAttribute("placeName", reservationService.getPlaceName(req.getPlaceId()));
             model.addAttribute("placeImage", reservationService.getPlaceImage(req.getPlaceId()));
@@ -122,9 +112,8 @@ public class ReservationController {
         log.info("[예약 생성 완료] reservationId={}", reservationId);
 
         // 결제금액이 0원(무료)이면 결제창을 거치지 않고 곧장 결제완료 처리 → 관리자 승인 대기로 넘어간다
-        // freeTest는 PLACE.place_type과 무관한 테스트 전용 오버라이드라 여기서 직접 판단한다
         Reservation r = reservationService.getById(reservationId);
-        int amount = req.isFreeTest() ? 0 : reservationService.calculateAmount(r);
+        int amount = reservationService.calculateAmount(r);
         if (amount == 0) {
             String orderId = paymentService.generateOrderId(reservationId);
             String freeKey = "FREE-" + reservationId + "-" + System.currentTimeMillis();

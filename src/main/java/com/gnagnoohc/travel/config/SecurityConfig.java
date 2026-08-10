@@ -1,9 +1,15 @@
 package com.gnagnoohc.travel.config;
 
 import java.time.Duration;
+import java.util.Map;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.DispatcherType;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.http.converter.FormHttpMessageConverter;
 import org.springframework.util.LinkedMultiValueMap;
@@ -12,6 +18,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.authorization.AuthorizationDecision;
+import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResponseClient;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
 import org.springframework.security.oauth2.client.endpoint.RestClientAuthorizationCodeTokenResponseClient;
@@ -28,10 +36,17 @@ import org.springframework.security.oauth2.core.http.converter.OAuth2AccessToken
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.context.DelegatingSecurityContextRepository;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.RequestAttributeSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
+import org.springframework.security.web.savedrequest.RequestCache;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.OrRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestTemplate;
 
@@ -51,10 +66,19 @@ public class SecurityConfig {
 
     @Bean
     public SecurityContextRepository securityContextRepository() {
-        // OAuth 인증 결과를 지울 때 필터와 성공 핸들러가 같은 저장소를 사용해야 세션에 인증이 남지 않는다.
+        // 소셜 인증 결과를 지울 때 필터와 성공 처리기가 같은 저장소를 사용해야 세션에 인증이 남지 않는다.
         return new DelegatingSecurityContextRepository(
                 new RequestAttributeSecurityContextRepository(),
                 new HttpSessionSecurityContextRepository());
+    }
+
+    @Bean
+    public RequestCache requestCache() {
+        HttpSessionRequestCache requestCache = new HttpSessionRequestCache();
+        // 로그인 뒤 복귀할 대상은 보호된 화면 조회 요청만 허용한다. 비동기 응답,
+        // 소셜 인증 흐름, 정적 파일, 결제 콜백은 로그인 후 리다이렉트 대상이 되면 안 된다.
+        requestCache.setRequestMatcher(this::isCacheableHtmlGet);
+        return requestCache;
     }
 
     @Bean
@@ -104,7 +128,7 @@ public class SecurityConfig {
     public OAuth2UserService<OidcUserRequest, OidcUser> oidcUserService(
             OAuth2UserService<OAuth2UserRequest, OAuth2User> oauth2UserService) {
         OidcUserService oidcUserService = new OidcUserService();
-        // Google OIDC의 UserInfo 조회에도 Kakao와 같은 5초 HTTP 제한을 적용한다.
+        // 구글 사용자 정보 조회에도 카카오와 같은 5초 통신 제한을 적용한다.
         oidcUserService.setOauth2UserService(oauth2UserService);
         return oidcUserService;
     }
@@ -123,20 +147,28 @@ public class SecurityConfig {
             AuthorizationRequestRepository<OAuth2AuthorizationRequest>
                     authorizationRequestRepository,
             SecurityContextRepository securityContextRepository,
+            RequestCache requestCache,
             OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> tokenClient,
             OAuth2UserService<OAuth2UserRequest, OAuth2User> userService,
-            OAuth2UserService<OidcUserRequest, OidcUser> oidcUserService) throws Exception {
+            OAuth2UserService<OidcUserRequest, OidcUser> oidcUserService,
+            ObjectMapper objectMapper) throws Exception {
         return http
                 .cors(cors -> cors.disable())
                 .csrf(csrf -> csrf.disable())
                 .formLogin(form -> form.disable())
                 .securityContext(context ->
-                        context.securityContextRepository(securityContextRepository))
+                        context
+                                .requireExplicitSave(true)
+                                .securityContextRepository(securityContextRepository))
+                .requestCache(cache -> cache.requestCache(requestCache))
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint(authenticationEntryPoint(objectMapper))
+                        .accessDeniedHandler(accessDeniedHandler(objectMapper)))
                 .oauth2Login(oauth2 -> oauth2
                         .authorizationEndpoint(authorization -> authorization
                                 .authorizationRequestRepository(
                                         authorizationRequestRepository))
-                        // callback 경로와 ClientRegistration의 redirect-uri를 같은 규칙으로 맞춘다.
+                        // 콜백 경로와 클라이언트 등록 정보의 리다이렉트 주소를 같은 규칙으로 맞춘다.
                         .redirectionEndpoint(redirection ->
                                 redirection.baseUri("/auth/callback/*"))
                         .authorizedClientRepository(authorizedClientRepository)
@@ -149,30 +181,169 @@ public class SecurityConfig {
                         .successHandler(socialOAuth2LoginHandler)
                         .failureHandler(socialOAuth2LoginHandler))
                 .authorizeHttpRequests(auth -> auth
+                        .dispatcherTypeMatchers(
+                                DispatcherType.ERROR,
+                                DispatcherType.FORWARD,
+                                DispatcherType.INCLUDE)
+                        .permitAll()
                         .requestMatchers(
+                                "/",
+                                "/tour/**",
                                 "/auth/**",
                                 "/oauth2/authorization/**",
-                                "/memberform",
-                                "/memberinsert",
-                                "/login",
-                                "/mypage",
-                                "/updateform",
-                                "/update",
-                                "/deleteform",
-                                "/delete",
-                                "/logout1",
-                                "/static/**",
                                 "/css/**",
                                 "/js/**",
-                                "/images/**")
+                                "/images/**",
+                                "/favicon.ico",
+                                "/uploads/place/**",
+                                "/upload/**",
+                                "/uploads/mypage/**")
                         .permitAll()
-                        .anyRequest().permitAll())
+                        .requestMatchers(HttpMethod.GET, "/event/**")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET,
+                                "/community/list",
+                                "/community/detail",
+                                "/community/place/search")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET,
+                                "/payments/kakao/success",
+                                "/payments/kakao/cancel",
+                                "/payments/kakao/fail",
+                                "/payments/toss/success",
+                                "/payments/toss/fail")
+                        .permitAll()
+                        .requestMatchers("/admin", "/admin/**")
+                        .access(requiresAuthorities("TYPE_ADMIN", "ROLE_ADMIN"))
+                        .requestMatchers("/business", "/business/**", "/api/business/**")
+                        .access(requiresAuthorities("TYPE_BUSINESS", "ROLE_BUSINESS"))
+                        .requestMatchers("/mypage/business-info", "/mypage/business-info/**")
+                        .access(requiresAuthorities("TYPE_BUSINESS"))
+                        .requestMatchers("/mypage", "/mypage/**", "/reservations", "/reservations/**", "/payments/**")
+                        .access(requiresAuthorities("TYPE_GENERAL", "ROLE_USER"))
+                        .requestMatchers("/community/**")
+                        .authenticated()
+                        .anyRequest().denyAll())
                 .build();
+    }
+
+    private AuthorizationManager<org.springframework.security.web.access.intercept.RequestAuthorizationContext>
+            requiresAuthorities(String... requiredAuthorities) {
+        return (authentication, context) -> {
+            var currentAuthentication = authentication.get();
+            if (currentAuthentication == null || !currentAuthentication.isAuthenticated()) {
+                return new AuthorizationDecision(false);
+            }
+            boolean authorized = currentAuthentication.getAuthorities().stream()
+                    .map(authority -> authority.getAuthority())
+                    .collect(java.util.stream.Collectors.toSet())
+                    .containsAll(java.util.Set.of(requiredAuthorities));
+            return new AuthorizationDecision(authorized);
+        };
+    }
+
+    private org.springframework.security.web.AuthenticationEntryPoint authenticationEntryPoint(
+            ObjectMapper objectMapper) {
+        LoginUrlAuthenticationEntryPoint loginEntryPoint =
+                new LoginUrlAuthenticationEntryPoint("/auth/login");
+        return (request, response, exception) -> {
+            if (apiRequestMatcher().matches(request)) {
+                writeJsonError(
+                        response,
+                        HttpServletResponse.SC_UNAUTHORIZED,
+                        "AUTHENTICATION_REQUIRED",
+                        "로그인이 필요합니다.",
+                        objectMapper);
+                return;
+            }
+            loginEntryPoint.commence(request, response, exception);
+        };
+    }
+
+    private AccessDeniedHandler accessDeniedHandler(ObjectMapper objectMapper) {
+        return (request, response, exception) -> {
+            if (apiRequestMatcher().matches(request)) {
+                writeJsonError(
+                        response,
+                        HttpServletResponse.SC_FORBIDDEN,
+                        "ACCESS_DENIED",
+                        "접근 권한이 없습니다.",
+                        objectMapper);
+                return;
+            }
+            response.sendError(HttpServletResponse.SC_FORBIDDEN);
+        };
+    }
+
+    private void writeJsonError(
+            HttpServletResponse response,
+            int status,
+            String code,
+            String message,
+            ObjectMapper objectMapper) throws java.io.IOException {
+        response.setStatus(status);
+        response.setCharacterEncoding("UTF-8");
+        response.setContentType("application/json;charset=UTF-8");
+        response.setHeader("Cache-Control", "no-store");
+        objectMapper.writeValue(response.getWriter(), Map.of("code", code, "message", message));
+    }
+
+    private boolean isCacheableHtmlGet(HttpServletRequest request) {
+        if (!HttpMethod.GET.matches(request.getMethod()) || apiRequestMatcher().matches(request)) {
+            return false;
+        }
+        String path = request.getRequestURI().substring(request.getContextPath().length());
+        return matchesAny(request,
+                "/admin", "/admin/**",
+                "/business", "/business/**",
+                "/mypage", "/mypage/**",
+                "/reservations", "/reservations/**",
+                "/payments/**",
+                "/community/**")
+                && !isPublicPaymentCallback(path);
+    }
+
+    private boolean isPublicPaymentCallback(String path) {
+        return "/payments/kakao/success".equals(path)
+                || "/payments/kakao/cancel".equals(path)
+                || "/payments/kakao/fail".equals(path)
+                || "/payments/toss/success".equals(path)
+                || "/payments/toss/fail".equals(path);
+    }
+
+    private boolean matchesAny(HttpServletRequest request, String... patterns) {
+        for (String pattern : patterns) {
+            if (new AntPathRequestMatcher(pattern).matches(request)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private RequestMatcher apiRequestMatcher() {
+        return new OrRequestMatcher(
+                new AntPathRequestMatcher("/api/business/**"),
+                new AntPathRequestMatcher("/mypage/withdraw/check-password", "POST"),
+                new AntPathRequestMatcher("/mypage/withdraw", "POST"),
+                new AntPathRequestMatcher("/mypage/business-info/withdraw/check-password", "POST"),
+                new AntPathRequestMatcher("/mypage/business-info/withdraw", "POST"),
+                new AntPathRequestMatcher("/mypage/wishlist/toggle", "POST"),
+                new AntPathRequestMatcher("/mypage/wishlist/status/**", "GET"),
+                new AntPathRequestMatcher("/reservations/availability", "GET"),
+                new AntPathRequestMatcher("/reservations/*/refund-preview", "GET"),
+                new AntPathRequestMatcher("/reservations/*/cancel-request", "POST"),
+                new AntPathRequestMatcher("/payments/kakao/ready/**", "POST"),
+                new AntPathRequestMatcher("/payments/toss/ready/**", "POST"),
+                new AntPathRequestMatcher("/payments/vcard/pay/**", "POST"),
+                new AntPathRequestMatcher("/payments/bank/ready/**", "POST"),
+                new AntPathRequestMatcher("/payments/bank/confirm/**", "POST"),
+                new AntPathRequestMatcher("/payments/*/cancel", "POST"),
+                new AntPathRequestMatcher("/admin/business-applications/*/document", "GET"));
     }
 
     private SimpleClientHttpRequestFactory oauthRequestFactory() {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        // 외부 OAuth 서버 장애가 애플리케이션 요청 스레드를 오래 점유하지 않도록 제한한다.
+        // 외부 소셜 인증 서버 장애가 애플리케이션 요청 스레드를 오래 점유하지 않도록 제한한다.
         requestFactory.setConnectTimeout(OAUTH_HTTP_TIMEOUT);
         requestFactory.setReadTimeout(OAUTH_HTTP_TIMEOUT);
         return requestFactory;

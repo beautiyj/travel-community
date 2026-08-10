@@ -30,17 +30,19 @@ import com.gnagnoohc.travel.auth.dto.PendingSocialSignup;
 import com.gnagnoohc.travel.auth.dto.SocialLinkRequest;
 import com.gnagnoohc.travel.auth.dto.SocialSignupRequest;
 import com.gnagnoohc.travel.auth.exception.SocialAuthException;
+import com.gnagnoohc.travel.auth.security.LoginSessionManager;
 import com.gnagnoohc.travel.auth.service.AuthService;
 import com.gnagnoohc.travel.auth.service.SocialAuthService;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 /**
  * 소셜 로그인 시작과 제공자 공통 신규 가입 화면의 세션 흐름을 담당한다.
- * OAuth callback은 Spring Security 필터와 SocialOAuth2LoginHandler가 처리한다.
+ * 소셜 인증 콜백은 시큐리티 필터와 전용 처리기가 담당한다.
  */
 @Controller
 @RequiredArgsConstructor
@@ -59,9 +61,10 @@ public class SocialAuthController {
 
     private final SocialAuthService socialAuthService;
     private final AuthService authService;
+    private final LoginSessionManager loginSessionManager;
 
     /**
-     * 기존 화면 경로를 유지하면서 실제 OAuth2 Client 표준 시작 경로로 연결한다.
+     * 기존 화면 경로를 유지하면서 소셜 인증 제공자의 표준 시작 경로로 연결한다.
      */
     @GetMapping("/kakao")
     public String startKakaoLogin(HttpSession session) {
@@ -71,7 +74,7 @@ public class SocialAuthController {
 
     @GetMapping("/google")
     public String startGoogleLogin(HttpSession session) {
-        // Google 로그인도 Kakao와 동일하게 이전의 미완료 소셜 가입 정보를 제거하고 시작한다.
+        // 구글 로그인도 카카오와 동일하게 이전의 미완료 소셜 가입 정보를 제거하고 시작한다.
         return startSocialAuth(session, "google", LOGIN_INTENT);
     }
 
@@ -124,6 +127,7 @@ public class SocialAuthController {
             BindingResult bindingResult,
             @RequestParam(value = "signupNonce", required = false) String signupNonce,
             HttpServletRequest request,
+            HttpServletResponse response,
             HttpSession session,
             Model model,
             RedirectAttributes redirectAttributes) {
@@ -149,7 +153,7 @@ public class SocialAuthController {
             LoginMemberDto loginMember = socialAuthService.registerSocialMember(
                     pendingSignup,
                     socialSignupRequest);
-            return completeLogin(request, loginMember);
+            return completeLogin(request, response, loginMember);
         } catch (SocialAuthException e) {
             if (!e.isUserVisible()) {
                 log.error("소셜 회원가입 처리 중 내부 오류가 발생했습니다.", e);
@@ -196,6 +200,7 @@ public class SocialAuthController {
             BindingResult bindingResult,
             @RequestParam(value = "linkNonce", required = false) String linkNonce,
             HttpServletRequest request,
+            HttpServletResponse response,
             HttpSession session,
             Model model,
             RedirectAttributes redirectAttributes) {
@@ -240,7 +245,7 @@ public class SocialAuthController {
             LoginMemberDto loginMember = socialAuthService.linkSocialAccount(
                     pendingLink,
                     loginResult.loginMember().getMemberId());
-            return completeLogin(request, loginMember);
+            return completeLogin(request, response, loginMember);
         } catch (PessimisticLockingFailureException e) {
             // DB 트랜잭션은 이미 롤백됐으므로 pending을 유지하고 사용자가 수동으로 다시 시도하게 한다.
             log.warn("소셜 계정 연동 중 DB 잠금 획득에 실패했습니다.");
@@ -341,15 +346,16 @@ public class SocialAuthController {
      */
     private String completeLogin(
             HttpServletRequest request,
+            HttpServletResponse response,
             LoginMemberDto loginMember) {
-        HttpSession previousSession = request.getSession(false);
-        if (previousSession != null) {
-            previousSession.invalidate();
+        try {
+            return "redirect:" + loginSessionManager.completeLogin(request, response, loginMember);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            // 소셜 가입·연동은 이미 커밋됐다. 성공한 트랜잭션을 폼 오류로 표시하거나
+            // 브라우저에 같은 상태 변경 요청의 재시도를 요구하지 않는다.
+            log.error("소셜 가입 또는 연동 후 로그인 세션 생성에 실패했습니다.", e);
+            return "redirect:/auth/login?socialLoginRequired=true";
         }
-
-        HttpSession loginSession = request.getSession(true);
-        loginSession.setAttribute("loginMember", loginMember);
-        return "redirect:/";
     }
 
     private String redirectToSocialLogin(RedirectAttributes redirectAttributes) {
@@ -360,7 +366,7 @@ public class SocialAuthController {
     }
 
     private String getSocialProviderName(String provider) {
-        // 화면에는 DB provider 코드 대신 사용자용 이름을 전달한다.
+        // 화면에는 데이터베이스 제공자 코드 대신 사용자용 이름을 전달한다.
         return switch (provider) {
             case "KAKAO" -> "카카오";
             case "GOOGLE" -> "구글";
@@ -377,8 +383,8 @@ public class SocialAuthController {
         String normalizedIntent = normalizeIntent(intent);
         String flowId = UUID.randomUUID().toString();
 
-        // 새 OAuth 시작은 이전에 완료되지 않은 흐름을 폐기하고 현재 요청으로 교체한다.
-        // Spring Security가 새 authorization request의 state를 저장하므로 이전 callback은 검증에 실패한다.
+        // 새 소셜 인증 시작은 이전에 완료되지 않은 흐름을 폐기하고 현재 요청으로 교체한다.
+        // 시큐리티가 새 인증 요청의 상태값을 저장하므로 이전 콜백은 검증에 실패한다.
         synchronized (session) {
             session.removeAttribute(PENDING_SOCIAL_AUTH_INTENT);
             session.removeAttribute(PENDING_SOCIAL_SIGNUP);

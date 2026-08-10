@@ -30,8 +30,8 @@
 	}
 
 	function validateLoginId(value) {
-		const valid = typeof value === "string" && /^[A-Za-z0-9]{5,20}$/.test(value);
-		return result(valid, "아이디는 영문 또는 숫자 5~20자로 입력해주세요.");
+		const valid = typeof value === "string" && /^[a-z0-9]{5,20}$/.test(value);
+		return result(valid, "아이디는 소문자 영문 또는 숫자 5~20자로 입력해주세요.");
 	}
 
 	function validatePassword(value) {

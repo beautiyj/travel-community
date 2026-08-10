@@ -94,6 +94,7 @@ public class BusinessMypageController {
     @PostMapping("/edit")
     public String edit(
             @ModelAttribute MypageDto form,
+            @RequestParam("nickname") String nickname,
             @RequestParam(value = "profileImage", required = false)
             MultipartFile profileImage,
             HttpSession session,
@@ -104,7 +105,7 @@ public class BusinessMypageController {
         }
         try {
             form.setMemberId(member.getMemberId());
-            form.setNickname(member.getNickname());
+            form.setNickname(nickname);
             mypageService.updateMember(form);
 
             if (profileImage != null && !profileImage.isEmpty()) {

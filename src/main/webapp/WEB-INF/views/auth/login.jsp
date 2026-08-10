@@ -48,6 +48,12 @@
         </div>
     </c:if>
 
+    <c:if test="${param.reactivated != null}">
+        <div class="form-alert form-alert--success" role="status">
+            계정이 재활성화되었습니다. 아이디와 비밀번호로 로그인해 주세요.
+        </div>
+    </c:if>
+
     <%-- 아래 쿼리 파라미터는 인증 처리 후 서버가 redirect할 때 붙이는 화면 상태이며, 인증 판단 근거로 사용하지 않는다. --%>
     <c:choose>
         <c:when test="${param.socialNotLinked != null}">
@@ -76,7 +82,7 @@
     <form id="loginForm" class="login-form" action="${pageContext.request.contextPath}/auth/login" method="post" novalidate>
         <div class="form-field">
             <label for="username">아이디</label>
-            <input id="username" name="username" type="text" autocomplete="username"
+            <input id="username" name="username" type="text" autocomplete="username" pattern="^[a-z0-9]{5,20}$"
                    maxlength="20" placeholder="아이디를 입력하세요" required autofocus>
             <p id="usernameError" class="field-error" aria-live="polite">${usernameError}</p>
         </div>

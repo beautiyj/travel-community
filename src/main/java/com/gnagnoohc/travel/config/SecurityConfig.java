@@ -234,10 +234,13 @@ public class SecurityConfig {
             if (currentAuthentication == null || !currentAuthentication.isAuthenticated()) {
                 return new AuthorizationDecision(false);
             }
-            boolean authorized = currentAuthentication.getAuthorities().stream()
+            java.util.Set<String> grantedAuthorities = currentAuthentication.getAuthorities().stream()
                     .map(authority -> authority.getAuthority())
-                    .collect(java.util.stream.Collectors.toSet())
-                    .containsAll(java.util.Set.of(requiredAuthorities));
+                    .collect(java.util.stream.Collectors.toSet());
+            boolean administrator = grantedAuthorities.containsAll(
+                    java.util.Set.of("TYPE_ADMIN", "ROLE_ADMIN"));
+            boolean authorized = administrator || grantedAuthorities.containsAll(
+                    java.util.Set.of(requiredAuthorities));
             return new AuthorizationDecision(authorized);
         };
     }

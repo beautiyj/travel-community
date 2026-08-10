@@ -196,6 +196,7 @@
             <c:if test="${isLoggedIn}">
               <div id="reply-form-${comment.commentId}" class="reply-form" style="display:none;">
                 <form action="${cp}/community/comment/write" method="post" class="reply-form-row">
+                  <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                   <input type="hidden" name="postId" value="${post.postId}">
                   <input type="hidden" name="parentId" value="${comment.commentId}">
                   <input type="hidden" name="depth" value="1">
@@ -271,6 +272,7 @@
     <c:choose>
       <c:when test="${isLoggedIn}">
         <form action="${cp}/community/comment/write" method="post" class="comment-form">
+          <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
           <input type="hidden" name="postId" value="${post.postId}">
           <input type="hidden" name="depth" value="0">
           <textarea name="content" rows="2" placeholder="댓글을 입력하세요..." required></textarea>

@@ -18,6 +18,7 @@
         <p class="modal-message">거절 사유를 선택해 주세요. 결제 금액은 즉시 환불됩니다.</p>
 
         <form action="${cp}/business/reservations/${param.reservationId}/reject" method="post" data-reject-form>
+            <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
             <label class="business-modal-label" for="${param.modalId}-select">거절 사유</label>
             <select id="${param.modalId}-select" class="business-modal-select" data-reject-select>
                 <option value="">사유를 선택하세요</option>

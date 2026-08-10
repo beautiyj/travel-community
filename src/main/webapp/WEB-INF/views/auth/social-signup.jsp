@@ -54,6 +54,7 @@
           action="${pageContext.request.contextPath}/auth/social/signup"
           method="post"
           novalidate>
+        <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
         <%--
           nonce는 소셜 인증을 시작한 같은 세션의 가입 요청인지 확인하고 재사용을 막기 위한 값이다.
           일반적인 CSRF 토큰을 자동으로 대체하는 값으로 간주하지 않는다.

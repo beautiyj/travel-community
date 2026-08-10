@@ -31,6 +31,7 @@
   </div>
 
   <form action="${cp}/community/write" method="post" enctype="multipart/form-data">
+    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
 
     <!-- 카테고리: dropdownSelector 와 동일한 마크업/클래스(drop-select-*, dropdown-*)를 그대로 써서
          디자인/열고닫기/숨은 라디오 동기화까지 전부 dropdownSelector.js(data-radio-name="category")가 처리함.

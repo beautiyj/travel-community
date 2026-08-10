@@ -4,6 +4,9 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <meta name="_csrf" content="${_csrf.token}">
+    <meta name="_csrf_header" content="${_csrf.headerName}">
+    <script src="${pageContext.request.contextPath}/js/csrf.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${businessMember ? '사업자 회원가입' : '일반 회원가입'} | 갈래말래</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/common.css">
@@ -51,6 +54,7 @@
     --%>
     <form id="signupForm" method="post" enctype="multipart/form-data" novalidate
           action="${pageContext.request.contextPath}/auth/membersignup">
+        <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
         <%-- memberType은 화면 분기용 서버 모델을 다시 전송하지만 hidden 값이므로 서버에서 허용 범위를 반드시 검증한다. --%>
         <input type="hidden" name="memberType" value="${memberType}">
 

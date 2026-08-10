@@ -86,6 +86,7 @@
       보안 설정에서 CSRF 보호를 활성화할 때는 서버가 발급한 토큰을 이 폼에 포함해야 한다.
     --%>
     <form id="loginForm" class="login-form" action="${pageContext.request.contextPath}/auth/login" method="post" novalidate>
+        <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
         <div class="form-field">
             <label for="username">아이디</label>
             <input id="username" name="username" type="text" autocomplete="username" pattern="^[a-z0-9]{5,20}$"

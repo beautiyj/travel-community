@@ -32,7 +32,7 @@ async function toggleWishlist(buttonElement) {
     const url = `${getContextPath()}/mypage/wishlist/toggle`;
 
     try {
-        const response = await fetch(url, {
+        const response = await csrfFetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'

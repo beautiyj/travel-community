@@ -31,6 +31,7 @@
       현재 마크업에는 CSRF 토큰 출력이 없으므로 CSRF 보호 적용 시 서버 토큰 필드를 함께 렌더링해야 한다.
     --%>
     <form id="resetPasswordForm" action="${pageContext.request.contextPath}/auth/reset-password" method="post" novalidate>
+        <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
         <div class="form-field">
             <label for="newPassword">새 비밀번호</label>
             <input id="newPassword" name="newPassword" type="password" autocomplete="new-password"

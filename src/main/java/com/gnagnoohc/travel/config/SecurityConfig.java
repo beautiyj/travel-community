@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.boot.autoconfigure.security.SecurityProperties;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -49,6 +51,7 @@ import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.multipart.support.MultipartFilter;
 
 import com.gnagnoohc.travel.auth.controller.SocialOAuth2LoginHandler;
 import com.gnagnoohc.travel.auth.security.SocialOAuth2AuthorizationRequestRepository;
@@ -62,6 +65,18 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public FilterRegistrationBean<MultipartFilter> multipartFilterRegistration() {
+        MultipartFilter multipartFilter = new MultipartFilter();
+        multipartFilter.setMultipartResolverBeanName("multipartResolver");
+
+        FilterRegistrationBean<MultipartFilter> registration =
+                new FilterRegistrationBean<>(multipartFilter);
+        // multipart body의 CSRF parameter를 Security의 CsrfFilter보다 먼저 읽을 수 있어야 한다.
+        registration.setOrder(SecurityProperties.DEFAULT_FILTER_ORDER - 1);
+        return registration;
     }
 
     @Bean
@@ -154,7 +169,6 @@ public class SecurityConfig {
             ObjectMapper objectMapper) throws Exception {
         return http
                 .cors(cors -> cors.disable())
-                .csrf(csrf -> csrf.disable())
                 .formLogin(form -> form.disable())
                 .securityContext(context ->
                         context

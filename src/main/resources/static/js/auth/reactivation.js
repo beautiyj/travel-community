@@ -79,7 +79,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     async function postForm(path, values) {
-        const response = await fetch(`${contextPath}${path}`, {
+        const response = await csrfFetch(`${contextPath}${path}`, {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
             credentials: "same-origin",

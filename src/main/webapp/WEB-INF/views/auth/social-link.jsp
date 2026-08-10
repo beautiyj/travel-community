@@ -53,6 +53,7 @@
           action="${pageContext.request.contextPath}/auth/social/link"
           method="post"
           novalidate>
+        <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
         <%-- linkNonce는 연동 흐름의 일회성과 세션 결속을 검증하는 값이며 사용자 식별자나 일반 CSRF 토큰이 아니다. --%>
         <input type="hidden" name="linkNonce"
                value="<c:out value='${socialLinkNonce}' />">
@@ -123,6 +124,7 @@
         <%-- 취소도 서버의 임시 소셜 인증 상태를 폐기하는 상태 변경이므로 GET 링크가 아닌 POST를 사용한다. --%>
         <form action="${pageContext.request.contextPath}/auth/social/link/cancel"
               method="post">
+            <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
             <input type="hidden" name="linkNonce"
                    value="<c:out value='${socialLinkNonce}' />">
             <button class="social-link-secondary-action" type="submit">로그인하기</button>

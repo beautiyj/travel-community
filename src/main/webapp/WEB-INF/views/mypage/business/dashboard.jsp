@@ -72,6 +72,7 @@
                         <form class="business-approval-form"
                               action="${pageContext.request.contextPath}/mypage/business-info/approval"
                               method="post" enctype="multipart/form-data">
+                            <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                             <label for="document">사업자등록증 파일</label>
                             <div class="business-file-input">
                                 <span id="document-file-name"
@@ -125,6 +126,7 @@
             <form class="cancel-modal__actions"
                   action="${pageContext.request.contextPath}/mypage/business-info/approval/cancel"
                   method="post">
+                <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                 <button class="cancel-modal__back js-business-approval-cancel-close"
                         type="button">돌아가기</button>
                 <button class="cancel-modal__submit" type="submit">등록 취소</button>

@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -26,7 +27,7 @@
                 <c:otherwise>
                     <div class="wishlist-grid">
                         <c:forEach var="wish" items="${wishlist}">
-                            <a href="${pageContext.request.contextPath}/tour/detail?placeId=${wish.placeId}" class="wishlist-item-link">
+<a href="${pageContext.request.contextPath}/tour/detail?placeId=${wish.placeId}" class="wishlist-item-link">
                                 <article class="wishlist-item">
                                     <div class="wishlist-item__thumbnail" aria-hidden="true"
                                          <c:if test="${not empty wish.firstImage}">style="background-image:url('${wish.firstImage}');"</c:if>>
@@ -43,7 +44,7 @@
                                                 <c:otherwise>장소 #<c:out value="${wish.placeId}" /></c:otherwise>
                                             </c:choose>
                                         </h3>
-                                        <p>찜한 날짜 <c:out value="${wish.createdAt}" default="-" /></p>
+                                        <p>찜한 날짜 <c:out value="${fn:replace(wish.createdAt, 'T', ' ')}" default="-" /></p>
                                     </div>
                                     <jsp:include page="/WEB-INF/views/common/wishButton.jsp">
                                         <jsp:param name="placeId" value="${wish.placeId}"/>

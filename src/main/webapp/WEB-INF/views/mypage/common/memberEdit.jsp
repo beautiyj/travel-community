@@ -28,6 +28,7 @@
             </c:if>
             <form class="profile-edit__form mypage-form-card" action="${cp}${basePath}/edit"
                   method="post" enctype="multipart/form-data" data-edit-confirm>
+                <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                 <input type="hidden" name="memberId" value="<c:out value='${member.memberId}'/>">
                 <div class="profile-edit__profile-card">
                     <div class="profile-edit__profile-image">

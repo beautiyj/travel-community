@@ -448,7 +448,11 @@ function appUrl(path) {
 
 // fetch와 JSON 형식 검사를 한 곳에서 처리해 각 기능은 업무 결과만 판단한다.
 async function requestJson(url, options) {
-	const response = await fetch(url, options);
+	// 조회는 기존 fetch로 유지하고, 상태 변경만 CSRF header helper를 사용한다.
+	const method = (options?.method || "GET").toUpperCase();
+	const response = await (["POST", "PUT", "PATCH", "DELETE"].includes(method)
+		? csrfFetch(url, options)
+		: fetch(url, options));
 	const result = await parseJsonResponse(response);
 	return { response, result };
 }

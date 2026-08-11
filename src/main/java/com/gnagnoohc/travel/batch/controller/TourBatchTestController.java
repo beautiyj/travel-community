@@ -27,9 +27,6 @@ public class TourBatchTestController {
         return ResponseEntity.ok("전국 296개 지역군 1차 전체 적재 완료!");
     }
 
-    
-
-
     // 특정 지역만 핀포인트 테스트하고 싶을 때 사용
     // POST http://localhost:9999/test/batch/sync-regions-test?regionIds=11110
     @PostMapping("/sync-regions-test")

@@ -1,9 +1,8 @@
 package com.gnagnoohc.travel.config;
 
-import java.time.Duration;
-import java.util.Map;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gnagnoohc.travel.auth.controller.SocialOAuth2LoginHandler;
+import com.gnagnoohc.travel.auth.security.SocialOAuth2AuthorizationRequestRepository;
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -14,14 +13,13 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.http.converter.FormHttpMessageConverter;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
+import org.springframework.security.authorization.AuthorizationDecision;
+import org.springframework.security.authorization.AuthorizationManager;
+import org.springframework.security.authorization.AuthorizationManagers;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.authorization.AuthorizationDecision;
-import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResponseClient;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
 import org.springframework.security.oauth2.client.endpoint.RestClientAuthorizationCodeTokenResponseClient;
@@ -49,12 +47,14 @@ import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.support.MultipartFilter;
 
-import com.gnagnoohc.travel.auth.controller.SocialOAuth2LoginHandler;
-import com.gnagnoohc.travel.auth.security.SocialOAuth2AuthorizationRequestRepository;
+import java.time.Duration;
+import java.util.Map;
 
 @Configuration
 @EnableWebSecurity
@@ -233,7 +233,11 @@ public class SecurityConfig {
                         .access(requiresAuthorities("TYPE_BUSINESS", "ROLE_BUSINESS"))
                         .requestMatchers("/mypage/business-info", "/mypage/business-info/**")
                         .access(requiresAuthorities("TYPE_BUSINESS"))
-                        .requestMatchers("/mypage", "/mypage/**", "/reservations", "/reservations/**", "/payments/**")
+                        .requestMatchers("/mypage")
+                        .access(AuthorizationManagers.anyOf(
+                                requiresAuthorities("TYPE_GENERAL", "ROLE_USER"),
+                                requiresAuthorities("TYPE_BUSINESS")))
+                        .requestMatchers("/mypage/**", "/reservations", "/reservations/**", "/payments/**")
                         .access(requiresAuthorities("TYPE_GENERAL", "ROLE_USER"))
                         .requestMatchers("/community/**")
                         .authenticated()

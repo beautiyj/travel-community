@@ -170,6 +170,9 @@ public class SecurityConfig {
         return http
                 .cors(cors -> cors.disable())
                 .formLogin(form -> form.disable())
+                .logout(logout -> logout
+                        .logoutUrl("/auth/logout")
+                        .logoutSuccessUrl("/"))
                 .securityContext(context ->
                         context
                                 .requireExplicitSave(true)

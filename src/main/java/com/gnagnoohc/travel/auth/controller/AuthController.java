@@ -19,7 +19,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -32,7 +31,7 @@ import java.util.Map;
  * 이 클래스는 요청값과 세션을 다루고 반환할 뷰/리다이렉트를 정한다. 비밀번호 검증,
  * 이메일 인증의 유효성 확인, 회원 저장처럼 데이터 상태를 바꾸는 규칙은
  * 서비스 계층에 맡긴다. 스프링 MVC는 매핑, 입력 객체 바인딩과 유효성 검증을
- * 수행하지만, 로그인 세션을 언제 만들고 폐기할지는 컨트롤러가 직접 책임진다.
+	 * 수행하지만, 로그인 세션 생성은 명시적인 로그인 처리에서만 직접 책임진다.
  */
 @Controller
 @RequiredArgsConstructor
@@ -44,7 +43,6 @@ public class AuthController {
 
 	private final AuthService service;
 	private final LoginSessionManager loginSessionManager;
-	private final SecurityContextRepository securityContextRepository;
 
 	// 로그인
 	@GetMapping("/login")
@@ -113,24 +111,6 @@ public class AuthController {
 			log.warn("로그인 세션 생성에 실패했습니다.", e);
 			return "redirect:/auth/login?error";
 		}
-	}
-
-	// 로그아웃
-	@PostMapping("/logout")
-	public String logout(HttpServletRequest request, HttpServletResponse response) {
-		HttpSession session = request.getSession(false);
-		SecurityContextHolder.setContext(SecurityContextHolder.createEmptyContext());
-		try {
-			// 로컬 로그아웃은 로그아웃 필터 밖에서 처리하므로 세션을 무효화하기 전에
-			// 명시적으로 저장소의 인증 상태를 제거한다.
-			securityContextRepository.saveContext(SecurityContextHolder.getContext(), request, response);
-		} finally {
-			SecurityContextHolder.clearContext();
-			if (session != null) {
-				session.invalidate();
-			}
-		}
-		return "redirect:/";
 	}
 
 	// 회원가입 화면

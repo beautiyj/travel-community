@@ -17,9 +17,7 @@
     <script defer src="${pageContext.request.contextPath}/js/auth/signup-validation.js"></script>
     <script defer src="${pageContext.request.contextPath}/js/auth/signup.js"></script>
 </head>
-<%-- 로그인한 사용자가 뒤로가기로 가입 폼을 다시 열면 세션 상태를 확인해 오래된 폼 노출을 막는다. --%>
-<body class="auth-page auth-page--signup-form"
-      data-session-status-url="${pageContext.request.contextPath}/auth/api/session-status">
+<body class="auth-page auth-page--signup-form">
 <main class="auth-card auth-card--signup-form">
     <p class="auth-brand brand"><span class="name">갈래말래</span></p>
 

@@ -12,9 +12,7 @@
     <script defer src="${pageContext.request.contextPath}/js/auth/auth-history-guard.js"></script>
     <script defer src="${pageContext.request.contextPath}/js/auth/login.js"></script>
 </head>
-<%-- 뒤로가기 복원 시 세션 확인 스크립트가 이 주소로 현재 로그인 여부를 다시 확인한다. --%>
-<body class="auth-page auth-page--login"
-      data-session-status-url="${pageContext.request.contextPath}/auth/api/session-status">
+<body class="auth-page auth-page--login">
 <main class="auth-card auth-card--small auth-card--login">
     <a class="auth-brand brand" href="${pageContext.request.contextPath}/"><span class="name">갈래말래</span></a>
 

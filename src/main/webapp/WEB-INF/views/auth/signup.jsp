@@ -11,9 +11,7 @@
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/auth/signup-choice.css?v=auth-admin-css-split-20260806-r7">
     <script defer src="${pageContext.request.contextPath}/js/auth/auth-history-guard.js"></script>
 </head>
-<%-- 로그인 이후 뒤로가기로 이 선택 화면이 복원되면 세션 상태를 다시 확인한다. --%>
-<body class="auth-page auth-page--signup-type"
-      data-session-status-url="${pageContext.request.contextPath}/auth/api/session-status">
+<body class="auth-page auth-page--signup-type">
 <main class="signup-type-shell">
     <%-- 시안의 여행 이미지는 프로젝트에 없으므로 외부 이미지를 추가하지 않고 그라데이션으로 분위기만 구현한다. --%>
     <aside class="signup-type-visual" aria-label="갈래말래 서비스 안내">

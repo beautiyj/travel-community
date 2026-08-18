@@ -34,8 +34,4 @@ public class ReservationCreateRequest {
     private LocalDate checkOutDate;
 
     private int headcount;
-
-    // 무료예약(0원) 즉시완료 테스트 전용 오버라이드. PLACE.place_type엔 'free' 값이 없어 별도로 둔다.
-    // 실제 place 가격(0원) 데이터가 생기면 제거 예정.
-    private boolean freeTest;
 }

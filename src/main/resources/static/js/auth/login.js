@@ -21,8 +21,11 @@ document.addEventListener("DOMContentLoaded", () => {
 	form.addEventListener("submit", (event) => {
 		let valid = true;
 
-		if (!username.value.trim()) {
+		if (!username.value) {
 			setError("usernameError", "아이디를 입력해주세요.");
+			valid = false;
+		} else if (!/^[a-z0-9]{5,20}$/.test(username.value)) {
+			setError("usernameError", "아이디는 소문자 영문 또는 숫자 5~20자로 입력해주세요.");
 			valid = false;
 		} else {
 			setError("usernameError", "");

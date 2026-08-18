@@ -4,6 +4,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import com.gnagnoohc.travel.auth.dto.VerifiedSignupEmail;
+import com.gnagnoohc.travel.auth.dto.PendingMemberReactivation;
 import com.gnagnoohc.travel.auth.model.EmailVerification;
 import com.gnagnoohc.travel.auth.model.Member;
 import com.gnagnoohc.travel.auth.model.MemberLocalAuth;
@@ -18,9 +19,11 @@ import com.gnagnoohc.travel.auth.model.MemberLocalAuth;
 public interface AuthMapper {
 
 	// 회원가입
-	int checkLoginId(@Param("loginId") String loginId);
+	int checkLoginId(@Param("username") String username);
 
 	int checkNickname(@Param("nickname") String nickname);
+
+	boolean existsMemberByEmail(@Param("email") String email);
 
 	int memberSignUp(Member member);
 
@@ -55,6 +58,12 @@ public interface AuthMapper {
 			@Param("email") String email,
 			@Param("memberId") int memberId);
 
+	// 회원 단위 인증은 이메일만이 아니라 purpose와 memberId까지 함께 묶어 다른 목적의 코드를 차단한다.
+	EmailVerification findLatestMemberEmailVerificationForUpdate(
+			@Param("email") String email,
+			@Param("purpose") String purpose,
+			@Param("memberId") int memberId);
+
 	int countEmailVerificationRequestsInLastDay(
 			@Param("email") String email,
 			@Param("purpose") String purpose);
@@ -84,9 +93,21 @@ public interface AuthMapper {
 			@Param("username") String username,
 			@Param("email") String email);
 
+	// 재활성화 대상은 탈퇴한 로컬 회원으로 제한하고 이메일은 DB에서만 조회한다.
+	PendingMemberReactivation findWithdrawnLocalMemberForReactivation(
+			@Param("username") String username);
+
+	boolean existsNonWithdrawnLocalMemberByUsername(@Param("username") String username);
+
 	int consumePasswordResetVerification(
 			@Param("emailVerificationId") long emailVerificationId,
 			@Param("memberId") int memberId);
+
+	int consumeMemberReactivationVerification(
+			@Param("emailVerificationId") long emailVerificationId,
+			@Param("memberId") int memberId);
+
+	int reactivateWithdrawnLocalMember(@Param("memberId") int memberId);
 
 	int updatePasswordByMemberId(
 			@Param("memberId") int memberId,

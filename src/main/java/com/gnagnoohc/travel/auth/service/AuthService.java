@@ -1,14 +1,16 @@
 package com.gnagnoohc.travel.auth.service;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Iterator;
-import java.util.Locale;
-
-import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
-import javax.imageio.stream.ImageInputStream;
-
+import com.gnagnoohc.travel.auth.dto.*;
+import com.gnagnoohc.travel.auth.exception.EmailVerificationException;
+import com.gnagnoohc.travel.auth.exception.SignupException;
+import com.gnagnoohc.travel.auth.mapper.AuthMapper;
+import com.gnagnoohc.travel.auth.model.Member;
+import com.gnagnoohc.travel.auth.model.MemberLocalAuth;
+import com.gnagnoohc.travel.auth.validation.LocalUsernamePolicy;
+import com.gnagnoohc.travel.storage.ImageStorage;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,20 +18,13 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.gnagnoohc.travel.auth.dto.LoginMemberDto;
-import com.gnagnoohc.travel.auth.dto.LocalLoginResult;
-import com.gnagnoohc.travel.auth.dto.SignUpRequest;
-import com.gnagnoohc.travel.auth.dto.VerifiedPasswordReset;
-import com.gnagnoohc.travel.auth.dto.VerifiedSignupEmail;
-import com.gnagnoohc.travel.auth.exception.EmailVerificationException;
-import com.gnagnoohc.travel.auth.exception.SignupException;
-import com.gnagnoohc.travel.auth.mapper.AuthMapper;
-import com.gnagnoohc.travel.auth.model.Member;
-import com.gnagnoohc.travel.auth.model.MemberLocalAuth;
-import com.gnagnoohc.travel.storage.ImageStorage;
-
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Iterator;
+import java.util.Locale;
 
 /**
  * 로컬 인증과 로컬 회원가입 유스케이스의 트랜잭션 경계를 담당한다.
@@ -60,13 +55,16 @@ public class AuthService {
 	 */
 	@Transactional
 	public LocalLoginResult authenticateLocal(String username, String rawPassword) {
-		if (username == null || username.isBlank()
+		if (username == null || username.isEmpty()
 				|| rawPassword == null || rawPassword.isBlank()) {
+			return LocalLoginResult.invalidCredentials();
+		}
+		if (!LocalUsernamePolicy.isValid(username)) {
 			return LocalLoginResult.invalidCredentials();
 		}
 
 		// 같은 아이디의 요청이 실패 횟수를 동시에 바꾸지 않도록 로그인 인증 정보를 잠가 조회한다.
-		MemberLocalAuth localAuth = mapper.findLocalLoginAuthForUpdate(username.trim());
+		MemberLocalAuth localAuth = mapper.findLocalLoginAuthForUpdate(username);
 		if (localAuth == null) {
 			return LocalLoginResult.invalidCredentials();
 		}
@@ -84,15 +82,14 @@ public class AuthService {
 			String username,
 			String rawPassword) {
 		if (candidateMemberId <= 0
-				|| username == null
-				|| !username.trim().matches("^[A-Za-z0-9]{5,20}$")
+				|| !LocalUsernamePolicy.isValid(username)
 				|| rawPassword == null
 				|| rawPassword.isBlank()) {
 			return LocalLoginResult.invalidCredentials();
 		}
 
 		MemberLocalAuth localAuth = mapper.findSocialLinkCandidateAuthForUpdate(
-				candidateMemberId, username.trim());
+				candidateMemberId, username);
 		if (localAuth == null) {
 			return LocalLoginResult.invalidCredentials();
 		}
@@ -148,18 +145,17 @@ public class AuthService {
 
 	/**
 	 * 공통 회원, 로컬 인증, 선택적인 사업자 신청, 이메일 인증 소비를 하나의 DB 트랜잭션으로 저장한다.
-	 * 사업자등록증은 외부 저장소(Cloudinary) 부작용이라 DB 트랜잭션에 포함되지 않으므로 예외와 최종
-	 * 롤백 시 별도로 삭제한다. 삭제도 실패하면 DB는 롤백되지만 고아 파일은 운영 정리 대상이 된다.
+	 * 사업자등록증은 외부 저장소(Cloudinary) 부작용이라 DB 트랜잭션에 포함되지 않으므로 최종
+	 * 롤백 확인 뒤 삭제한다. 삭제도 실패하면 DB는 롤백되지만 고아 파일은 운영 정리 대상이 된다.
 	 */
 	@Transactional
 	public int memberSignUp(
 			SignUpRequest signUpRequest,
 			VerifiedSignupEmail sessionVerification) {
 
-		// 입력값 검증부터 이메일 인증 결과를 회원과 연결하는 작업까지 하나의 트랜잭션으로 진행한다.
-		String storedBusinessRegistrationDocumentUrl = null;
+		// 유스케이스 검증부터 이메일 인증 결과를 회원과 연결하는 작업까지 하나의 트랜잭션으로 진행한다.
 		try {
-			validateSignupRequest(signUpRequest);
+			validateSignupBusinessRules(signUpRequest);
 			validateBusinessRegistrationFile(signUpRequest);
 			VerifiedSignupEmail verifiedEmail = emailVerificationService
 					.requireVerifiedSignupEmail(signUpRequest.getEmail(), sessionVerification);
@@ -169,7 +165,7 @@ public class AuthService {
 			saveLocalAuth(createLocalAuth(member, signUpRequest.getPassword()));
 
 			if (signUpRequest.getMemberType() == 2) {
-				storedBusinessRegistrationDocumentUrl = imageStorage.store(
+				String storedBusinessRegistrationDocumentUrl = imageStorage.store(
 						signUpRequest.getBusinessRegistrationFile(), BUSINESS_DOCUMENT_BUCKET);
 				registerDocumentCleanupAfterRollback(storedBusinessRegistrationDocumentUrl);
 				saveBusinessApplication(
@@ -179,47 +175,35 @@ public class AuthService {
 
 			consumeSignupEmailVerification(verifiedEmail, member);
 			return member.getMemberId();
-		} catch (RuntimeException | Error e) {
-			deleteStoredDocument(storedBusinessRegistrationDocumentUrl);
-			throw e;
+		} catch (DuplicateKeyException e) {
+			throw new SignupException("아이디, 닉네임 또는 이메일 중 이미 사용 중인 정보가 있습니다.");
 		}
 	}
 
 	// 회원가입 입력값 중복 확인
-	public int checkLoginId(String loginId) {
-		return mapper.checkLoginId(loginId);
+	public int checkLoginId(String username) {
+		return mapper.checkLoginId(username);
 	}
 
 	public int checkNickname(String nickname) {
 		return mapper.checkNickname(nickname);
 	}
 
-	// 회원가입 입력값 검증
-	private void validateSignupRequest(SignUpRequest signUpRequest) {
-		// 사용자에게 안내 가능한 회원가입 오류를 전용 예외로 전달한다.
-		validateNoWhitespace("아이디", signUpRequest.getLoginId());
-		validateNoWhitespace("닉네임", signUpRequest.getNickname());
-		validateNoWhitespace("이름", signUpRequest.getName());
-		validateNoWhitespace("비밀번호", signUpRequest.getPassword());
-		validateNoWhitespace("이메일", signUpRequest.getEmail());
-		validateNoWhitespace("전화번호", signUpRequest.getPhone());
-
-		if (!signUpRequest.getPassword()
-				.equals(signUpRequest.getPasswordConfirm())) {
-			throw new SignupException("비밀번호가 비밀번호 확인란과 일치하지 않습니다.");
+	// DTO 형식 검증과 별개로 가입 유스케이스가 반드시 지켜야 할 조건만 확인한다.
+	private void validateSignupBusinessRules(SignUpRequest signUpRequest) {
+		if (signUpRequest == null) {
+			throw new SignupException("회원가입 입력값을 다시 확인해주세요.");
 		}
-
-		if (!signUpRequest.isPrivacyAgreed()) {
-			throw new SignupException("개인정보 동의가 필요합니다.");
-		}
-
 		if (signUpRequest.getMemberType() != 1
 				&& signUpRequest.getMemberType() != 2) {
 			throw new SignupException("잘못된 회원 유형");
 		}
-
-		if (!isSelectableGender(signUpRequest.getGender())) {
-			throw new SignupException("성별을 선택해주세요.");
+		if (signUpRequest.getPassword() == null
+				|| !signUpRequest.getPassword().equals(signUpRequest.getPasswordConfirm())) {
+			throw new SignupException("비밀번호가 비밀번호 확인란과 일치하지 않습니다.");
+		}
+		if (!signUpRequest.isPrivacyAgreed()) {
+			throw new SignupException("개인정보 동의가 필요합니다.");
 		}
 	}
 
@@ -323,12 +307,6 @@ public class AuthService {
 		return member;
 	}
 
-	private boolean isSelectableGender(String gender) {
-		return "MALE".equals(gender)
-				|| "FEMALE".equals(gender)
-				|| "NONE".equals(gender);
-	}
-
 	private String toStoredGender(String gender) {
 		return "NONE".equals(gender) ? null : gender;
 	}
@@ -406,13 +384,6 @@ public class AuthService {
 		}
 	}
 
-	// 입력값의 공백 포함 여부 확인
-	private void validateNoWhitespace(String fieldName, String value) {
-		if (value != null && value.chars().anyMatch(ch -> Character.isWhitespace(ch))) {
-			throw new SignupException(fieldName + "에는 공백을 입력할 수 없습니다.");
-		}
-	}
-
 	public String findId(String name, String email) {
 		
 		return mapper.findId(name, email);
@@ -438,6 +409,29 @@ public class AuthService {
 		// 비밀번호 변경 후에는 잠금과 실패 횟수를 초기화해 새 비밀번호로 로그인할 수 있게 한다.
 		if (mapper.updatePasswordByMemberId(sessionVerification.getMemberId(), passwordHash) != 1) {
 			throw new IllegalStateException("비밀번호 변경에 실패했습니다.");
+		}
+	}
+
+	/**
+	 * 재활성화 인증 소비와 회원 상태 전이를 하나의 DB 트랜잭션으로 묶는다.
+	 * 인증 행을 먼저 잠그고 한 번 소비한 뒤 조건부 UPDATE까지 모두 성공해야 하므로,
+	 * 두 브라우저의 완료 요청이나 중간 관리자 상태 변경이 성공으로 오인되지 않는다.
+	 */
+	@Transactional
+	public void reactivateMember(VerifiedMemberReactivation sessionVerification) {
+		emailVerificationService.requireVerifiedMemberReactivation(sessionVerification);
+
+		if (mapper.consumeMemberReactivationVerification(
+				sessionVerification.getEmailVerificationId(),
+				sessionVerification.getMemberId()) != 1) {
+			throw new EmailVerificationException(
+					EmailVerificationException.EMAIL_REVERIFICATION_REQUIRED,
+					"이메일 인증이 만료되었거나 이미 사용되었습니다. 다시 인증해주세요.");
+		}
+
+		// 재활성화는 로그인 성공이 아니므로 last_login_at은 변경하지 않는다.
+		if (mapper.reactivateWithdrawnLocalMember(sessionVerification.getMemberId()) != 1) {
+			throw new IllegalStateException("재활성화 가능한 탈퇴 계정을 찾을 수 없습니다.");
 		}
 	}
 

@@ -38,6 +38,7 @@
     <div class="admin-sidebar__footer">
         <%-- 로그아웃은 세션을 변경하므로 POST를 사용한다. CSRF 보호 적용 시 서버 토큰 필드를 이 폼에 포함해야 한다. --%>
         <form method="post" action="${logoutUrl}">
+            <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
             <button class="admin-sidebar__logout" type="submit">로그아웃</button>
         </form>
     </div>

@@ -3,6 +3,9 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="_csrf" content="${_csrf.token}">
+    <meta name="_csrf_header" content="${_csrf.headerName}">
+    <script src="${pageContext.request.contextPath}/js/csrf.js"></script>
     <title>마감 관리 - 관리자 - 갈래말래</title>
     <link rel="stylesheet" href="/css/common.css">
     <link rel="stylesheet" href="/css/components/buttonComponent.css">

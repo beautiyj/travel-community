@@ -6,6 +6,9 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <meta name="_csrf" content="${_csrf.token}">
+    <meta name="_csrf_header" content="${_csrf.headerName}">
+    <script src="${pageContext.request.contextPath}/js/csrf.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${businessAccount ? '사업자 기본 정보' : '회원정보'}</title>
     <link rel="stylesheet" href="${cp}/css/common.css">
@@ -38,6 +41,7 @@
             <dl class="member-info-list">
                 <div><dt>아이디</dt><dd><c:out value="${member.loginId}" default="-"/></dd></div>
                 <div><dt>이름</dt><dd><c:out value="${member.name}" default="-"/></dd></div>
+                <div><dt>닉네임</dt><dd><c:out value="${member.nickname}" default="-"/></dd></div>
                 <div><dt>이메일</dt><dd><c:out value="${member.email}" default="-"/></dd></div>
                 <div><dt>연락처</dt><dd><c:out value="${member.phone}" default="-"/></dd></div>
                 <div><dt>생일</dt><dd><c:out value="${member.birth}" default="-"/></dd></div>

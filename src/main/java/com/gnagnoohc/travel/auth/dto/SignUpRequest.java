@@ -1,21 +1,13 @@
 package com.gnagnoohc.travel.auth.dto;
 
-import java.sql.Date;
-
+import com.gnagnoohc.travel.auth.validation.LocalUsernamePolicy;
+import jakarta.validation.constraints.*;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.ibatis.type.Alias;
 import org.springframework.web.multipart.MultipartFile;
 
-import jakarta.validation.constraints.AssertTrue;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PastOrPresent;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.Setter;
+import java.sql.Date;
 
 /**
  * 회원가입 화면에서 전달되는 입력만 표현한다.
@@ -43,8 +35,8 @@ public class SignUpRequest {
 	private String name;
 
 	// 로그인 정보
-	@NotBlank(message = "아이디를 입력해주세요.")
-	@Pattern(regexp = "^[A-Za-z0-9]{5,20}$", message = "아이디는 영문 또는 숫자 5~20자로 입력해주세요.")
+	@NotNull(message = "아이디를 입력해주세요.")
+	@Pattern(regexp = LocalUsernamePolicy.REGEX, message = LocalUsernamePolicy.MESSAGE)
 	private String loginId;
 
 	@NotBlank(message = "비밀번호를 입력해주세요.")

@@ -4,6 +4,9 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <meta name="_csrf" content="${_csrf.token}">
+    <meta name="_csrf_header" content="${_csrf.headerName}">
+    <script src="${pageContext.request.contextPath}/js/csrf.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${businessMember ? '사업자 회원가입' : '일반 회원가입'} | 갈래말래</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/common.css">
@@ -14,9 +17,7 @@
     <script defer src="${pageContext.request.contextPath}/js/auth/signup-validation.js"></script>
     <script defer src="${pageContext.request.contextPath}/js/auth/signup.js"></script>
 </head>
-<%-- 로그인한 사용자가 뒤로가기로 가입 폼을 다시 열면 세션 상태를 확인해 오래된 폼 노출을 막는다. --%>
-<body class="auth-page auth-page--signup-form"
-      data-session-status-url="${pageContext.request.contextPath}/auth/api/session-status">
+<body class="auth-page auth-page--signup-form">
 <main class="auth-card auth-card--signup-form">
     <p class="auth-brand brand"><span class="name">갈래말래</span></p>
 
@@ -51,6 +52,7 @@
     --%>
     <form id="signupForm" method="post" enctype="multipart/form-data" novalidate
           action="${pageContext.request.contextPath}/auth/membersignup">
+        <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
         <%-- memberType은 화면 분기용 서버 모델을 다시 전송하지만 hidden 값이므로 서버에서 허용 범위를 반드시 검증한다. --%>
         <input type="hidden" name="memberType" value="${memberType}">
 
@@ -71,7 +73,7 @@
         <div class="form-field">
             <label for="login_id">아이디</label>
             <div class="input-action-row">
-                <input id="login_id" name="loginId" type="text" maxlength="20"
+                <input id="login_id" name="loginId" type="text" maxlength="20" pattern="^[a-z0-9]{5,20}$"
                        autocomplete="username" placeholder="영문 또는 숫자 5~20자" required>
                 <button id="checkUsernameButton" class="secondary-button" type="button">중복 확인</button>
             </div>

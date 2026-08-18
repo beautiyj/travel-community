@@ -5,6 +5,9 @@
 <html lang="ko">
     <head>
         <meta charset="UTF-8">
+        <meta name="_csrf" content="${_csrf.token}">
+        <meta name="_csrf_header" content="${_csrf.headerName}">
+        <script src="${pageContext.request.contextPath}/js/csrf.js"></script>
         <title>갈래말래 -
             <c:choose>
                 <c:when test="${selectedPlaceType eq 'stay'}">숙박 - Travel</c:when>

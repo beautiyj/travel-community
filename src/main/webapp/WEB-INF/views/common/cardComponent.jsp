@@ -7,14 +7,8 @@
 <c:set var="cardRegion" value="${empty param.regionName ? '지역' : param.regionName}" />
 <%-- 평점 및 리뷰 수 기본값 처리 (평점은 삭제 가능) --%>
 <c:set var="cardRating" value="${empty param.rating ? '리뷰수' : param.rating}" />
-<%-- 하드코딩: 가게명이 '밀크티'일 때만 리뷰수 11 고정 표시 (임시) --%>
-<c:set var="cardReviewCount"
-value="${param.name eq '밀크티' ? 11 : (empty param.reviewCount ? '0' : param.reviewCount)}" />
-
-<c:set var="cardPrice"
-value="${param.name eq '밀크티' ? '10,000원' : (empty param.price ? '가격 변동' : param.price)}" />
-
-<%-- <c:set var="cardPrice" value="${empty param.price ? '가격 변동' : param.price}" /> --%>
+<c:set var="cardReviewCount" value="${empty param.reviewCount ? '0' : param.reviewCount}" />
+<c:set var="cardPrice" value="${empty param.price ? '가격 변동' : param.price}" />
 
 <%-- 외부에서 전달하는 showWish 옵션 (기본값: true) --%>
 <c:set var="showWishParam" value="${empty param.showWish ? true : param.showWish}" />

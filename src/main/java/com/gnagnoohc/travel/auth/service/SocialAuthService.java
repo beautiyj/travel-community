@@ -1,7 +1,6 @@
 package com.gnagnoohc.travel.auth.service;
 
 import java.sql.Timestamp;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -168,7 +167,7 @@ public class SocialAuthService {
             PendingSocialSignup pendingSignup,
             SocialSignupRequest signupRequest) {
         validatePendingSignup(pendingSignup);
-        validateSignupRequest(signupRequest);
+        validateSignupBusinessRules(signupRequest);
 
         // 사전 검사는 안내용이며, 동시 요청의 최종 방어는 이메일·소셜 식별자 UNIQUE 제약이다.
         if (socialAuthMapper.findMemberBySocialIdentity(
@@ -468,28 +467,11 @@ public class SocialAuthService {
         }
     }
 
-    private void validateSignupRequest(SocialSignupRequest signupRequest) {
-        if (signupRequest == null
-                || signupRequest.getName() == null
-                || signupRequest.getName().length() < 2
-                || signupRequest.getName().length() > 20
-                || signupRequest.getName().matches(".*\\s.*")
-                || signupRequest.getNickname() == null
-                || !signupRequest.getNickname().matches("^[^\\s]{2,10}$")
-                || signupRequest.getPhone() == null
-                || !signupRequest.getPhone().matches("^01[016789]-?\\d{3,4}-?\\d{4}$")
-                || signupRequest.getBirth() == null
-                || signupRequest.getBirth().toLocalDate().isAfter(LocalDate.now())
-                || !isSelectableGender(signupRequest.getGender())
-                || !signupRequest.isPrivacyAgreed()) {
+    // DTO 형식 검증과 별개로 가입 유스케이스의 개인정보 동의만 다시 보장한다.
+    private void validateSignupBusinessRules(SocialSignupRequest signupRequest) {
+        if (signupRequest == null || !signupRequest.isPrivacyAgreed()) {
             throw new SocialAuthException("소셜 회원가입 입력값을 다시 확인해 주세요.");
         }
-    }
-
-    private boolean isSelectableGender(String gender) {
-        return "MALE".equals(gender)
-                || "FEMALE".equals(gender)
-                || "NONE".equals(gender);
     }
 
     private String toStoredGender(String gender) {

@@ -26,6 +26,7 @@
                 <p class="profile-edit__message profile-edit__message--error"><c:out value="${error}"/></p>
             </c:if>
             <form class="profile-edit__form mypage-form-card" action="${cp}${basePath}/password" method="post">
+                <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                 <div class="input-field"><label for="currentPassword">현재 비밀번호</label><input id="currentPassword" type="password" name="currentPassword" autocomplete="current-password" required></div>
                 <div class="input-field"><label for="newPassword">새 비밀번호</label><input id="newPassword" type="password" name="newPassword" autocomplete="new-password" minlength="8" maxlength="20" placeholder="영문·숫자 포함 8~20자" required></div>
                 <div class="input-field"><label for="newPasswordCheck">새 비밀번호 확인</label><input id="newPasswordCheck" type="password" name="newPasswordCheck" autocomplete="new-password" minlength="8" maxlength="20" required></div>

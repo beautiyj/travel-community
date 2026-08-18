@@ -11,9 +11,6 @@ import java.util.List;
 @Mapper
 public interface TourMapper {
 
-    // DB region 테이블에 해당 regionId가 존재하는지 유효성 체크 (FK 에러 방지용)
-    boolean existsRegion(@Param("regionId") Integer regionId);
-
     // PLACE 테이블 UPSERT
     void upsertPlace(PlaceDTO place);
     

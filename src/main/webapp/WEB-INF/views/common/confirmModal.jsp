@@ -30,6 +30,9 @@
       <p class="modal-message"><c:out value="${mMessage}" /></p>
 
       <form action="${cp}${param.action}" method="${mMethod}">
+        <c:if test="${fn:toLowerCase(mMethod) ne 'get' and fn:toLowerCase(mMethod) ne 'head' and fn:toLowerCase(mMethod) ne 'options' and fn:toLowerCase(mMethod) ne 'trace'}">
+          <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
+        </c:if>
         <c:choose>
           <c:when test="${hCount eq 0}">
             <input type="hidden" name="id" value="" data-modal-value>

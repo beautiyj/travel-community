@@ -27,6 +27,7 @@
 
                     <%-- 로그아웃은 POST 전용(AuthController)이라 링크가 아닌 폼 제출로 처리 --%>
                     <form action="${cp}/auth/logout" method="post" style="display:contents;">
+                        <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                         <jsp:include page="/WEB-INF/views/common/buttonComponent.jsp">
                             <jsp:param name="text" value="로그아웃" />
                             <jsp:param name="size" value="var(--text-sm)" />

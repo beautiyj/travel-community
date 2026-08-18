@@ -14,9 +14,7 @@
     <script defer src="${pageContext.request.contextPath}/js/auth/signup-validation.js"></script>
     <script defer src="${pageContext.request.contextPath}/js/auth/social-signup.js"></script>
 </head>
-<%-- 로그인 이후 뒤로가기로 소셜 가입 폼이 복원되면 현재 세션 상태를 다시 확인한다. --%>
-<body class="auth-page auth-page--social-signup"
-      data-session-status-url="${pageContext.request.contextPath}/auth/api/session-status">
+<body class="auth-page auth-page--social-signup">
 <main class="auth-card auth-card--social-signup">
     <p class="auth-brand brand"><span class="name">갈래말래</span></p>
 
@@ -54,6 +52,7 @@
           action="${pageContext.request.contextPath}/auth/social/signup"
           method="post"
           novalidate>
+        <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
         <%--
           nonce는 소셜 인증을 시작한 같은 세션의 가입 요청인지 확인하고 재사용을 막기 위한 값이다.
           일반적인 CSRF 토큰을 자동으로 대체하는 값으로 간주하지 않는다.

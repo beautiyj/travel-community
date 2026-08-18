@@ -86,7 +86,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function postForm(path, values) {
         // 컨텍스트 경로를 포함해 배포 위치와 무관하게 같은 애플리케이션의 인증 API를 호출한다.
-        const response = await fetch(`${contextPath}${path}`, {
+        const response = await csrfFetch(`${contextPath}${path}`, {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
             body: new URLSearchParams(values)

@@ -23,6 +23,7 @@
     </div>
 
     <form action="${pageContext.request.contextPath}/auth/reactivation/complete" method="post">
+        <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
         <button class="primary-button" type="submit">계정 재활성화 완료</button>
     </form>
 

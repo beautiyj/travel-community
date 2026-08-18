@@ -21,6 +21,9 @@ https://picsum.photos/id/1024/560/360^전주^전통과 현대가 어우러진 �
 <html lang="ko">
     <head>
         <meta charset="UTF-8">
+        <meta name="_csrf" content="${_csrf.token}">
+        <meta name="_csrf_header" content="${_csrf.headerName}">
+        <script src="${pageContext.request.contextPath}/js/csrf.js"></script>
         <title>갈래말래 - 여행 커뮤니티 메인</title>
 
         <link rel="stylesheet" href="${cp}/css/common.css">

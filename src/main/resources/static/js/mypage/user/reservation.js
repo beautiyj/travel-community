@@ -50,7 +50,7 @@
         submitButton.disabled = true;
 
         try {
-            const response = await fetch(
+            const response = await csrfFetch(
                 form.dataset.endpointPrefix + encodeURIComponent(reservationId) + '/cancel-request',
                 {
                     method: 'POST',
@@ -100,7 +100,7 @@
         submitButton.disabled = true;
 
         try {
-            const response = await fetch(
+            const response = await csrfFetch(
                 form.dataset.endpointPrefix + encodeURIComponent(reservationId) + '/cancel-request',
                 { method: 'POST' }
             );

@@ -25,6 +25,7 @@
       조회 결과가 계정 존재 여부를 노출할 수 있으므로 서버는 응답 정책과 요청 남용 방지를 책임진다.
     --%>
     <form id="findIdForm" action="${pageContext.request.contextPath}/auth/find-id" method="post" novalidate>
+        <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
         <div class="form-field">
             <label for="findIdName">이름</label>
             <input id="findIdName" name="name" type="text" autocomplete="name"

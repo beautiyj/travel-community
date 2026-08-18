@@ -12,9 +12,7 @@
     <script defer src="${pageContext.request.contextPath}/js/auth/auth-history-guard.js"></script>
     <script defer src="${pageContext.request.contextPath}/js/auth/login.js"></script>
 </head>
-<%-- auth-history-guard.js가 뒤로가기 복원 시 이 URL로 현재 세션의 로그인 여부를 다시 확인한다. --%>
-<body class="auth-page auth-page--login"
-      data-session-status-url="${pageContext.request.contextPath}/auth/api/session-status">
+<body class="auth-page auth-page--login">
 <main class="auth-card auth-card--small auth-card--login">
     <a class="auth-brand brand" href="${pageContext.request.contextPath}/"><span class="name">갈래말래</span></a>
 
@@ -54,6 +52,12 @@
         </div>
     </c:if>
 
+    <c:if test="${param.socialLoginRequired != null}">
+        <div class="form-alert form-alert--success" role="status">
+            소셜 가입 또는 연동은 완료되었습니다. 로그인 세션을 만들지 못했으므로 다시 로그인해 주세요.
+        </div>
+    </c:if>
+
     <%-- 아래 쿼리 파라미터는 인증 처리 후 서버가 redirect할 때 붙이는 화면 상태이며, 인증 판단 근거로 사용하지 않는다. --%>
     <c:choose>
         <c:when test="${param.socialNotLinked != null}">
@@ -80,6 +84,7 @@
       보안 설정에서 CSRF 보호를 활성화할 때는 서버가 발급한 토큰을 이 폼에 포함해야 한다.
     --%>
     <form id="loginForm" class="login-form" action="${pageContext.request.contextPath}/auth/login" method="post" novalidate>
+        <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
         <div class="form-field">
             <label for="username">아이디</label>
             <input id="username" name="username" type="text" autocomplete="username" pattern="^[a-z0-9]{5,20}$"
@@ -113,7 +118,7 @@
                 <span class="kakao-login-label">카카오 로그인</span>
             </span>
         </a>
-        <%-- 기존 소셜 버튼 구조는 유지하고 Google 로고만 작은 아이콘으로 추가한다. --%>
+        <%-- 기존 소셜 버튼 구조는 유지하고 구글 로고만 작은 아이콘으로 추가한다. --%>
         <a class="social-login-button social-login-button--google"
            href="${pageContext.request.contextPath}/auth/google" aria-label="Google 계정으로 로그인">
             <svg class="social-login-button__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" aria-hidden="true">

@@ -165,6 +165,7 @@
                                   method="post"
                                   action="${approveUrl}"
                                   data-confirm-message="이 사업자 인증 신청을 승인하시겠습니까?">
+                                <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                                 <button id="approve-button"
                                         class="admin-btn admin-btn--approve admin-btn--block"
                                         type="submit"
@@ -177,6 +178,7 @@
                                   method="post"
                                   action="${rejectUrl}"
                                   data-confirm-message="입력한 사유로 이 신청을 반려하시겠습니까?">
+                                <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                                 <label class="admin-form-label" for="rejection-reason">반려 사유 <span aria-hidden="true">*</span></label>
                                 <textarea class="admin-form-textarea"
                                           id="rejection-reason"

@@ -7,7 +7,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -58,19 +57,6 @@ public class AuthApiController {
 
 	private final AuthService service;
 	private final EmailVerificationService emailVerificationService;
-
-	/**
-	 * 브라우저 뒤로 가기로 복원된 인증 화면이 현재 로그인 상태를 다시 확인할 때 사용한다.
-	 * 조회만으로 새 세션을 만들지 않으며 회원 역할이나 개인정보는 응답에 노출하지 않는다.
-	 */
-	@GetMapping("/session-status")
-	public ResponseEntity<Map<String, Object>> sessionStatus(HttpServletRequest request) {
-		boolean authenticated = AuthController.resolveAuthenticatedRedirect(
-				request.getSession(false)) != null;
-		return ResponseEntity.ok()
-				.cacheControl(CacheControl.noStore())
-				.body(Map.of("authenticated", authenticated));
-	}
 
 	// 회원가입 입력값 중복 확인
 	@GetMapping("/check-login-id")

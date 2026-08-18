@@ -145,18 +145,17 @@ public class AuthService {
 
 	/**
 	 * 공통 회원, 로컬 인증, 선택적인 사업자 신청, 이메일 인증 소비를 하나의 DB 트랜잭션으로 저장한다.
-	 * 사업자등록증은 외부 저장소(Cloudinary) 부작용이라 DB 트랜잭션에 포함되지 않으므로 예외와 최종
-	 * 롤백 시 별도로 삭제한다. 삭제도 실패하면 DB는 롤백되지만 고아 파일은 운영 정리 대상이 된다.
+	 * 사업자등록증은 외부 저장소(Cloudinary) 부작용이라 DB 트랜잭션에 포함되지 않으므로 최종
+	 * 롤백 확인 뒤 삭제한다. 삭제도 실패하면 DB는 롤백되지만 고아 파일은 운영 정리 대상이 된다.
 	 */
 	@Transactional
 	public int memberSignUp(
 			SignUpRequest signUpRequest,
 			VerifiedSignupEmail sessionVerification) {
 
-		// 입력값 검증부터 이메일 인증 결과를 회원과 연결하는 작업까지 하나의 트랜잭션으로 진행한다.
-		String storedBusinessRegistrationDocumentUrl = null;
+		// 유스케이스 검증부터 이메일 인증 결과를 회원과 연결하는 작업까지 하나의 트랜잭션으로 진행한다.
 		try {
-			validateSignupRequest(signUpRequest);
+			validateSignupBusinessRules(signUpRequest);
 			validateBusinessRegistrationFile(signUpRequest);
 			VerifiedSignupEmail verifiedEmail = emailVerificationService
 					.requireVerifiedSignupEmail(signUpRequest.getEmail(), sessionVerification);
@@ -166,7 +165,7 @@ public class AuthService {
 			saveLocalAuth(createLocalAuth(member, signUpRequest.getPassword()));
 
 			if (signUpRequest.getMemberType() == 2) {
-				storedBusinessRegistrationDocumentUrl = imageStorage.store(
+				String storedBusinessRegistrationDocumentUrl = imageStorage.store(
 						signUpRequest.getBusinessRegistrationFile(), BUSINESS_DOCUMENT_BUCKET);
 				registerDocumentCleanupAfterRollback(storedBusinessRegistrationDocumentUrl);
 				saveBusinessApplication(
@@ -177,11 +176,7 @@ public class AuthService {
 			consumeSignupEmailVerification(verifiedEmail, member);
 			return member.getMemberId();
 		} catch (DuplicateKeyException e) {
-			deleteStoredDocument(storedBusinessRegistrationDocumentUrl);
 			throw new SignupException("아이디, 닉네임 또는 이메일 중 이미 사용 중인 정보가 있습니다.");
-		} catch (RuntimeException | Error e) {
-			deleteStoredDocument(storedBusinessRegistrationDocumentUrl);
-			throw e;
 		}
 	}
 
@@ -194,35 +189,21 @@ public class AuthService {
 		return mapper.checkNickname(nickname);
 	}
 
-	// 회원가입 입력값 검증
-	private void validateSignupRequest(SignUpRequest signUpRequest) {
-		// 사용자에게 안내 가능한 회원가입 오류를 전용 예외로 전달한다.
-		if (!LocalUsernamePolicy.isValid(signUpRequest.getLoginId())) {
-			throw new SignupException(LocalUsernamePolicy.MESSAGE);
+	// DTO 형식 검증과 별개로 가입 유스케이스가 반드시 지켜야 할 조건만 확인한다.
+	private void validateSignupBusinessRules(SignUpRequest signUpRequest) {
+		if (signUpRequest == null) {
+			throw new SignupException("회원가입 입력값을 다시 확인해주세요.");
 		}
-		validateNoWhitespace("아이디", signUpRequest.getLoginId());
-		validateNoWhitespace("닉네임", signUpRequest.getNickname());
-		validateNoWhitespace("이름", signUpRequest.getName());
-		validateNoWhitespace("비밀번호", signUpRequest.getPassword());
-		validateNoWhitespace("이메일", signUpRequest.getEmail());
-		validateNoWhitespace("전화번호", signUpRequest.getPhone());
-
-		if (!signUpRequest.getPassword()
-				.equals(signUpRequest.getPasswordConfirm())) {
-			throw new SignupException("비밀번호가 비밀번호 확인란과 일치하지 않습니다.");
-		}
-
-		if (!signUpRequest.isPrivacyAgreed()) {
-			throw new SignupException("개인정보 동의가 필요합니다.");
-		}
-
 		if (signUpRequest.getMemberType() != 1
 				&& signUpRequest.getMemberType() != 2) {
 			throw new SignupException("잘못된 회원 유형");
 		}
-
-		if (!isSelectableGender(signUpRequest.getGender())) {
-			throw new SignupException("성별을 선택해주세요.");
+		if (signUpRequest.getPassword() == null
+				|| !signUpRequest.getPassword().equals(signUpRequest.getPasswordConfirm())) {
+			throw new SignupException("비밀번호가 비밀번호 확인란과 일치하지 않습니다.");
+		}
+		if (!signUpRequest.isPrivacyAgreed()) {
+			throw new SignupException("개인정보 동의가 필요합니다.");
 		}
 	}
 
@@ -326,12 +307,6 @@ public class AuthService {
 		return member;
 	}
 
-	private boolean isSelectableGender(String gender) {
-		return "MALE".equals(gender)
-				|| "FEMALE".equals(gender)
-				|| "NONE".equals(gender);
-	}
-
 	private String toStoredGender(String gender) {
 		return "NONE".equals(gender) ? null : gender;
 	}
@@ -406,13 +381,6 @@ public class AuthService {
 					EmailVerificationException.EMAIL_REVERIFICATION_REQUIRED,
 					"이미 사용되었거나 유효하지 않은 이메일 인증입니다. 다시 인증해주세요."
 			);
-		}
-	}
-
-	// 입력값의 공백 포함 여부 확인
-	private void validateNoWhitespace(String fieldName, String value) {
-		if (value != null && value.chars().anyMatch(ch -> Character.isWhitespace(ch))) {
-			throw new SignupException(fieldName + "에는 공백을 입력할 수 없습니다.");
 		}
 	}
 

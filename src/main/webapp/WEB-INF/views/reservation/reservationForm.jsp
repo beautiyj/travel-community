@@ -27,6 +27,7 @@
     <h1 class="page-title">예약하기</h1>
 
     <form action="/reservations" method="post" id="reservationForm">
+        <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
 
         <!-- 서버로 넘길 식별/금액 값. placeType은 서버가 PLACE 조회로 다시 판단하므로 폼으로 넘기지 않는다 -->
         <input type="hidden" name="placeId" value="${placeId}">

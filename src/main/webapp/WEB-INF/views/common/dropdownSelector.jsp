@@ -16,6 +16,9 @@ ex) "120px", "240px", "50%", "100%"
 - selectedNameAttr : (선택) 초기 선택되어 있을 라벨(Name) 변수명
 - targetUrl        : (선택) 선택 시 이동할 URL 경로
 - paramKey         : (선택) URL 전달용 파라미터 키 이름
+- hiddenInputName  : (선택) 지정 시 선택값을 담는 hidden input(name=이 값)을 렌더링.
+                      dropdownSelector.js가 항목 클릭 시 이 input의 value를 갱신 → 검색폼 등에서 실제 제출값으로 사용 가능
+ex) "searchType"
 --%>
 
 <c:set var="dropdownId" value="${empty param.dropdownId ? 'defaultSelect' : param.dropdownId}" />
@@ -25,8 +28,12 @@ ex) "120px", "240px", "50%", "100%"
 <c:set var="defaultLabel" value="${empty param.defaultLabel ? '선택' : param.defaultLabel}" />
 <c:set var="iconSrc" value="${param.iconSrc}" />
 <c:set var="widthStyle" value="${not empty param.width ? 'width:'.concat(param.width).concat(';') : ''}" />
+<c:set var="hiddenInputName" value="${param.hiddenInputName}" />
 
 <div class="drop-select-container dropdown" style="${widthStyle}">
+    <c:if test="${not empty hiddenInputName}">
+        <input type="hidden" id="hidden_${dropdownId}" name="${hiddenInputName}" value="${selectedValue}" />
+    </c:if>
     <button type="button"
     id="dropTrigger_${dropdownId}"
     class="drop-select-trigger ${not empty selectedValue ? 'is-selected' : ''}"
@@ -57,12 +64,16 @@ ex) "120px", "240px", "50%", "100%"
     </button>
 </li>
 <c:forEach var="item" items="${dropdownList}">
+    <%-- RegionDTO(regionId, shortName/regionName)와 기존 DTO(code, name)를 모두 지원하도록 동적 바인딩 --%>
+    <c:set var="itemValue" value="${not empty item.regionId ? item.regionId : item.code}" />
+    <c:set var="itemLabel" value="${not empty item.shortName ? item.shortName : (not empty item.regionName ? item.regionName : item.name)}" />
+
     <li>
         <button type="button"
-        class="dropdown-item drop-menu-item ${selectedValue eq item.code ? 'is-active' : ''}"
-        data-value="${item.code}"
-        data-label="${item.name}">
-        ${item.name}
+        class="dropdown-item drop-menu-item ${selectedValue eq itemValue ? 'is-active' : ''}"
+        data-value="${itemValue}"
+        data-label="${itemLabel}">
+        ${itemLabel}
     </button>
 </li>
 </c:forEach>

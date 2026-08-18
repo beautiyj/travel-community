@@ -6,9 +6,21 @@
 <c:set var="cardName" value="${empty param.name ? '기본 관광지 명칭' : param.name}" />
 <c:set var="cardRegion" value="${empty param.regionName ? '지역' : param.regionName}" />
 <%-- 평점 및 리뷰 수 기본값 처리 (평점은 삭제 가능) --%>
-<c:set var="cardRating" value="${empty param.rating ? '0.0' : param.rating}" />
-<c:set var="cardReviewCount" value="${empty param.reviewCount ? '0' : param.reviewCount}" />
-<c:set var="cardPrice" value="${empty param.price ? '정보 없음' : param.price}" />
+<c:set var="cardRating" value="${empty param.rating ? '리뷰수' : param.rating}" />
+<%-- 하드코딩: 가게명이 '밀크티'일 때만 리뷰수 11 고정 표시 (임시) --%>
+<c:set var="cardReviewCount"
+value="${param.name eq '밀크티' ? 11 : (empty param.reviewCount ? '0' : param.reviewCount)}" />
+
+<c:set var="cardPrice"
+value="${param.name eq '밀크티' ? '10,000원' : (empty param.price ? '가격 변동' : param.price)}" />
+
+<%-- <c:set var="cardPrice" value="${empty param.price ? '가격 변동' : param.price}" /> --%>
+
+<%-- 외부에서 전달하는 showWish 옵션 (기본값: true) --%>
+<c:set var="showWishParam" value="${empty param.showWish ? true : param.showWish}" />
+<c:set var="isBusiness" value="${not empty sessionScope.loginMember and sessionScope.loginMember.memberRole eq 'BUSINESS'}" />
+<%-- 최종 위시버튼 노출 여부 (showWish가 true이고 사업자가 아닐 때만 true) --%>
+<c:set var="canShowWish" value="${showWishParam and not isBusiness}" />
 
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/tagButton.css">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/wishButton.css">
@@ -20,11 +32,12 @@
             <jsp:include page="/WEB-INF/views/common/tagButton.jsp">
                 <jsp:param name="place_type" value="${param.place_type}" />
             </jsp:include>
-            <jsp:include page="/WEB-INF/views/common/wishButton.jsp">
-                <jsp:param name="placeId" value="${param.placeId}" />
-                <jsp:param name="isBookmarked" value="${param.isBookmarked}" />
-            </jsp:include>
-
+            <c:if test="${canShowWish}">
+                <jsp:include page="/WEB-INF/views/common/wishButton.jsp">
+                    <jsp:param name="placeId" value="${param.placeId}" />
+                    <jsp:param name="isBookmarked" value="${param.isBookmarked}" />
+                </jsp:include>
+            </c:if>
         </div>
     </div>
 
@@ -66,7 +79,7 @@
                         <c:set var="tagArray" value="${fn:split(param.hashTags, ',')}" />
                         <c:forEach var="tag" items="${tagArray}">
                             <div class="card-badge-sky">
-                                <span class="card-txt-accent">#${fn:trim(tag)}</span>
+                                <span class="card-txt-accent">${fn:trim(tag)}</span>
                             </div>
                         </c:forEach>
                     </c:when>

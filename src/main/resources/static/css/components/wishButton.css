@@ -33,5 +33,16 @@
 .wish-icon {
   width: 24px;
   height: 24px;
-  object-fit: contain;
+  display: block;
+  stroke-width: 2;
+  stroke: currentColor;
+  fill: transparent;
+  color: var(--muted-foreground);
+  transition: color 0.2s ease, fill 0.2s ease, stroke 0.2s ease;
+}
+
+.wish-icon.is-active {
+  color: var(--danger);
+  fill: currentColor;
+  stroke: currentColor;
 }

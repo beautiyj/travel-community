@@ -1,33 +1,80 @@
-function toggleWishLocal(buttonElement) {
-    // 현재 버튼의 활성화 상태 유무 (기본값 wish-off)
-    const isActive = buttonElement.getAttribute('data-active') === 'true';
-    const imgElement = buttonElement.querySelector('.wish-icon');
-    
-    // 프로젝트 Context Path 자동 계산
-    const contextPath = window.location.pathname.substring(0, window.location.pathname.indexOf('/', 2));
+function getContextPath() {
+    // Prefer explicit context path injected from server-side JSP (footer.jsp)
+    if (typeof window.__CONTEXT_PATH__ !== 'undefined') {
+        return window.__CONTEXT_PATH__ || '';
+    }
+    // Fallback: assume root context when unsure
+    return '';
+}
 
-    // 클릭할 때마다 상태 반전시키고 이미지 갈아끼우기
+function toggleWishLocal(buttonElement, isActive) {
+    const iconElement = buttonElement.querySelector('.wish-icon');
+
     if (isActive) {
-        // ON -> OFF 상태로 전환
-        imgElement.src = `${contextPath}/images/icons/wish-off.png`;
-        buttonElement.setAttribute('data-active', 'false');
-    } else {
-        // OFF -> ON 상태로 전환
-        imgElement.src = `${contextPath}/images/icons/wish-on.png`;
+        iconElement.classList.add('is-active');
         buttonElement.setAttribute('data-active', 'true');
+        buttonElement.setAttribute('aria-pressed', 'true');
+    } else {
+        iconElement.classList.remove('is-active');
+        buttonElement.setAttribute('data-active', 'false');
+        buttonElement.setAttribute('aria-pressed', 'false');
+    }
+}
+
+async function toggleWishlist(buttonElement) {
+    const placeId = buttonElement.dataset.placeId;
+    if (!placeId) {
+        showWishToast(false, '찜할 장소 정보를 찾을 수 없습니다.');
+        return;
+    }
+
+    const isActive = buttonElement.getAttribute('data-active') === 'true';
+    const url = `${getContextPath()}/mypage/wishlist/toggle`;
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: new URLSearchParams({ placeId })
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+            showWishToast(false, data?.message || '찜 상태 변경에 실패했습니다.');
+            if (response.status === 401) {
+                window.location.href = `${getContextPath()}/auth/login`;
+            }
+            return;
+        }
+
+        toggleWishLocal(buttonElement, data.wishlisted);
+        showWishToast(data.wishlisted, data.message);
+    } catch (error) {
+        console.error('wishlist toggle failed', error);
+        showWishToast(false, '네트워크 오류로 찜 상태를 변경할 수 없습니다.');
     }
 }
 
 /* 셀렉터블 컴포넌트 인터랙션 핸들러 */
 document.addEventListener("DOMContentLoaded", function () {
-    
+
+    // 카드 내 위시버튼 클릭 시 상세 페이지 이동 차단 및 찜 API 호출/토스트 표시
+    const wishButtons = document.querySelectorAll(".btn-wish-trigger[data-place-id]");
+
+    wishButtons.forEach(btn => {
+        btn.addEventListener("click", function (e) {
+            if (this.closest('a')) {
+                e.preventDefault();   // 부모 <a> 태그의 이동 막기
+                e.stopPropagation();  // 이벤트 전파 차단
+            }
+
+            toggleWishlist(this);
+        });
+    });
+
     document.addEventListener("click", function (event) {
-        
-        // 셀렉터블 버튼 감지 (.btn-selectable)
-        const button = event.target.closest(".btn-selectable");
-        if (button) {
-            button.classList.toggle("is-active");
-        }
 
         // 셀렉터블 역할 카드 감지 ([class^='sel-card-col-'])
         const roleCard = event.target.closest("[class^='sel-card-col-']");
@@ -53,6 +100,59 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 });
+
+// 카드컴포넌트의 위시버튼 - 신규 토스트 알림 제어 함수 추가
+let toastTimeout;
+
+function createWishToastElement() {
+    let toast = document.getElementById("wishToast");
+    if (toast) return toast;
+
+    toast = document.createElement("div");
+    toast.id = "wishToast";
+    toast.className = "wish-toast";
+    toast.setAttribute("role", "status");
+    toast.setAttribute("aria-live", "polite");
+    toast.style.display = "none";
+
+    const message = document.createElement("div");
+    message.className = "wish-toast__message";
+    const messageSpan = document.createElement("span");
+    messageSpan.id = "wishToastMsg";
+    message.appendChild(messageSpan);
+
+    const link = document.createElement("a");
+    link.id = "wishToastLink";
+    link.className = "wish-toast-link";
+    link.textContent = "내 찜목록 보기";
+    link.href = `${getContextPath()}/mypage/wishlist`;
+
+    toast.appendChild(message);
+    toast.appendChild(link);
+    document.body.appendChild(toast);
+
+    return toast;
+}
+
+function showWishToast(isAdded, customMessage) {
+    const toast = createWishToastElement();
+    const toastMsg = document.getElementById("wishToastMsg");
+    const toastLink = document.getElementById("wishToastLink");
+
+    if (!toast || !toastMsg || !toastLink) return;
+
+    toastMsg.textContent = customMessage || (isAdded ? "찜 목록에 추가되었습니다." : "찜 목록에서 삭제되었습니다.");
+    toastLink.href = `${getContextPath()}/mypage/wishlist`;
+
+    toast.style.display = "flex";
+    setTimeout(() => { toast.classList.add("show"); }, 10);
+
+    clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => {
+        toast.classList.remove("show");
+        setTimeout(() => { toast.style.display = "none"; }, 300);
+    }, 3000);
+}
 
 /* ============================================================
    공통 모달 (confirmModal.jsp) 열기/닫기

@@ -1,143 +1,237 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="c"   uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn"  uri="jakarta.tags.functions" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 
-<%
-    // =========================================================================
-    // 드롭다운 컴포넌트 테스트용 더미 데이터 생성 (request 영역 저장)
-    // =========================================================================
-    
-    // 1. 지역 리스트 더미
-    java.util.List<java.util.Map<String, String>> regionList = new java.util.ArrayList<>();
-    java.util.Map<String, String> r1 = new java.util.HashMap<>(); r1.put("code", "1"); r1.put("name", "서울"); regionList.add(r1);
-    java.util.Map<String, String> r2 = new java.util.HashMap<>(); r2.put("code", "6"); r2.put("name", "부산"); regionList.add(r2);
-    java.util.Map<String, String> r3 = new java.util.HashMap<>(); r3.put("code", "39"); r3.put("name", "제주"); regionList.add(r3);
-    java.util.Map<String, String> r4 = new java.util.HashMap<>(); r4.put("code", "32"); r4.put("name", "강원"); regionList.add(r4);
-    request.setAttribute("regionList", regionList);
-    
-    // 2. 카테고리 리스트 더미
-    java.util.List<java.util.Map<String, String>> categoryList = new java.util.ArrayList<>();
-    java.util.Map<String, String> c1 = new java.util.HashMap<>(); c1.put("code", "12"); c1.put("name", "관광지"); categoryList.add(c1);
-    java.util.Map<String, String> c2 = new java.util.HashMap<>(); c2.put("code", "39"); c2.put("name", "맛집"); categoryList.add(c2);
-    java.util.Map<String, String> c3 = new java.util.HashMap<>(); c3.put("code", "32"); c3.put("name", "숙박"); categoryList.add(c3);
-    request.setAttribute("categoryList", categoryList);
-    
-    // 3. 정렬 리스트 더미
-    java.util.List<java.util.Map<String, String>> sortList = new java.util.ArrayList<>();
-    java.util.Map<String, String> s1 = new java.util.HashMap<>(); s1.put("code", "latest"); s1.put("name", "최신순"); sortList.add(s1);
-    java.util.Map<String, String> s2 = new java.util.HashMap<>(); s2.put("code", "popular"); s2.put("name", "인기순"); sortList.add(s2);
-    java.util.Map<String, String> s3 = new java.util.HashMap<>(); s3.put("code", "rating"); s3.put("name", "평점 높은 순"); sortList.add(s3);
-    request.setAttribute("sortList", sortList);
-    
-    // 4. 개수별 데이터 테스트용 리스트 (2개, 4개, 8개)
-    java.util.List<java.util.Map<String, String>> twoItemList = new java.util.ArrayList<>();
-    java.util.Map<String, String> t1 = new java.util.HashMap<>(); t1.put("code", "Y"); t1.put("name", "공개"); twoItemList.add(t1);
-    java.util.Map<String, String> t2 = new java.util.HashMap<>(); t2.put("code", "N"); t2.put("name", "비공개"); twoItemList.add(t2);
-    request.setAttribute("twoItemList", twoItemList);
-    
-    java.util.List<java.util.Map<String, String>> fourItemList = new java.util.ArrayList<>();
-    java.util.Map<String, String> f1 = new java.util.HashMap<>(); f1.put("code", "SPRING"); f1.put("name", "봄 여행"); fourItemList.add(f1);
-    java.util.Map<String, String> f2 = new java.util.HashMap<>(); f2.put("code", "SUMMER"); f2.put("name", "여름 여행"); fourItemList.add(f2);
-    java.util.Map<String, String> f3 = new java.util.HashMap<>(); f3.put("code", "AUTUMN"); f3.put("name", "가을 여행"); fourItemList.add(f3);
-    java.util.Map<String, String> f4 = new java.util.HashMap<>(); f4.put("code", "WINTER"); f4.put("name", "겨울 여행"); fourItemList.add(f4);
-    request.setAttribute("fourItemList", fourItemList);
-    
-    java.util.List<java.util.Map<String, String>> eightItemList = new java.util.ArrayList<>();
-    for(int i = 1; i <= 8; i++) {
-        java.util.Map<String, String> item = new java.util.HashMap<>();
-        item.put("code", "OPT_" + i);
-        item.put("name", "옵션 항목 " + i);
-        eightItemList.add(item);
-    }
-    request.setAttribute("eightItemList", eightItemList);
-    
-    // 5. 기본 선택값 테스트용 데이터
-    request.setAttribute("selectedType", "SUMMER");
-    request.setAttribute("selectedTypeName", "여름 여행");
-%>
+<c:set var="cp" value="${pageContext.request.contextPath}" />
+
+<%--
+── 인기 여행지 캐러셀 더미 데이터 (유지) ──────────────────────────────
+슬라이드 1장 = 이미지 ^ 지역 ^ 제목
+슬라이드끼리는 | 로 구분
+--%>
+<c:set var="destinationSlides" value="
+https://picsum.photos/id/1069/560/360^제주^에메랄드빛 바다가 펼쳐지는 여름|
+https://picsum.photos/id/1041/560/360^부산^광안대교와 함께하는 낭만적인 야경|
+https://picsum.photos/id/1015/560/360^경주^천년의 숨결이 남아있는 고도 여행|
+https://picsum.photos/id/1024/560/360^전주^전통과 현대가 어우러진 골목 여행
+" />
 
 <!DOCTYPE html>
-<html>
+<html lang="ko">
     <head>
         <meta charset="UTF-8">
-        <title>여행 커뮤니티 메인</title>
+        <title>갈래말래 - 여행 커뮤니티 메인</title>
 
-        <%-- 공통 CSS 및 컴포넌트 CSS 호출 --%>
-        <link rel="stylesheet" href="${pageContext.request.contextPath}/css/common.css">
-        <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/selectableButton.css">
-        <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/selectableCardComponent.css">
-        <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/dropdownSelector.css">
-        <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/buttonComponent.css">
-        <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/searchbar.css">
+        <link rel="stylesheet" href="${cp}/css/common.css">
+        <link rel="stylesheet" href="${cp}/css/main.css">
+        <link rel="stylesheet" href="${cp}/css/components/searchbar.css">
+        <link rel="stylesheet" href="${cp}/css/components/selectableButton.css">
+        <link rel="stylesheet" href="${cp}/css/components/buttonComponent.css">
+        <link rel="stylesheet" href="${cp}/css/components/tagButton.css">
+        <link rel="stylesheet" href="${cp}/css/components/wishButton.css">
+        <link rel="stylesheet" href="${cp}/css/components/cardComponent.css">
+        <link rel="stylesheet" href="${cp}/css/components/banner.css">
+        <link rel="stylesheet" href="${cp}/css/components/smallButton.css">
     </head>
     <body style="margin: 0; padding: 0;">
 
         <jsp:include page="/WEB-INF/views/common/header.jsp" />
 
-        <div style="padding: 20px; min-height: 400px;">
-            <h2>컴포넌트추가_테스트인덱스파일</h2>
-            <button onclick="location.href='/tour/test'">테스트 페이지</button>
+        <%-- ===================== 검색 히어로 (통합 지역 드롭다운 검색바) ===================== --%>
+        <div class="main-hero">
+            <div class="main-hero-inner">
+                <p class="main-hero-eyebrow">갈래말래</p>
+                <h1 class="main-hero-title">어디로 떠나고 싶으세요?</h1>
+                <p class="main-hero-subtitle">숙박, 맛집, 여행지를 한 번에 검색하세요</p>
 
-            <!-- ===================== 검색창 컴포넌트 테스트 ===================== -->
-            <h3 style="margin-top:30px;">검색창 컴포넌트 테스트</h3>
+                <div class="main-hero-search">
+                    <form action="${cp}/tour/list" method="get">
+                        <jsp:include page="/WEB-INF/views/common/searchbar.jsp">
+                            <jsp:param name="useDropdown"       value="true" />
+                            <jsp:param name="listAttr"          value="parentRegionList" />
+                            <jsp:param name="selectedAttr"      value="selectedRegionId" />
+                            <jsp:param name="selectedNameAttr"    value="selectedRegionName" />
+                            <jsp:param name="dropdownHiddenName"  value="regionId" />
+                            <jsp:param name="value"             value="${keyword}" />
+                            <jsp:param name="defaultLabel"        value="전체" />
+                            <jsp:param name="placeholder"   value="어디로 떠나고 싶으신가요?" />
+                        </jsp:include>
+                    </form>
+                </div>
 
-            <%-- 1. 파라미터 미전달 (기본 설정값 적용) --%>
-            <p style="margin-top:15px; color:#666;">1. 기본 검색창 (파라미터 미전달)</p>
-            <form action="/tour/list" method="get">
-                <jsp:include page="/WEB-INF/views/common/searchbar.jsp" />
-            </form>
 
-            <%-- 2. 커스텀 설정 (플레이스홀더, 버튼 텍스트, 파라미터명 변경) --%>
-            <p style="margin-top:25px; color:#666;">2. 커스텀 검색창 (플레이스홀더, 버튼명, input name 변경)</p>
-            <form action="/community/list" method="get">
-                <jsp:include page="/WEB-INF/views/common/searchbar.jsp">
-                    <jsp:param name="placeholder" value="게시글 제목이나 내용을 입력하세요" />
-                    <jsp:param name="name"        value="query" />
-                    <jsp:param name="btnText"     value="조회" />
-                </jsp:include>
-            </form>
+            </div>
+        </div>
 
-            <%-- 3. 검색어 유지 테스트 (value 전달) --%>
-            <p style="margin-top:25px; color:#666;">3. 검색어 유지를 위한 value 값 전달 (기존 검색어: 제주도)</p>
-            <form action="/tour/list" method="get">
-                <jsp:include page="/WEB-INF/views/common/searchbar.jsp">
-                    <jsp:param name="value" value="제주도" />
-                </jsp:include>
-            </form>
+        <div class="main-container">
 
-            <%-- 4. 너비 확장, 드롭다운 포함 및 버튼 색상 변경 테스트 --%>
-            <p style="margin-top:25px; color:#666;">4. 너비 지정(600px), 드롭다운 포함, 버튼 색상 변경(#dc2626)</p>
-            <form action="/tour/list" method="get">
-                <jsp:include page="/WEB-INF/views/common/searchbar.jsp">
-                    <jsp:param name="width"       value="600px" />
-                    <jsp:param name="useDropdown"  value="true" />
-                    <jsp:param name="btnText"      value="검색" />
-                    <jsp:param name="btnColor"     value="#dc2626" />
-                </jsp:include>
-            </form>
+            <%-- ===================== 광고 배너 슬라이더 ===================== --%>
+            <div class="main-section">
+                <jsp:include page="/WEB-INF/views/common/banner.jsp" />
+            </div>
 
-            <%-- 5. 드롭다운 커스텀 데이터(regionList) 및 드롭다운 너비(140px) 지정 테스트 --%>
-            <p style="margin-top:25px; color:#666;">5. 커스텀 데이터 드롭다운 (지역 선택 data: regionList, 너비: 140px)</p>
-            <form action="/tour/list" method="get">
-                <jsp:include page="/WEB-INF/views/common/searchbar.jsp">
-                    <jsp:param name="width"         value="600px" />
-                    <jsp:param name="useDropdown"    value="true" />
-                    <jsp:param name="listAttr"       value="regionList" />
-                    <jsp:param name="defaultLabel"   value="지역 선택" />
-                    <jsp:param name="dropdownWidth"  value="140px" />
-                    <jsp:param name="btnText"        value="검색" />
-                    <jsp:param name="btnColor"       value="#dc2626" />
-                </jsp:include>
-            </form>
+            <%-- ===================== 인기 여행지 캐러셀 (상단 더미 데이터 연동) ===================== --%>
+            <div class="main-section" data-destination>
+                <div class="main-section-head">
+                    <h2 class="main-section-title">지금 인기 여행지</h2>
+                    <div class="destination-controls">
+                        <button type="button" class="btn-wish-trigger" data-destination-prev aria-label="이전 여행지">
+                            <svg class="destination-chevron" viewBox="0 0 24 24" aria-hidden="true">
+                                <polyline points="15 5 8 12 15 19" />
+                            </svg>
+                        </button>
+                        <button type="button" class="btn-wish-trigger" data-destination-next aria-label="다음 여행지">
+                            <svg class="destination-chevron" viewBox="0 0 24 24" aria-hidden="true">
+                                <polyline points="9 5 16 12 9 19" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="destination-carousel">
+                    <div class="destination-track" data-destination-track>
+                        <c:forEach var="row" items="${fn:split(destinationSlides, '|')}">
+                            <c:set var="col" value="${fn:split(row, '^')}" />
+                            <div class="destination-slide" onclick="location.href='${cp}/tour/list?keyword=${fn:trim(col[1])}'">
+                                <img src="${fn:trim(col[0])}" alt="${fn:trim(col[2])}" />
+                                <div class="destination-caption">
+                                    <span class="destination-region">${fn:trim(col[1])}</span>
+                                    <p class="destination-title">${fn:trim(col[2])}</p>
+                                </div>
+                            </div>
+                        </c:forEach>
+                    </div>
+                </div>
+            </div>
+
+            <%-- ===================== 1. 추천 숙박 코너 (실제 DB 4개) ===================== --%>
+            <div class="main-section">
+                <div class="main-section-head">
+                    <h2 class="main-section-title">🏨 추천 숙박</h2>
+                    <a href="${cp}/tour/list?placeType=stay" class="main-section-more">숙박 전체보기 →</a>
+                </div>
+
+                <div class="place-grid">
+                    <c:choose>
+                        <c:when test="${not empty stayList}">
+                            <c:forEach var="place" items="${stayList}">
+                                <a href="${cp}/tour/detail?placeId=${place.placeId}" class="place-card-link">
+                                    <jsp:include page="/WEB-INF/views/common/cardComponent.jsp">
+                                        <jsp:param name="firstimage"  value="${place.firstImage}" />
+                                        <jsp:param name="placeId"     value="${place.placeId}" />
+                                        <jsp:param name="place_type"  value="${place.placeType}" />
+                                        <jsp:param name="name"        value="${place.name}" />
+                                        <jsp:param name="regionName"  value="${place.regionName}" />
+                                        <jsp:param name="price"       value="${place.displayPrice}" />
+                                        <jsp:param name="hashTags"    value="${place.hashtags}" />
+                                    </jsp:include>
+                                </a>
+                            </c:forEach>
+                        </c:when>
+                        <c:otherwise>
+                            <div style="grid-column: span 4; text-align: center; padding: 40px 0; color: var(--muted-foreground);">
+                                등록된 숙박 데이터가 없습니다.
+                            </div>
+                        </c:otherwise>
+                    </c:choose>
+                </div>
+            </div>
+
+            <%-- ===================== 2. 인기 맛집 코너 (실제 DB 4개) ===================== --%>
+            <div class="main-section">
+                <div class="main-section-head">
+                    <h2 class="main-section-title">🍽️ 인기 맛집</h2>
+                    <a href="${cp}/tour/list?placeType=food" class="main-section-more">맛집 전체보기 →</a>
+                </div>
+
+                <div class="place-grid">
+                    <c:choose>
+                        <c:when test="${not empty foodList}">
+                            <c:forEach var="place" items="${foodList}">
+                                <a href="${cp}/tour/detail?placeId=${place.placeId}" class="place-card-link">
+                                    <jsp:include page="/WEB-INF/views/common/cardComponent.jsp">
+                                        <jsp:param name="firstimage"  value="${place.firstImage}" />
+                                        <jsp:param name="placeId"     value="${place.placeId}" />
+                                        <jsp:param name="place_type"  value="${place.placeType}" />
+                                        <jsp:param name="name"        value="${place.name}" />
+                                        <jsp:param name="regionName"  value="${place.regionName}" />
+                                        <jsp:param name="price"       value="${place.displayPrice}" />
+                                        <jsp:param name="hashTags"    value="${place.hashtags}" />
+                                    </jsp:include>
+                                </a>
+                            </c:forEach>
+                        </c:when>
+                        <c:otherwise>
+                            <div style="grid-column: span 4; text-align: center; padding: 40px 0; color: var(--muted-foreground);">
+                                등록된 맛집 데이터가 없습니다.
+                            </div>
+                        </c:otherwise>
+                    </c:choose>
+                </div>
+            </div>
+
+            <%-- ===================== 3. 핫플 관광지 코너 (실제 DB 4개) ===================== --%>
+            <div class="main-section">
+                <div class="main-section-head">
+                    <h2 class="main-section-title">🌴 핫플 관광지</h2>
+                    <a href="${cp}/tour/list?placeType=tour" class="main-section-more">관광지 전체보기 →</a>
+                </div>
+
+                <div class="place-grid">
+                    <c:choose>
+                        <c:when test="${not empty tourList}">
+                            <c:forEach var="place" items="${tourList}">
+                                <a href="${cp}/tour/detail?placeId=${place.placeId}" class="place-card-link">
+                                    <jsp:include page="/WEB-INF/views/common/cardComponent.jsp">
+                                        <jsp:param name="firstimage"  value="${place.firstImage}" />
+                                        <jsp:param name="placeId"     value="${place.placeId}" />
+                                        <jsp:param name="place_type"  value="${place.placeType}" />
+                                        <jsp:param name="name"        value="${place.name}" />
+                                        <jsp:param name="regionName"  value="${place.regionName}" />
+                                        <jsp:param name="price"       value="${place.displayPrice}" />
+                                        <jsp:param name="hashTags"    value="${place.hashtags}" />
+                                    </jsp:include>
+                                </a>
+                            </c:forEach>
+                        </c:when>
+                        <c:otherwise>
+                            <div style="grid-column: span 4; text-align: center; padding: 40px 0; color: var(--muted-foreground);">
+                                등록된 관광지 데이터가 없습니다.
+                            </div>
+                        </c:otherwise>
+                    </c:choose>
+                </div>
+            </div>
 
         </div>
 
-        <%@ include file="../common/footer.jsp" %>
+        <%-- ===================== 하단 CTA 배너 ===================== --%>
+        <div class="main-cta-banner">
+            <h2 class="main-cta-title">지금 바로 나만의 여행을 시작하세요</h2>
+            <p class="main-cta-subtitle">숙박, 맛집, 관광지를 한 번에 예약하고 특별한 혜택을 누리세요</p>
 
-        <!-- 💡 부트스트랩 JS (드롭다운 토글 제어용) -->
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+            <c:choose>
+                <c:when test="${not empty sessionScope.loginMember}">
+                    <jsp:include page="/WEB-INF/views/common/buttonComponent.jsp">
+                        <jsp:param name="text" value="여행 탐색하기" />
+                        <jsp:param name="color" value="var(--card)" />
+                        <jsp:param name="onclick" value="location.href='${cp}/tour/list'" />
+                    </jsp:include>
+                </c:when>
+                <c:otherwise>
+                    <jsp:include page="/WEB-INF/views/common/buttonComponent.jsp">
+                        <jsp:param name="text" value="무료로 가입하기" />
+                        <jsp:param name="color" value="var(--card)" />
+                        <jsp:param name="onclick" value="location.href='${cp}/auth/signup'" />
+                    </jsp:include>
+                </c:otherwise>
+            </c:choose>
+        </div>
 
-        <script src="${pageContext.request.contextPath}/js/dropdownSelector.js"></script>
-        <script src="${pageContext.request.contextPath}/js/common.js"></script>
+        <jsp:include page="/WEB-INF/views/common/footer.jsp" />
+        <script src="${cp}/js/dropdownSelector.js"></script>
+        <script src="${cp}/js/main/main.js"></script>
 
     </body>
 </html>

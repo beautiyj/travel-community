@@ -3,6 +3,7 @@ package com.gnagnoohc.travel.auth.dto;
 import java.sql.Date;
 
 import org.apache.ibatis.type.Alias;
+import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Email;
@@ -29,6 +30,9 @@ public class SignUpRequest {
 	@Min(value = 1, message = "회원 유형이 올바르지 않습니다.")
 	@Max(value = 2, message = "회원 유형이 올바르지 않습니다.")
 	private int memberType;
+
+	// 사업자 회원(memberType=2)만 필수이며 조건부 검증은 서비스에서 수행한다.
+	private MultipartFile businessRegistrationFile;
 
 	// 기본 회원 정보
 	// 회원가입 입력 규칙을 서버에서도 동일하게 검증한다.
@@ -69,7 +73,8 @@ public class SignUpRequest {
 	@Pattern(regexp = "^01[016789]-?\\d{3,4}-?\\d{4}$", message = "휴대전화 번호를 확인해주세요.")
 	private String phone;
 
-	@Pattern(regexp = "^(MALE|FEMALE)$", message = "성별 값이 올바르지 않습니다.")
+	@NotBlank(message = "성별을 선택해주세요.")
+	@Pattern(regexp = "^(MALE|FEMALE|NONE)$", message = "성별 값이 올바르지 않습니다.")
 	private String gender;
 
 	// 약관 동의 및 항목 간 검증

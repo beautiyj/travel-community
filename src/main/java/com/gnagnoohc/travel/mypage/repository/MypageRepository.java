@@ -3,6 +3,7 @@ package com.gnagnoohc.travel.mypage.repository;
 import java.util.List;
 
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import com.gnagnoohc.travel.mypage.dto.MypageDto;
 
@@ -11,20 +12,42 @@ public interface MypageRepository {
 
     MypageDto getMemberInfo(Long memberId);
 
-    void updateMember(MypageDto member);
+    MypageDto getMemberByLoginId(@Param("loginId") String loginId);
 
-    void changePassword(MypageDto member);
+    int updateMember(MypageDto member);
+
+    int updateProfileImage(@Param("memberId") Long memberId,
+                           @Param("profileImgUrl") String profileImgUrl);
+
+    String getPasswordHash(Long memberId);
+
+    int updatePassword(@Param("memberId") Long memberId,
+                       @Param("passwordHash") String passwordHash);
 
     List<MypageDto> getReservationList(Long memberId);
     
     List<MypageDto> getWishlist(Long memberId);
     
-    void withdrawMember(Long memberId);
+    int withdrawMember(Long memberId);
     
-    void deleteWishlist(Long wishlistId);
+    int deleteWishlist(@Param("wishlistId") Long wishlistId,
+                       @Param("memberId") Long memberId);
 
-	void cancelReservation(Long reservationId);
+    int countWishlist(@Param("memberId") Long memberId,
+                      @Param("placeId") Long placeId);
+
+    List<Long> getWishlistedPlaceIds(Long memberId);
+
+    int addWishlist(@Param("memberId") Long memberId,
+                    @Param("placeId") Long placeId);
+
+    int deleteWishlistByPlace(@Param("memberId") Long memberId,
+                              @Param("placeId") Long placeId);
+
+	int cancelReservation(Long reservationId);
     
-    
+	List<MypageDto> getReservationCompleteList(Long memberId);
+
+	List<MypageDto> getPaymentCompleteList(Long memberId);
     
 }

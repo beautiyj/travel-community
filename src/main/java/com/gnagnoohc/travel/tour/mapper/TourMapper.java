@@ -1,13 +1,64 @@
 package com.gnagnoohc.travel.tour.mapper;
 
+import com.gnagnoohc.travel.tour.model.PlaceDTO;
+import com.gnagnoohc.travel.tour.model.PlaceImageDTO;
+import com.gnagnoohc.travel.tour.model.RegionDTO;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
-import com.gnagnoohc.travel.batch.dto.TourItemDTO;
+import java.util.List;
 
 @Mapper
 public interface TourMapper {
 
-    // 공공데이터 수집 후 PLACE 테이블에 알박기(UPSERT)용 메서드
-    void upsertPlace(TourItemDTO item);
+    // DB region 테이블에 해당 regionId가 존재하는지 유효성 체크 (FK 에러 방지용)
+    boolean existsRegion(@Param("regionId") Integer regionId);
+
+    // PLACE 테이블 UPSERT
+    void upsertPlace(PlaceDTO place);
     
+    // REGION 테이블 UPSERT
+    void upsertRegion(RegionDTO region);
+
+    // PLACE_IMAGE 테이블 INSERT
+    void insertPlaceImage(PlaceImageDTO image);
+
+    // PLACE 조회 (ResultMap/ResultType -> PlaceDTO 반환)
+    PlaceDTO selectPlaceById(Integer placeId);
+
+    // 지역 코드 기반 장소 목록 조회 (TourService의 selectByAreaCode 에러 해결용)
+    List<com.gnagnoohc.travel.tour.model.PlaceEntity> selectByAreaCode(@Param("areaCode") String areaCode);
+
+    // 키워드 파라미터 추가 - 타입별 및 지역별 장소 목록 통합 조회 (TourController의 getPlaceList 에러 해결용)
+    // 타입별/지역별/키워드/정렬 및 페이징 적용된 장소 목록 조회 용도(정렬)
+    List<PlaceDTO> selectPlaceList(
+            @Param("placeType") String placeType,
+            @Param("regionId") Integer regionId,
+            @Param("keyword") String keyword,
+            @Param("sort") String sort,
+            @Param("offset") int offset,
+            @Param("limit") int limit
+    );
+
+    // 페이징 처리를 위한 전체 개수 조회
+    int countPlaceList(
+            @Param("placeType") String placeType,
+            @Param("regionId") Integer regionId,
+            @Param("keyword") String keyword
+    );
+
+    List<PlaceImageDTO> getImagesByPlaceId(@Param("placeId") Integer placeId);
+
+    Integer countCommunityReviewPostsByPlaceId(@Param("placeId") int placeId);
+    Integer selectLatestCommunityReviewPostIdByPlaceId(@Param("placeId") int placeId);
+
+    // 특정 지역의 현재 적재된 PLACE 건수 조회 (지역별 무작위 샘플링 쿼터 체크용)
+    int selectPlaceCountByRegion(@Param("regionId") Integer regionId);
+
+    // 스케줄러 적용 로직 2가지
+    int countPlacesByRegionAndType(@Param("regionId") String regionId, @Param("placeType") String placeType);
+    List<RegionDTO> selectAllRegions();
+
+    List<RegionDTO> selectParentRegions();
+
 }

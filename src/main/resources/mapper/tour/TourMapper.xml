@@ -3,36 +3,301 @@
 
 <mapper namespace="com.gnagnoohc.travel.tour.mapper.TourMapper">
 
-    <!-- 배치용 - 외부 공공데이터 수집 후 PLACE 테이블 알박기(UPSERT) -->
-    <insert id="upsertPlace">
-        INSERT INTO place (
-            content_id, 
-            title, 
-            address, 
-            tel, 
-            overview, 
-            is_closed
+    <!-- region 테이블 UPSERT 전, 컬럼 등 존재 여부 확인 -->
+    <select id="existsRegion" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM region
+        WHERE region_id = #{regionId}
+    </select>
+
+    <!-- region 테이블 UPSERT -->
+    <insert id="upsertRegion" parameterType="com.gnagnoohc.travel.tour.model.RegionDTO">
+        INSERT INTO region (
+            region_id,
+            region_name,
+            parent_region_id
         ) VALUES (
-            #{contentid}, 
-            #{title}, 
-            #{addr1}, 
-            #{tel}, 
-            #{overview}, 
-            #{isClosed}
+            #{regionId},
+            #{regionName},
+            #{parentRegionId}
         )
         ON DUPLICATE KEY UPDATE
-            title = VALUES(title),
-            address = VALUES(address),
-            tel = VALUES(tel),
-            overview = VALUES(overview),
-            is_closed = VALUES(is_closed);
+            region_name = VALUES(region_name),
+            parent_region_id = VALUES(parent_region_id);
     </insert>
 
-    <!-- 서비스 조회용 - 사용자 서비스 쿼리 영역 -->
-    <!-- 
-    <select id="selectTourList" resultType="tourDto">
-        SELECT * FROM tour_table
+    <!-- place 테이블 UPSERT -->
+    <insert id="upsertPlace" parameterType="com.gnagnoohc.travel.tour.model.PlaceDTO">
+        INSERT INTO place (
+            place_id,
+            member_id,
+            region_id,
+            place_type,
+            name,
+            description,
+            address,
+            mapx,
+            mapy,
+            is_closed,
+            created_at,
+            updated_at,
+            first_image,
+            hashtags,
+            min_price,
+            use_fee_info,
+            people_count,
+            extra_info
+        ) VALUES (
+            #{placeId},
+            #{memberId},
+            #{regionId},
+            #{placeType},
+            #{name},
+            #{description},
+            #{address},
+            #{mapx},
+            #{mapy},
+            #{isClosed},
+            NOW(),
+            NOW(),
+            #{firstImage},
+            #{hashtags},
+            #{minPrice},
+            #{useFeeInfo},
+            #{peopleCount},
+            #{extraInfo}
+        )
+        ON DUPLICATE KEY UPDATE
+            region_id = VALUES(region_id),
+            place_type = VALUES(place_type),
+            name = VALUES(name),
+            description = VALUES(description),
+            address = VALUES(address),
+            mapx = VALUES(mapx),
+            mapy = VALUES(mapy),
+            is_closed = VALUES(is_closed),
+            updated_at = NOW(),
+            first_image = VALUES(first_image),
+            hashtags = VALUES(hashtags),
+            min_price = VALUES(min_price),
+            use_fee_info = VALUES(use_fee_info),
+            people_count = VALUES(people_count),
+            extra_info = VALUES(extra_info);
+    </insert>
+
+    <!-- place_image 테이블 INSERT -->
+    <insert id="insertPlaceImage" parameterType="com.gnagnoohc.travel.tour.model.PlaceImageDTO">
+        INSERT INTO place_image (
+            place_id,
+            image_url,
+            sort_order
+        ) VALUES (
+            #{placeId},
+            #{imageUrl},
+            #{sortOrder}
+        );
+    </insert>
+
+    <!-- place 단건 조회 -->
+    <select id="selectPlaceById" resultType="com.gnagnoohc.travel.tour.model.PlaceDTO">
+        SELECT 
+            place_id AS placeId,
+            member_id AS memberId,
+            region_id AS regionId,
+            place_type AS placeType,
+            name,
+            description,
+            address,
+            mapx,
+            mapy,
+            is_closed AS isClosed,
+            created_at AS createdAt,
+            updated_at AS updatedAt,
+            first_image AS firstImage,
+            hashtags,
+            min_price AS minPrice,
+            use_fee_info AS useFeeInfo,
+            people_count AS peopleCount,
+            extra_info AS extraInfo
+        FROM place
+        WHERE place_id = #{placeId}
     </select>
-    -->
+
+    <!-- 타입별/지역별/키워드 장소 목록 조회 공용 필터 (selectPlaceList/countPlaceList 공용) -->
+    <sql id="placeListFilter">
+        WHERE p.is_closed = 0
+
+        <!-- 타입별 필터링 (placeType이 넘어온 경우만 해당 타입 필터링 / null 또는 빈값 시 전체 검색) -->
+        <if test="placeType != null and placeType != ''">
+            AND p.place_type = #{placeType}
+        </if>
+
+        <!-- 지역 필터 조건 (시/도 클릭 시 하위 시/군/구 데이터까지 함께 포함) -->
+        <if test="regionId != null">
+            AND (p.region_id = #{regionId} OR r.parent_region_id = #{regionId})
+        </if>
+
+        <!-- 통합 키워드 검색 (장소명, 주소, 해시태그 부분/전체 일치) -->
+        <if test="keyword != null and keyword != ''">
+            AND (
+            p.name LIKE CONCAT('%', #{keyword}, '%')
+            OR p.address LIKE CONCAT('%', #{keyword}, '%')
+            OR p.hashtags LIKE CONCAT('%', #{keyword}, '%')
+            )
+        </if>
+    </sql>
+
+    <!-- 조인 - 타입별 및 지역별 장소 목록 통합 조회 (페이지네이션: limit/offset) -->
+    <select id="selectPlaceList" resultType="com.gnagnoohc.travel.tour.model.PlaceDTO">
+        SELECT
+            p.place_id AS placeId,
+            p.member_id AS memberId,
+            p.region_id AS regionId,
+            p.place_type AS placeType,
+            p.name,
+            p.description,
+            p.address,
+            p.mapx,
+            p.mapy,
+            p.is_closed AS isClosed,
+            p.created_at AS createdAt,
+            p.updated_at AS updatedAt,
+            p.first_image AS firstImage,
+            p.hashtags,
+            p.min_price AS minPrice,
+            p.use_fee_info AS useFeeInfo,
+            p.people_count AS peopleCount,
+            p.extra_info AS extraInfo,
+            r.region_name AS regionName
+        FROM place p
+        LEFT JOIN region r ON p.region_id = r.region_id
+        WHERE p.is_closed = 0
+
+        <!-- 타입별 필터링 (placeType이 넘어온 경우만 해당 타입 필터링 / null 또는 빈값 시 전체 검색) -->
+        <if test="placeType != null and placeType != ''">
+            AND p.place_type = #{placeType}
+        </if>
+
+        <!-- 지역 필터 조건 (시/도 클릭 시 하위 시/군/구 데이터까지 함께 포함) -->
+        <if test="regionId != null">
+            AND (p.region_id = #{regionId} OR r.parent_region_id = #{regionId})
+        </if>
+
+        <!-- 통합 키워드 검색 (장소명, 주소, 해시태그 부분/전체 일치) -->
+        <if test="keyword != null and keyword != ''">
+            AND (
+            p.name LIKE CONCAT('%', #{keyword}, '%')
+            OR p.address LIKE CONCAT('%', #{keyword}, '%')
+            OR p.hashtags LIKE CONCAT('%', #{keyword}, '%')
+            )
+        </if>
+        <!-- 정렬 조건 동적 분기 -->
+        <choose>
+            <when test="sort == 'name'">
+                ORDER BY p.name ASC
+            </when>
+            <when test="sort == 'priceAsc'">
+                ORDER BY p.min_price ASC
+            </when>
+            <when test="sort == 'priceDesc'">
+                ORDER BY p.min_price DESC
+            </when>
+            <otherwise>
+                ORDER BY p.created_at DESC
+            </otherwise>
+        </choose>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!-- 페이징 계산용 총 개수 조회 -->
+    <select id="countPlaceList" resultType="int">
+        SELECT COUNT(*)
+        FROM place p
+        LEFT JOIN region r ON p.region_id = r.region_id
+        WHERE p.is_closed = 0
+
+        <if test="placeType != null and placeType != ''">
+            AND p.place_type = #{placeType}
+        </if>
+
+        <if test="regionId != null">
+            AND (p.region_id = #{regionId} OR r.parent_region_id = #{regionId})
+        </if>
+
+        <if test="keyword != null and keyword != ''">
+            AND (
+            p.name LIKE CONCAT('%', #{keyword}, '%')
+            OR p.address LIKE CONCAT('%', #{keyword}, '%')
+            OR p.hashtags LIKE CONCAT('%', #{keyword}, '%')
+            )
+        </if>
+    </select>
+
+    <!-- 특정 장소의 추가 이미지 목록 조회 -->
+    <select id="getImagesByPlaceId" resultType="com.gnagnoohc.travel.tour.model.PlaceImageDTO">
+        SELECT 
+            image_id AS imageId,
+            place_id AS placeId,
+            image_url AS imageUrl,
+            sort_order AS sortOrder
+        FROM place_image
+        WHERE place_id = #{placeId}
+        ORDER BY sort_order ASC
+    </select>
+
+    <!-- 특정 장소에 연결된 커뮤니티 후기 개수 조회 (post.place_id + post_place_tag 양쪽에서 post_id 합쳐서 중복 제거하여 카운트) -->
+    <select id="countCommunityReviewPostsByPlaceId" parameterType="int" resultType="int">
+        SELECT COUNT(*)
+        FROM (
+            SELECT post_id FROM post WHERE place_id = #{placeId}
+            UNION
+            SELECT post_id FROM post_place_tag WHERE place_id = #{placeId}
+        ) t
+    </select>
+
+    <!-- 특정 장소에 직접 태그된(visit-verified) 최신 후기의 post_id 조회 -->
+    <!-- 요구대로 최신은 post.place_id에서만 조회 (post_place_tag는 최신 대표글 판단에 포함하지 않음) -->
+    <select id="selectLatestCommunityReviewPostIdByPlaceId" parameterType="int" resultType="int">
+        SELECT post_id
+        FROM post
+        WHERE place_id = #{placeId}
+        ORDER BY created_at DESC
+        LIMIT 1
+    </select>
+
+    <!-- 특정 지역의 현재 적재된 place 건수 조회 (지역별 무작위 샘플링 쿼터 체크용) -->
+    <select id="selectPlaceCountByRegion" resultType="int">
+        SELECT COUNT(*)
+        FROM place
+        WHERE region_id = #{regionId}
+    </select>
+
+    <select id="countPlacesByRegionAndType" resultType="int">
+        SELECT COUNT(*)
+        FROM place
+        WHERE region_id = #{regionId}
+        AND place_type = #{placeType}
+    </select>
+
+    <!-- 하위 지역(시/군/구) 목록 조회 (스케줄러/배치용) -->
+    <select id="selectAllRegions" resultType="com.gnagnoohc.travel.tour.model.RegionDTO">
+        SELECT
+            region_id AS regionId,
+            region_name AS regionName,
+            parent_region_id AS parentRegionId
+        FROM region
+        WHERE parent_region_id IS NOT NULL
+    </select>
+
+    <!-- 상위 지역(시/도) 전용 목록 조회 (지역 필터 버튼 바 동적 생성용) -->
+    <select id="selectParentRegions" resultType="com.gnagnoohc.travel.tour.model.RegionDTO">
+        SELECT
+            region_id AS regionId,
+            region_name AS regionName,
+            parent_region_id AS parentRegionId
+        FROM region
+        WHERE parent_region_id IS NULL
+        ORDER BY region_id ASC
+    </select>
 
 </mapper>

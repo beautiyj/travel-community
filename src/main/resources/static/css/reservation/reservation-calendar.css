@@ -1,0 +1,160 @@
+/* ============================================================
+   reservation-calendar.css — 예약 폼 방문날짜 캘린더
+   - 예약 가능일 = 초록, 마감일(이미 예약됨, 숙박만) = 빨강(선택 불가), 지난날 = 흐림
+   - common.css 의 디자인 토큰(var(--...))을 사용하므로 그 뒤에 로드
+   ============================================================ */
+
+.rsv-cal {
+    max-width: 450px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 14px;
+    background: var(--card);
+}
+
+/* 기간 선택 안내 문구 (숙박에만 노출) */
+.cal-hint {
+    margin: -4px 0 8px;
+    font-size: 12px;
+    color: var(--muted-foreground);
+}
+
+.rsv-cal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.rsv-cal-title {
+    font-weight: 700;
+    font-size: var(--text-sm);
+}
+
+.rsv-cal-nav {
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--card);
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+}
+
+.rsv-cal-nav:disabled {
+    opacity: .35;
+    cursor: default;
+}
+
+.rsv-cal-weekdays,
+.rsv-cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+}
+
+.rsv-cal-weekdays {
+    margin-bottom: 6px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted-foreground);
+}
+
+.rsv-cal-day {
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: transparent;
+    font-size: var(--text-sm);
+    color: var(--foreground);
+    cursor: default;
+    padding: 0;
+}
+
+.rsv-cal-day.is-blank {
+    border: none;
+}
+
+
+.rsv-cal-day.is-past {
+    color: var(--muted-foreground);
+    opacity: .4;
+}
+
+/* 예약 가능 = 초록 */
+.rsv-cal-day.is-available {
+    background: rgba(34, 197, 94, .12);
+    color: #15803d;
+    border-color: rgba(34, 197, 94, .35);
+    cursor: pointer;
+}
+
+.rsv-cal-day.is-available:hover {
+    background: rgba(34, 197, 94, .25);
+}
+
+/* 마감(이미 예약됨) = 빨강, 선택 불가 */
+.rsv-cal-day.is-full {
+    background: rgba(239, 68, 68, .12);
+    color: #b91c1c;
+    border-color: rgba(239, 68, 68, .35);
+    cursor: not-allowed;
+}
+
+/* 선택된 날 (당일 방문의 선택일, 숙박의 체크인) */
+.rsv-cal-day.is-selected {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+    font-weight: 700;
+}
+
+/* ── 숙박 기간 선택: 체크인·체크아웃은 진하게, 사이는 연하게 ── */
+.rsv-cal-day.is-range-end {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+    font-weight: 700;
+}
+
+.rsv-cal-day.is-in-range {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+}
+
+.rsv-cal-legend {
+    display: flex;
+    gap: 16px;
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--muted-foreground);
+}
+
+.rsv-cal-legend .dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 4px;
+    vertical-align: middle;
+}
+
+.rsv-cal-legend .dot.ok {
+    background: #22c55e;
+}
+
+.rsv-cal-legend .dot.full {
+    background: #ef4444;
+}
+
+/* 맛집·관광지: 선택한 날짜의 남은 자리 (범례 오른쪽 끝) */
+.rsv-cal-legend .seat-info {
+    margin-left: auto;
+    font-weight: var(--font-weight-bold);
+    color: var(--foreground);
+}

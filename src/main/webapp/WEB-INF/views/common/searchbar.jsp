@@ -19,7 +19,11 @@
 <c:set var="dropdownId"        value="${empty param.dropdownId ? 'search_dropdown' : param.dropdownId}" />
 <c:set var="dropdownListAttr"  value="${empty param.listAttr ? 'categoryList' : param.listAttr}" />
 <c:set var="defaultLabel"      value="${empty param.defaultLabel ? '전체' : param.defaultLabel}" />
-<c:set var="dropdownWidth"     value="${empty param.dropdownWidth ? '' : param.dropdownWidth}" />
+<c:set var="dropdownWidth"     value="${empty param.dropdownWidth ? '135px' : param.dropdownWidth}" />
+<%-- 드롭다운 선택값 제출/유지용 (선택) --%>
+<c:set var="dropdownHiddenName" value="${param.dropdownHiddenName}" />
+<c:set var="dropdownSelectedAttr" value="${param.selectedAttr}" />
+<c:set var="dropdownSelectedNameAttr" value="${param.selectedNameAttr}" />
 
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/buttonComponent.css">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/components/dropdownSelector.css">
@@ -33,9 +37,13 @@
 				<jsp:param name="listAttr"     value="${dropdownListAttr}" />
 				<jsp:param name="defaultLabel" value="${defaultLabel}" />
 				<jsp:param name="width"        value="${dropdownWidth}" />
+				<jsp:param name="hiddenInputName"  value="${dropdownHiddenName}" />
+				<jsp:param name="selectedAttr"     value="${dropdownSelectedAttr}" />
+				<jsp:param name="selectedNameAttr" value="${dropdownSelectedNameAttr}" />
 			</jsp:include>
 		</div>
 		<div class="search-divider"></div>
+
 	</c:if>
 
 	<img src="${pageContext.request.contextPath}/images/icons/search.png" class="search-icon" alt="검색" />

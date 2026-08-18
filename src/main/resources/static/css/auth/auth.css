@@ -1,29 +1,25 @@
-:root {
-    color: #1f2937;
-    font-family: Arial, "Noto Sans KR", sans-serif;
-    background: #f3f7f6;
-}
-
-* {
-    box-sizing: border-box;
-}
-
-body {
-    margin: 0;
-}
-
-button,
-input {
-    font: inherit;
-}
-
+/* 인증 화면 공통 레이아웃과 폼 컴포넌트다. 폰트와 일반 토큰은 common.css를 상속한다. */
 .auth-page {
     display: flex;
+    flex-direction: row;
     min-height: 100vh;
     align-items: center;
     justify-content: center;
     padding: 40px 16px;
+    color: #1f2937;
     background: linear-gradient(145deg, #eef7f4 0%, #f8fafc 55%, #edf6ff 100%);
+}
+
+/* common.css의 전역 1.5 line-height는 auth 기존 폼 리듬과 달라지므로 이 범위에서만 복원한다. */
+body.auth-page {
+    line-height: normal;
+}
+
+/* 기존 button, input의 font: inherit 계약과 label의 기본 타이포그래피를 auth 범위에서 유지한다. */
+.auth-page label,
+.auth-page button,
+.auth-page input {
+    font: inherit;
 }
 
 .auth-card {
@@ -31,7 +27,7 @@ input {
     padding: 36px;
     border: 1px solid #dfe7e5;
     border-radius: 18px;
-    background: #ffffff;
+    background: var(--card);
     box-shadow: 0 16px 45px rgba(31, 41, 55, 0.09);
 }
 
@@ -39,11 +35,73 @@ input {
     width: min(100%, 440px);
 }
 
-.auth-brand {
-    color: #087f5b;
-    font-size: 18px;
+/* 회원 유형 선택과 가입 폼이 함께 사용하는 진행 단계를 base에 둔다. */
+.signup-progress {
+    display: grid;
+    margin: 30px 0 0;
+    padding: 0;
+    grid-template-columns: repeat(2, 1fr);
+    list-style: none;
+}
+
+.signup-progress__step {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    gap: 5px;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.signup-progress__step:not(:last-child)::after {
+    position: absolute;
+    z-index: 0;
+    top: 15px;
+    left: calc(50% + 24px);
+    width: calc(100% - 48px);
+    height: 2px;
+    background: rgba(148, 163, 184, 0.25);
+    content: "";
+}
+
+.signup-progress__number {
+    z-index: 1;
+    display: grid;
+    width: 32px;
+    height: 32px;
+    place-items: center;
+    border-radius: 50%;
+    background: #f1f5f9;
+    font-size: 14px;
     font-weight: 700;
-    text-decoration: none;
+}
+
+.signup-progress__step--current {
+    color: #0369a1;
+}
+
+.signup-progress__step--current .signup-progress__number {
+    color: #ffffff;
+    background: #0369a1;
+}
+
+.signup-progress__step--complete {
+    color: #0369a1;
+}
+
+.signup-progress__step--complete .signup-progress__number {
+    color: #0369a1;
+    background: #e0f2fe;
+}
+
+.signup-progress__step--complete:not(:last-child)::after {
+    background: #7dd3fc;
+}
+
+/* 브랜드의 글꼴·색상·크기는 common.css의 .brand .name을 그대로 사용한다. */
+.auth-brand {
+    margin: 0;
 }
 
 .auth-header {
@@ -53,6 +111,8 @@ input {
 .auth-header h1 {
     margin: 0 0 8px;
     font-size: 30px;
+    font-weight: 700;
+    line-height: normal;
 }
 
 .auth-header p,
@@ -66,6 +126,7 @@ input {
     margin: 0;
 }
 
+/* 라벨·입력·도움말·검증 메시지를 세로로 묶는 공통 폼 단위다. */
 .form-field {
     margin: 0 0 20px;
     padding: 0;
@@ -90,7 +151,7 @@ input {
     padding: 10px 12px;
     border: 1px solid #cfd8d5;
     border-radius: 8px;
-    background: #ffffff;
+    background: var(--card);
 }
 
 .form-field input:focus {
@@ -98,6 +159,7 @@ input {
     outline: 3px solid rgba(12, 166, 120, 0.14);
 }
 
+/* 입력 옆에 중복 확인·인증번호 발송·비밀번호 보기 같은 보조 동작을 배치한다. */
 .input-action-row,
 .password-field {
     display: flex;
@@ -109,6 +171,22 @@ input {
     flex: 1;
 }
 
+/* 숨긴 파일 입력 대신 선택 파일명과 크기를 노출하는 읽기 전용 표시 영역이다. */
+.business-registration-file-info {
+    display: flex;
+    min-width: 0;
+    min-height: 46px;
+    flex: 1;
+    align-items: center;
+    margin: 0;
+    padding: 10px 12px;
+    border: 1px solid #cfd8d5;
+    border-radius: 8px;
+    background: var(--card);
+    overflow-wrap: anywhere;
+}
+
+/* 라디오·체크박스 선택지를 한 줄에 배치하고 좁은 화면에서는 자연스럽게 줄바꿈한다. */
 .choice-row {
     display: flex;
     flex-wrap: wrap;
@@ -128,6 +206,7 @@ input {
     border-radius: 8px;
 }
 
+/* 제출·보조 요청·텍스트 동작이 같은 포인터 피드백을 공유하고 역할별 색상은 아래에서 구분한다. */
 .primary-button,
 .secondary-button,
 .text-button {
@@ -139,7 +218,7 @@ input {
     min-height: 48px;
     border: 0;
     border-radius: 8px;
-    color: #ffffff;
+    color: var(--primary-foreground);
     background: #087f5b;
     font-weight: 700;
 }
@@ -154,7 +233,7 @@ input {
     border: 1px solid #087f5b;
     border-radius: 8px;
     color: #087f5b;
-    background: #ffffff;
+    background: var(--card);
     font-weight: 700;
 }
 
@@ -164,6 +243,13 @@ input {
     background: transparent;
 }
 
+/* common reset이 제거한 native button 여백을 복원해 로그인 비밀번호 행의 높이를 유지한다. */
+#togglePassword.text-button {
+    padding: 1px 6px;
+    line-height: normal;
+}
+
+/* 비동기 검증 결과가 바뀌어도 폼 높이가 흔들리지 않도록 오류·성공 영역의 최소 높이를 유지한다. */
 .field-error {
     min-height: 18px;
     margin: 6px 0 0;
@@ -171,10 +257,10 @@ input {
     font-size: 13px;
 }
 
-/* [수정] 중복 확인/이메일 인증 성공 안내를 오류 태그와 분리해 초록색으로 표시한다. */
+/* 중복 확인·이메일 인증의 성공 안내를 오류 태그와 분리해 상태별 색상을 유지한다. */
 .field-success {
-	min-height: 18px;
-	margin: 6px 0 0;
+    min-height: 18px;
+    margin: 6px 0 0;
     color: #087f5b;
     font-size: 13px;
 }
@@ -184,6 +270,7 @@ input {
     font-size: 13px;
 }
 
+/* 필수 동의 항목을 일반 입력과 시각적으로 구분하는 공통 컨테이너다. */
 .agreement-box {
     margin-bottom: 20px;
     padding: 16px;
@@ -191,6 +278,7 @@ input {
     background: #f3f7f6;
 }
 
+/* 서버 처리 결과와 폼 전체 오류처럼 특정 입력 하나에 속하지 않는 메시지 영역이다. */
 .form-alert {
     margin-bottom: 18px;
     padding: 12px 14px;
@@ -229,7 +317,7 @@ input {
     text-decoration: none;
 }
 
-/* [추가] 공통 컴포넌트 적용 전 로그인·회원가입 화면에서 사용하는 소셜 버튼 스타일이다. */
+/* 로그인·회원가입 화면에서 공유하는 소셜 제공자 버튼 구조다. */
 .social-login-section {
     display: grid;
     gap: 10px;
@@ -255,32 +343,100 @@ input {
 .social-login-button {
     display: flex;
     width: 100%;
-    min-height: 46px;
+    height: 48px;
+    min-height: 48px;
     align-items: center;
     justify-content: center;
     border: 0;
-    border-radius: 8px;
+    border-radius: 12px;
     color: #1f2937;
     font-weight: 700;
     text-decoration: none;
+    overflow: hidden;
 }
 
 .social-login-button--kakao {
+    padding: 0;
     background: #fee500;
 }
 
-.social-login-button--google,
+.social-login-button--kakao:focus-visible {
+    outline: 3px solid rgba(0, 0, 0, 0.35);
+    outline-offset: 3px;
+}
+
+.kakao-login-content {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.kakao-login-symbol {
+    display: block;
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+    margin-inline: -1.63636px;
+    object-fit: contain;
+}
+
+.kakao-login-label {
+    color: rgba(0, 0, 0, 0.85);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
+    letter-spacing: normal;
+}
+
+.social-login-button--google {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    padding: 0 12px;
+    border: 1px solid #747775;
+    color: #1f1f1f;
+    background: var(--card);
+    font-family: Roboto, Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 20px;
+}
+
 .social-login-button--naver {
-    border: 1px solid #d1d5db;
-    color: #9ca3af;
-    background: #f9fafb;
+    gap: 8px;
+    padding: 0 12px;
+    color: var(--primary-foreground);
+    background: #03a94d;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
+    letter-spacing: normal;
 }
 
-.social-login-button:disabled {
-    cursor: not-allowed;
+.social-login-button--naver:hover {
+    background: #03a94d;
+    box-shadow: 0 4px 10px rgba(3, 169, 77, 0.22);
 }
 
-/* [추가] 카카오 콜백에서 서버 세션으로 전달한 이메일·프로필을 읽기 전용으로 보여준다. */
+.social-login-button--naver:focus-visible {
+    outline: 3px solid rgba(3, 169, 77, 0.35);
+    outline-offset: 3px;
+}
+
+.naver-login-icon {
+    display: block;
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+    margin-inline: -13.75px;
+    object-fit: contain;
+}
+
+/* 소셜 제공자가 전달한 계정 정보를 읽기 전용으로 보여주는 공통 요약 영역이다. */
 .social-account-summary {
     display: flex;
     align-items: center;
@@ -311,96 +467,9 @@ input {
     object-fit: cover;
 }
 
-.signup-type-card {
-    width: min(100%, 560px);
-}
-
-.signup-type-list {
-    display: grid;
-    gap: 14px;
-}
-
-.signup-type-option {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 22px 20px;
-    border: 1px solid #cfd8d5;
-    border-radius: 12px;
-    color: #1f2937;
-    text-decoration: none;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
-}
-
-.signup-type-option:hover,
-.signup-type-option:focus-visible {
-    border-color: #0ca678;
-    box-shadow: 0 8px 20px rgba(12, 166, 120, 0.12);
-    outline: none;
-    transform: translateY(-1px);
-}
-
-.signup-type-icon {
-    display: grid;
-    flex: 0 0 46px;
-    height: 46px;
-    place-items: center;
-    border-radius: 50%;
-    color: #087f5b;
-    background: #e9f8f2;
-    font-size: 22px;
-    font-weight: 700;
-}
-
-.signup-type-content {
-    display: grid;
-    flex: 1;
-    gap: 5px;
-}
-
-.signup-type-content strong {
-    font-size: 18px;
-}
-
-.signup-type-content span {
-    color: #6b7280;
-    font-size: 14px;
-    line-height: 1.5;
-}
-
-.signup-type-arrow {
-    color: #087f5b;
-    font-size: 30px;
-}
-
-.selected-member-type {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 24px;
-    padding: 14px 16px;
-    border-radius: 8px;
-    background: #f3f7f6;
-}
-
-.selected-member-type span {
-    color: #6b7280;
-    font-size: 14px;
-}
-
-.selected-member-type strong {
-    flex: 1;
-    color: #075c42;
-}
-
-.selected-member-type a {
-    color: #087f5b;
-    font-size: 14px;
-    font-weight: 700;
-}
-
+/* page CSS가 뒤에 로드되어도 모바일 카드 padding이 유지되도록 두 class selector를 사용한다. */
 @media (max-width: 560px) {
-    .auth-card {
+    .auth-page .auth-card {
         padding: 24px 18px;
     }
 
@@ -409,7 +478,26 @@ input {
         flex-direction: column;
     }
 
+    .business-registration-file-info {
+        width: 100%;
+    }
+
     .secondary-button {
         min-height: 42px;
     }
+}
+
+@media (max-width: 520px) {
+    .signup-progress__step:not(:last-child)::after {
+        left: calc(50% + 20px);
+        width: calc(100% - 40px);
+    }
+}
+
+/* 기존 소셜 버튼 디자인을 유지하면서 Google 로고만 작게 표시한다. */
+.social-login-button--google .social-login-button__icon {
+    display: block;
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
 }

@@ -9,6 +9,9 @@ build/
 *.key
 **/application-secret.properties
 
+### Claude Code ###
+.claude/
+
 ### STS ###
 .apt_generated
 .classpath
@@ -39,3 +42,7 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### SQL ###
+src/main/resources/sql/*.sql
+src/main/resources/sql/*.sql.bak

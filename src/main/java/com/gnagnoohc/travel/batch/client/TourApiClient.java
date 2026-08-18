@@ -5,27 +5,28 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
-// batch: 데이터 수집 로직
-// 중복되는 파라미터는 Config에서 생성한 빈 주입하는 방식으로 사용!
+/* TourApiClient.java - 공공데이터 요청(통신)
+ * 공공데이터 관광정보 API 호출을 위한 WebClient 설정 및 호출 메서드 제공
+ * WebClient를 사용하여 비동기 방식으로 API 호출 및 응답 처리
+ * 중복되는 파라미터는 Config에서 생성한 빈 주입하는 방식으로 사용하려 했으나 공공데이터 응답의 명시적 선언이 응답파라미터에 무조건 필요한 관계로 baseurl만 config 설정.
+ * XML -> JSON 변환은 주소 뒤에 필수 파라미터 세팅에 _type = "json" 꼭 추가해야 변환됨
 
-// 한국관광공사 TourAPI 엔드포인트를 호출하여 대용량 데이터를 받아오는 통신 컴포넌트
-// 공공데이터 서버 호출, JSON XML 데이터 받아오기
-// XML -> JSON 변환은 주소 뒤에 필수 파라미터 세팅에 _type = "json" 꼭 추가해야 변환됨
-
+ * batch: 데이터 수집 로직
+ */
 @Component
 public class TourApiClient {
 
     private final WebClient webClient;
 
-    // config의 @Bean 주입 - 공통적으로 적용되는 api키, url 엔드포인트를 포함하여 중복파라미터 생략 가능
+    // config의 @Bean 주입 - 공통적으로 적용되는 url 엔드포인트 생략
     public TourApiClient(@Qualifier("tourWebClient") WebClient tourWebClient) {
         this.webClient = tourWebClient;
     }
 
-    // 테스트용 공공데이터 조회량 - 500/1페이지
+    // 공공데이터 조회량 batchSize & defaultPage - 프로퍼티에서 수정 가능
     @Value("${tour.api.batch-size}") private String batchSize;
     @Value("${tour.api.default-page}") private String defaultPage;
-
+    @Value("${tour.api.service-key}") private String serviceKey;
 
     /**
      * 위치기반 관광정보조회 /locationBasedList2
@@ -37,10 +38,19 @@ public class TourApiClient {
      */
     public String fetchLocationBasedTour(String mapX, String mapY, int radius, String arrange) {
         try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        try {
             // 쿼리스트링 빌더를 통해 메서드 전용 특수 변수들과 필수 페이징 정보만 매핑(공통은 config 이동)
             return this.webClient.get()                    // HTTP GET 방식 요청
                 .uri(uriBuilder -> uriBuilder
                     .path("/locationBasedList2")
+                    .queryParam("serviceKey", serviceKey)
+                    .queryParam("MobileOS", "ETC")
+                    .queryParam("MobileApp", "Travel")
+                    .queryParam("_type", "json")
                     .queryParam("numOfRows", batchSize)
                     .queryParam("pageNo", defaultPage)
                     .queryParam("arrange", arrange)
@@ -49,7 +59,7 @@ public class TourApiClient {
                     .queryParam("radius", radius)
                     .build())
                 .retrieve()                                // 공공데이터 서버가 응답한 결과 추출
-                .bodyToMono(String.class)    // 받아온 JSON 데이터 전체를 String 변환
+                .bodyToMono(String.class)                  // 받아온 JSON 데이터 전체를 String 변환
                 .block();                                  // 동기식 배치를 위해 block() 처리하여 대기
         } catch (Exception e) {
             // 에러 로그는 나중에 batch_execution_log 테이블에 기록할 수 있도록 예외를 던지거나 기록 조치
@@ -66,9 +76,18 @@ public class TourApiClient {
      */
     public String fetchAreaBasedList(String lDongRegnCd, String lDongSignguCd, String contentTypeId, String arrange) {
         try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        try {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
                     .path("/areaBasedList2")
+                    .queryParam("serviceKey", serviceKey)
+                    .queryParam("MobileOS", "ETC")
+                    .queryParam("MobileApp", "Travel")
+                    .queryParam("_type", "json")
                     .queryParam("numOfRows", batchSize)
                     .queryParam("pageNo", defaultPage)
                     .queryParam("arrange", arrange)
@@ -91,9 +110,18 @@ public class TourApiClient {
      */
     public String fetchSearchKeywordTour(String keyword, String arrange) {
         try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        try {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
                     .path("/searchKeyword2")
+                    .queryParam("serviceKey", serviceKey)
+                    .queryParam("MobileOS", "ETC")
+                    .queryParam("MobileApp", "Travel")
+                    .queryParam("_type", "json")
                     .queryParam("numOfRows", batchSize)
                     .queryParam("pageNo", defaultPage)
                     .queryParam("arrange", arrange)
@@ -110,14 +138,23 @@ public class TourApiClient {
     /**
      * 숙박정보조회 /searchStay2
      * contentTypeId 숙박에서만 유효
-     * @param 법정동 시도/시군구 및 분류체계 대/중/소분류 조건 필터링 (옵션)
+     * @param lDongRegnCd 법정동시도/시군구 및 분류체계 대/중/소분류 조건 필터링 (옵션)
      */
-    public String fetchSearchStay(String lDongRegnCd, String lDongSignguCd, 
+    public String fetchSearchStay(String lDongRegnCd, String lDongSignguCd,
                                 String lclsSystm1, String lclsSystm2, String lclsSystm3, String arrange) {
+        try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
         try {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
                     .path("/searchStay2")
+                    .queryParam("serviceKey", serviceKey)
+                    .queryParam("MobileOS", "ETC")
+                    .queryParam("MobileApp", "Travel")
+                    .queryParam("_type", "json")
                     .queryParam("numOfRows", batchSize)
                     .queryParam("pageNo", defaultPage)
                     .queryParam("arrange", arrange)             // 정렬필터 (A, C, D 등)
@@ -141,9 +178,18 @@ public class TourApiClient {
      */
     public String fetchDetailCommon(String contentId) {
         try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        try {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
                     .path("/detailCommon2")
+                    .queryParam("serviceKey", serviceKey)
+                    .queryParam("MobileOS", "ETC")
+                    .queryParam("MobileApp", "Travel")
+                    .queryParam("_type", "json")
                     .queryParam("contentId", contentId)
                     .build())
                 .retrieve()
@@ -162,9 +208,20 @@ public class TourApiClient {
      */
     public String fetchDetailIntro(String contentId, String contentTypeId) {
         try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        try {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
                     .path("/detailIntro2")
+                    .queryParam("serviceKey", serviceKey)
+                    .queryParam("MobileOS", "ETC")
+                    .queryParam("MobileApp", "Travel")
+                    .queryParam("_type", "json")
+                    .queryParam("numOfRows", batchSize)
+                    .queryParam("pageNo", defaultPage)
                     .queryParam("contentId", contentId)
                     .queryParam("contentTypeId", contentTypeId)
                     .build())
@@ -184,9 +241,20 @@ public class TourApiClient {
      */
     public String fetchDetailInfo(String contentId, String contentTypeId) {
         try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        try {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
                     .path("/detailInfo2")
+                    .queryParam("serviceKey", serviceKey)
+                    .queryParam("MobileOS", "ETC")
+                    .queryParam("MobileApp", "Travel")
+                    .queryParam("_type", "json")
+                    .queryParam("numOfRows", batchSize)
+                    .queryParam("pageNo", defaultPage)
                     .queryParam("contentId", contentId)
                     .queryParam("contentTypeId", contentTypeId)
                     .build())
@@ -206,9 +274,21 @@ public class TourApiClient {
      */
     public String fetchDetailImage(String contentId, String imageYN) {
         try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        
+        try {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
                     .path("/detailImage2")
+                    .queryParam("serviceKey", serviceKey)
+                    .queryParam("MobileOS", "ETC")
+                    .queryParam("MobileApp", "Travel")
+                    .queryParam("_type", "json")
+                    .queryParam("numOfRows", batchSize)
+                    .queryParam("pageNo", defaultPage)
                     .queryParam("contentId", contentId)
                     .queryParam("imageYN", imageYN)
                     .build())
@@ -220,28 +300,47 @@ public class TourApiClient {
         }
     }
 
+    // BATCH 동기화 스케줄러 - 필요값만 수정, 적용되는 스케줄러를 위해 modifiedtime 추가해둠
     /**
      * 관광정보 동기화 목록 조회 /areaBasedSyncList2 - 배치 수집 전용 API (DB 최신상태 유지용 API)
      * 파라미터에 따라 제목순, 수정일순(최신순), 등록일순 정렬 검색 제공
-     * @param modifiedtime 콘텐츠변경일자 (옵션)
+     * @param defaultPage 페이지 번호
+     * @param contentTypeId 관광타입 ID (옵션)
+     * @param modifiedtime 수정일자 (YYYYMMDD 형식, 증분 수집용)
      * @param showflag 콘텐츠표출여부 1/0 (옵션, 1=표출 0=비표출)
-     * 
+     * @param arrange 정렬 구분
      * 동기화 목록에서만 페이징 매개변수 처리
      */
-    public String fetchAreaBasedSyncList(int pageNo, String modifiedtime, String showflag, String arrange) {
+    public String fetchAreaBasedSyncList(int defaultPage, String contentTypeId, String modifiedtime, String showflag, String arrange) {
+        try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
         try {
             return this.webClient.get()
-                .uri(uriBuilder -> uriBuilder
-                    .path("/areaBasedSyncList2")
-                    .queryParam("numOfRows", batchSize)
-                    .queryParam("pageNo", pageNo)
-                    .queryParam("arrange", arrange)
-                    .queryParam("modifiedtime", modifiedtime)
-                    .queryParam("showflag", showflag)
-                    .build())
-                .retrieve()
-                .bodyToMono(String.class)
-                .block();
+                    .uri(uriBuilder -> {
+                        var builder = uriBuilder
+                                .path("/areaBasedSyncList2")
+                                .queryParam("serviceKey", serviceKey)
+                                .queryParam("MobileOS", "ETC")
+                                .queryParam("MobileApp", "Travel")
+                                .queryParam("_type", "json")
+                                .queryParam("numOfRows", batchSize)
+                                .queryParam("pageNo", defaultPage)
+                                .queryParam("arrange", arrange)
+                                .queryParam("contentTypeId", contentTypeId)
+                                .queryParam("showflag", showflag);
+
+                        // modifiedtime 값이 넘어온 경우에만 쿼리 파라미터 추가
+                        if (org.springframework.util.StringUtils.hasText(modifiedtime)) {
+                            builder.queryParam("modifiedtime", modifiedtime);
+                        }
+                        return builder.build();
+                    })
+            .retrieve()
+            .bodyToMono(String.class)
+            .block();
         } catch (Exception e) {
             throw new RuntimeException("fetchAreaBasedSyncList 에러: " + e.getMessage(), e);
         }
@@ -253,9 +352,18 @@ public class TourApiClient {
      */
     public String fetchDetailPetTour(String contentId) {
         try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        try {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
                     .path("/detailPetTour2")
+                    .queryParam("serviceKey", serviceKey)
+                    .queryParam("MobileOS", "ETC")
+                    .queryParam("MobileApp", "Travel")
+                    .queryParam("_type", "json")
                     .queryParam("numOfRows", batchSize)
                     .queryParam("pageNo", defaultPage)
                     .queryParam("contentId", contentId)
@@ -276,9 +384,18 @@ public class TourApiClient {
      */
     public String fetchLdongCode(String lDongRegnCd, String lDongListYn) {
         try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        try {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
                     .path("/ldongCode2")
+                    .queryParam("serviceKey", serviceKey)
+                    .queryParam("MobileOS", "ETC")
+                    .queryParam("MobileApp", "Travel")
+                    .queryParam("_type", "json")
                     .queryParam("numOfRows", batchSize)
                     .queryParam("pageNo", defaultPage)
                     .queryParam("lDongRegnCd", lDongRegnCd)
@@ -301,9 +418,18 @@ public class TourApiClient {
      */
     public String fetchLclsSystmCode(String lclsSystm1, String lclsSystm2, String lclsSystmListYn) {
         try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        try {
             return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder
                     .path("/lclsSystmCode2")
+                    .queryParam("serviceKey", serviceKey)
+                    .queryParam("MobileOS", "ETC")
+                    .queryParam("MobileApp", "Travel")
+                    .queryParam("_type", "json")
                     .queryParam("numOfRows", batchSize)
                     .queryParam("pageNo", defaultPage)
                     .queryParam("lclsSystm1", lclsSystm1)

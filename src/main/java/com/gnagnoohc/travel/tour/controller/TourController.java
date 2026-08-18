@@ -1,49 +1,89 @@
 package com.gnagnoohc.travel.tour.controller;
 
+import com.gnagnoohc.travel.tour.model.PlaceDTO;
+import com.gnagnoohc.travel.tour.model.PlaceImageDTO;
+import com.gnagnoohc.travel.tour.model.RegionDTO;
+import com.gnagnoohc.travel.tour.service.TourService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.util.List;
+import java.util.Map;
+
+@Slf4j
 @Controller
+@RequiredArgsConstructor
 public class TourController {
 
-    @RequestMapping("/tour/test")
-    public String tourList() {
-        // /WEB-INF/views/tour/test.jsp 파일과 매핑
-        return "tour/test";
-    }
+    private final TourService tourService;
 
-    // @GetMapping("/tour/detail")
-    // public String tourDetail() {
-    // // /WEB-INF/views/tour/detail.jsp 파일과 매핑
-    // return "tour/detail";
-    // }
-
+    // 실제 데이터베이스 연동된 장소 목록 통합 조회
     @GetMapping("/tour/list")
-    public String tourList(@RequestParam(required = false) String areaCode,
-            @RequestParam(required = false) String categoryCode,
+    public String tourList(
+            @RequestParam(value = "placeType", required = false) String placeType,
+            @RequestParam(value = "regionId", required = false) Integer regionId,
+            @RequestParam(value = "keyword", required = false) String keyword,
+            @RequestParam(value = "sort", defaultValue = "latest") String sort,
+            @RequestParam(value = "page", defaultValue = "1") int page,
             Model model) {
 
-        // List<TourItemDto> tourList = tourService.getTourListByArea(areaCode);
-        // model.addAttribute("tourList", tourList);
+        if (!StringUtils.hasText(placeType) || "all".equalsIgnoreCase(placeType)) {
+            placeType = null;
+        }
 
-        // // 지역 드롭다운용 데이터
-        // List<RegionDto> regionList = regionService.getAllRegions();
-        // model.addAttribute("regionList", regionList);
-        // model.addAttribute("areaCode", areaCode);
-        // regionList.stream().filter(r -> r.getCode().equals(areaCode)).findFirst()
-        //         .ifPresent(r -> model.addAttribute("areaName", r.getName()));
+        // 목록 + 페이징 메타데이터 일괄 수집
+        Map<String, Object> pageData = tourService.getPlacePage(placeType, regionId, keyword, sort, page);
 
-        // // 카테고리 드롭다운용 데이터 (lclsSystmCode2로 미리 저장해둔 데이터)
-        // List<CategoryDto> categoryList = categoryService.getAllCategories();
-        // model.addAttribute("categoryList", categoryList);
-        // model.addAttribute("categoryCode", categoryCode);
-        // categoryList.stream().filter(c -> c.getCode().equals(categoryCode)).findFirst()
-        //         .ifPresent(c -> model.addAttribute("categoryName", c.getName()));
+        List<RegionDTO> parentRegionList = tourService.getParentRegionList();
+
+        String selectedRegionName = null;
+        if (regionId != null && parentRegionList != null) {
+            for (RegionDTO reg : parentRegionList) {
+                // RegionDTO의 PK(regionId) 비교
+                if (reg.getRegionId() != null && reg.getRegionId().equals(regionId)) {
+                    // shortName이 있으면 shortName 사용, 없으면 regionName 사용
+                    selectedRegionName = StringUtils.hasText(reg.getShortName()) ? reg.getShortName() : reg.getRegionName();
+                    break;
+                }
+            }
+        }
+
+        model.addAllAttributes(pageData);    
+        model.addAttribute("selectedPlaceType", placeType);
+        model.addAttribute("selectedRegionId", regionId);
+        model.addAttribute("selectedRegionName", selectedRegionName);
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("selectedSort", sort);
+        model.addAttribute("parentRegionList", parentRegionList);
 
         return "tour/list";
     }
+    
+    // 실제 데이터베이스 연동된 장소 상세 조회 (placeId: Integer로 수정)
+    @GetMapping("/tour/detail")
+    public String tourDetail(@RequestParam("placeId") Integer placeId, Model model) {
+        PlaceDTO place = tourService.getPlaceDetail(placeId);
+        List<PlaceImageDTO> placeImages = tourService.getPlaceImages(placeId);
 
+        // community 연동: 후기 개수(포함된 post_id 집합)와 대표 최신 postId (직접 태그된 post에서만 최신 판단)
+        int communityReviewCount = tourService.getCommunityReviewCount(placeId);
+        Integer communityReviewPostId = tourService.getLatestCommunityReviewPostId(placeId);
+
+        List<String> extraInfoLines = (place != null)
+                ? tourService.getExtraInfoLines(place.getExtraInfo())
+                : List.of();
+
+        model.addAttribute("place", place);
+        model.addAttribute("placeImages", placeImages);
+        model.addAttribute("communityReviewCount", communityReviewCount);
+        model.addAttribute("communityReviewPostId", communityReviewPostId);
+        model.addAttribute("extraInfoLines", extraInfoLines);
+
+        return "tour/detail";
+    }
 }

@@ -1,3 +1,7 @@
+/**
+ * 새 비밀번호 형식과 확인값 일치를 화면에서 안내한다.
+ * 재설정 권한·인증 만료 여부와 최종 비밀번호 정책은 POST 요청을 처리하는 서버가 다시 검증한다.
+ */
 document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("resetPasswordForm");
     if (!form) {
@@ -13,6 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     form.addEventListener("submit", (event) => {
+        // 모든 오류를 한 번에 갱신하되, 오류가 있을 때만 일반 form POST를 중단한다.
         clearErrors();
         let valid = true;
         if (!/^(?=.*[A-Za-z])(?=.*\d)\S{8,20}$/.test(password.value)) {

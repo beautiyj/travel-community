@@ -9,6 +9,6 @@ public class BusinessPlaceOverviewDto {
     private Long placeId;
     private String placeName;
     private String ownerName;
-    private boolean isClosed;
+    private Integer closed;
     private String firstImage;
 }

@@ -4,12 +4,12 @@
 <mapper namespace="com.gnagnoohc.travel.auth.mapper.AuthMapper">
 
 	<!-- 회원가입 -->
-	<!-- 아이디 중복 확인 -->
+	<!-- 아이디 중복 사전 확인은 사용자 안내용이며 동시 가입의 최종 보장은 DB UNIQUE 제약이다. -->
 	<select id="checkLoginId" parameterType="String" resultType="int">
 		select count(*) from member where login_id=#{loginId}
 	</select>
 
-	<!-- 닉네임 중복 확인 -->
+	<!-- 닉네임 중복 사전 확인은 사용자 안내용이며 동시 가입의 최종 보장은 DB UNIQUE 제약이다. -->
 	<select id="checkNickname" parameterType="String" resultType="int">
 		select count(*) from member where nickname=#{nickname}
 	</select>
@@ -36,6 +36,14 @@
 		values(#{username}, #{passwordHash}, sysdate(), 0, #{memberId})
 	</insert>
 
+	<!-- 사업자 가입 신청은 DB 기본값을 사용해 PENDING 상태로 생성한다. -->
+	<insert id="insertBusinessApplication">
+		insert into business_application(
+			member_id, business_registration_file_key
+		)
+		values(#{memberId}, #{fileKey})
+	</insert>
+
 	<!-- 로컬 로그인 및 계정 잠금 -->
 	<!-- 같은 계정의 로그인 요청이 동시에 처리되지 않도록 인증 행을 잠가 조회한다. -->
 	<select id="findLocalLoginAuthForUpdate" resultType="memberlocalauth">
@@ -43,6 +51,7 @@
 			local_auth.member_id AS memberId,
 			-- 로그인 성공 후 세션에 저장할 회원 표시·권한 정보도 함께 조회한다.
 			member_info.nickname AS nickname,
+			member_info.member_type AS memberType,
 			member_info.member_role AS memberRole,
 			local_auth.password_hash AS passwordHash,
 			local_auth.failed_login_count AS failedLoginCount,
@@ -58,6 +67,35 @@
 		where local_auth.username = #{username}
 			and member_info.member_status = 'ACTIVE'
 			and member_info.deleted_at is null
+		limit 1
+		for update
+	</select>
+
+	<!-- 다른 아이디를 제출해 타 계정의 실패 횟수를 올릴 수 없도록 연동 후보 회원까지 함께 제한한다. -->
+	<select id="findSocialLinkCandidateAuthForUpdate" resultType="memberlocalauth">
+		select local_auth.username AS username,
+			local_auth.member_id AS memberId,
+			member_info.nickname AS nickname,
+			member_info.member_type AS memberType,
+			member_info.member_role AS memberRole,
+			local_auth.password_hash AS passwordHash,
+			local_auth.failed_login_count AS failedLoginCount,
+			local_auth.locked_until AS lockedUntil,
+			case
+				when local_auth.locked_until is not null
+					and local_auth.locked_until &gt; now() then 1
+				else 0
+			end AS currentlyLocked
+		from member_local_auth local_auth
+		inner join member member_info
+			on member_info.member_id = local_auth.member_id
+		where local_auth.member_id = #{memberId}
+			and local_auth.username = #{username}
+			and (
+				(member_info.member_status = 'ACTIVE' and member_info.deleted_at is null)
+				or
+				(member_info.member_status = 'WITHDRAWN' and member_info.deleted_at is not null)
+			)
 		limit 1
 		for update
 	</select>
@@ -148,7 +186,7 @@
 			and created_at &gt;= date_sub(now(), interval 1 day)
 	</select>
 
-	<!-- 인증번호 해시와 만료 시각 저장 -->
+	<!-- 인증번호 원문은 저장하지 않고 해시와 만료 시각만 저장해 DB 유출 시 즉시 재사용되는 위험을 줄인다. -->
 	<insert id="insertEmailVerification" parameterType="emailverification"
 		useGeneratedKeys="true" keyProperty="emailVerificationId"
 		keyColumn="email_verification_id">

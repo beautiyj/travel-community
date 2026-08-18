@@ -17,7 +17,7 @@ public class TourDetailIntroDTO {
     @NotBlank(message = "contentid: 콘텐츠ID는 필수 수집 항목입니다.") private String contentid;
     @NotBlank(message = "contenttypeid: 관광타입ID는 필수 수집 항목입니다.") private String contenttypeid;
 
-    // 옵션 0
+    // 옵션 0 (필수아님)
     // [관광지 - contentTypeId=12]
     private String accomcount;             // 수용인원
     private String chkbabycarriage;        // 유모차대여정보
@@ -30,7 +30,7 @@ public class TourDetailIntroDTO {
     private String useseason;              // 이용시기
     private String usetime;                // 이용시간
 
-    // [문화시설 - contentTypeId=14] => 관광지로 분류 예정
+    // [문화시설 - contentTypeId=14] => 관광지로 분류
     private String accomcountculture;      // 수용인원
     private String chkbabycarriageculture; // 유모차대여정보
     private String chkcreditcardculture;   // 신용카드가능정보
@@ -44,14 +44,7 @@ public class TourDetailIntroDTO {
     private String usetimeculture;         // 이용시간
     private String spendtime;              // 관람소요시간
 
-    // [여행코스 - contentTypeId=25] => 관광지로 분류 예정 or 데이터 확인 후 제거
-    private String distance;               // 코스총거리
-    private String infocentertourcourse;   // 문의및안내
-    private String schedule;               // 코스일정
-    private String taketime;               // 코스총소요시간
-    private String theme;                  // 코스테마
-
-    // [레포츠 - contentTypeId=28] => 레저 여부 미정(삭제될 수 있음)
+    // [레포츠 - contentTypeId=28] => 관광지로 분류
     private String accomcountleports;      // 수용인원
     private String chkbabycarriageleports; // 유모차대여정보
     private String chkcreditcardleports;   // 신용카드가능정보

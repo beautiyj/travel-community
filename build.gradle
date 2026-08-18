@@ -14,20 +14,6 @@ java {
 	}
 }
 
-//tour 관련 도메인 빌드제외 코드
-//todo: 개발완료되면 해당 코드 전체 삭제
-sourceSets {
-	main {
-		java {
-			exclude 'com/gnagnoohc/travel/batch/**'
-			exclude 'com/gnagnoohc/travel/tour/**'
-		}
-		resources {
-			exclude 'mapper/tour/**'
-		}
-	}
-}
-
 repositories {
 	mavenCentral()
 	maven { url 'https://jitpack.io' } // Komoran (형태소분석기, 후기 감성분석용)
@@ -45,8 +31,8 @@ dependencies {
 	providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'
 
 	// Security
-	// implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
-	implementation 'org.springframework.boot:spring-boot-starter-security'
+	 implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+	 implementation 'org.springframework.boot:spring-boot-starter-security'
 
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -64,13 +50,19 @@ dependencies {
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter-test:3.0.5'
-    // testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'org.springframework.security:spring-security-test'
 	testCompileOnly 'org.projectlombok:lombok'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	testAnnotationProcessor 'org.projectlombok:lombok'
 	
 	// Email
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+	// Resilience4j - batch scheduler 전용 속도 제어 + 지터
+	implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.2.0'
+
+	// 업소 사진 외부 저장소
+	implementation 'com.cloudinary:cloudinary-http5:2.3.0'
 }
 
 tasks.named('test') {

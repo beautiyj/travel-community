@@ -2,9 +2,7 @@ package com.gnagnoohc.travel.business.service;
 
 import com.gnagnoohc.travel.business.dto.BusinessDashboardCountsDto;
 import com.gnagnoohc.travel.business.dto.BusinessDashboardViewDto;
-import com.gnagnoohc.travel.business.dto.BusinessMonthlyTrendDto;
 import com.gnagnoohc.travel.business.dto.BusinessPlaceOverviewDto;
-import com.gnagnoohc.travel.business.dto.BusinessReservationDto;
 import com.gnagnoohc.travel.business.dto.BusinessSidebarContextDto;
 import com.gnagnoohc.travel.business.exception.NoPlaceRegisteredException;
 import com.gnagnoohc.travel.business.mapper.BusinessMapper;
@@ -13,7 +11,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -27,39 +24,34 @@ public class BusinessDashboardService {
     // 사이드바(업소명/대표명/마감상태/뱃지 카운트)에만 필요한 최소 데이터. 대시보드 외 다른 business 페이지에서도 재사용
     public BusinessSidebarContextDto getSidebarContext(Long bizMemberId) {
         BusinessPlaceOverviewDto overview = requireOverview(bizMemberId);
-        BusinessDashboardCountsDto counts = businessMapper.selectDashboardCounts(overview.getPlaceId());
-
-        return BusinessSidebarContextDto.builder()
-                .placeId(overview.getPlaceId())
-                .placeName(overview.getPlaceName())
-                .ownerName(overview.getOwnerName())
-                .isClosed(overview.isClosed())
-                .pendingCount(counts.getPendingCount())
-                .cancelRequestCount(counts.getCancelRequestCount())
-                .firstImage(overview.getFirstImage())
-                .build();
+        return toSidebarContext(overview, businessMapper.selectDashboardCounts(overview.getPlaceId()));
     }
 
     public BusinessDashboardViewDto getDashboard(Long bizMemberId) {
         BusinessPlaceOverviewDto overview = requireOverview(bizMemberId);
-
-        List<BusinessReservationDto> todayReservations = businessMapper.selectTodayReservations(overview.getPlaceId());
-        BusinessDashboardCountsDto counts = businessMapper.selectDashboardCounts(overview.getPlaceId());
-        List<BusinessMonthlyTrendDto> monthlyTrend = businessMapper.selectMonthlyTrend(overview.getPlaceId());
+        Long placeId = overview.getPlaceId();
+        BusinessDashboardCountsDto counts = businessMapper.selectDashboardCounts(placeId);
 
         return BusinessDashboardViewDto.builder()
+                .sidebar(toSidebarContext(overview, counts))
+                .todayLabel(todayLabel())
+                .todayReservations(businessMapper.selectTodayReservations(placeId))
+                .monthlyTrend(businessMapper.selectMonthlyTrend(placeId))
+                .monthlyCount(counts.getMonthlyCount())
+                .todayVisitors(counts.getTodayVisitors())
+                .reviewSentiment(reviewSentimentService.getSentimentSummary(placeId))
+                .build();
+    }
+
+    private BusinessSidebarContextDto toSidebarContext(BusinessPlaceOverviewDto overview, BusinessDashboardCountsDto counts) {
+        return BusinessSidebarContextDto.builder()
+                .placeId(overview.getPlaceId())
                 .placeName(overview.getPlaceName())
                 .ownerName(overview.getOwnerName())
-                .isClosed(overview.isClosed())
-                .firstImage(overview.getFirstImage())
-                .todayLabel(todayLabel())
-                .todayReservations(todayReservations)
-                .monthlyTrend(monthlyTrend)
-                .monthlyCount(counts.getMonthlyCount())
+                .closed(overview.getClosed())
                 .pendingCount(counts.getPendingCount())
-                .todayVisitors(counts.getTodayVisitors())
                 .cancelRequestCount(counts.getCancelRequestCount())
-                .reviewSentiment(reviewSentimentService.getSentimentSummary(overview.getPlaceId()))
+                .firstImage(overview.getFirstImage())
                 .build();
     }
 

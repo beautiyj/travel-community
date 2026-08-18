@@ -5,29 +5,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${businessMember ? '사업자 회원가입' : '일반 회원가입'} | Travel Community</title>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/auth/auth.css">
+    <title>${businessMember ? '사업자 회원가입' : '일반 회원가입'} | 갈래말래</title>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/common.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/auth/auth.css?v=auth-admin-css-split-20260806-r7">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/auth/signup-form.css?v=auth-admin-css-split-20260806-r9">
+    <script defer src="${pageContext.request.contextPath}/js/auth/auth-history-guard.js"></script>
     <%-- 회원가입 검증 모듈을 먼저 로드한 뒤 화면·API 로직을 실행한다. --%>
     <script defer src="${pageContext.request.contextPath}/js/auth/signup-validation.js"></script>
     <script defer src="${pageContext.request.contextPath}/js/auth/signup.js"></script>
 </head>
-<body class="auth-page">
-<main class="auth-card">
-    <a class="auth-brand" href="${pageContext.request.contextPath}/">Travel Community</a>
+<%-- 로그인한 사용자가 뒤로가기로 가입 폼을 다시 열면 세션 상태를 확인해 오래된 폼 노출을 막는다. --%>
+<body class="auth-page auth-page--signup-form"
+      data-session-status-url="${pageContext.request.contextPath}/auth/api/session-status">
+<main class="auth-card auth-card--signup-form">
+    <p class="auth-brand brand"><span class="name">갈래말래</span></p>
+
+    <%-- 계정정보와 상세정보를 같은 화면에서 입력하므로 실제 가입 흐름을 2단계로 표시한다. --%>
+    <ol class="signup-progress signup-progress--form" aria-label="회원가입 진행 단계">
+        <li class="signup-progress__step signup-progress__step--complete"
+            aria-label="1단계 유형 선택 완료">
+            <span class="signup-progress__number">1</span>
+            <span class="signup-progress__label">유형 선택</span>
+        </li>
+        <li class="signup-progress__step signup-progress__step--current" aria-current="step">
+            <span class="signup-progress__number">2</span>
+            <span class="signup-progress__label">회원정보 입력</span>
+        </li>
+    </ol>
 
     <header class="auth-header">
         <h1>${businessMember ? '사업자 회원가입' : '일반 회원가입'}</h1>
         <p>
             <c:choose>
-                <c:when test="${businessMember}">사업자 정보를 확인할 수 있도록 등록증을 함께 첨부해주세요.</c:when>
+                <c:when test="${businessMember}">사업자 회원가입 후 관리자 승인을 받으면 업소와 예약을 관리할 수 있습니다.</c:when>
                 <c:otherwise>나만의 여행 기록을 시작해보세요.</c:otherwise>
             </c:choose>
         </p>
     </header>
 
-    <%-- 배포 경로가 달라져도 회원가입 요청이 현재 애플리케이션으로 전달되게 한다. --%>
+    <%--
+      multipart POST는 회원 정보와 사업자등록증 파일을 함께 전달한다.
+      JavaScript 검증·중복 확인·이메일 인증 상태는 조작 가능하므로 서버가 모두 재검증하고,
+      아이디·닉네임·이메일의 최종 유일성은 DB 제약조건으로도 보장해야 한다.
+      현재 마크업에는 CSRF 토큰 출력이 없으므로 CSRF 보호 적용 시 서버 토큰 필드를 함께 렌더링해야 한다.
+    --%>
     <form id="signupForm" method="post" enctype="multipart/form-data" novalidate
           action="${pageContext.request.contextPath}/auth/membersignup">
+        <%-- memberType은 화면 분기용 서버 모델을 다시 전송하지만 hidden 값이므로 서버에서 허용 범위를 반드시 검증한다. --%>
         <input type="hidden" name="memberType" value="${memberType}">
 
         <div class="selected-member-type">
@@ -92,7 +116,24 @@
             <p id="verificationCodeError" class="field-error" aria-live="polite"></p>
         </div>
 
-        <%-- TODO 사업자 승인 기능을 추가할 때 사업자등록증 업로드 항목을 구현한다. --%>
+        <%-- businessMember가 true일 때만 파일 입력을 렌더링한다. 파일 형식·크기·내용과 저장 권한은 서버가 재검증한다. --%>
+        <c:if test="${businessMember}">
+            <div class="form-field">
+                <label for="businessRegistrationFile">사업자등록증</label>
+                <input id="businessRegistrationFile" name="businessRegistrationFile" type="file"
+                       accept=".jpg,.jpeg,.png,image/jpeg,image/png" required hidden
+                       aria-describedby="businessRegistrationFileHelp businessRegistrationFileError">
+                <div class="input-action-row">
+                    <p id="businessRegistrationFileInfo" class="business-registration-file-info"
+                       role="status" aria-live="polite" aria-atomic="true">선택된 파일 없음</p>
+                    <button id="businessRegistrationFileButton" class="secondary-button" type="button"
+                            aria-label="사업자등록증 파일 선택"
+                            aria-describedby="businessRegistrationFileHelp businessRegistrationFileError">파일 선택</button>
+                </div>
+                <p id="businessRegistrationFileHelp" class="field-help">JPG, JPEG, PNG 형식, 최대 5MB</p>
+                <p id="businessRegistrationFileError" class="field-error" aria-live="polite"></p>
+            </div>
+        </c:if>
 
         <div class="form-field">
             <label for="nickname">닉네임</label>
@@ -119,12 +160,14 @@
             <p id="phoneError" class="field-error" aria-live="polite"></p>
         </div>
 
-        <fieldset class="form-field">
-            <legend>성별 <span class="optional-label">선택</span></legend>
+        <fieldset class="form-field" aria-describedby="genderError">
+            <legend>성별</legend>
             <div class="choice-row">
-                <label><input type="radio" name="gender" value="MALE" checked> 남성</label>
-                <label><input type="radio" name="gender" value="FEMALE"> 여성</label>
+                <label><input type="radio" name="gender" value="MALE" required> 남성</label>
+                <label><input type="radio" name="gender" value="FEMALE" required> 여성</label>
+                <label><input type="radio" name="gender" value="NONE" required> 선택 안함</label>
             </div>
+            <p id="genderError" class="field-error" aria-live="polite"></p>
         </fieldset>
 
         <div class="agreement-box">

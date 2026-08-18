@@ -522,7 +522,6 @@ public class TourApiService {
                     .collect(Collectors.toSet());
 
             // 셀렉팅 2단계 - 패딩 안전장치 : 최종 적재 건수가 10개 미만인 경우, 필수값(대표이미지+개요+주소)이 존재하는 후보로 마저 채우기
-
             int currentFinalCount = tourMapper.selectPlaceCountByRegion(regionId);
             if (currentFinalCount < targetGoal) {
                 int paddingNeeded = targetGoal - currentFinalCount;
@@ -584,10 +583,8 @@ public class TourApiService {
 
     // 조기 종료 옵션 - 1~3단계 큐 처리에서 적재 건수가 목표치에 도달하면 바로 종료하도록 옵션 추가 가능
     // 부실데이터 예외 보완 레이어 전용 메서드
-    // TourApiClient.fetchAreaBasedList로 해당 지역+타입군을 직접 다시 조회 (1~3단계 큐와는 독립적인 별도 후보
-    // 풀)
-    // TourValidator.isValidBlacklistOnly()(블랙리스트만) + 필수 필드(주소/대표이미지/개요) 확인만 거쳐 무조건
-    // need개수만큼 추가 적재
+    // TourApiClient.fetchAreaBasedList로 해당 지역+타입군을 직접 다시 조회 (1~3단계 큐와는 독립적인 별도 후보 풀)
+    // TourValidator.isValidBlacklistOnly()(블랙리스트만) + 필수 필드(주소/대표이미지/개요) 확인만 거쳐 무조건 need개수만큼 추가 적재
     private void fillLowQualitySupplement(String regnCd, String signguCd, String regionKey,
                                           String bucketType, List<String> sourceContentTypeIds, int need) {
         List<TourAreaBasedSyncListDTO> pool = new ArrayList<>();

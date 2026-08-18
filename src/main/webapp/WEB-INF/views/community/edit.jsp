@@ -31,6 +31,7 @@
   </div>
 
   <form action="${cp}/community/update" method="post" enctype="multipart/form-data">
+    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
 
     <!-- 어떤 글을 수정하는지 서버에 전달 -->
     <input type="hidden" name="postId" value="${post.postId}">

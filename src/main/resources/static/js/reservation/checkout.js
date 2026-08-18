@@ -65,7 +65,7 @@ function payKakao() {
     lockButtons(true);
     watchPopup(popup);
 
-    fetch("/payments/kakao/ready/" + reservationId, { method: "POST" })
+    csrfFetch("/payments/kakao/ready/" + reservationId, { method: "POST" })
         .then(function (res) {
             if (!res.ok) throw new Error("ready 실패");
             return res.json();
@@ -93,7 +93,7 @@ function payToss() {
     }
     lockButtons(true);
 
-    fetch("/payments/toss/ready/" + reservationId, { method: "POST" })
+    csrfFetch("/payments/toss/ready/" + reservationId, { method: "POST" })
         .then(function (res) {
             if (!res.ok) throw new Error("ready 실패");
             return res.json();
@@ -120,7 +120,7 @@ function payToss() {
 // 무통장: 준비 요청 → 가상계좌 안내 페이지로 이동
 function payBank() {
     lockButtons(true);
-    fetch("/payments/bank/ready/" + reservationId, { method: "POST" })
+    csrfFetch("/payments/bank/ready/" + reservationId, { method: "POST" })
         .then(function (res) {
             if (!res.ok) throw new Error("ready 실패");
             return res.json();
@@ -139,7 +139,7 @@ function payVcard() {
     var cardNumber = (document.getElementById("cardNumber").value || "").trim();
     if (!cardNumber) { alert("카드번호를 입력해 주세요."); return; }
     lockButtons(true);
-    fetch("/payments/vcard/pay/" + reservationId, {
+    csrfFetch("/payments/vcard/pay/" + reservationId, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: "cardNumber=" + encodeURIComponent(cardNumber)

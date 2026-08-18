@@ -3,8 +3,11 @@ package com.gnagnoohc.travel.auth.controller;
 import com.gnagnoohc.travel.auth.dto.*;
 import com.gnagnoohc.travel.auth.exception.EmailVerificationException;
 import com.gnagnoohc.travel.auth.exception.SignupException;
+import com.gnagnoohc.travel.auth.security.LoginSessionManager;
 import com.gnagnoohc.travel.auth.service.AuthService;
+import com.gnagnoohc.travel.auth.validation.LocalUsernamePolicy;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +17,8 @@ import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -21,12 +26,12 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 /**
- * 로컬 로그인·회원가입·계정 찾기 화면의 HTTP 흐름을 연결한다.
+ * 로컬 로그인·회원가입·계정 찾기 화면의 웹 요청 흐름을 연결한다.
  * <p>
  * 이 클래스는 요청값과 세션을 다루고 반환할 뷰/리다이렉트를 정한다. 비밀번호 검증,
  * 이메일 인증의 유효성 확인, 회원 저장처럼 데이터 상태를 바꾸는 규칙은
- * {@link AuthService}에 맡긴다. Spring MVC는 매핑, DTO 바인딩과 Bean Validation을
- * 수행하지만, 로그인 세션을 언제 만들고 폐기할지는 컨트롤러가 직접 책임진다.
+ * 서비스 계층에 맡긴다. 스프링 MVC는 매핑, 입력 객체 바인딩과 유효성 검증을
+	 * 수행하지만, 로그인 세션 생성은 명시적인 로그인 처리에서만 직접 책임진다.
  */
 @Controller
 @RequiredArgsConstructor
@@ -34,8 +39,10 @@ import java.util.Map;
 public class AuthController {
 
 	private static final Logger log = LoggerFactory.getLogger(AuthController.class);
+	private static final String VERIFIED_MEMBER_REACTIVATION = "verifiedMemberReactivation";
 
 	private final AuthService service;
+	private final LoginSessionManager loginSessionManager;
 
 	// 로그인
 	@GetMapping("/login")
@@ -54,17 +61,26 @@ public class AuthController {
 	@PostMapping("/login")
 	public String login(@RequestParam(value = "username", required = false) String username,
 			@RequestParam(value = "password", required = false) String password, HttpServletRequest request,
-			Model model) {
+			HttpServletResponse response, Model model) {
 		// 입력하지 않은 항목은 로그인 처리 전에 확인해 해당 입력칸에 안내한다.
-		boolean usernameBlank = username == null || username.isBlank();
+		boolean usernameMissing = username == null || username.isEmpty();
 		boolean passwordBlank = password == null || password.isBlank();
-		if (usernameBlank || passwordBlank) {
-			if (usernameBlank) {
-				model.addAttribute("usernameError", "아이디를 입력해주세요.");
-			}
+		if (usernameMissing) {
+			model.addAttribute("usernameError", "아이디를 입력해주세요.");
 			if (passwordBlank) {
 				model.addAttribute("passwordError", "비밀번호를 입력해주세요.");
 			}
+			return "auth/login";
+		}
+		if (!LocalUsernamePolicy.isValid(username)) {
+			model.addAttribute("usernameError", LocalUsernamePolicy.MESSAGE);
+			if (passwordBlank) {
+				model.addAttribute("passwordError", "비밀번호를 입력해주세요.");
+			}
+			return "auth/login";
+		}
+		if (passwordBlank) {
+			model.addAttribute("passwordError", "비밀번호를 입력해주세요.");
 			return "auth/login";
 		}
 
@@ -87,38 +103,14 @@ public class AuthController {
 		}
 
 		// 로그인 성공 시 기존 세션을 폐기하여 세션 고정 공격을 방지한다.
-		HttpSession previousSession = request.getSession(false);
-		if (previousSession != null) {
-			previousSession.invalidate();
-		}
-
-		HttpSession loginSession = request.getSession(true);
-		// 다른 패키지와 JSP에서 loginMember DTO를 동일한 세션 키로 사용한다.
 		LoginMemberDto loginMember = loginResult.loginMember();
-		loginSession.setAttribute("loginMember", loginMember);
-
-        // 사업자 회원은 로그인시 대쉬보드로 이동한다.
-        if (loginMember.getMemberType() == 2
-                && "BUSINESS".equals(loginMember.getMemberRole())) {
-            return "redirect:/business/dashboard";
-        }
-
-		// 직접 생성된 로컬 관리자 계정은 로그인 직후 관리자 대시보드로 이동한다.
-		if (loginMember.getMemberType() == 0
-				&& "ADMIN".equals(loginMember.getMemberRole())) {
-			return "redirect:/admin";
+		try {
+			return "redirect:" + loginSessionManager.completeLogin(request, response, loginMember);
+		} catch (IllegalArgumentException | IllegalStateException e) {
+			// 인증 상태 저장에 실패해도 회원 정보만 남은 세션을 유지하지 않는다.
+			log.warn("로그인 세션 생성에 실패했습니다.", e);
+			return "redirect:/auth/login?error";
 		}
-		return "redirect:/";
-	}
-
-	// 로그아웃
-	@PostMapping("/logout")
-	public String logout(HttpServletRequest request) {
-		HttpSession session = request.getSession(false);
-		if (session != null) {
-			session.invalidate();
-		}
-		return "redirect:/";
 	}
 
 	// 회원가입 화면
@@ -158,21 +150,29 @@ public class AuthController {
 	 * 세션 속성의 타입과 역할을 모두 확인해 잘못된 세션 값은 로그인 상태로 인정하지 않는다.
 	 */
 	static String resolveAuthenticatedRedirect(HttpSession session) {
-		if (session == null
-				|| !(session.getAttribute("loginMember") instanceof LoginMemberDto loginMember)) {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		if (authentication == null
+				|| !authentication.isAuthenticated()
+				|| !(authentication.getPrincipal() instanceof LoginMemberDto loginMember)) {
+			removeStaleLoginMember(session);
 			return null;
 		}
 
-		String memberRole = loginMember.getMemberRole();
-		if (memberRole == null) {
-			return null;
-		}
-		return switch (memberRole) {
-			case "USER" -> "redirect:/";
-			case "BUSINESS" -> "redirect:/business/dashboard";
-			case "ADMIN" -> "redirect:/admin";
-			default -> null;
+		return switch (loginMember.getMemberType() + ":" + loginMember.getMemberRole()) {
+			case "0:ADMIN" -> "redirect:/admin";
+			case "2:BUSINESS" -> "redirect:/business/dashboard";
+			case "1:USER", "2:USER" -> "redirect:/";
+			default -> {
+				removeStaleLoginMember(session);
+				yield null;
+			}
 		};
+	}
+
+	private static void removeStaleLoginMember(HttpSession session) {
+		if (session != null) {
+			session.removeAttribute("loginMember");
+		}
 	}
 
 	/**
@@ -286,6 +286,53 @@ public class AuthController {
 		return "auth/find-password";
 	}
 
+	// 아이디·비밀번호 찾기 화면의 정적 링크에서만 진입하는 탈퇴 로컬 회원 재활성화 시작 화면이다.
+	@GetMapping("/reactivation")
+	public String memberReactivationPage(HttpServletRequest request) {
+		String authenticatedRedirect = resolveAuthenticatedRedirect(request.getSession(false));
+		if (authenticatedRedirect != null) {
+			return authenticatedRedirect;
+		}
+		return "auth/reactivation";
+	}
+
+	// 인증 성공 세션 증표가 없는 직접 접근은 아이디 입력 단계로 되돌린다.
+	@GetMapping("/reactivation/complete")
+	public String memberReactivationCompletePage(HttpServletRequest request) {
+		String authenticatedRedirect = resolveAuthenticatedRedirect(request.getSession(false));
+		if (authenticatedRedirect != null) {
+			return authenticatedRedirect;
+		}
+		if (getVerifiedMemberReactivation(request.getSession(false)) == null) {
+			return "redirect:/auth/reactivation";
+		}
+		return "auth/reactivation-complete";
+	}
+
+	/**
+	 * 완료 요청은 로그인 세션을 만들지 않고 상태 전이만 수행한다.
+	 * 성공·실패 모두 증표를 제거해 같은 인증 결과의 재시도를 막는다.
+	 */
+	@PostMapping("/reactivation/complete")
+	public String completeMemberReactivation(HttpServletRequest request) {
+		HttpSession session = request.getSession(false);
+		VerifiedMemberReactivation sessionVerification = getVerifiedMemberReactivation(session);
+		if (sessionVerification == null) {
+			return "redirect:/auth/reactivation";
+		}
+
+		try {
+			service.reactivateMember(sessionVerification);
+			return "redirect:/auth/login?reactivated";
+		} catch (EmailVerificationException | IllegalStateException e) {
+			return "redirect:/auth/reactivation?error=verification";
+		} finally {
+			if (session != null) {
+				session.removeAttribute(VERIFIED_MEMBER_REACTIVATION);
+			}
+		}
+	}
+
 	// 인증 성공 세션이 없는 직접 접근은 비밀번호 찾기 첫 화면으로 돌려보낸다.
 	@GetMapping("/reset-password")
 	public String resetPasswordPage(HttpServletRequest request) {
@@ -346,6 +393,18 @@ public class AuthController {
 		Object sessionValue = session.getAttribute("verifiedPasswordReset");
 		if (sessionValue instanceof VerifiedPasswordReset verifiedPasswordReset) {
 			return verifiedPasswordReset;
+		}
+		return null;
+	}
+
+	private VerifiedMemberReactivation getVerifiedMemberReactivation(HttpSession session) {
+		if (session == null) {
+			return null;
+		}
+
+		Object sessionValue = session.getAttribute(VERIFIED_MEMBER_REACTIVATION);
+		if (sessionValue instanceof VerifiedMemberReactivation verifiedMemberReactivation) {
+			return verifiedMemberReactivation;
 		}
 		return null;
 	}

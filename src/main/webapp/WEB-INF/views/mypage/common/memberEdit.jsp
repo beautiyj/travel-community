@@ -28,8 +28,8 @@
             </c:if>
             <form class="profile-edit__form mypage-form-card" action="${cp}${basePath}/edit"
                   method="post" enctype="multipart/form-data" data-edit-confirm>
+                <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                 <input type="hidden" name="memberId" value="<c:out value='${member.memberId}'/>">
-                <input type="hidden" name="nickname" value="<c:out value='${member.nickname}'/>">
                 <div class="profile-edit__profile-card">
                     <div class="profile-edit__profile-image">
                         <c:choose>
@@ -59,6 +59,11 @@
                 <jsp:include page="/WEB-INF/views/common/inputField.jsp">
                     <jsp:param name="label" value="이름"/><jsp:param name="name" value="name"/>
                     <jsp:param name="value" value="${member.name}"/><jsp:param name="maxlength" value="${businessAccount ? 20 : 50}"/>
+                    <jsp:param name="required" value="true"/>
+                </jsp:include>
+                <jsp:include page="/WEB-INF/views/common/inputField.jsp">
+                    <jsp:param name="label" value="닉네임"/><jsp:param name="name" value="nickname"/>
+                    <jsp:param name="value" value="${member.nickname}"/><jsp:param name="maxlength" value="10"/>
                     <jsp:param name="required" value="true"/>
                 </jsp:include>
                 <jsp:include page="/WEB-INF/views/mypage/common/readOnlyField.jsp">

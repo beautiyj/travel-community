@@ -86,7 +86,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function postForm(path, values) {
         // 컨텍스트 경로를 포함해 배포 위치와 무관하게 같은 애플리케이션의 인증 API를 호출한다.
-        const response = await fetch(`${contextPath}${path}`, {
+        const response = await csrfFetch(`${contextPath}${path}`, {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
             body: new URLSearchParams(values)
@@ -97,8 +97,8 @@ document.addEventListener("DOMContentLoaded", () => {
     function validateAccountInput() {
         // 화면 검증은 요청 횟수를 줄이는 편의 기능이며 서버의 형식·계정 일치 검증을 대체하지 않는다.
         let valid = true;
-        if (!/^[A-Za-z0-9]{5,20}$/.test(username.value)) {
-            showError("findPasswordUsernameError", "아이디는 영문 또는 숫자 5~20자로 입력해주세요.");
+        if (!/^[a-z0-9]{5,20}$/.test(username.value)) {
+            showError("findPasswordUsernameError", "아이디는 소문자 영문 또는 숫자 5~20자로 입력해주세요.");
             valid = false;
         }
         if (email.value.length > 100 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {

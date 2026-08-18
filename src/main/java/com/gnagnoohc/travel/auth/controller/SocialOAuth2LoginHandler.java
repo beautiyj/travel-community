@@ -24,6 +24,7 @@ import com.gnagnoohc.travel.auth.dto.PendingSocialAuthIntent;
 import com.gnagnoohc.travel.auth.dto.PendingSocialLink;
 import com.gnagnoohc.travel.auth.dto.PendingSocialSignup;
 import com.gnagnoohc.travel.auth.exception.SocialAuthException;
+import com.gnagnoohc.travel.auth.security.LoginSessionManager;
 import com.gnagnoohc.travel.auth.service.SocialAuthService;
 
 import jakarta.servlet.ServletException;
@@ -33,13 +34,13 @@ import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 
 /**
- * Spring OAuth2 Client가 검증한 사용자를 서비스의 세션 로그인 또는 추가 가입으로 연결한다.
+ * 소셜 인증 제공자가 검증한 사용자를 서비스의 세션 로그인 또는 추가 가입으로 연결한다.
  * 외부 제공자별 응답 차이는 이 클래스에서 공통 프로필로 변환하고 회원 처리는 서비스에 맡긴다.
  * <p>
- * Spring Security가 callback의 OAuth 요청과 state를 검증한 다음 이 핸들러를 호출한다.
- * 핸들러는 서비스 고유의 LOGIN/SIGNUP 의도를 한 번만 소비하고, 성공 후 Spring Security의
- * 임시 인증·authorized client를 제거한다. 애플리케이션의 최종 로그인 기준은
- * {@code loginMember} 세션 하나이며 OAuth 액세스 토큰을 로그인 세션으로 유지하지 않는다.
+ * 시큐리티가 콜백의 소셜 인증 요청과 상태값을 검증한 다음 이 처리기를 호출한다.
+ * 처리기는 서비스 고유의 로그인·가입 의도를 한 번만 소비하고, 성공 후 시큐리티의
+ * 임시 인증·승인된 클라이언트를 제거한다. 애플리케이션의 최종 로그인 기준은
+ * 회원 정보 세션 하나이며 소셜 인증 액세스 토큰을 로그인 세션으로 유지하지 않는다.
  */
 @Component
 @RequiredArgsConstructor
@@ -66,6 +67,7 @@ public class SocialOAuth2LoginHandler
     private final SocialAuthService socialAuthService;
     private final OAuth2AuthorizedClientRepository authorizedClientRepository;
     private final SecurityContextRepository securityContextRepository;
+    private final LoginSessionManager loginSessionManager;
 
     @Override
     public void onAuthenticationSuccess(
@@ -151,15 +153,27 @@ public class SocialOAuth2LoginHandler
             }
         } catch (Exception e) {
             removePendingSocialFlowIfMatching(request);
-            // OAuth 응답 원문이나 토큰은 기록하지 않고 예외 종류만 서버 로그에서 확인한다.
+            // 소셜 인증 응답 원문이나 토큰은 기록하지 않고 예외 종류만 서버 로그에서 확인한다.
             log.error("소셜 로그인 처리 중 예기치 않은 오류가 발생했습니다.", e);
         } finally {
-            cleanupOAuthAuthentication(oauthToken, request, response);
+            if (!cleanupOAuthAuthentication(oauthToken, request, response)) {
+                // 임시 소셜 인증을 제거하지 못하면 애플리케이션 로그인이나
+                // 대기 중인 소셜 흐름으로 진행하지 않는다.
+                completedLogin = null;
+                redirectPath = "/auth/login?socialError=true";
+            }
         }
 
         if (completedLogin != null) {
-            // OAuth 임시 인증 정리가 끝난 뒤 기존 세션을 폐기하여 세션 고정 공격을 막는다.
-            completeLogin(request, completedLogin);
+            // 임시 소셜 인증 정리가 끝난 뒤 기존 세션을 폐기하여 세션 고정 공격을 막는다.
+            try {
+                // 항상 실행되는 정리 구간에서 임시 소셜 인증 상태를 먼저 지운 뒤
+                // 애플리케이션 인증을 명시적으로 저장한다.
+                redirectPath = loginSessionManager.completeLogin(request, response, completedLogin);
+            } catch (IllegalArgumentException | IllegalStateException e) {
+                log.warn("소셜 로그인 세션 생성에 실패했습니다.", e);
+                redirectPath = "/auth/login?socialError=true";
+            }
         }
         response.sendRedirect(request.getContextPath() + redirectPath);
     }
@@ -248,10 +262,11 @@ public class SocialOAuth2LoginHandler
                 stringValue(response.get("profile_image")));
     }
 
-    private void cleanupOAuthAuthentication(
+    private boolean cleanupOAuthAuthentication(
             OAuth2AuthenticationToken authentication,
             HttpServletRequest request,
             HttpServletResponse response) {
+        boolean cleanupFailed = false;
         try {
             if (authentication != null) {
                 authorizedClientRepository.removeAuthorizedClient(
@@ -261,22 +276,44 @@ public class SocialOAuth2LoginHandler
                         response);
             }
         } catch (RuntimeException e) {
+            cleanupFailed = true;
             log.error("소셜 로그인 임시 토큰 정리에 실패했습니다.", e);
-        } finally {
-            clearSecurityContext(request, response);
         }
+        if (cleanupFailed) {
+            invalidateSession(request);
+            SecurityContextHolder.clearContext();
+            return false;
+        }
+        return clearSecurityContext(request, response);
     }
 
-    private void clearSecurityContext(
+    private boolean clearSecurityContext(
             HttpServletRequest request,
             HttpServletResponse response) {
         SecurityContext emptyContext = SecurityContextHolder.createEmptyContext();
         try {
             SecurityContextHolder.setContext(emptyContext);
-            // 애플리케이션 인증은 loginMember 세션만 사용하므로 Spring OAuth 인증은 즉시 제거한다.
+            // 애플리케이션 인증은 회원 정보 세션만 사용하므로 임시 소셜 인증은 즉시 제거한다.
             securityContextRepository.saveContext(emptyContext, request, response);
+            return true;
+        } catch (RuntimeException e) {
+            log.error("OAuth temporary authentication removal failed.", e);
+            invalidateSession(request);
+            return false;
         } finally {
             SecurityContextHolder.clearContext();
+        }
+    }
+
+    private void invalidateSession(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        if (session == null) {
+            return;
+        }
+        try {
+            session.invalidate();
+        } catch (IllegalStateException ignored) {
+            // 세션은 이미 사용할 수 없으므로 남은 인증 상태가 없다.
         }
     }
 
@@ -315,7 +352,7 @@ public class SocialOAuth2LoginHandler
 
             sessionValue = session.getAttribute(PENDING_SOCIAL_AUTH_INTENT);
             if (sessionValue instanceof PendingSocialAuthIntent) {
-                // callback 재전송이 같은 시작 정보를 다시 사용할 수 없도록 state와 함께 소비한다.
+                // 콜백 재전송이 같은 시작 정보를 다시 사용할 수 없도록 상태값과 함께 소비한다.
                 session.removeAttribute(PENDING_SOCIAL_AUTH_INTENT);
                 session.removeAttribute(PENDING_SOCIAL_AUTH_FLOW_ID);
                 session.removeAttribute(PENDING_SOCIAL_AUTH_STATE);
@@ -355,16 +392,6 @@ public class SocialOAuth2LoginHandler
             return "/auth/login?socialNotLinked=true";
         }
         return "/auth/login?socialError=true";
-    }
-
-    private void completeLogin(
-            HttpServletRequest request,
-            LoginMemberDto loginMember) {
-        HttpSession previousSession = request.getSession(false);
-        if (previousSession != null) {
-            previousSession.invalidate();
-        }
-        request.getSession(true).setAttribute("loginMember", loginMember);
     }
 
     private Map<?, ?> mapValue(Object value) {

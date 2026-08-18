@@ -25,6 +25,7 @@
       조회 결과가 계정 존재 여부를 노출할 수 있으므로 서버는 응답 정책과 요청 남용 방지를 책임진다.
     --%>
     <form id="findIdForm" action="${pageContext.request.contextPath}/auth/find-id" method="post" novalidate>
+        <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
         <div class="form-field">
             <label for="findIdName">이름</label>
             <input id="findIdName" name="name" type="text" autocomplete="name"
@@ -44,10 +45,11 @@
         <button class="primary-button" type="submit">아이디 찾기</button>
     </form>
 
-    <p class="auth-switch">
-        로그인 화면으로 돌아가시겠어요?
+    <div class="auth-links">
+        <a href="${pageContext.request.contextPath}/auth/reactivation">탈퇴 계정 재활성화</a>
+        <span aria-hidden="true">|</span>
         <a href="${pageContext.request.contextPath}/auth/login">로그인</a>
-    </p>
+    </div>
 </main>
 </body>
 </html>

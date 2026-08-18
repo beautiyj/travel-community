@@ -34,6 +34,7 @@ CANCEL_REQUESTED 행마다 하나씩 렌더링. 고객이 남긴 취소 사유�
         <%-- 1단계: 승인 또는 거절 선택 --%>
         <div class="business-cancel-actions" data-cancel-actions>
             <form action="${cp}/business/reservations/${param.reservationId}/cancel-approve" method="post" class="business-inline-form">
+                <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                 <jsp:include page="/WEB-INF/views/common/smallButton.jsp">
                     <jsp:param name="text" value="취소 승인" />
                     <jsp:param name="theme" value="primary" />
@@ -49,6 +50,7 @@ CANCEL_REQUESTED 행마다 하나씩 렌더링. 고객이 남긴 취소 사유�
         <%-- 2단계: 거절 선택 시 사유 입력 (평소엔 숨김) --%>
         <form action="${cp}/business/reservations/${param.reservationId}/cancel-reject" method="post"
               class="business-cancel-reject-panel" data-reject-form data-cancel-reject-panel style="display:none;">
+            <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
             <label class="business-modal-label" for="${param.modalId}-select">거절 사유</label>
             <select id="${param.modalId}-select" class="business-modal-select" data-reject-select>
                 <option value="">사유를 선택하세요</option>

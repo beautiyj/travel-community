@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", function () {
             + "?placeId=" + encodeURIComponent(placeId)
             + "&isClosed=" + (nextClosed ? 1 : 0);
 
-        fetch(url, { method: "PATCH" })
+        csrfFetch(url, { method: "PATCH" })
             .then(function (res) {
                 if (!res.ok) throw new Error("요청 실패");
                 // 사이드바 상태 표시는 새로고침
@@ -407,10 +407,10 @@ document.addEventListener("DOMContentLoaded", function () {
                     + "&oldEndDate=" + encodeURIComponent(editingGroup.end)
                     + "&newStartDate=" + encodeURIComponent(rangeStart)
                     + "&newEndDate=" + encodeURIComponent(rangeEnd);
-                request = fetch(datesUrl(params), { method: "PUT" });
+                request = csrfFetch(datesUrl(params), { method: "PUT" });
             } else {
                 var addParams = "&startDate=" + encodeURIComponent(rangeStart) + "&endDate=" + encodeURIComponent(rangeEnd);
-                request = fetch(datesUrl(addParams), { method: "POST" });
+                request = csrfFetch(datesUrl(addParams), { method: "POST" });
             }
 
             request
@@ -465,7 +465,7 @@ document.addEventListener("DOMContentLoaded", function () {
             window.openModal("closureDeleteModal");
         });
 
-        // 삭제 확인 모달의 "삭제" 버튼(폼 submit)을 가로채 fetch(DELETE)로 처리한다.
+        // 삭제 확인 모달의 "삭제" 버튼(폼 submit)을 가로채 csrfFetch(DELETE)로 처리한다.
         // confirmModal.jsp는 원래 실제 폼 제출(페이지 이동) 방식이라, AJAX 삭제에 맞게 여기서 막는다.
         if (deleteForm) {
             deleteForm.addEventListener("submit", function (e) {
@@ -478,7 +478,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (submitBtn) submitBtn.disabled = true;
 
                 var delParams = "&startDate=" + encodeURIComponent(start) + "&endDate=" + encodeURIComponent(end);
-                fetch(datesUrl(delParams), { method: "DELETE" })
+                csrfFetch(datesUrl(delParams), { method: "DELETE" })
                     .then(function (res) {
                         if (!res.ok) throw new Error("삭제 실패");
                         window.closeModal("closureDeleteModal");

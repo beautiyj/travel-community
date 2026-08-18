@@ -5,6 +5,9 @@
 <html lang="ko">
     <head>
         <meta charset="UTF-8">
+        <meta name="_csrf" content="${_csrf.token}">
+        <meta name="_csrf_header" content="${_csrf.headerName}">
+        <script src="${pageContext.request.contextPath}/js/csrf.js"></script>
         <title>${place.name} - 상세 정보</title>
 
         <!-- 공통 및 컴포넌트 CSS -->
@@ -53,7 +56,7 @@
 
                     <div class="place-rating-area">
                         <span class="star-icon">⭐</span>
-                        <span class="place-rating-count">리뷰 ${communityReviewCount}개</span>
+                        <span class="place-rating-count">리뷰 0개</span>
                     </div>
 
                     <div class="place-desc">

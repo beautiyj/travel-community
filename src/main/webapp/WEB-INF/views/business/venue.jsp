@@ -41,6 +41,7 @@
                         <p class="business-empty">아직 등록된 업소가 없습니다. 아래 정보를 입력해 업소를 등록해주세요.</p>
 
                         <form class="business-form" action="/business/venue/register" method="post" enctype="multipart/form-data">
+                            <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                             <jsp:include page="common/venueFormFields.jsp" />
                             <jsp:include page="common/venuePhotoField.jsp" />
 
@@ -56,6 +57,7 @@
                         <h2 class="business-card__title">업소 정보 수정</h2>
 
                         <form class="business-form" action="/business/venue/update" method="post" enctype="multipart/form-data">
+                            <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                             <%-- address를 안 넘기면 수정 화면에서 주소가 빈 값으로 뜨고,
                                  business-venue.js의 제출 검증에 걸려 매번 주소를 다시 검색해야 한다 --%>
                             <jsp:include page="common/venueFormFields.jsp">

@@ -62,6 +62,7 @@
             <a href="/tour/detail?placeId=${placeId}" target="_blank" rel="noopener" class="business-nav-item">내 업소보기</a>
         </c:if>
         <form method="post" action="/auth/logout" class="business-sidebar__logout-form">
+            <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
             <button type="submit" class="business-nav-item business-nav-item--danger">로그아웃</button>
         </form>
     </div>

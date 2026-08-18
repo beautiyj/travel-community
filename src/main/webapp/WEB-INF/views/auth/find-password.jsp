@@ -4,6 +4,9 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <meta name="_csrf" content="${_csrf.token}">
+    <meta name="_csrf_header" content="${_csrf.headerName}">
+    <script src="${pageContext.request.contextPath}/js/csrf.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>비밀번호 찾기 | 갈래말래</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/common.css">
@@ -38,7 +41,7 @@
         <div class="form-field">
             <label for="findPasswordUsername">아이디</label>
             <input id="findPasswordUsername" name="username" type="text" autocomplete="username"
-                   maxlength="20" pattern="[A-Za-z0-9]{5,20}" placeholder="아이디를 입력하세요" required autofocus>
+                   maxlength="20" pattern="^[a-z0-9]{5,20}$" placeholder="아이디를 입력하세요" required autofocus>
             <p id="findPasswordUsernameError" class="field-error" aria-live="polite"></p>
         </div>
 
@@ -64,10 +67,11 @@
         <button id="verifyPasswordCodeButton" class="primary-button" type="submit" disabled>본인 확인</button>
     </form>
 
-    <p class="auth-switch">
-        로그인 화면으로 돌아가시겠어요?
+    <div class="auth-links">
+        <a href="${pageContext.request.contextPath}/auth/reactivation">탈퇴 계정 재활성화</a>
+        <span aria-hidden="true">|</span>
         <a href="${pageContext.request.contextPath}/auth/login">로그인</a>
-    </p>
+    </div>
 </main>
 </body>
 </html>

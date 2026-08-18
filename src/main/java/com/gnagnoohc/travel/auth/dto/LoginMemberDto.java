@@ -1,5 +1,8 @@
 package com.gnagnoohc.travel.auth.dto;
 
+import java.io.Serial;
+import java.io.Serializable;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -8,12 +11,15 @@ import lombok.Getter;
  */
 @Getter
 @AllArgsConstructor
-public class LoginMemberDto {
+public class LoginMemberDto implements Serializable {
 
-	private int memberId;
-	private String nickname;
+	@Serial
+	private static final long serialVersionUID = 1L;
+
+	private final int memberId;
+	private final String nickname;
 	// 마이페이지에서 회원 유형을 구분할 수 있도록 DB의 member_type 값을 보관한다.
-	private int memberType;
+	private final int memberType;
 	// DB에서 조회한 member_role 문자열을 그대로 저장한다.
-	private String memberRole;
+	private final String memberRole;
 }

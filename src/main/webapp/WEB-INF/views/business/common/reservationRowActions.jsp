@@ -17,6 +17,7 @@
 
     <c:if test="${param.status == 'PAID'}">
         <form method="post" action="/business/reservations/${param.reservationId}/confirm" class="business-inline-form">
+            <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
             <jsp:include page="/WEB-INF/views/common/smallButton.jsp">
                 <jsp:param name="text" value="예약확정" />
                 <jsp:param name="theme" value="primary" />

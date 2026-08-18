@@ -18,6 +18,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -63,18 +65,140 @@ public class TourApiService {
     // 5개 타입을 모두 모아 후보 리스트를 합친 뒤 지역별 샘플링을 단 한 번만 수행하도록 변경
 
     // [실제 운용/전체 적재용 로직] - 5개 타입을 모아 1차 큐 셀렉팅(조기종료 3건) + 부실 보완(tour 3건, stay 3건)을 한 번에 적재하는 메인 로직
+//    @Transactional
+//    public void syncAllTargetList() {
+//        log.info("[Batch Sync Start] 전국 296개 지역군 1차 전체 적재를 시작합니다.");
+//        for (String contentTypeId : TARGET_CONTENT_TYPES) {
+//            // pageNo=1부터 시작하여 1차 목록을 수집한 뒤 샘플링/큐셀렉팅 실행
+//            List<TourAreaBasedSyncListDTO> rawValidList = collectValidItems(contentTypeId, 1);
+//            processRandomSamplingAndSave(rawValidList);
+//        }
+//        log.info("[Batch Sync End] 전국 296개 지역군 전체 적재가 완료되었습니다.");
+//    }
+
+    /** [실제 운용/스케줄러 전용]
+     * 타겟 증분 동기화 (Incremental Sync)
+     * 매일 새벽 3시 실행 시 어제 이후 변동(폐업/신규/수정)이 일어난 공공데이터만 조회하여,
+     * 해당 지역들만 핀포인트로 DB에 반영 및 T.O 보충
+     */
     @Transactional
     public void syncAllTargetList() {
-        log.info("[Batch Sync Start] 전국 296개 지역군 1차 전체 적재를 시작합니다.");
+        // 어제 날짜 (YYYYMMDD) 계산 -> 최근 24시간 내 변동분만 수집
+        String modifiedtime = LocalDate.now().minusDays(1).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        log.info("[Incremental Sync Start] {} 이후 변동된 장소 데이터를 수집합니다.", modifiedtime);
+
+        // 어제 이후 변동된 아이템 수집
+        List<TourAreaBasedSyncListDTO> changedItems = new ArrayList<>();
         for (String contentTypeId : TARGET_CONTENT_TYPES) {
-            // pageNo=1부터 시작하여 1차 목록을 수집한 뒤 샘플링/큐셀렉팅 실행
-            List<TourAreaBasedSyncListDTO> rawValidList = collectValidItems(contentTypeId, 1);
-            processRandomSamplingAndSave(rawValidList);
+            changedItems.addAll(collectChangedItems(contentTypeId, modifiedtime));
         }
-        log.info("[Batch Sync End] 전국 296개 지역군 전체 적재가 완료되었습니다.");
+
+        if (changedItems.isEmpty()) {
+            log.info("[Incremental Sync] 어제 이후 변동된 공공데이터가 없습니다. 배치를 완료합니다.");
+            return;
+        }
+
+        log.info("[Incremental Sync] 총 {}건의 변동 데이터가 감지되었습니다.", changedItems.size());
+
+        // 변동이 일어난 데이터를 법정동 regionKey(예: 11110) 기준으로만 그룹핑
+        Map<String, List<TourAreaBasedSyncListDTO>> regionGroupMap = changedItems.stream()
+                .filter(item -> StringUtils.hasText(item.getLDongRegnCd()))
+                .collect(Collectors.groupingBy(item -> item.getLDongRegnCd()
+                        + (StringUtils.hasText(item.getLDongSignguCd()) ? item.getLDongSignguCd() : "")));
+
+        log.info("[Incremental Sync] 총 {}개 지역에서 변동이 발생했습니다. (지역 목록: {})", regionGroupMap.size(), regionGroupMap.keySet());
+
+        // 변동이 일어난 지역들만 순회하며 핀포인트 동기화 처리
+        for (Map.Entry<String, List<TourAreaBasedSyncListDTO>> entry : regionGroupMap.entrySet()) {
+            String regionKey = entry.getKey();
+            List<TourAreaBasedSyncListDTO> items = entry.getValue();
+
+            Integer regionId;
+            try {
+                regionId = Integer.parseInt(regionKey);
+            } catch (NumberFormatException e) {
+                log.warn("[Incremental Sync] 유효하지 않은 regionKey: {}", regionKey);
+                continue;
+            }
+
+            // DB region 테이블에 존재하지 않는 지역이면 스킵 (FK 에러 사전 방어)
+            if (!tourMapper.existsRegion(regionId)) {
+                log.warn("[Incremental Sync] DB region 테이블에 존재하지 않는 regionId({}) - 스킵", regionId);
+                continue;
+            }
+
+            int closedCount = 0; // 이 지역에서 폐업 처리된 건수 카운트
+
+            for (TourAreaBasedSyncListDTO syncItem : items) {
+                // [CASE 1] 폐업(showflag == "0") 데이터 -> DB에서 is_closed = 1 처리
+                if ("0".equals(syncItem.getShowflag())) {
+                    if (processClosedPlace(syncItem)) {
+                        closedCount++;
+                    }
+                }
+                // [CASE 2] 신규/수정(showflag != "0") 데이터 -> 1차 검증 통과 시 DB Upsert
+                else {
+                    if (tourValidator.isValid(syncItem) && tourApiHelper.isValidItem(syncItem)) {
+                        processSinglePlace(syncItem);
+                    }
+                }
+            }
+
+            // [CASE 3] 폐업으로 발생한 빈자리 핀포인트 보충 레이어
+            // 해당 지역에 폐업이 closedCount개 발생했다면, 딱 그 수량만큼만 핀포인트 보충
+            if (closedCount > 0) {
+                log.info("[Incremental Sync] 지역({}) 폐업 {}건 발생 -> 1:1 수량 핀포인트 보충 실행", regionKey, closedCount);
+                String regnCd = regionKey.length() >= 2 ? regionKey.substring(0, 2) : regionKey;
+                String signguCd = regionKey.length() > 2 ? regionKey.substring(2) : "";
+
+                // 폐업된 수량(closedCount)만큼 부실 보완 레이어를 돌려 정확히 추가 적재
+                fillLowQualitySupplement(regnCd, signguCd, regionKey, "tour", TOUR_CONTENT_TYPES, closedCount);
+            }
+        }
+
+        log.info("[Incremental Sync End] 변동 지역 핀포인트 동기화가 성공적으로 완료되었습니다.");
     }
 
-    
+    /**
+     * 스케줄러 전용 - 특정 modifiedtime(수정일자) 이후 변동분만 수집하는 헬퍼 메서드
+     */
+    private List<TourAreaBasedSyncListDTO> collectChangedItems(String contentTypeId, String modifiedtime) {
+        List<TourAreaBasedSyncListDTO> changedList = new ArrayList<>();
+        int pageNo = 1;
+
+        while (true) {
+            try {
+                // TourApiClient에 5개 인자 전달 (pageNo, contentTypeId, modifiedtime, showflag, arrange)
+                String jsonResponse = tourApiClient.fetchAreaBasedSyncList(pageNo, contentTypeId, modifiedtime, null, null);
+                if (!StringUtils.hasText(jsonResponse)) break;
+
+                TourApiResponseDTO<TourAreaBasedSyncListDTO> response = objectMapper.readValue(
+                        jsonResponse, new TypeReference<TourApiResponseDTO<TourAreaBasedSyncListDTO>>() {}
+                );
+
+                if (response == null || response.getResponse() == null
+                        || response.getResponse().getBody() == null
+                        || response.getResponse().getBody().getItems() == null
+                        || response.getResponse().getBody().getItems().getItem() == null) {
+                    break;
+                }
+
+                List<TourAreaBasedSyncListDTO> items = response.getResponse().getBody().getItems().getItem();
+                if (items.isEmpty()) break;
+
+                changedList.addAll(items);
+                pageNo++;
+
+                if (pageNo > 10) break; // 안전장치 페이징
+
+            } catch (Exception e) {
+                log.error("[Incremental Sync API Error] contentTypeId: {}, page: {} 수집 실패", contentTypeId, pageNo, e);
+                break;
+            }
+        }
+        return changedList;
+    }
+
     // [테스트 / 특정 지역 한정용] 지정한 regionIds만 큐 셀렉팅 + 보충 적재
     @Transactional
     public void syncTargetListForRegions(List<Integer> regionIds) {
@@ -84,7 +208,7 @@ public class TourApiService {
         for (Integer regionId : regionIds) {
             String regionIdStr = String.valueOf(regionId);
             if (regionIdStr.length() < 3) continue;
-            
+
             String regnCd = regionIdStr.substring(0, 2);
             String signguCd = regionIdStr.substring(2);
 
@@ -96,6 +220,7 @@ public class TourApiService {
         processRandomSamplingAndSave(rawValidList);
         log.info("[Batch Sync Test End] 지정 지역 {} 대상 큐 셀렉팅 적재 완료.", regionIds);
     }
+
     // 특정 지역 대상 부족분 보충 전용 메서드 (스케줄러와 동일 로직)
     // [테스트 / 특정 지역 한정용 2] 지정한 regionIds만 부족분 T.O 체크 후 핀포인트 보충 적재
     public void fetchSupplementForRegions(List<Integer> regionIds) {
@@ -191,8 +316,8 @@ public class TourApiService {
 
         while (hasNext) {
             try {
-                // TourAreaBasedSyncListDTO 동기화 목록 API 호출
-                String jsonResponse = tourApiClient.fetchAreaBasedSyncList(pageNo, contentTypeId, null, null);
+                // TourAreaBasedSyncListDTO 동기화 목록 API 호출 (5개 인자로 전달)
+                String jsonResponse = tourApiClient.fetchAreaBasedSyncList(pageNo, contentTypeId, null, null, null);
                 if (!StringUtils.hasText(jsonResponse)) { break; }
 
                 // JSON 파싱
@@ -235,7 +360,7 @@ public class TourApiService {
                 }
                 pageNo++;
                 // 방어용 페이징 안전장치 (필요 시 조절 가능, 테스트용 30)
-                if (pageNo > 30) { hasNext = false; 
+                if (pageNo > 30) { hasNext = false;
                 }
 
             } catch (Exception e) {
@@ -270,7 +395,7 @@ public class TourApiService {
     // 지역기반 목록조회(/areaBasedList2)로 특정 지역+타입 조합의 1차 검증 통과 항목만 수집
     // 페이징 없이 1회 호출 (지역 단위라 데이터량이 적음), arrange="Q"로 대표이미지 보장된 항목만 응답받음
     private List<TourAreaBasedSyncListDTO> collectValidItemsForRegion(String regnCd, String signguCd,
-            String contentTypeId) {
+                                                                      String contentTypeId) {
         List<TourAreaBasedSyncListDTO> rawValidList = new ArrayList<>();
         try {
             String jsonResponse = tourApiClient.fetchAreaBasedList(regnCd, signguCd, contentTypeId, "Q");
@@ -464,7 +589,7 @@ public class TourApiService {
     // TourValidator.isValidBlacklistOnly()(블랙리스트만) + 필수 필드(주소/대표이미지/개요) 확인만 거쳐 무조건
     // need개수만큼 추가 적재
     private void fillLowQualitySupplement(String regnCd, String signguCd, String regionKey,
-            String bucketType, List<String> sourceContentTypeIds, int need) {
+                                          String bucketType, List<String> sourceContentTypeIds, int need) {
         List<TourAreaBasedSyncListDTO> pool = new ArrayList<>();
         for (String contentTypeId : sourceContentTypeIds) {
             try {
@@ -558,12 +683,30 @@ public class TourApiService {
         }
     }
 
-    // 폐업(showflag == 0) 데이터 전용 처리 헬퍼
-    private void processClosedPlace(TourAreaBasedSyncListDTO syncItem) {
-        TourItemDTO tourItem = tourDataConverter.convertToTourItemDTO(syncItem);
-        PlaceDTO placeDto = tourDataConverter.convertToPlaceDTO(syncItem, tourItem, null, null, null);
-        placeDto.setIsClosed(1); // 전부 폐업(Soft Off) 처리
-        tourMapper.upsertPlace(placeDto);
+    /**
+     * 폐업(showflag == 0) 데이터 전용 처리 헬퍼 (FK 에러 방어 추가)
+     */
+    private boolean processClosedPlace(TourAreaBasedSyncListDTO syncItem) {
+        try {
+            // 법정동 코드 존재 및 region_id 유효성 1차 검증
+            Integer regionId = tourApiHelper.parseRegionId(syncItem.getLDongRegnCd(), syncItem.getLDongSignguCd());
+            if (regionId == null || regionId <= 0 || !tourMapper.existsRegion(regionId)) {
+                log.warn("[Closed Place Skip] 유효하지 않거나 DB에 없는 region_id({}) - placeId: {}, 장소명: {}",
+                        regionId, syncItem.getContentid(), syncItem.getTitle());
+                return false; // DB 적재 안 함 (FK 에러 방지)
+            }
+
+            TourItemDTO tourItem = tourDataConverter.convertToTourItemDTO(syncItem);
+            PlaceDTO placeDto = tourDataConverter.convertToPlaceDTO(syncItem, tourItem, null, null, null);
+            placeDto.setIsClosed(1); // 전부 폐업(Soft Off) 처리
+
+            tourMapper.upsertPlace(placeDto);
+            log.info("[Closed Place Processed] placeId: {}, name: {} 폐업 처리 완료", syncItem.getContentid(), syncItem.getTitle());
+            return true;
+        } catch (Exception e) {
+            log.error("[Closed Place Error] placeId: {} 처리 중 오류 발생", syncItem.getContentid(), e);
+            return false;
+        }
     }
 
     // 헬퍼 메소드 - 개별 장소의 상세정보 연쇄 수집 및 DB 적재(PLACE + PLACE_IMAGE)

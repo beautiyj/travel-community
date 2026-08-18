@@ -3,6 +3,13 @@
 
 <mapper namespace="com.gnagnoohc.travel.tour.mapper.TourMapper">
 
+    <!-- region 테이블 UPSERT 전, 컬럼 등 존재 여부 확인 -->
+    <select id="existsRegion" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM region
+        WHERE region_id = #{regionId}
+    </select>
+
     <!-- region 테이블 UPSERT -->
     <insert id="upsertRegion" parameterType="com.gnagnoohc.travel.tour.model.RegionDTO">
         INSERT INTO region (

@@ -300,34 +300,44 @@ public class TourApiClient {
         }
     }
 
+    // BATCH 동기화 스케줄러 - 필요값만 수정, 적용되는 스케줄러를 위해 modifiedtime 추가해둠
     /**
      * 관광정보 동기화 목록 조회 /areaBasedSyncList2 - 배치 수집 전용 API (DB 최신상태 유지용 API)
      * 파라미터에 따라 제목순, 수정일순(최신순), 등록일순 정렬 검색 제공
+     * @param defaultPage 페이지 번호
      * @param contentTypeId 관광타입 ID (옵션)
+     * @param modifiedtime 수정일자 (YYYYMMDD 형식, 증분 수집용)
      * @param showflag 콘텐츠표출여부 1/0 (옵션, 1=표출 0=비표출)
-     * 
+     * @param arrange 정렬 구분
      * 동기화 목록에서만 페이징 매개변수 처리
      */
-    public String fetchAreaBasedSyncList(int defaultPage, String contentTypeId, String showflag, String arrange) {        
+    public String fetchAreaBasedSyncList(int defaultPage, String contentTypeId, String modifiedtime, String showflag, String arrange) {
         try {
             Thread.sleep(200);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
         try {
-        return this.webClient.get()
-            .uri(uriBuilder -> uriBuilder
-                .path("/areaBasedSyncList2")
-                .queryParam("serviceKey", serviceKey)
-                .queryParam("MobileOS", "ETC")
-                .queryParam("MobileApp", "Travel")
-                .queryParam("_type", "json")
-                .queryParam("numOfRows", batchSize)
-                .queryParam("pageNo", defaultPage)
-                .queryParam("arrange", arrange)
-                .queryParam("contentTypeId", contentTypeId)
-                .queryParam("showflag", showflag)
-                .build())
+            return this.webClient.get()
+                    .uri(uriBuilder -> {
+                        var builder = uriBuilder
+                                .path("/areaBasedSyncList2")
+                                .queryParam("serviceKey", serviceKey)
+                                .queryParam("MobileOS", "ETC")
+                                .queryParam("MobileApp", "Travel")
+                                .queryParam("_type", "json")
+                                .queryParam("numOfRows", batchSize)
+                                .queryParam("pageNo", defaultPage)
+                                .queryParam("arrange", arrange)
+                                .queryParam("contentTypeId", contentTypeId)
+                                .queryParam("showflag", showflag);
+
+                        // modifiedtime 값이 넘어온 경우에만 쿼리 파라미터 추가
+                        if (org.springframework.util.StringUtils.hasText(modifiedtime)) {
+                            builder.queryParam("modifiedtime", modifiedtime);
+                        }
+                        return builder.build();
+                    })
             .retrieve()
             .bodyToMono(String.class)
             .block();

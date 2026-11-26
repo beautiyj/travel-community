@@ -12,6 +12,12 @@
 </div>
 [**GitHub Repository →**](https://github.com/beautiyj/travel-community)
 
+- 📽️ **[프로젝트 시연 영상)](**추후 추가 예정)**
+  
+- 📜 **[프로젝트 요약서](https://docs.google.com/document/d/16Dz9T7B5qjydQ-nMdgIqZuRW_dR23_Ej/edit?usp=sharing&ouid=100019042496732926316&rtpof=true&sd=true)**
+- 📜 **[프로젝트 개발 계획서](https://docs.google.com/document/d/12kya6y1YMu43Jbr2G98aaC8OeJUCBfD4/edit?usp=sharing&ouid=100019042496732926316&rtpof=true&sd=true)**
+
+
 </div>
 
 <br>
